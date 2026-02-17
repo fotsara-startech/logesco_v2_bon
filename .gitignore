@@ -1,0 +1,80 @@
+node_modules
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.g.dart
+*.pdb
+logesco_v2/build/
+logesco_v2/.dart_tool/
+logesco_v2/.flutter-plugins
+logesco_v2/.flutter-plugins-dependencies
+logesco_v2/node_modules/
+logesco_v2/windows/flutter/ephemeral/
+
+# Backend
+node_modules/
+dist/
+dist-portable/
+release/
+*.log
+backend/node_modules/
+backend/dist/
+backend/prisma/dev.db*
+backend/prisma/database/
+logesco_v2/assets/backend/
+
+# Fichiers d'installation et builds
+*.exe
+*.msi
+*.dmg
+*.deb
+*.rpm
+*.dll
+*.so
+*.dylib
+*.pdb
+logesco_license_admin/setup/release/
+logesco_license_admin/build/
+logesco_v2/assets/VC_redist.x64.exe
+
+# Base de données
+*.db
+*.sqlite
+*.sqlite3
+prisma/dev.db*
+backend/prisma/*.db*
+
+# Fichiers volumineux
+*.zip
+*.tar.gz
+*.rar
+*.7z
+Package-Mise-A-Jour-Client/
+Package-Mise-A-Jour-Client.zip
+
+# Uploads et fichiers temporaires
+uploads/
+*.tmp
+*.temp
+
+# Docker volumes
+docker/data/
+
+# Git backup
+.git_backup/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

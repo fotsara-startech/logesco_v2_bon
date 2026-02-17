@@ -1,0 +1,214 @@
+═══════════════════════════════════════════════════════════════════
+PROMPT VISUEL PROMOTIONNEL - LOGESCO V2
+Logiciel de Gestion Commerciale Moderne
+═══════════════════════════════════════════════════════════════════
+
+🎨 PROMPT POUR GÉNÉRATEUR D'IMAGE IA (Midjourney, DALL-E, Stable Diffusion)
+───────────────────────────────────────────────────────────────────
+
+📋 VERSION PRINCIPALE - STYLE PROFESSIONNEL MODERNE
+───────────────────────────────────────────────────────────────────
+
+A modern professional software promotional banner for "LOGESCO v2" business management system, featuring a sleek dashboard interface with vibrant data visualizations, clean typography, gradient blue and purple color scheme, floating UI elements showing inventory charts, sales graphs, and product management screens, 3D isometric perspective, soft shadows, glass morphism effects, minimalist design, tech startup aesthetic, high quality render, 4K resolution, professional lighting, corporate branding style --ar 16:9 --v 6
+
+───────────────────────────────────────────────────────────────────
+
+🎯 VARIANTES THÉMATIQUES
+───────────────────────────────────────────────────────────────────
+
+VARIANTE 1 - FOCUS TABLEAU DE BORD
+──────────────────────────────────
+Professional business dashboard mockup for LOGESCO v2 software, modern analytics interface with real-time sales charts, inventory widgets, revenue graphs in vibrant colors, clean white background, floating glass panels, blue and teal gradient accents, minimalist icons, data visualization, corporate tech aesthetic, photorealistic 3D render, soft ambient lighting --ar 16:9 --style raw
+
+VARIANTE 2 - FOCUS POINT DE VENTE
+──────────────────────────────────
+Modern point of sale system interface for LOGESCO v2, sleek POS terminal screen showing product catalog and shopping cart, clean UI design, professional retail environment, blue and white color palette, touch screen interface, barcode scanner, receipt printer, contemporary business setting, high-end commercial photography style, professional lighting --ar 16:9
+
+VARIANTE 3 - FOCUS GESTION STOCK
+─────────────────────────────────
+Inventory management software visualization for LOGESCO v2, 3D warehouse with floating digital screens showing stock levels, product cards, alert notifications, modern logistics interface, blue holographic displays, isometric view, tech-forward design, clean and organized aesthetic, professional business illustration, vibrant colors --ar 16:9
+
+VARIANTE 4 - STYLE HÉROÏQUE/LANDING PAGE
+─────────────────────────────────────────
+Hero section banner for LOGESCO v2 business software, laptop displaying elegant dashboard interface, floating UI elements, abstract geometric shapes, gradient mesh background in blue and purple, modern SaaS product presentation, professional photography style, depth of field, premium business aesthetic, marketing material quality --ar 21:9
+
+VARIANTE 5 - STYLE MINIMALISTE ÉLÉGANT
+───────────────────────────────────────
+Minimalist promotional design for LOGESCO v2 management software, clean white space, single elegant dashboard screen mockup, subtle blue accent colors, simple geometric shapes, professional typography, Swiss design influence, high-end corporate branding, sophisticated and refined aesthetic --ar 16:9 --style raw
+
+───────────────────────────────────────────────────────────────────
+
+🎨 ÉLÉMENTS VISUELS À INCLURE
+───────────────────────────────────────────────────────────────────
+
+OBLIGATOIRES:
+✓ Logo/Nom "LOGESCO v2" bien visible
+✓ Interface dashboard moderne
+✓ Graphiques/Charts de données
+✓ Palette de couleurs: Bleu, Violet, Blanc
+
+RECOMMANDÉS:
+✓ Icônes de gestion (📊 📦 💰 👥)
+✓ Écrans flottants en 3D
+✓ Effets de verre/transparence
+✓ Ombres douces et professionnelles
+✓ Typographie moderne et lisible
+
+À ÉVITER:
+✗ Designs trop chargés ou confus
+✗ Couleurs criardes ou agressives
+✗ Éléments datés ou vintage
+✗ Texte illisible ou trop petit
+
+───────────────────────────────────────────────────────────────────
+
+📐 FORMATS RECOMMANDÉS
+───────────────────────────────────────────────────────────────────
+
+• Banner Web/LinkedIn: --ar 16:9 (1920x1080px)
+• Story Instagram/Facebook: --ar 9:16 (1080x1920px)
+• Post Carré Social Media: --ar 1:1 (1080x1080px)
+• Cover Facebook: --ar 21:9 (2560x1097px)
+• Affiche A4: --ar 3:4 (2480x3508px)
+
+───────────────────────────────────────────────────────────────────
+
+🎯 MOTS-CLÉS POUR OPTIMISATION
+───────────────────────────────────────────────────────────────────
+
+Style: modern, professional, clean, minimalist, corporate, tech, SaaS
+Couleurs: blue gradient, purple accent, white space, vibrant
+Qualité: 4K, high resolution, photorealistic, premium quality
+Éclairage: soft lighting, ambient light, professional photography
+Effets: glass morphism, 3D isometric, floating elements, depth of field
+Ambiance: business, enterprise, startup, innovative, trustworthy
+
+───────────────────────────────────────────────────────────────────
+
+💡 CONSEILS D'UTILISATION
+───────────────────────────────────────────────────────────────────
+
+1. MIDJOURNEY:
+   - Utilisez --v 6 pour la dernière version
+   - Ajoutez --style raw pour plus de contrôle
+   - Utilisez --q 2 pour qualité maximale
+
+2. DALL-E 3:
+   - Simplifiez le prompt (moins de détails techniques)
+   - Insistez sur l'ambiance et le style général
+   - Demandez "high quality professional render"
+
+3. STABLE DIFFUSION:
+   - Ajoutez des negative prompts: "blurry, low quality, pixelated"
+   - Utilisez des modèles orientés UI/UX design
+   - Augmentez les steps (50-100) pour meilleur résultat
+
+4. POST-PRODUCTION:
+   - Ajoutez le logo LOGESCO en haute résolution
+   - Insérez le slogan: "Gestion Commerciale Simplifiée"
+   - Ajoutez des call-to-action si nécessaire
+
+───────────────────────────────────────────────────────────────────
+
+📱 PROMPT POUR RÉSEAUX SOCIAUX (Version Courte)
+───────────────────────────────────────────────────────────────────
+
+Modern business software dashboard for LOGESCO v2, clean blue interface with sales charts and inventory widgets, professional tech aesthetic, glass morphism, 3D floating elements, minimalist design --ar 1:1 --v 6
+
+───────────────────────────────────────────────────────────────────
+
+🎬 PROMPT POUR VIDÉO/ANIMATION (Bonus)
+───────────────────────────────────────────────────────────────────
+
+Si vous utilisez un générateur de vidéo (Runway, Pika Labs):
+
+Smooth camera movement through a modern LOGESCO v2 dashboard interface, data visualizations animating, charts updating in real-time, clean blue and white color scheme, professional business software, cinematic lighting, 4K quality, 5 seconds duration
+
+───────────────────────────────────────────────────────────────────
+
+✨ ÉLÉMENTS DE TEXTE À AJOUTER (Post-Production)
+───────────────────────────────────────────────────────────────────
+
+TITRE PRINCIPAL:
+"LOGESCO v2"
+
+SOUS-TITRE:
+"Gestion Commerciale Simplifiée"
+
+POINTS CLÉS (à choisir):
+✓ Interface Moderne & Intuitive
+✓ 100% Hors Ligne
+✓ Installation en 3 Clics
+✓ Gestion Complète: Stock, Ventes, Clients
+✓ Tableau de Bord en Temps Réel
+✓ Aucune Configuration Requise
+
+CALL-TO-ACTION:
+"Essayez Gratuitement"
+"Télécharger Maintenant"
+"Demander une Démo"
+
+───────────────────────────────────────────────────────────────────
+
+📊 EXEMPLES DE COMPOSITIONS
+───────────────────────────────────────────────────────────────────
+
+COMPOSITION 1 - Triptyque
+┌─────────────┬─────────────┬─────────────┐
+│   PRODUITS  │   VENTES    │    STOCK    │
+│   Screen    │   Screen    │   Screen    │
+└─────────────┴─────────────┴─────────────┘
+        LOGESCO v2 - Tout en Un
+
+COMPOSITION 2 - Hero Central
+┌───────────────────────────────────────────┐
+│                                           │
+│         [DASHBOARD PRINCIPAL]             │
+│                                           │
+│         LOGESCO v2                        │
+│    Gestion Commerciale Moderne            │
+│                                           │
+└───────────────────────────────────────────┘
+
+COMPOSITION 3 - Avant/Après
+┌──────────────┬──────────────┐
+│   AVANT      │    APRÈS     │
+│  Paperwork   │  LOGESCO v2  │
+│  Chaos       │  Dashboard   │
+└──────────────┴──────────────┘
+
+───────────────────────────────────────────────────────────────────
+
+🎨 PALETTE DE COULEURS EXACTE
+───────────────────────────────────────────────────────────────────
+
+COULEURS PRINCIPALES:
+• Bleu Principal: #2563EB (RGB: 37, 99, 235)
+• Bleu Clair: #60A5FA (RGB: 96, 165, 250)
+• Violet Accent: #8B5CF6 (RGB: 139, 92, 246)
+• Blanc: #FFFFFF
+• Gris Clair: #F3F4F6 (RGB: 243, 244, 246)
+
+DÉGRADÉS SUGGÉRÉS:
+• Gradient 1: #2563EB → #8B5CF6 (Bleu vers Violet)
+• Gradient 2: #60A5FA → #2563EB (Bleu clair vers foncé)
+• Gradient 3: #F3F4F6 → #FFFFFF (Fond subtil)
+
+───────────────────────────────────────────────────────────────────
+
+📝 NOTES FINALES
+───────────────────────────────────────────────────────────────────
+
+• Testez plusieurs variantes avant de choisir
+• Adaptez le style à votre audience cible
+• Gardez la cohérence avec votre identité visuelle
+• Privilégiez la clarté et la lisibilité
+• N'hésitez pas à itérer et affiner le prompt
+
+───────────────────────────────────────────────────────────────────
+
+Créé pour: LOGESCO v2 - Système de Gestion Commerciale
+Date: Novembre 2024
+Version: 1.0
+
+═══════════════════════════════════════════════════════════════════

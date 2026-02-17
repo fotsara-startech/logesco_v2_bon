@@ -1,0 +1,983 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../models/customer.dart';
+import '../../../shared/widgets/debug_banner.dart';
+import '../../sales/controllers/sales_controller.dart';
+
+/// Vue de détail d'un client
+class CustomerDetailView extends StatefulWidget {
+  const CustomerDetailView({super.key});
+
+  @override
+  State<CustomerDetailView> createState() => _CustomerDetailViewState();
+}
+
+class _CustomerDetailViewState extends State<CustomerDetailView> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Customer customer = Get.arguments as Customer;
+
+    return DebugBanner(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(customer.nomComplet),
+          elevation: 0,
+          actions: [
+            IconButton(
+              onPressed: () => Get.toNamed('/customers/${customer.id}/edit', arguments: customer),
+              icon: const Icon(Icons.edit),
+              tooltip: 'Modifier',
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Carte d'informations principales
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                            child: Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  customer.nomComplet,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Client #${customer.id}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Informations de contact
+              _buildInfoSection(
+                'Informations de contact',
+                [
+                  if (customer.telephone != null) _buildInfoRow(Icons.phone, 'Téléphone', customer.telephone!),
+                  if (customer.email != null) _buildInfoRow(Icons.email, 'Email', customer.email!),
+                  if (customer.adresse != null) _buildInfoRow(Icons.location_on, 'Adresse', customer.adresse!),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Section Compte et Solde - Temporairement désactivée
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.account_balance_wallet, size: 48, color: Colors.blue),
+                      const SizedBox(height: 8),
+                      const Text('Section compte client'),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => Get.toNamed('/customers/${customer.id}/transactions'),
+                        icon: const Icon(Icons.history),
+                        label: const Text('Voir les transactions'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Informations système
+              _buildInfoSection(
+                'Informations système',
+                [
+                  _buildInfoRow(
+                    Icons.calendar_today,
+                    'Date de création',
+                    _formatDate(customer.dateCreation),
+                  ),
+                  _buildInfoRow(
+                    Icons.update,
+                    'Dernière modification',
+                    _formatDate(customer.dateModification),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+
+              // Boutons d'action
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Get.toNamed('/customers/${customer.id}/edit', arguments: customer),
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Modifier'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Get.toNamed('/customers/${customer.id}/transactions');
+                      },
+                      icon: const Icon(Icons.history),
+                      label: const Text('Historique'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Construit une section d'informations
+  Widget _buildInfoSection(String title, List<Widget> children) {
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construit une ligne d'information
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: Colors.grey[600],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Charge les informations du compte client
+  Future<Map<String, dynamic>?> _loadCustomerAccount(int clientId) async {
+    try {
+      final salesController = Get.find<SalesController>();
+      return await salesController.getCustomerAccount(clientId);
+    } catch (e) {
+      print('Erreur lors du chargement du compte client: $e');
+      return null;
+    }
+  }
+
+  /// Actualise les informations du compte
+  void _refreshAccountInfo(int clientId) {
+    setState(() {
+      _accountFuture = _loadCustomerAccount(clientId);
+    });
+  }
+
+  /// Construit une section d'informations
+  Widget _buildInfoSection(String title, List<Widget> children) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text(
+                  'Compte client',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _refreshAccountInfo(customer.id),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Actualiser'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Solde actuel
+            FutureBuilder<Map<String, dynamic>?>(
+              future: _accountFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange.shade600),
+                        const SizedBox(width: 8),
+                        const Text('Impossible de charger les informations du compte'),
+                      ],
+                    ),
+                  );
+                }
+
+                final accountData = snapshot.data!;
+
+                // Vérifier si les données sont dans 'compte' ou directement dans 'data'
+                final compte = accountData['compte'] as Map<String, dynamic>? ?? accountData;
+                final transactions = accountData['transactions'] as List<dynamic>? ?? [];
+
+                if (compte.isEmpty) {
+                  return _buildNoAccountInfo();
+                }
+
+                final solde = (compte['soldeActuel'] as num?)?.toDouble() ?? 0.0;
+                final limiteCredit = (compte['limiteCredit'] as num?)?.toDouble() ?? 0.0;
+                final isDette = solde < 0;
+                final montantDette = isDette ? -solde : 0.0;
+
+                return Column(
+                  children: [
+                    // Informations du solde
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDette ? Colors.red.shade50 : Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDette ? Colors.red.shade200 : Colors.green.shade200,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Solde actuel:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDette ? Colors.red.shade800 : Colors.green.shade800,
+                                ),
+                              ),
+                              Text(
+                                '${solde.toStringAsFixed(0)} FCFA',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: isDette ? Colors.red.shade800 : Colors.green.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isDette) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Dette:',
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${montantDette.toStringAsFixed(0)} FCFA',
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (limiteCredit > 0) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Limite de crédit:',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${limiteCredit.toStringAsFixed(0)} FCFA',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Actions rapides
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isDette ? () => _showAddPaymentDialog(customer, montantDette) : null,
+                            icon: const Icon(Icons.payment),
+                            label: const Text('Paiement'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDette ? Colors.green : Colors.grey,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showAdjustCreditDialog(customer),
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Ajuster'),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (transactions.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+
+                      // Transactions récentes
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Transactions récentes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Get.toNamed('/customers/${customer.id}/transactions'),
+                            child: const Text('Voir tout'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Liste des transactions récentes (max 3)
+                      ...transactions.take(3).map((t) => _buildTransactionItem(t)).toList(),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construit un élément de transaction
+  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
+    final type = transaction['typeTransaction'] as String;
+    final montant = (transaction['montant'] as num).toDouble();
+    final description = transaction['description'] as String? ?? '';
+    final date = DateTime.parse(transaction['dateTransaction'] as String);
+
+    final isCredit = type == 'paiement_dette' || type == 'credit_manuel';
+    final color = isCredit ? Colors.green : Colors.red;
+    final icon = isCredit ? Icons.add_circle_outline : Icons.remove_circle_outline;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getTransactionTypeDisplay(type),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (description.isNotEmpty)
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isCredit ? '+' : '-'}${montant.toStringAsFixed(0)} FCFA',
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                _formatDateShort(date),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Affiche les informations quand aucun compte n'existe
+  Widget _buildNoAccountInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.account_balance_wallet_outlined, color: Colors.grey.shade400, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            'Aucun compte créé',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Le compte sera créé lors de la première transaction',
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Charge les informations du compte client
+  Future<Map<String, dynamic>?> _loadCustomerAccount(int clientId) async {
+    try {
+      // Utiliser le même service que dans le SalesController
+      final salesController = Get.find<SalesController>();
+      return await salesController.getCustomerAccount(clientId);
+    } catch (e) {
+      print('Erreur lors du chargement du compte client: $e');
+      return null;
+    }
+  }
+
+  /// Actualise les informations du compte
+  void _refreshAccountInfo(int clientId) {
+    setState(() {
+      _accountFuture = _loadCustomerAccount(clientId);
+    });
+  }
+
+  /// Affiche le dialog de paiement
+  void _showAddPaymentDialog(Customer customer, double montantDette) {
+    final amountController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: Text('Paiement - ${customer.nomComplet}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Dette actuelle: ${montantDette.toStringAsFixed(0)} FCFA'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Montant du paiement',
+                suffixText: 'FCFA',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description (optionnel)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              if (amount > 0) {
+                _processPayment(customer.id, amount, descriptionController.text);
+                Get.back();
+              }
+            },
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Affiche le dialog d'ajustement de crédit
+  void _showAdjustCreditDialog(Customer customer) {
+    Get.snackbar(
+      'Fonctionnalité',
+      'Ajustement de crédit - À implémenter',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  /// Traite un paiement
+  void _processPayment(int clientId, double amount, String description) {
+    // TODO: Implémenter l'appel API pour ajouter un paiement
+    Get.snackbar(
+      'Paiement',
+      'Paiement de ${amount.toStringAsFixed(0)} FCFA enregistré',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.shade100,
+      colorText: Colors.green.shade800,
+    );
+  }
+
+  /// Obtient le libellé d'affichage pour un type de transaction
+  String _getTransactionTypeDisplay(String type) {
+    switch (type) {
+      case 'paiement_dette':
+        return 'Paiement dette';
+      case 'achat_credit':
+        return 'Achat à crédit';
+      case 'achat_comptant':
+        return 'Achat comptant';
+      case 'credit_manuel':
+        return 'Crédit manuel';
+      case 'debit_manuel':
+        return 'Débit manuel';
+      default:
+        return type;
+    }
+  }
+
+  /// Formate une date en version courte
+  String _formatDateShort(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Formate une date
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// FIN DU FICHIER - Widget _AccountSection supprimé
+/*
+class _AccountSection extends StatelessWidget {
+  final Customer customer;
+  final Future<Map<String, dynamic>?> accountFuture;
+  final VoidCallback onRefresh;
+
+  const _AccountSection({
+    required this.customer,
+    required this.accountFuture,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text(
+                  'Compte client',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: onRefresh,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Actualiser'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<Map<String, dynamic>?>(
+              future: accountFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange.shade600),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text('Impossible de charger les informations du compte'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final accountData = snapshot.data!;
+                final compte = accountData['compte'] as Map<String, dynamic>? ?? accountData;
+
+                if (compte.isEmpty) {
+                  return _buildNoAccountInfo();
+                }
+
+                final solde = (compte['soldeActuel'] as num?)?.toDouble() ?? 0.0;
+                final limiteCredit = (compte['limiteCredit'] as num?)?.toDouble() ?? 0.0;
+                final isDette = solde < 0;
+                final montantDette = isDette ? -solde : 0.0;
+
+                return Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDette ? Colors.red.shade50 : Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDette ? Colors.red.shade200 : Colors.green.shade200,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Solde actuel:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDette ? Colors.red.shade800 : Colors.green.shade800,
+                                ),
+                              ),
+                              Text(
+                                '${solde.toStringAsFixed(0)} FCFA',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: isDette ? Colors.red.shade800 : Colors.green.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isDette) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Dette:',
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${montantDette.toStringAsFixed(0)} FCFA',
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (limiteCredit > 0) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Limite de crédit:',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${limiteCredit.toStringAsFixed(0)} FCFA',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isDette ? () => _showAddPaymentDialog(context, customer, montantDette) : null,
+                            icon: const Icon(Icons.payment),
+                            label: const Text('Paiement'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDette ? Colors.green : Colors.grey,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => Get.toNamed('/customers/${customer.id}/transactions'),
+                            icon: const Icon(Icons.history),
+                            label: const Text('Historique'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoAccountInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.account_balance_wallet_outlined, color: Colors.grey.shade400, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            'Aucun compte créé',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Le compte sera créé lors de la première transaction',
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddPaymentDialog(BuildContext context, Customer customer, double montantDette) {
+    final amountController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: Text('Paiement - ${customer.nomComplet}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Dette actuelle: ${montantDette.toStringAsFixed(0)} FCFA'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Montant du paiement',
+                suffixText: 'FCFA',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description (optionnel)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              if (amount > 0) {
+                Get.back();
+                Get.snackbar(
+                  'Paiement',
+                  'Paiement de ${amount.toStringAsFixed(0)} FCFA enregistré',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.green.shade100,
+                  colorText: Colors.green.shade800,
+                );
+              }
+            },
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+}

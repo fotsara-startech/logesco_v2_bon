@@ -1,0 +1,620 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Utilisateur {
+  id                      Int               @id @default(autoincrement())
+  nomUtilisateur          String            @unique @map("nom_utilisateur")
+  email                   String            @unique
+  motDePasseHash          String            @map("mot_de_passe_hash")
+  roleId                  Int?              @map("role_id")
+  isActive                Boolean           @default(true) @map("is_active")
+  dateCreation            DateTime          @default(now()) @map("date_creation")
+  dateModification        DateTime          @updatedAt @map("date_modification")
+  dateDerniereConnexion   DateTime?         @map("date_derniere_connexion")
+  
+  // Relations pour les nouveaux modules
+  role                    UserRole?         @relation(fields: [roleId], references: [id])
+  caisses                 CashRegister[]
+  mouvementsCaisse        CashMovement[]
+  sessionsCaisse          CashSession[]
+  inventaires             StockInventory[]
+  comptagesInventaire     InventoryItem[]   @relation("UtilisateurComptage")
+  mouvementsFinanciers    FinancialMovement[]
+  ventesVendeur           Vente[]
+
+  @@index([email], map: "idx_utilisateurs_email")
+  @@index([nomUtilisateur], map: "idx_utilisateurs_nom")
+  @@index([roleId], map: "idx_utilisateurs_role")
+  @@map("utilisateurs")
+}
+
+model Fournisseur {
+  id               Int                         @id @default(autoincrement())
+  nom              String
+  personneContact  String?                     @map("personne_contact")
+  telephone        String?
+  email            String?
+  adresse          String?
+  dateCreation     DateTime                    @default(now()) @map("date_creation")
+  dateModification DateTime                    @updatedAt @map("date_modification")
+  commandes        CommandeApprovisionnement[]
+  compte           CompteFournisseur?
+
+  @@index([email], map: "idx_fournisseurs_email")
+  @@index([telephone], map: "idx_fournisseurs_telephone")
+  @@map("fournisseurs")
+}
+
+model Client {
+  id               Int           @id @default(autoincrement())
+  nom              String
+  prenom           String?
+  telephone        String?
+  email            String?
+  adresse          String?
+  dateCreation     DateTime      @default(now()) @map("date_creation")
+  dateModification DateTime      @updatedAt @map("date_modification")
+  compte           CompteClient?
+  ventes           Vente[]
+
+  @@index([nom, prenom], map: "idx_clients_nom_prenom")
+  @@index([email], map: "idx_clients_email")
+  @@index([telephone], map: "idx_clients_telephone")
+  @@map("clients")
+}
+
+model CompteFournisseur {
+  id              Int         @id @default(autoincrement())
+  fournisseurId   Int         @unique @map("fournisseur_id")
+  soldeActuel     Float       @default(0.00) @map("solde_actuel")
+  limiteCredit    Float       @default(0.00) @map("limite_credit")
+  dateDerniereMaj DateTime    @updatedAt @map("date_derniere_maj")
+  fournisseur     Fournisseur @relation(fields: [fournisseurId], references: [id])
+
+  @@map("comptes_fournisseurs")
+}
+
+model CompteClient {
+  id              Int      @id @default(autoincrement())
+  clientId        Int      @unique @map("client_id")
+  soldeActuel     Float    @default(0.00) @map("solde_actuel")
+  limiteCredit    Float    @default(0.00) @map("limite_credit")
+  dateDerniereMaj DateTime @updatedAt @map("date_derniere_maj")
+  client          Client   @relation(fields: [clientId], references: [id])
+
+  @@map("comptes_clients")
+}
+
+model Category {
+  id               Int               @id @default(autoincrement())
+  nom              String            @unique
+  description      String?
+  dateCreation     DateTime          @default(now()) @map("date_creation")
+  dateModification DateTime          @updatedAt @map("date_modification")
+  produits         Produit[]
+  inventaires      StockInventory[]  // Nouvelle relation pour les inventaires
+
+  @@index([nom], map: "idx_categories_nom")
+  @@map("categories")
+}
+
+model Produit {
+  id                Int                               @id @default(autoincrement())
+  reference         String                            @unique
+  nom               String
+  description       String?
+  prixUnitaire      Float                             @map("prix_unitaire")
+  prixAchat         Float?                            @map("prix_achat")
+  codeBarre         String?                           @map("code_barre")
+  categorieId       Int?                              @map("categorie_id")
+  seuilStockMinimum Int                               @default(0) @map("seuil_stock_minimum")
+  estActif          Boolean                           @default(true) @map("est_actif")
+  estService        Boolean                           @default(false) @map("est_service")
+  remiseMaxAutorisee Float                            @default(0) @map("remise_max_autorisee")
+  gestionPeremption Boolean                           @default(false) @map("gestion_peremption")
+  dateCreation      DateTime                          @default(now()) @map("date_creation")
+  dateModification  DateTime                          @updatedAt @map("date_modification")
+  categorie         Category?                         @relation(fields: [categorieId], references: [id])
+  detailsCommandes  DetailCommandeApprovisionnement[]
+  detailsVentes     DetailVente[]
+  mouvementsStock   MouvementStock[]
+  stock             Stock?
+  inventoryItems    InventoryItem[]                   // Nouvelle relation pour les inventaires
+  datesPeremption   DatePeremption[]                  // Nouvelle relation pour les dates de péremption
+
+  @@index([seuilStockMinimum], map: "idx_produits_stock_minimum")
+  @@index([nom, estActif], map: "idx_produits_nom_actif")
+  @@index([estActif], map: "idx_produits_actif")
+  @@index([categorieId], map: "idx_produits_categorie")
+  @@index([codeBarre], map: "idx_produits_code_barre")
+  @@index([estService], map: "idx_produits_service")
+  @@index([gestionPeremption], map: "idx_produits_gestion_peremption")
+  @@map("produits")
+}
+
+model Stock {
+  id                 Int      @id @default(autoincrement())
+  produitId          Int      @unique @map("produit_id")
+  quantiteDisponible Int      @default(0) @map("quantite_disponible")
+  quantiteReservee   Int      @default(0) @map("quantite_reservee")
+  derniereMaj        DateTime @updatedAt @map("derniere_maj")
+  produit            Produit  @relation(fields: [produitId], references: [id])
+
+  @@map("stock")
+}
+
+model CommandeApprovisionnement {
+  id                  Int                               @id @default(autoincrement())
+  numeroCommande      String                            @unique @map("numero_commande")
+  fournisseurId       Int                               @map("fournisseur_id")
+  statut              String                            @default("en_attente")
+  dateCommande        DateTime                          @default(now()) @map("date_commande")
+  dateLivraisonPrevue DateTime?                         @map("date_livraison_prevue")
+  montantTotal        Float?                            @map("montant_total")
+  modePaiement        String                            @default("credit") @map("mode_paiement")
+  notes               String?
+  fournisseur         Fournisseur                       @relation(fields: [fournisseurId], references: [id])
+  details             DetailCommandeApprovisionnement[]
+
+  @@index([statut], map: "idx_commandes_statut")
+  @@index([fournisseurId, dateCommande], map: "idx_commandes_fournisseur_date")
+  @@map("commandes_approvisionnement")
+}
+
+model DetailCommandeApprovisionnement {
+  id                Int                       @id @default(autoincrement())
+  commandeId        Int                       @map("commande_id")
+  produitId         Int                       @map("produit_id")
+  quantiteCommandee Int                       @map("quantite_commandee")
+  quantiteRecue     Int                       @default(0) @map("quantite_recue")
+  coutUnitaire      Float                     @map("cout_unitaire")
+  produit           Produit                   @relation(fields: [produitId], references: [id])
+  commande          CommandeApprovisionnement @relation(fields: [commandeId], references: [id])
+
+  @@index([commandeId], map: "idx_details_commandes_commande")
+  @@map("details_commandes_approvisionnement")
+}
+
+model Vente {
+  id             Int              @id @default(autoincrement())
+  numeroVente    String           @unique @map("numero_vente")
+  clientId       Int?             @map("client_id")
+  vendeurId      Int?             @map("vendeur_id")
+  dateVente      DateTime         @default(now()) @map("date_vente")
+  sousTotal      Float            @map("sous_total")
+  montantRemise  Float            @default(0) @map("montant_remise")
+  montantTotal   Float            @map("montant_total")
+  statut         String           @default("terminee")
+  modePaiement   String           @default("comptant") @map("mode_paiement")
+  montantPaye    Float            @default(0) @map("montant_paye")
+  montantRestant Float            @default(0) @map("montant_restant")
+  details        DetailVente[]
+  client         Client?          @relation(fields: [clientId], references: [id])
+  vendeur        Utilisateur?     @relation(fields: [vendeurId], references: [id])
+  recus          HistoriqueRecu[]
+
+  @@index([modePaiement], map: "idx_ventes_mode_paiement")
+  @@index([statut], map: "idx_ventes_statut")
+  @@index([clientId, dateVente], map: "idx_ventes_client_date")
+  @@index([vendeurId, dateVente], map: "idx_ventes_vendeur_date")
+  @@map("ventes")
+}
+
+model DetailVente {
+  id                Int     @id @default(autoincrement())
+  venteId           Int     @map("vente_id")
+  produitId         Int     @map("produit_id")
+  quantite          Int
+  prixUnitaire      Float   @map("prix_unitaire")
+  prixAffiche       Float   @map("prix_affiche")
+  remiseAppliquee   Float   @default(0) @map("remise_appliquee")
+  justificationRemise String? @map("justification_remise")
+  prixTotal         Float   @map("prix_total")
+  produit           Produit @relation(fields: [produitId], references: [id])
+  vente             Vente   @relation(fields: [venteId], references: [id])
+
+  @@index([venteId], map: "idx_details_ventes_vente")
+  @@map("details_ventes")
+}
+
+model TransactionCompte {
+  id                     Int      @id @default(autoincrement())
+  typeCompte             String   @map("type_compte")
+  compteId               Int      @map("compte_id")
+  typeTransaction        String   @map("type_transaction")
+  typeTransactionDetail  String?  @map("type_transaction_detail")
+  montant                Float
+  description            String?
+  referenceId            Int?     @map("reference_id")
+  referenceType          String?  @map("reference_type")
+  venteId                Int?     @map("vente_id")
+  venteReference         String?  @map("vente_reference")
+  dateTransaction        DateTime @default(now()) @map("date_transaction")
+  soldeApres             Float    @map("solde_apres")
+
+  @@index([referenceType, referenceId], map: "idx_transactions_reference")
+  @@index([dateTransaction], map: "idx_transactions_date")
+  @@index([venteId], map: "idx_transactions_vente")
+  @@index([typeTransactionDetail], map: "idx_transactions_type_detail")
+  @@map("transactions_comptes")
+}
+
+model MouvementStock {
+  id                 Int      @id @default(autoincrement())
+  produitId          Int      @map("produit_id")
+  typeMouvement      String   @map("type_mouvement")
+  changementQuantite Int      @map("changement_quantite")
+  referenceId        Int?     @map("reference_id")
+  typeReference      String?  @map("type_reference")
+  dateMouvement      DateTime @default(now()) @map("date_mouvement")
+  notes              String?
+  produit            Produit  @relation(fields: [produitId], references: [id])
+
+  @@index([typeReference, referenceId], map: "idx_mouvements_reference")
+  @@index([typeMouvement], map: "idx_mouvements_type")
+  @@map("mouvements_stock")
+}
+
+model ParametresEntreprise {
+  id               Int      @id @default(autoincrement())
+  nomEntreprise    String   @map("nom_entreprise")
+  adresse          String
+  localisation     String?
+  telephone        String?
+  email            String?
+  nuiRccm          String?  @map("nui_rccm")
+  dateCreation     DateTime @default(now()) @map("date_creation")
+  dateModification DateTime @updatedAt @map("date_modification")
+
+  @@map("parametres_entreprise")
+}
+
+model HistoriqueRecu {
+  id                Int                @id @default(autoincrement())
+  venteId           Int                @map("vente_id")
+  numeroRecu        String             @unique @map("numero_recu")
+  formatImpression  String             @default("thermal") @map("format_impression")
+  contenuRecu       String             @map("contenu_recu")
+  dateGeneration    DateTime           @default(now()) @map("date_generation")
+  utilisateurId     Int?               @map("utilisateur_id")
+  vente             Vente              @relation(fields: [venteId], references: [id])
+  reimpressions     ReimpressionRecu[]
+
+  @@index([venteId], map: "idx_historique_recu_vente")
+  @@index([numeroRecu], map: "idx_historique_recu_numero")
+  @@index([dateGeneration], map: "idx_historique_recu_date")
+  @@map("historique_recus")
+}
+
+model ReimpressionRecu {
+  id                Int             @id @default(autoincrement())
+  historiqueRecuId  Int             @map("historique_recu_id")
+  formatImpression  String          @map("format_impression")
+  dateReimpression  DateTime        @default(now()) @map("date_reimpression")
+  utilisateurId     Int?            @map("utilisateur_id")
+  motifReimpression String?         @map("motif_reimpression")
+  historiqueRecu    HistoriqueRecu  @relation(fields: [historiqueRecuId], references: [id])
+
+  @@index([historiqueRecuId], map: "idx_reimpression_historique")
+  @@index([dateReimpression], map: "idx_reimpression_date")
+  @@map("reimpressions_recus")
+}
+// =====================================================
+// NOUVEAUX MODÈLES POUR LES MODULES AJOUTÉS
+// =====================================================
+
+// Modèle pour les rôles utilisateur
+model UserRole {
+  id          Int           @id @default(autoincrement())
+  nom         String        @unique
+  displayName String        @map("display_name")
+  isAdmin     Boolean       @default(false) @map("is_admin")
+  privileges  String?       // JSON des privilèges
+  dateCreation     DateTime @default(now()) @map("date_creation")
+  dateModification DateTime @updatedAt @map("date_modification")
+  
+  // Relations
+  utilisateurs Utilisateur[]
+
+  @@map("user_roles")
+}
+
+
+
+// Modèle pour les caisses
+model CashRegister {
+  id               Int            @id @default(autoincrement())
+  nom              String         @unique
+  description      String?
+  soldeInitial     Float          @default(0) @map("solde_initial")
+  soldeActuel      Float          @default(0) @map("solde_actuel")
+  isActive         Boolean        @default(true) @map("is_active")
+  utilisateurId    Int?           @map("utilisateur_id")
+  dateCreation     DateTime       @default(now()) @map("date_creation")
+  dateModification DateTime       @updatedAt @map("date_modification")
+  dateOuverture    DateTime?      @map("date_ouverture")
+  dateFermeture    DateTime?      @map("date_fermeture")
+  
+  // Relations
+  utilisateur      Utilisateur? @relation(fields: [utilisateurId], references: [id])
+  mouvements       CashMovement[]
+  sessions         CashSession[]
+
+  @@index([nom], map: "idx_cash_registers_nom")
+  @@index([utilisateurId], map: "idx_cash_registers_utilisateur")
+  @@map("cash_registers")
+}
+
+// Modèle pour les mouvements de caisse
+model CashMovement {
+  id               Int            @id @default(autoincrement())
+  caisseId         Int            @map("caisse_id")
+  type             String         // 'ouverture', 'fermeture', 'entree', 'sortie', 'vente'
+  montant          Float
+  description      String?
+  utilisateurId    Int?           @map("utilisateur_id")
+  dateCreation     DateTime       @default(now()) @map("date_creation")
+  metadata         String?        // JSON pour données supplémentaires
+  
+  // Relations
+  caisse           CashRegister   @relation(fields: [caisseId], references: [id], onDelete: Cascade)
+  utilisateur      Utilisateur? @relation(fields: [utilisateurId], references: [id])
+
+  @@index([caisseId], map: "idx_cash_movements_caisse")
+  @@index([dateCreation], map: "idx_cash_movements_date")
+  @@index([type], map: "idx_cash_movements_type")
+  @@map("cash_movements")
+}
+
+// Modèle pour les sessions de caisse
+model CashSession {
+  id               Int            @id @default(autoincrement())
+  caisseId         Int            @map("caisse_id")
+  utilisateurId    Int            @map("utilisateur_id")
+  soldeOuverture   Float          @map("solde_ouverture")
+  soldeFermeture   Float?         @map("solde_fermeture")
+  soldeAttendu     Float?         @map("solde_attendu")
+  ecart            Float?         // Écart entre solde déclaré et solde attendu
+  dateOuverture    DateTime       @default(now()) @map("date_ouverture")
+  dateFermeture    DateTime?      @map("date_fermeture")
+  isActive         Boolean        @default(true) @map("is_active")
+  metadata         String?        // JSON pour données supplémentaires
+  
+  // Relations
+  caisse           CashRegister   @relation(fields: [caisseId], references: [id], onDelete: Cascade)
+  utilisateur      Utilisateur    @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@index([caisseId], map: "idx_cash_sessions_caisse")
+  @@index([utilisateurId], map: "idx_cash_sessions_utilisateur")
+  @@index([dateOuverture], map: "idx_cash_sessions_date_ouverture")
+  @@index([isActive], map: "idx_cash_sessions_active")
+  @@map("cash_sessions")
+}
+
+// Modèle pour les inventaires de stock
+model StockInventory {
+  id               Int             @id @default(autoincrement())
+  nom              String          @unique
+  description      String?
+  type             String          // 'PARTIEL', 'TOTAL'
+  status           String          @default("BROUILLON") // 'BROUILLON', 'EN_COURS', 'TERMINE', 'CLOTURE'
+  categorieId      Int?            @map("categorie_id")
+  utilisateurId    Int             @map("utilisateur_id")
+  dateCreation     DateTime        @default(now()) @map("date_creation")
+  dateDebut        DateTime?       @map("date_debut")
+  dateFin          DateTime?       @map("date_fin")
+  
+  // Relations
+  categorie        Category?       @relation(fields: [categorieId], references: [id])
+  utilisateur      Utilisateur     @relation(fields: [utilisateurId], references: [id])
+  items            InventoryItem[]
+
+  @@index([status], map: "idx_stock_inventories_status")
+  @@index([type], map: "idx_stock_inventories_type")
+  @@index([utilisateurId], map: "idx_stock_inventories_utilisateur")
+  @@index([dateCreation], map: "idx_stock_inventories_date")
+  @@map("stock_inventories")
+}
+
+// Modèle pour les articles d'inventaire
+model InventoryItem {
+  id                      Int             @id @default(autoincrement())
+  inventaireId            Int             @map("inventaire_id")
+  produitId               Int             @map("produit_id")
+  quantiteSysteme         Float           @map("quantite_systeme")
+  quantiteComptee         Float?          @map("quantite_comptee")
+  ecart                   Float?
+  prixUnitaire            Float?          @default(0) @map("prix_unitaire")
+  prixAchat               Float?          @default(0) @map("prix_achat")
+  commentaire             String?
+  dateComptage            DateTime?       @map("date_comptage")
+  utilisateurComptageId   Int?            @map("utilisateur_comptage_id")
+  
+  // Relations
+  inventaire              StockInventory  @relation(fields: [inventaireId], references: [id], onDelete: Cascade)
+  produit                 Produit         @relation(fields: [produitId], references: [id])
+  utilisateurComptage     Utilisateur? @relation("UtilisateurComptage", fields: [utilisateurComptageId], references: [id])
+
+  @@index([inventaireId], map: "idx_inventory_items_inventaire")
+  @@index([produitId], map: "idx_inventory_items_produit")
+  @@map("inventory_items")
+}
+
+// =====================================================
+// MODÈLES POUR LES MOUVEMENTS FINANCIERS
+// =====================================================
+
+// Modèle pour les catégories de mouvements financiers
+model MovementCategory {
+  id               Int                 @id @default(autoincrement())
+  nom              String              @unique
+  displayName      String              @map("display_name")
+  color            String              @default("#6B7280") // Couleur hex pour l'UI
+  icon             String              @default("receipt") // Nom de l'icône
+  isDefault        Boolean             @default(false) @map("is_default")
+  isActive         Boolean             @default(true) @map("is_active")
+  dateCreation     DateTime            @default(now()) @map("date_creation")
+  dateModification DateTime            @updatedAt @map("date_modification")
+  
+  // Relations
+  mouvements       FinancialMovement[]
+
+  @@index([nom], map: "idx_movement_categories_nom")
+  @@index([isActive], map: "idx_movement_categories_active")
+  @@map("movement_categories")
+}
+
+// Modèle pour les mouvements financiers
+model FinancialMovement {
+  id               Int                      @id @default(autoincrement())
+  reference        String                   @unique
+  montant          Float                    // Montant de la sortie d'argent
+  categorieId      Int                      @map("categorie_id")
+  description      String
+  date             DateTime                 @default(now())
+  utilisateurId    Int                      @map("utilisateur_id")
+  dateCreation     DateTime                 @default(now()) @map("date_creation")
+  dateModification DateTime                 @updatedAt @map("date_modification")
+  notes            String?                  // Notes additionnelles
+  
+  // Relations
+  categorie        MovementCategory         @relation(fields: [categorieId], references: [id])
+  utilisateur      Utilisateur             @relation(fields: [utilisateurId], references: [id])
+  attachments      MovementAttachment[]
+  
+  @@index([reference], map: "idx_financial_movements_reference")
+  @@index([categorieId], map: "idx_financial_movements_categorie")
+  @@index([utilisateurId], map: "idx_financial_movements_utilisateur")
+  @@index([date], map: "idx_financial_movements_date")
+  @@index([montant], map: "idx_financial_movements_montant")
+  @@map("financial_movements")
+}
+
+// Modèle pour les justificatifs des mouvements financiers
+model MovementAttachment {
+  id               Int               @id @default(autoincrement())
+  mouvementId      Int               @map("mouvement_id")
+  fileName         String            @map("file_name")
+  originalName     String            @map("original_name")
+  mimeType         String            @map("mime_type")
+  fileSize         Int               @map("file_size")
+  filePath         String            @map("file_path")
+  uploadedAt       DateTime          @default(now()) @map("uploaded_at")
+  
+  // Relations
+  mouvement        FinancialMovement @relation(fields: [mouvementId], references: [id], onDelete: Cascade)
+  
+  @@index([mouvementId], map: "idx_movement_attachments_mouvement")
+  @@map("movement_attachments")
+}
+
+// =====================================================
+// MODÈLES POUR LA GESTION DES LICENCES
+// =====================================================
+
+// Modèle pour les dates de péremption des produits
+model DatePeremption {
+  id              Int      @id @default(autoincrement())
+  produitId       Int      @map("produit_id")
+  datePeremption  DateTime @map("date_peremption")
+  quantite        Int      @default(0)
+  numeroLot       String?  @map("numero_lot")
+  dateEntree      DateTime @default(now()) @map("date_entree")
+  notes           String?
+  estEpuise       Boolean  @default(false) @map("est_epuise")
+  dateCreation    DateTime @default(now()) @map("date_creation")
+  dateModification DateTime @updatedAt @map("date_modification")
+  
+  // Relations
+  produit         Produit  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  
+  @@index([produitId], map: "idx_dates_peremption_produit")
+  @@index([datePeremption], map: "idx_dates_peremption_date")
+  @@index([estEpuise], map: "idx_dates_peremption_epuise")
+  @@index([produitId, datePeremption], map: "idx_dates_peremption_produit_date")
+  @@map("dates_peremption")
+}
+
+// Modèle pour les licences générées
+model License {
+  id                    Int                 @id @default(autoincrement())
+  licenseKey            String              @unique @map("license_key")
+  userId                String              @map("user_id") // Identifiant unique de l'utilisateur
+  subscriptionType      String              @map("subscription_type") // 'trial', 'monthly', 'annual', 'lifetime'
+  deviceFingerprint     String?             @map("device_fingerprint")
+  issuedAt              DateTime            @default(now()) @map("issued_at")
+  expiresAt             DateTime            @map("expires_at")
+  isActive              Boolean             @default(true) @map("is_active")
+  isRevoked             Boolean             @default(false) @map("is_revoked")
+  revokedAt             DateTime?           @map("revoked_at")
+  revokedReason         String?             @map("revoked_reason")
+  activatedAt           DateTime?           @map("activated_at")
+  lastValidatedAt       DateTime?           @map("last_validated_at")
+  validationCount       Int                 @default(0) @map("validation_count")
+  metadata              String?             // JSON pour données supplémentaires
+  signature             String              // Signature cryptographique RSA
+  dateCreation          DateTime            @default(now()) @map("date_creation")
+  dateModification      DateTime            @updatedAt @map("date_modification")
+  
+  // Relations
+  activations           LicenseActivation[]
+  auditLogs             LicenseAuditLog[]
+
+  @@index([licenseKey], map: "idx_licenses_key")
+  @@index([userId], map: "idx_licenses_user")
+  @@index([subscriptionType], map: "idx_licenses_type")
+  @@index([isActive, isRevoked], map: "idx_licenses_status")
+  @@index([expiresAt], map: "idx_licenses_expiry")
+  @@index([deviceFingerprint], map: "idx_licenses_device")
+  @@map("licenses")
+}
+
+// Modèle pour l'historique des activations
+model LicenseActivation {
+  id                    Int                 @id @default(autoincrement())
+  licenseId             Int                 @map("license_id")
+  deviceFingerprint     String              @map("device_fingerprint")
+  deviceInfo            String?             @map("device_info") // JSON des informations de l'appareil
+  activatedAt           DateTime            @default(now()) @map("activated_at")
+  ipAddress             String?             @map("ip_address")
+  userAgent             String?             @map("user_agent")
+  isSuccessful          Boolean             @default(true) @map("is_successful")
+  errorMessage          String?             @map("error_message")
+  
+  // Relations
+  license               License             @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  
+  @@index([licenseId], map: "idx_license_activations_license")
+  @@index([deviceFingerprint], map: "idx_license_activations_device")
+  @@index([activatedAt], map: "idx_license_activations_date")
+  @@map("license_activations")
+}
+
+// Modèle pour l'audit des licences
+model LicenseAuditLog {
+  id                    Int                 @id @default(autoincrement())
+  licenseId             Int                 @map("license_id")
+  action                String              // 'GENERATED', 'ACTIVATED', 'VALIDATED', 'REVOKED', 'EXPIRED'
+  details               String?             // JSON avec les détails de l'action
+  performedBy           String?             @map("performed_by") // Utilisateur ou système
+  ipAddress             String?             @map("ip_address")
+  userAgent             String?             @map("user_agent")
+  timestamp             DateTime            @default(now())
+  
+  // Relations
+  license               License             @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  
+  @@index([licenseId], map: "idx_license_audit_license")
+  @@index([action], map: "idx_license_audit_action")
+  @@index([timestamp], map: "idx_license_audit_timestamp")
+  @@map("license_audit_logs")
+}
+
+
+

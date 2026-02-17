@@ -1,0 +1,61 @@
+name: logesco_license_admin
+description: Interface d'administration pour la gestion des licences LOGESCO
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Interface utilisateur
+  cupertino_icons: ^1.0.2
+  flutter_riverpod: ^2.4.9
+  go_router: ^12.1.3
+  
+  # Base de données locale
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path: ^1.8.3
+  
+  # Utilitaires
+  uuid: ^4.2.1
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+  
+  # Cryptographie
+  crypto: ^3.0.3
+  pointycastle: ^3.7.3
+  
+  # Interface
+  data_table_2: ^2.5.11
+  file_picker: ^6.1.1
+  url_launcher: ^6.2.2
+  fl_chart: ^0.65.0
+  
+  # JSON
+  json_annotation: ^4.8.1
+  
+  # Export
+  excel: ^4.0.2
+  csv: ^5.1.1
+  
+  # Sécurité
+  encrypt: ^5.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/

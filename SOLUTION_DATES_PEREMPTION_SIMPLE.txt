@@ -1,0 +1,262 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║         GESTION DATES DE PÉREMPTION - SOLUTION SIMPLE          ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+
+VOTRE BESOIN
+============
+
+✅ Simple à utiliser
+✅ Optionnel (pas obligatoire pour tous les produits)
+✅ Pas de système de lots complexe
+✅ Alertes automatiques
+
+
+SOLUTION RECOMMANDÉE ⭐
+=======================
+
+Table séparée "DatePeremption" liée aux produits
+
+Structure:
+  Produit
+    ├── gestionPeremption (Oui/Non)
+    └── DatesPeremption[]
+          ├── Date de péremption
+          ├── Quantité
+          ├── N° lot (optionnel)
+          └── Notes
+
+
+POURQUOI CETTE SOLUTION?
+=========================
+
+✅ SIMPLE
+   - Activation optionnelle par produit
+   - Pas de complexité pour produits non périssables
+   - Interface intuitive
+
+✅ FLEXIBLE
+   - Plusieurs dates par produit
+   - Numéro de lot optionnel
+   - Gestion manuelle ou automatique
+
+✅ PAS DE REFONTE
+   - S'intègre au système existant
+   - Pas de modification du flux de vente
+   - Compatible avec stock actuel
+
+✅ ALERTES UTILES
+   - Dashboard avec résumé
+   - Notifications visuelles
+   - Rapports détaillés
+
+
+COMPARAISON DES OPTIONS
+========================
+
+Option 1: SYSTÈME DE LOTS (Complexe)
+  ❌ Très complexe à implémenter
+  ❌ Lourd pour l'utilisateur
+  ❌ Nécessite refonte complète
+  ❌ Interface compliquée
+  Verdict: TROP COMPLEXE
+
+Option 2: UNE DATE PAR PRODUIT (Trop simple)
+  ❌ Pas adapté si plusieurs lots
+  ❌ Pas de traçabilité
+  ❌ Impossible de gérer plusieurs dates
+  Verdict: TROP SIMPLE
+
+Option 3: DATES MULTIPLES (RECOMMANDÉ) ⭐
+  ✅ Simple pour l'utilisateur
+  ✅ Optionnel
+  ✅ Flexible
+  ✅ Pas de refonte
+  ✅ Alertes automatiques
+  Verdict: PARFAIT!
+
+
+EXEMPLE D'UTILISATION
+=====================
+
+1. ACTIVATION (Optionnel)
+   
+   Produit: Yaourt Nature
+   ☑ Gérer les dates de péremption
+
+
+2. AJOUT DE DATES
+   
+   Lors d'un approvisionnement:
+   ┌─────────────────────────────────┐
+   │ Réception: Yaourt Nature        │
+   ├─────────────────────────────────┤
+   │ Quantité: 100                   │
+   │ Date péremption: 31/12/2026     │
+   │ N° lot: LOT-2026-001 (optionnel)│
+   └─────────────────────────────────┘
+
+
+3. LORS D'UNE VENTE
+   
+   Automatique: Déduit de la date la plus proche
+   Ou Manuel: Vendeur choisit la date
+
+
+4. ALERTES
+   
+   Dashboard:
+   ⚠️ 5 produits expirent dans 7 jours
+   ❌ 2 produits périmés
+
+
+INTERFACE UTILISATEUR
+=====================
+
+FICHE PRODUIT:
+┌─────────────────────────────────────┐
+│ Yaourt Nature                       │
+├─────────────────────────────────────┤
+│ ☑ Gérer les dates de péremption    │
+│                                     │
+│ Dates de péremption:                │
+│ • 15/02/2026 | 50 unités | LOT-001 │
+│ • 30/03/2026 | 100 unités | LOT-002│
+│ [+ Ajouter]                         │
+└─────────────────────────────────────┘
+
+INVENTAIRE - ONGLET PÉREMPTIONS:
+┌─────────────────────────────────────┐
+│ Produits Périssables                │
+├─────────────────────────────────────┤
+│ ❌ Yaourt Fraise (Périmé)          │
+│    50 unités - Expiré le 13/02/2026│
+│    [Retirer] [Marquer traité]      │
+│                                     │
+│ ⚠️ Yaourt Nature (Expire dans 1j)  │
+│    50 unités - Expire le 15/02/2026│
+│    [Promotion] [Retirer]           │
+└─────────────────────────────────────┘
+
+DASHBOARD - WIDGET:
+┌─────────────────────────────────────┐
+│ ⚠️ Alertes Péremption              │
+├─────────────────────────────────────┤
+│ Périmés: 2 produits                 │
+│ < 7 jours: 5 produits               │
+│ < 30 jours: 12 produits             │
+│ [Voir détails]                      │
+└─────────────────────────────────────┘
+
+
+FONCTIONNALITÉS
+===============
+
+ALERTES:
+  • Périmés (rouge)
+  • < 7 jours (orange)
+  • < 30 jours (jaune)
+
+ACTIONS:
+  • Retirer du stock
+  • Appliquer promotion
+  • Marquer comme traité
+  • Exporter liste
+
+RAPPORTS:
+  • Liste produits périmés
+  • Historique retraits
+  • Valeur des pertes
+
+
+AVANTAGES
+=========
+
+1. SIMPLICITÉ
+   ✅ Activation optionnelle
+   ✅ Pas de complexité inutile
+   ✅ Interface intuitive
+
+2. FLEXIBILITÉ
+   ✅ Plusieurs dates par produit
+   ✅ N° lot optionnel
+   ✅ Notes personnalisables
+
+3. PAS DE REFONTE
+   ✅ S'intègre au système existant
+   ✅ Pas de modification du flux
+   ✅ Compatible avec stock actuel
+
+4. ALERTES UTILES
+   ✅ Dashboard avec résumé
+   ✅ Notifications visuelles
+   ✅ Rapports détaillés
+
+
+LIMITATIONS ACCEPTABLES
+========================
+
+1. Pas de FIFO automatique
+   → Déduction automatique de la date la plus proche
+   → Ou choix manuel par le vendeur
+   → Suffisant pour la plupart des cas
+
+2. Gestion manuelle des quantités
+   → Mise à jour manuelle ou automatique
+   → Simple et compréhensible
+
+3. Pas de traçabilité complète
+   → Suffisant pour besoins de base
+   → Peut être ajouté plus tard si besoin
+
+
+PLAN D'IMPLÉMENTATION
+======================
+
+Phase 1: Base de Données (30 min)
+  • Ajouter champ gestionPeremption
+  • Créer table DatePeremption
+  • Migration Prisma
+
+Phase 2: Backend (2h)
+  • Routes CRUD dates péremption
+  • Endpoint alertes
+  • Logique déduction automatique
+
+Phase 3: Frontend (3h)
+  • Toggle dans fiche produit
+  • Liste dates péremption
+  • Onglet Péremptions
+  • Widget dashboard
+
+Phase 4: Avancé (2h)
+  • Alertes automatiques
+  • Rapports
+  • Actions (retirer, promotion)
+  • Export
+
+TOTAL: ~7-8 heures
+
+
+CONCLUSION
+==========
+
+✅ Solution SIMPLE et OPTIONNELLE
+✅ Pas de système de lots complexe
+✅ Alertes automatiques
+✅ Interface intuitive
+✅ S'intègre parfaitement au système existant
+
+Cette solution est PARFAITE pour vos besoins!
+
+
+═══════════════════════════════════════════════════════════════
+
+Recommandation: Option 3 - Dates Multiples
+Complexité: Faible
+Temps: 7-8 heures
+Impact: Minimal sur système existant
+
+═══════════════════════════════════════════════════════════════

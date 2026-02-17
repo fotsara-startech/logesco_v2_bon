@@ -1,0 +1,258 @@
+// Schéma Prisma pour PostgreSQL (déploiement cloud)
+// Ce fichier est utilisé automatiquement quand DATABASE_URL pointe vers PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Utilisateurs et authentification
+model Utilisateur {
+  id                Int      @id @default(autoincrement())
+  nomUtilisateur    String   @unique @map("nom_utilisateur") @db.VarChar(50)
+  email             String   @unique @db.VarChar(100)
+  motDePasseHash    String   @map("mot_de_passe_hash") @db.VarChar(255)
+  dateCreation      DateTime @default(now()) @map("date_creation") @db.Timestamptz(6)
+  dateModification  DateTime @updatedAt @map("date_modification") @db.Timestamptz(6)
+
+  @@map("utilisateurs")
+}
+
+// Fournisseurs
+model Fournisseur {
+  id                Int      @id @default(autoincrement())
+  nom               String   @db.VarChar(100)
+  personneContact   String?  @map("personne_contact") @db.VarChar(100)
+  telephone         String?  @db.VarChar(20)
+  email             String?  @db.VarChar(100)
+  adresse           String?  @db.Text
+  dateCreation      DateTime @default(now()) @map("date_creation") @db.Timestamptz(6)
+  dateModification  DateTime @updatedAt @map("date_modification") @db.Timestamptz(6)
+
+  // Relations
+  compte            CompteFournisseur?
+  commandes         CommandeApprovisionnement[]
+
+  @@map("fournisseurs")
+  @@index([nom])
+  @@index([telephone])
+  @@index([email])
+}
+
+// Clients
+model Client {
+  id                Int      @id @default(autoincrement())
+  nom               String   @db.VarChar(100)
+  prenom            String?  @db.VarChar(100)
+  telephone         String?  @db.VarChar(20)
+  email             String?  @db.VarChar(100)
+  adresse           String?  @db.Text
+  dateCreation      DateTime @default(now()) @map("date_creation") @db.Timestamptz(6)
+  dateModification  DateTime @updatedAt @map("date_modification") @db.Timestamptz(6)
+
+  // Relations
+  compte            CompteClient?
+  ventes            Vente[]
+
+  @@map("clients")
+  @@index([nom])
+  @@index([telephone])
+  @@index([email])
+  @@index([nom, prenom])
+}
+
+// Comptes fournisseurs (pour les achats à crédit)
+model CompteFournisseur {
+  id                Int      @id @default(autoincrement())
+  fournisseurId     Int      @unique @map("fournisseur_id")
+  soldeActuel       Decimal  @default(0.00) @map("solde_actuel") @db.Decimal(12,2)
+  limiteCredit      Decimal  @default(0.00) @map("limite_credit") @db.Decimal(12,2)
+  dateDerniereMaj   DateTime @updatedAt @map("date_derniere_maj") @db.Timestamptz(6)
+
+  // Relations
+  fournisseur       Fournisseur @relation(fields: [fournisseurId], references: [id])
+
+  @@map("comptes_fournisseurs")
+}
+
+// Comptes clients (pour les ventes à crédit)
+model CompteClient {
+  id                Int      @id @default(autoincrement())
+  clientId          Int      @unique @map("client_id")
+  soldeActuel       Decimal  @default(0.00) @map("solde_actuel") @db.Decimal(12,2)
+  limiteCredit      Decimal  @default(0.00) @map("limite_credit") @db.Decimal(12,2)
+  dateDerniereMaj   DateTime @updatedAt @map("date_derniere_maj") @db.Timestamptz(6)
+
+  // Relations
+  client            Client @relation(fields: [clientId], references: [id])
+
+  @@map("comptes_clients")
+}
+
+// Produits
+model Produit {
+  id                    Int      @id @default(autoincrement())
+  reference             String   @unique @db.VarChar(50)
+  nom                   String   @db.VarChar(100)
+  description           String?  @db.Text
+  prixUnitaire          Decimal  @map("prix_unitaire") @db.Decimal(10,2)
+  categorie             String?  @db.VarChar(50)
+  seuilStockMinimum     Int      @default(0) @map("seuil_stock_minimum")
+  estActif              Boolean  @default(true) @map("est_actif")
+  dateCreation          DateTime @default(now()) @map("date_creation") @db.Timestamptz(6)
+  dateModification      DateTime @updatedAt @map("date_modification") @db.Timestamptz(6)
+
+  // Relations
+  stock                 Stock?
+  detailsCommandes      DetailCommandeApprovisionnement[]
+  detailsVentes         DetailVente[]
+  mouvementsStock       MouvementStock[]
+
+  @@map("produits")
+  @@index([nom])
+  @@index([categorie])
+  @@index([estActif])
+  @@index([nom, estActif])
+  @@index([seuilStockMinimum])
+}
+
+// Stock
+model Stock {
+  id                    Int      @id @default(autoincrement())
+  produitId             Int      @unique @map("produit_id")
+  quantiteDisponible    Int      @default(0) @map("quantite_disponible")
+  quantiteReservee      Int      @default(0) @map("quantite_reservee")
+  derniereMaj           DateTime @updatedAt @map("derniere_maj") @db.Timestamptz(6)
+
+  // Relations
+  produit               Produit @relation(fields: [produitId], references: [id])
+
+  @@map("stock")
+  @@index([quantiteDisponible])
+}
+
+// Commandes d'approvisionnement
+model CommandeApprovisionnement {
+  id                    Int      @id @default(autoincrement())
+  numeroCommande        String   @unique @map("numero_commande") @db.VarChar(50)
+  fournisseurId         Int      @map("fournisseur_id")
+  statut                String   @default("en_attente") @db.VarChar(20) // en_attente, partielle, terminee, annulee
+  dateCommande          DateTime @default(now()) @map("date_commande") @db.Timestamptz(6)
+  dateLivraisonPrevue   DateTime? @map("date_livraison_prevue") @db.Date
+  montantTotal          Decimal? @map("montant_total") @db.Decimal(12,2)
+  modePaiement          String   @default("credit") @map("mode_paiement") @db.VarChar(20) // comptant, credit
+  notes                 String?  @db.Text
+
+  // Relations
+  fournisseur           Fournisseur @relation(fields: [fournisseurId], references: [id])
+  details               DetailCommandeApprovisionnement[]
+
+  @@map("commandes_approvisionnement")
+  @@index([dateCommande])
+  @@index([fournisseurId, dateCommande])
+  @@index([statut])
+}
+
+// Détails des commandes d'approvisionnement
+model DetailCommandeApprovisionnement {
+  id                    Int      @id @default(autoincrement())
+  commandeId            Int      @map("commande_id")
+  produitId             Int      @map("produit_id")
+  quantiteCommandee     Int      @map("quantite_commandee")
+  quantiteRecue         Int      @default(0) @map("quantite_recue")
+  coutUnitaire          Decimal  @map("cout_unitaire") @db.Decimal(10,2)
+
+  // Relations
+  commande              CommandeApprovisionnement @relation(fields: [commandeId], references: [id])
+  produit               Produit @relation(fields: [produitId], references: [id])
+
+  @@map("details_commandes_approvisionnement")
+  @@index([commandeId])
+  @@index([produitId])
+}
+
+// Ventes
+model Vente {
+  id                    Int      @id @default(autoincrement())
+  numeroVente           String   @unique @map("numero_vente") @db.VarChar(50)
+  clientId              Int?     @map("client_id")
+  dateVente             DateTime @default(now()) @map("date_vente") @db.Timestamptz(6)
+  sousTotal             Decimal  @map("sous_total") @db.Decimal(12,2)
+  montantRemise         Decimal  @default(0) @map("montant_remise") @db.Decimal(12,2)
+  montantTotal          Decimal  @map("montant_total") @db.Decimal(12,2)
+  statut                String   @default("terminee") @db.VarChar(20) // terminee, annulee
+  modePaiement          String   @default("comptant") @map("mode_paiement") @db.VarChar(20) // comptant, credit
+  montantPaye           Decimal  @default(0) @map("montant_paye") @db.Decimal(12,2)
+  montantRestant        Decimal  @default(0) @map("montant_restant") @db.Decimal(12,2)
+
+  // Relations
+  client                Client? @relation(fields: [clientId], references: [id])
+  details               DetailVente[]
+
+  @@map("ventes")
+  @@index([dateVente])
+  @@index([clientId, dateVente])
+  @@index([statut])
+  @@index([modePaiement])
+}
+
+// Détails des ventes
+model DetailVente {
+  id                    Int      @id @default(autoincrement())
+  venteId               Int      @map("vente_id")
+  produitId             Int      @map("produit_id")
+  quantite              Int
+  prixUnitaire          Decimal  @map("prix_unitaire") @db.Decimal(10,2)
+  prixTotal             Decimal  @map("prix_total") @db.Decimal(10,2)
+
+  // Relations
+  vente                 Vente @relation(fields: [venteId], references: [id])
+  produit               Produit @relation(fields: [produitId], references: [id])
+
+  @@map("details_ventes")
+  @@index([venteId])
+  @@index([produitId])
+}
+
+// Transactions de comptes (pour le suivi des crédits)
+model TransactionCompte {
+  id                    Int      @id @default(autoincrement())
+  typeCompte            String   @map("type_compte") @db.VarChar(20) // client, fournisseur
+  compteId              Int      @map("compte_id") // ID du compte client ou fournisseur
+  typeTransaction       String   @map("type_transaction") @db.VarChar(20) // debit, credit, paiement, achat
+  montant               Decimal  @db.Decimal(12,2)
+  description           String?  @db.Text
+  referenceId           Int?     @map("reference_id") // ID de la vente/achat source
+  referenceType         String?  @map("reference_type") @db.VarChar(20) // vente, achat, paiement
+  dateTransaction       DateTime @default(now()) @map("date_transaction") @db.Timestamptz(6)
+  soldeApres            Decimal  @map("solde_apres") @db.Decimal(12,2)
+
+  @@map("transactions_comptes")
+  @@index([typeCompte, compteId])
+  @@index([dateTransaction])
+  @@index([referenceType, referenceId])
+}
+
+// Mouvements de stock (audit trail)
+model MouvementStock {
+  id                    Int      @id @default(autoincrement())
+  produitId             Int      @map("produit_id")
+  typeMouvement         String   @map("type_mouvement") @db.VarChar(20) // achat, vente, ajustement, retour
+  changementQuantite    Int      @map("changement_quantite") // positif ou négatif
+  referenceId           Int?     @map("reference_id") // ID de la transaction source
+  typeReference         String?  @map("type_reference") @db.VarChar(20) // approvisionnement, vente, ajustement
+  dateMouvement         DateTime @default(now()) @map("date_mouvement") @db.Timestamptz(6)
+  notes                 String?  @db.Text
+
+  // Relations
+  produit               Produit @relation(fields: [produitId], references: [id])
+
+  @@map("mouvements_stock")
+  @@index([produitId, dateMouvement])
+  @@index([typeMouvement])
+  @@index([typeReference, referenceId])
+}

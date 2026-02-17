@@ -1,0 +1,17 @@
+﻿# Solutions Implementees - Problemes de Production
+
+## Probleme 1: Backend ne demarre pas - RESOLU
+
+**Modification**: release/LOGESCO-Client/DEMARRER-LOGESCO.bat et preparer-pour-client.bat
+**Solution**: Remplacement de la commande complexe par cd backend puis cd ..
+
+## Probleme 2: DLL manquantes - RESOLU
+
+**Modification**: preparer-pour-client.bat
+**Solution**: Copie automatique de VC_redist.x64.exe depuis logesco_v2/assets
+
+Le fichier est maintenant inclus localement, pas de telechargement Internet requis.
+
+## Test
+
+Executez: test-copie-vcredist.bat

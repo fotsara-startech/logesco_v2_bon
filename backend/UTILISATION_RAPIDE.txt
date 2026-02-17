@@ -1,0 +1,57 @@
+═══════════════════════════════════════════════════════════════════
+  🌱 LOGESCO - REMPLISSAGE BASE DE DONNÉES - UTILISATION RAPIDE
+═══════════════════════════════════════════════════════════════════
+
+📋 COMMANDES ESSENTIELLES
+─────────────────────────────────────────────────────────────────
+
+  cd backend
+
+  npm run db:help        → Afficher l'aide complète
+  npm run db:check       → Vérifier la base actuelle
+  npm run db:seed        → Remplir (sans supprimer)
+  npm run db:reset-seed  → Réinitialiser et remplir
+
+═══════════════════════════════════════════════════════════════════
+
+🎬 WORKFLOW PRÉSENTATION
+─────────────────────────────────────────────────────────────────
+
+  1. cd backend
+  2. npm run db:reset-seed
+  3. npm run db:check
+  4. npm start
+  5. Connexion: admin / password123
+
+═══════════════════════════════════════════════════════════════════
+
+📊 DONNÉES CRÉÉES
+─────────────────────────────────────────────────────────────────
+
+  ✅ 5 utilisateurs (admin, gerant, 2 caissiers, stock_manager)
+  ✅ 26 produits dans 8 catégories
+  ✅ 5 fournisseurs + 10 clients
+  ✅ 15 commandes + 50 ventes
+  ✅ 3 caisses + 30 mouvements financiers
+  ✅ 5 inventaires
+
+═══════════════════════════════════════════════════════════════════
+
+⚠️  ATTENTION
+─────────────────────────────────────────────────────────────────
+
+  ⛔ "npm run db:reset-seed" SUPPRIME TOUTES LES DONNÉES !
+  💾 Sauvegardez avant !
+  🚫 Ne JAMAIS utiliser en production !
+
+═══════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION COMPLÈTE
+─────────────────────────────────────────────────────────────────
+
+  Guide principal:    ../SEED_DATABASE_GUIDE.md
+  Guide français:     scripts/GUIDE_SEED_FR.md
+  Documentation:      scripts/SEED_README.md
+  Démonstration:      DEMO_SEED.md
+
+═══════════════════════════════════════════════════════════════════
