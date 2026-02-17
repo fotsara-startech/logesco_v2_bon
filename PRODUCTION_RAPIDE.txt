@@ -1,0 +1,110 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🚀 LOGESCO - PRÉPARATION PRODUCTION RAPIDE 🚀              ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🔄 NETTOYER POUR LA PRODUCTION                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Méthode Automatique (Recommandée):
+  
+    cd backend
+    npm run db:clean-production
+    
+  OU
+  
+    node scripts/clean-for-production.js
+
+  ⚠️  Ce script va:
+    ✅ Supprimer TOUTES les données de test
+    ✅ Créer un admin avec mot de passe personnalisé
+    ✅ Créer les paramètres entreprise de base
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📋 WORKFLOW COMPLET                                                 │
+└──────────────────────────────────────────────────────────────────────┘
+
+  1️⃣  Développement et Tests
+      npm run db:reset-seed      (Données de test)
+      npm run db:check           (Vérification)
+      # ... développement ...
+
+  2️⃣  Préparation Production
+      npm run db:clean-production (Nettoyage)
+      # Configurer entreprise
+      # Créer utilisateurs réels
+      # Ajouter données réelles
+
+  3️⃣  Mise en Production
+      npm start
+      # Tester
+      # Former utilisateurs
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🔐 SÉCURITÉ PRODUCTION                                              │
+└──────────────────────────────────────────────────────────────────────┘
+
+  ⚠️  Points Critiques:
+  
+    ✅ Utiliser un mot de passe FORT pour admin
+    ✅ Configurer JWT_SECRET dans .env
+    ✅ Ne JAMAIS utiliser db:seed en production
+    ✅ Sauvegarder régulièrement la base
+    ✅ Documenter les accès de manière sécurisée
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📊 VÉRIFICATION POST-NETTOYAGE                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+  npm run db:check
+  
+  Devrait afficher:
+    ✅ 1 rôle (admin)
+    ✅ 1 utilisateur (admin)
+    ✅ 1 paramètre entreprise
+    ✅ 0 produits, 0 clients, 0 ventes
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🆘 EN CAS DE PROBLÈME                                               │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Base corrompue:
+    del backend\database\logesco.db
+    cd backend
+    npx prisma migrate deploy
+    npm run db:clean-production
+
+  Mot de passe oublié:
+    cd backend
+    node scripts/ensure-admin.js
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📚 DOCUMENTATION                                                    │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Guide complet:  backend/GUIDE_PRODUCTION.md
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  ✅ CHECKLIST PRODUCTION                                             │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Avant Nettoyage:
+    □ Sauvegarder données importantes
+    □ Arrêter le serveur
+    □ Fermer Prisma Studio
+
+  Après Nettoyage:
+    □ Vérifier connexion admin
+    □ Configurer paramètres entreprise
+    □ Créer utilisateurs réels
+    □ Ajouter catégories et produits
+    □ Tester fonctionnalités
+    □ Former les utilisateurs
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║              Bonne mise en production ! 🚀                           ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝

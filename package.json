@@ -1,0 +1,73 @@
+{
+  "name": "logesco-api",
+  "version": "1.0.0",
+  "description": "LOGESCO v2 Backend API with hybrid SQLite/PostgreSQL support",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "generate": "prisma generate",
+    "studio": "prisma studio",
+    "db:indexes": "node scripts/apply-indexes.js",
+    "db:setup": "npm run migrate && npm run generate && npm run db:indexes",
+    "db:reset": "prisma migrate reset --force && npm run db:indexes",
+    "db:cleanup": "node scripts/cleanup-test-users.js",
+    "db:seed": "node scripts/seed-full-database.js",
+    "db:reset-seed": "node scripts/reset-and-seed.js",
+    "db:check": "node scripts/check-database.js",
+    "db:help": "node scripts/show-seed-help.js",
+    "db:clean-production": "node scripts/clean-for-production.js",
+    "test:validation": "node src/utils/validation-test.js",
+    "test:auth": "node src/utils/auth-test.js",
+    "test:auth-http": "node src/utils/auth-http-test.js",
+    "test:products": "node src/utils/products-test.js",
+    "test:integration": "node src/utils/integration-test.js",
+    "test:final": "node src/utils/final-integration-test.js",
+    "test:real-data": "node scripts/comprehensive-real-data-test.js",
+    "test:setup": "node scripts/setup-test-environment.js",
+    "rate-limit:disable": "node scripts/disable-rate-limiting.js",
+    "rate-limit:enable": "node scripts/enable-rate-limiting.js",
+    "validate": "npm run test:validation",
+    "test": "npm run test:validation && npm run test:auth",
+    "test:all": "npm run test && npm run test:final",
+    "setup:db": "node scripts/setup-database.js",
+    "build:standalone": "node build-standalone-v2.js",
+    "build:exe": "npm run build:standalone",
+    "build:old": "node build-standalone.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "pdfkit": "^0.15.2",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "axios": "^1.13.1",
+    "nodemon": "^3.0.1",
+    "prisma": "^6.17.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "pkg": {
+    "scripts": [
+      "src/**/*.js",
+      "scripts/**/*.js"
+    ],
+    "assets": [],
+    "outputPath": "../dist"
+  }
+}

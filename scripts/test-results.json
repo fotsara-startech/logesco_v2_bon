@@ -1,0 +1,431 @@
+{
+  "startTime": "2025-10-25T13:09:49.408Z",
+  "tests": [
+    {
+      "name": "Connectivité serveur",
+      "startTime": "2025-10-25T13:09:49.411Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:90:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testConnectivity (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:89:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:46:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.460Z"
+    },
+    {
+      "name": "Inscription utilisateur réel",
+      "startTime": "2025-10-25T13:09:49.460Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:121:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAuthentication (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:120:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:49:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.464Z"
+    },
+    {
+      "name": "Connexion utilisateur réel",
+      "startTime": "2025-10-25T13:09:49.465Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:132:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAuthentication (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:131:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:49:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.469Z"
+    },
+    {
+      "name": "Création fournisseur: Électronique Moderne SARL",
+      "startTime": "2025-10-25T13:09:49.470Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:194:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testSuppliersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:193:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:52:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.475Z"
+    },
+    {
+      "name": "Création fournisseur: Matériaux Pro Distribution",
+      "startTime": "2025-10-25T13:09:49.475Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:194:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testSuppliersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:193:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:52:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.478Z"
+    },
+    {
+      "name": "Création fournisseur: Import Export Global Ltd",
+      "startTime": "2025-10-25T13:09:49.479Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:194:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testSuppliersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:193:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:52:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.481Z"
+    },
+    {
+      "name": "Liste des fournisseurs",
+      "startTime": "2025-10-25T13:09:49.482Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:210:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testSuppliersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:209:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:52:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.485Z"
+    },
+    {
+      "name": "Recherche fournisseur par nom",
+      "startTime": "2025-10-25T13:09:49.486Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:223:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testSuppliersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:222:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:52:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.489Z"
+    },
+    {
+      "name": "Création client: Dupont",
+      "startTime": "2025-10-25T13:09:49.491Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:283:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testCustomersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:282:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:55:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.495Z"
+    },
+    {
+      "name": "Création client: TechStart Solutions",
+      "startTime": "2025-10-25T13:09:49.495Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:283:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testCustomersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:282:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:55:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.497Z"
+    },
+    {
+      "name": "Création client: Restaurant Le Gourmet",
+      "startTime": "2025-10-25T13:09:49.498Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:283:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testCustomersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:282:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:55:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.500Z"
+    },
+    {
+      "name": "Segmentation clients par type",
+      "startTime": "2025-10-25T13:09:49.500Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:303:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testCustomersWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:298:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:55:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.504Z"
+    },
+    {
+      "name": "Création produit: MacBook Pro 16\" M3 Pro",
+      "startTime": "2025-10-25T13:09:49.505Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:415:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:414:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.508Z"
+    },
+    {
+      "name": "Création produit: Perceuse visseuse sans fil Bosch Professional",
+      "startTime": "2025-10-25T13:09:49.509Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:415:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:414:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.511Z"
+    },
+    {
+      "name": "Création produit: Machine à café expresso automatique Delonghi",
+      "startTime": "2025-10-25T13:09:49.512Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:415:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:414:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.513Z"
+    },
+    {
+      "name": "Création produit: Smartphone Samsung Galaxy S24 Ultra",
+      "startTime": "2025-10-25T13:09:49.514Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:415:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:414:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.516Z"
+    },
+    {
+      "name": "Création produit: Chaise de bureau ergonomique Herman Miller",
+      "startTime": "2025-10-25T13:09:49.516Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:415:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:414:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.519Z"
+    },
+    {
+      "name": "Recherche produits par catégorie",
+      "startTime": "2025-10-25T13:09:49.519Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:435:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:430:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.523Z"
+    },
+    {
+      "name": "Recherche produits par gamme de prix",
+      "startTime": "2025-10-25T13:09:49.524Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:449:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testProductsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:448:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:58:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.526Z"
+    },
+    {
+      "name": "Création compte: Compte Courant Principal",
+      "startTime": "2025-10-25T13:09:49.527Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:506:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAccountsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:505:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:61:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.530Z"
+    },
+    {
+      "name": "Création compte: Compte Épargne Entreprise",
+      "startTime": "2025-10-25T13:09:49.530Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:506:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAccountsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:505:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:61:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.532Z"
+    },
+    {
+      "name": "Création compte: Caisse Magasin",
+      "startTime": "2025-10-25T13:09:49.533Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:506:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAccountsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:505:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:61:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.537Z"
+    },
+    {
+      "name": "Création compte: Compte USD Import",
+      "startTime": "2025-10-25T13:09:49.537Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:506:26\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAccountsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:505:7)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:61:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.540Z"
+    },
+    {
+      "name": "Calcul soldes totaux par devise",
+      "startTime": "2025-10-25T13:09:49.541Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:522:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testAccountsWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:521:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:61:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.543Z"
+    },
+    {
+      "name": "État des stocks complet",
+      "startTime": "2025-10-25T13:09:49.543Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:584:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testInventoryWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:583:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:64:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.545Z"
+    },
+    {
+      "name": "Alertes de stock faible",
+      "startTime": "2025-10-25T13:09:49.545Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:600:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testInventoryWithRealData (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:599:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:64:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.547Z"
+    },
+    {
+      "name": "Flux commande fournisseur",
+      "startTime": "2025-10-25T13:09:49.548Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Cannot read properties of undefined (reading 'id')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'id')\n    at D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:623:33\n    at ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:28)\n    at ComprehensiveRealDataTest.testBusinessFlows (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:617:16)\n    at ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:67:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+      },
+      "endTime": "2025-10-25T13:09:49.548Z"
+    },
+    {
+      "name": "Flux vente client",
+      "startTime": "2025-10-25T13:09:49.548Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Cannot read properties of undefined (reading 'id')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'id')\n    at D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:648:28\n    at ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:28)\n    at ComprehensiveRealDataTest.testBusinessFlows (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:643:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:67:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.549Z"
+    },
+    {
+      "name": "Performance - Création produits en masse",
+      "startTime": "2025-10-25T13:09:49.549Z",
+      "status": "PASSED",
+      "result": {
+        "created": 0,
+        "timeMs": 23,
+        "avgTimePerProduct": null
+      },
+      "endTime": "2025-10-25T13:09:49.572Z"
+    },
+    {
+      "name": "Performance - Recherche avec pagination",
+      "startTime": "2025-10-25T13:09:49.573Z",
+      "status": "FAILED",
+      "error": {
+        "message": "Error",
+        "stack": "AggregateError: Error\n    at AxiosError.from (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:905:14)\n    at RedirectableRequest.handleRequestError (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:3326:25)\n    at RedirectableRequest.emit (node:events:518:28)\n    at eventHandlers.<computed> (D:\\projects\\logesco_app\\backend\\node_modules\\follow-redirects\\index.js:49:24)\n    at ClientRequest.emit (node:events:518:28)\n    at emitErrorEvent (node:_http_client:103:11)\n    at Socket.socketErrorListener (node:_http_client:506:5)\n    at Socket.emit (node:events:518:28)\n    at emitErrorNT (node:internal/streams/destroy:170:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:129:3)\n    at Axios.request (D:\\projects\\logesco_app\\backend\\node_modules\\axios\\dist\\node\\axios.cjs:4483:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:718:24\n    at async ComprehensiveRealDataTest.runTest (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:748:22)\n    at async ComprehensiveRealDataTest.testPerformanceWithVolume (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:715:5)\n    at async ComprehensiveRealDataTest.runAllTests (D:\\projects\\logesco_app\\backend\\scripts\\comprehensive-real-data-test.js:70:7)"
+      },
+      "endTime": "2025-10-25T13:09:49.575Z"
+    }
+  ],
+  "summary": {
+    "total": 30,
+    "passed": 1,
+    "failed": 29,
+    "errors": [
+      {
+        "test": "Connectivité serveur",
+        "message": "Error"
+      },
+      {
+        "test": "Inscription utilisateur réel",
+        "message": "Error"
+      },
+      {
+        "test": "Connexion utilisateur réel",
+        "message": "Error"
+      },
+      {
+        "test": "Création fournisseur: Électronique Moderne SARL",
+        "message": "Error"
+      },
+      {
+        "test": "Création fournisseur: Matériaux Pro Distribution",
+        "message": "Error"
+      },
+      {
+        "test": "Création fournisseur: Import Export Global Ltd",
+        "message": "Error"
+      },
+      {
+        "test": "Liste des fournisseurs",
+        "message": "Error"
+      },
+      {
+        "test": "Recherche fournisseur par nom",
+        "message": "Error"
+      },
+      {
+        "test": "Création client: Dupont",
+        "message": "Error"
+      },
+      {
+        "test": "Création client: TechStart Solutions",
+        "message": "Error"
+      },
+      {
+        "test": "Création client: Restaurant Le Gourmet",
+        "message": "Error"
+      },
+      {
+        "test": "Segmentation clients par type",
+        "message": "Error"
+      },
+      {
+        "test": "Création produit: MacBook Pro 16\" M3 Pro",
+        "message": "Error"
+      },
+      {
+        "test": "Création produit: Perceuse visseuse sans fil Bosch Professional",
+        "message": "Error"
+      },
+      {
+        "test": "Création produit: Machine à café expresso automatique Delonghi",
+        "message": "Error"
+      },
+      {
+        "test": "Création produit: Smartphone Samsung Galaxy S24 Ultra",
+        "message": "Error"
+      },
+      {
+        "test": "Création produit: Chaise de bureau ergonomique Herman Miller",
+        "message": "Error"
+      },
+      {
+        "test": "Recherche produits par catégorie",
+        "message": "Error"
+      },
+      {
+        "test": "Recherche produits par gamme de prix",
+        "message": "Error"
+      },
+      {
+        "test": "Création compte: Compte Courant Principal",
+        "message": "Error"
+      },
+      {
+        "test": "Création compte: Compte Épargne Entreprise",
+        "message": "Error"
+      },
+      {
+        "test": "Création compte: Caisse Magasin",
+        "message": "Error"
+      },
+      {
+        "test": "Création compte: Compte USD Import",
+        "message": "Error"
+      },
+      {
+        "test": "Calcul soldes totaux par devise",
+        "message": "Error"
+      },
+      {
+        "test": "État des stocks complet",
+        "message": "Error"
+      },
+      {
+        "test": "Alertes de stock faible",
+        "message": "Error"
+      },
+      {
+        "test": "Flux commande fournisseur",
+        "message": "Cannot read properties of undefined (reading 'id')"
+      },
+      {
+        "test": "Flux vente client",
+        "message": "Cannot read properties of undefined (reading 'id')"
+      },
+      {
+        "test": "Performance - Recherche avec pagination",
+        "message": "Error"
+      }
+    ]
+  },
+  "endTime": "2025-10-25T13:09:49.576Z",
+  "durationMs": 168
+}

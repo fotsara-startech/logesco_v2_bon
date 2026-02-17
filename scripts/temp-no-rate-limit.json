@@ -1,0 +1,10 @@
+{
+  "rateLimitingDisabled": true,
+  "timestamp": "2025-10-22T09:20:58.702Z",
+  "reason": "Tests avec données réelles",
+  "instructions": [
+    "Le rate limiting est temporairement désactivé",
+    "Redémarrez le serveur pour appliquer les changements",
+    "Utilisez enable-rate-limiting.js pour réactiver"
+  ]
+}

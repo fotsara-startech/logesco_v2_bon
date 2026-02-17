@@ -1,0 +1,91 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║              🌱 LOGESCO - REMPLISSAGE BASE DE DONNÉES 🌱             ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📋 COMMANDES RAPIDES                                                │
+└──────────────────────────────────────────────────────────────────────┘
+
+  🔍 Vérifier la base de données:
+     npm run db:check
+
+  🌱 Remplir la base (sans supprimer):
+     npm run db:seed
+
+  🔄 Réinitialiser et remplir:
+     npm run db:reset-seed
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  👥 COMPTES UTILISATEURS CRÉÉS                                       │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Tous les mots de passe: password123
+
+  ┌─────────────────┬──────────────────────┬─────────────────────┐
+  │ Utilisateur     │ Email                │ Rôle                │
+  ├─────────────────┼──────────────────────┼─────────────────────┤
+  │ admin           │ admin@logesco.com    │ Administrateur      │
+  │ gerant          │ gerant@logesco.com   │ Gérant              │
+  │ caissier1       │ caissier1@logesco.com│ Caissier            │
+  │ caissier2       │ caissier2@logesco.com│ Caissier            │
+  │ stock_manager   │ stock@logesco.com    │ Gestionnaire Stock  │
+  └─────────────────┴──────────────────────┴─────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📊 DONNÉES CRÉÉES                                                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+  ✅ 4 rôles utilisateur
+  ✅ 5 utilisateurs
+  ✅ 8 catégories de produits
+  ✅ 26 produits avec stock
+  ✅ 5 fournisseurs
+  ✅ 10 clients
+  ✅ 15 commandes d'approvisionnement
+  ✅ 50 ventes
+  ✅ 3 caisses
+  ✅ 30 mouvements financiers
+  ✅ 5 inventaires
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🎬 WORKFLOW PRÉSENTATION                                            │
+└──────────────────────────────────────────────────────────────────────┘
+
+  1️⃣  npm run db:reset-seed    (Réinitialiser)
+  2️⃣  npm run db:check         (Vérifier)
+  3️⃣  npm start                (Démarrer serveur)
+  4️⃣  Se connecter avec admin/password123
+  5️⃣  Faire votre présentation ! 🎉
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  ⚠️  AVERTISSEMENTS                                                  │
+└──────────────────────────────────────────────────────────────────────┘
+
+  ⛔ "npm run db:reset-seed" SUPPRIME TOUTES LES DONNÉES !
+  💾 Sauvegardez vos données importantes avant !
+  🚫 N'utilisez JAMAIS ces scripts en production !
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  📚 DOCUMENTATION                                                    │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Guide complet:     backend/scripts/GUIDE_SEED_FR.md
+  Documentation:     backend/scripts/SEED_README.md
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🏢 ENTREPRISE CONFIGURÉE                                            │
+└──────────────────────────────────────────────────────────────────────┘
+
+  Nom:        LOGESCO SARL
+  Adresse:    123 Avenue du Commerce, Kinshasa
+  Téléphone:  +243 123 456 789
+  Email:      contact@logesco.com
+  NUI/RCCM:   CD/KIN/RCCM/12-A-12345
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║                    Bonne présentation ! 🚀                           ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
