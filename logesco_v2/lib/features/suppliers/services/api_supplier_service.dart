@@ -143,7 +143,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
   /// Récupère l'historique des transactions d'un fournisseur
   @override
   Future<List<SupplierTransaction>> getSupplierTransactions(int supplierId) async {
-    final response = await _apiClient.get<Map<String, dynamic>>('/suppliers/$supplierId/transactions');
+    final response = await _apiClient.get<Map<String, dynamic>>('/accounts/suppliers/$supplierId/transactions');
 
     if (response.isSuccess && response.data != null) {
       // Le backend retourne les transactions directement dans 'data'
@@ -152,6 +152,154 @@ class ApiSupplierService extends GetxService implements SupplierService {
     }
 
     return [];
+  }
+
+  /// Paie un fournisseur (enregistre un paiement)
+  @override
+  Future<bool> paySupplier(
+    int supplierId,
+    double montant, {
+    String? description,
+  }) async {
+    print('💰 Appel API POST /accounts/suppliers/$supplierId/transactions');
+    print('  - Montant: $montant');
+    print('  - Description: $description');
+
+    try {
+      final body = {
+        'montant': montant,
+        'typeTransaction': 'paiement',
+        if (description != null) 'description': description,
+      };
+
+      print('📤 Body: $body');
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        '/accounts/suppliers/$supplierId/transactions',
+        body,
+      );
+
+      print('📡 Réponse paiement:');
+      print('  - Success: ${response.isSuccess}');
+      print('  - Data: ${response.data}');
+
+      if (response.isSuccess) {
+        print('✅ Paiement enregistré avec succès');
+        return true;
+      } else {
+        print('❌ Paiement échoué - réponse non-success');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Erreur paiement: $e');
+      if (e is ApiException) {
+        print('  - Message: ${e.message}');
+        print('  - Code: ${e.code}');
+        print('  - Status: ${e.statusCode}');
+      }
+      rethrow;
+    }
+  }
+
+  /// Récupère les commandes impayées d'un fournisseur
+  @override
+  Future<List<UnpaidProcurement>> getUnpaidProcurements(int supplierId) async {
+    print('🔍 Appel API GET /accounts/suppliers/$supplierId/unpaid-procurements');
+
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/accounts/suppliers/$supplierId/unpaid-procurements',
+      );
+
+      print('📡 Réponse commandes impayées:');
+      print('  - Success: ${response.isSuccess}');
+
+      if (response.isSuccess && response.data != null) {
+        final procurementsData = response.data!['data'] as List<dynamic>;
+        print('  - Nombre de commandes: ${procurementsData.length}');
+        return procurementsData.map((json) => UnpaidProcurement.fromJson(json as Map<String, dynamic>)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('❌ Erreur récupération commandes impayées: $e');
+      rethrow;
+    }
+  }
+
+  /// Récupère les données du relevé de compte fournisseur
+  @override
+  Future<Map<String, dynamic>?> getSupplierStatement(int supplierId) async {
+    print('� Appel API GET /accounts/suppliers/$supplierId/statement');
+
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/accounts/suppliers/$supplierId/statement',
+      );
+
+      if (response.isSuccess && response.data != null) {
+        return response.data!['data'] as Map<String, dynamic>;
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Erreur récupération relevé: $e');
+      rethrow;
+    }
+  }
+
+  /// Paie une commande spécifique d'un fournisseur
+  @override
+  Future<bool> paySupplierForProcurement(
+    int supplierId,
+    double montant,
+    int procurementId, {
+    String? description,
+    bool createFinancialMovement = false,
+  }) async {
+    print('💰 Appel API POST /accounts/suppliers/$supplierId/transactions (commande spécifique)');
+    print('  - Montant: $montant');
+    print('  - Commande ID: $procurementId');
+    print('  - Description: $description');
+    print('  - Créer mouvement financier: $createFinancialMovement');
+
+    try {
+      final body = {
+        'montant': montant,
+        'typeTransaction': 'paiement',
+        'referenceType': 'approvisionnement',
+        'referenceId': procurementId,
+        if (description != null) 'description': description,
+        'createFinancialMovement': createFinancialMovement,
+      };
+
+      print('📤 Body: $body');
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        '/accounts/suppliers/$supplierId/transactions',
+        body,
+      );
+
+      print('📡 Réponse paiement commande:');
+      print('  - Success: ${response.isSuccess}');
+      print('  - Data: ${response.data}');
+
+      if (response.isSuccess) {
+        print('✅ Paiement commande enregistré avec succès');
+        return true;
+      } else {
+        print('❌ Paiement commande échoué - réponse non-success');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Erreur paiement commande: $e');
+      if (e is ApiException) {
+        print('  - Message: ${e.message}');
+        print('  - Code: ${e.code}');
+        print('  - Status: ${e.statusCode}');
+      }
+      rethrow;
+    }
   }
 
   /// Vérifie si un fournisseur peut être supprimé (pas de commandes en cours)

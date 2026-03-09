@@ -65,7 +65,7 @@ class _UserFormViewState extends State<UserFormView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Modifier Utilisateur' : 'Nouvel Utilisateur'),
+        title: Text(isEditing ? 'users_edit'.tr : 'users_add'.tr),
         actions: [
           if (isEditing)
             IconButton(
@@ -108,26 +108,26 @@ class _UserFormViewState extends State<UserFormView> {
               children: [
                 Icon(Icons.person, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations de base',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'users_basic_info'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom d\'utilisateur *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.account_circle),
+              decoration: InputDecoration(
+                labelText: 'users_username'.tr + ' *',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.account_circle),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Le nom d\'utilisateur est requis';
+                  return 'users_username_required'.tr;
                 }
                 if (value.length < 3) {
-                  return 'Le nom d\'utilisateur doit contenir au moins 3 caractères';
+                  return 'users_username_min_length'.tr;
                 }
                 return null;
               },
@@ -135,18 +135,18 @@ class _UserFormViewState extends State<UserFormView> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+              decoration: InputDecoration(
+                labelText: 'users_email'.tr + ' *',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.email),
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'L\'email est requis';
+                  return 'users_email_required'.tr;
                 }
                 if (!GetUtils.isEmail(value)) {
-                  return 'Veuillez entrer un email valide';
+                  return 'users_email_invalid'.tr;
                 }
                 return null;
               },
@@ -169,7 +169,7 @@ class _UserFormViewState extends State<UserFormView> {
                 Icon(Icons.lock, color: Colors.orange.shade600),
                 const SizedBox(width: 8),
                 Text(
-                  isEditing ? 'Changer le mot de passe' : 'Mot de passe',
+                  isEditing ? 'users_change_password'.tr : 'users_password_section'.tr,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -177,7 +177,7 @@ class _UserFormViewState extends State<UserFormView> {
             if (isEditing) ...[
               const SizedBox(height: 8),
               Text(
-                'Laissez vide pour conserver le mot de passe actuel',
+                'users_password_keep_current'.tr,
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
             ],
@@ -185,7 +185,7 @@ class _UserFormViewState extends State<UserFormView> {
             TextFormField(
               controller: _passwordController,
               decoration: InputDecoration(
-                labelText: isEditing ? 'Nouveau mot de passe' : 'Mot de passe *',
+                labelText: isEditing ? 'users_new_password'.tr : 'users_password'.tr + ' *',
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
@@ -196,10 +196,10 @@ class _UserFormViewState extends State<UserFormView> {
               obscureText: !_showPassword,
               validator: (value) {
                 if (!isEditing && (value == null || value.isEmpty)) {
-                  return 'Le mot de passe est requis';
+                  return 'users_password_required'.tr;
                 }
                 if (value != null && value.isNotEmpty && value.length < 6) {
-                  return 'Le mot de passe doit contenir au moins 6 caractères';
+                  return 'users_password_min_length'.tr;
                 }
                 return null;
               },
@@ -208,7 +208,7 @@ class _UserFormViewState extends State<UserFormView> {
             TextFormField(
               controller: _confirmPasswordController,
               decoration: InputDecoration(
-                labelText: isEditing ? 'Confirmer le nouveau mot de passe' : 'Confirmer le mot de passe *',
+                labelText: isEditing ? 'users_confirm_new_password'.tr : 'users_confirm_password'.tr + ' *',
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
@@ -220,7 +220,7 @@ class _UserFormViewState extends State<UserFormView> {
               validator: (value) {
                 if (_passwordController.text.isNotEmpty) {
                   if (value != _passwordController.text) {
-                    return 'Les mots de passe ne correspondent pas';
+                    return 'users_passwords_not_match'.tr;
                   }
                 }
                 return null;
@@ -243,9 +243,9 @@ class _UserFormViewState extends State<UserFormView> {
               children: [
                 Icon(Icons.admin_panel_settings, color: Colors.purple.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Rôle et privilèges',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'users_role_privileges'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -268,10 +268,10 @@ class _UserFormViewState extends State<UserFormView> {
 
               return DropdownButtonFormField<String>(
                 value: validSelectedRole,
-                decoration: const InputDecoration(
-                  labelText: 'Rôle *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.security),
+                decoration: InputDecoration(
+                  labelText: 'users_role'.tr + ' *',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.security),
                 ),
                 items: controller.availableRoles.map((role) {
                   return DropdownMenuItem(
@@ -292,7 +292,7 @@ class _UserFormViewState extends State<UserFormView> {
                 onChanged: (roleNom) => setState(() => _selectedRoleNom = roleNom),
                 validator: (value) {
                   if (value == null) {
-                    return 'Veuillez sélectionner un rôle';
+                    return 'users_role_required'.tr;
                   }
                   return null;
                 },
@@ -350,7 +350,7 @@ class _UserFormViewState extends State<UserFormView> {
             Icon(Icons.admin_panel_settings, color: Colors.amber.shade700),
             const SizedBox(width: 8),
             Text(
-              'Accès administrateur complet',
+              'users_admin_access'.tr,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.amber.shade800,
@@ -413,7 +413,7 @@ class _UserFormViewState extends State<UserFormView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Privilèges accordés :',
+            'users_privileges_granted'.tr,
             style: TextStyle(
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade700,
@@ -422,7 +422,7 @@ class _UserFormViewState extends State<UserFormView> {
           const SizedBox(height: 8),
           if (moduleWidgets.isEmpty)
             Text(
-              'Aucun privilège spécial',
+              'users_no_special_privileges'.tr,
               style: TextStyle(color: Colors.grey.shade600),
             )
           else
@@ -447,17 +447,17 @@ class _UserFormViewState extends State<UserFormView> {
               children: [
                 Icon(Icons.toggle_on, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Statut du compte',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'users_account_status'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Compte actif'),
+              title: Text('users_account_active'.tr),
               subtitle: Text(
-                _isActive ? 'L\'utilisateur peut se connecter et utiliser l\'application' : 'L\'utilisateur ne peut pas se connecter',
+                _isActive ? 'users_can_login'.tr : 'users_cannot_login'.tr,
               ),
               value: _isActive,
               onChanged: (value) => setState(() => _isActive = value),
@@ -479,7 +479,7 @@ class _UserFormViewState extends State<UserFormView> {
               Get.back();
               print('🔙 [UserFormView] Navigation arrière Annuler terminée');
             },
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
         ),
         const SizedBox(width: 16),
@@ -493,7 +493,7 @@ class _UserFormViewState extends State<UserFormView> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(isEditing ? 'Mettre à jour' : 'Créer'),
+                  : Text(isEditing ? 'users_update'.tr : 'users_create'.tr),
             );
           }),
         ),
@@ -559,12 +559,12 @@ class _UserFormViewState extends State<UserFormView> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer l\'utilisateur "${user.nomUtilisateur}" ?'),
+        title: Text('users_delete_confirm_title'.tr),
+        content: Text('users_delete_confirm_message'.trParams({'username': user.nomUtilisateur})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -578,7 +578,7 @@ class _UserFormViewState extends State<UserFormView> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('users_delete'.tr),
           ),
         ],
       ),

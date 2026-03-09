@@ -200,6 +200,13 @@ class ProductController extends GetxController {
       case 'reference':
         sortedProducts.sort((a, b) => sortAscending.value ? a.reference.compareTo(b.reference) : b.reference.compareTo(a.reference));
         break;
+      case 'categorie':
+        sortedProducts.sort((a, b) {
+          final catA = a.categorie ?? '';
+          final catB = b.categorie ?? '';
+          return sortAscending.value ? catA.toLowerCase().compareTo(catB.toLowerCase()) : catB.toLowerCase().compareTo(catA.toLowerCase());
+        });
+        break;
       case 'dateCreation':
         sortedProducts.sort((a, b) => sortAscending.value ? a.dateCreation.compareTo(b.dateCreation) : b.dateCreation.compareTo(a.dateCreation));
         break;

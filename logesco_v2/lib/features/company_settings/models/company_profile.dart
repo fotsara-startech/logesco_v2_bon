@@ -17,6 +17,10 @@ class CompanyProfile {
   final String? email;
   @JsonKey(name: 'nuiRccm')
   final String? nuiRccm;
+  final String? logo; // Chemin vers le fichier logo (optionnel)
+  final String? slogan; // Slogan de l'entreprise (optionnel)
+  @JsonKey(name: 'langueFacture')
+  final String? receiptLanguage; // Langue des factures: 'fr', 'en' ou 'es'
   @JsonKey(name: 'dateCreation')
   final DateTime? createdAt;
   @JsonKey(name: 'dateModification')
@@ -30,6 +34,9 @@ class CompanyProfile {
     this.phone,
     this.email,
     this.nuiRccm,
+    this.logo,
+    this.slogan,
+    this.receiptLanguage = 'fr', // Par défaut en français
     this.createdAt,
     this.updatedAt,
   });
@@ -47,6 +54,9 @@ class CompanyProfile {
     String? phone,
     String? email,
     String? nuiRccm,
+    String? logo,
+    String? slogan,
+    String? receiptLanguage,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -58,6 +68,9 @@ class CompanyProfile {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       nuiRccm: nuiRccm ?? this.nuiRccm,
+      logo: logo ?? this.logo,
+      slogan: slogan ?? this.slogan,
+      receiptLanguage: receiptLanguage ?? this.receiptLanguage,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -127,6 +140,9 @@ class CompanyProfile {
       phone: '',
       email: '',
       nuiRccm: '',
+      logo: null,
+      slogan: null,
+      receiptLanguage: 'fr',
     );
   }
 
@@ -137,12 +153,14 @@ class CompanyProfile {
         (location?.trim().isEmpty ?? true) &&
         (phone?.trim().isEmpty ?? true) &&
         (email?.trim().isEmpty ?? true) &&
-        (nuiRccm?.trim().isEmpty ?? true);
+        (nuiRccm?.trim().isEmpty ?? true) &&
+        (logo?.trim().isEmpty ?? true) &&
+        (slogan?.trim().isEmpty ?? true);
   }
 
   @override
   String toString() {
-    return 'CompanyProfile(id: $id, name: $name, address: $address, location: $location, phone: $phone, email: $email, nuiRccm: $nuiRccm)';
+    return 'CompanyProfile(id: $id, name: $name, address: $address, location: $location, phone: $phone, email: $email, nuiRccm: $nuiRccm, logo: $logo, slogan: $slogan)';
   }
 
   @override
@@ -155,12 +173,14 @@ class CompanyProfile {
         other.location == location &&
         other.phone == phone &&
         other.email == email &&
-        other.nuiRccm == nuiRccm;
+        other.nuiRccm == nuiRccm &&
+        other.logo == logo &&
+        other.slogan == slogan;
   }
 
   @override
   int get hashCode {
-    return Object.hash(id, name, address, location, phone, email, nuiRccm);
+    return Object.hash(id, name, address, location, phone, email, nuiRccm, logo, slogan);
   }
 }
 
@@ -177,6 +197,10 @@ class CompanyProfileRequest {
   final String? phone;
   final String? email;
   final String? nuiRccm;
+  final String? logo; // Chemin vers le fichier logo (optionnel)
+  final String? slogan; // Slogan de l'entreprise (optionnel)
+  @JsonKey(name: 'langueFacture')
+  final String? receiptLanguage; // Langue des factures
 
   CompanyProfileRequest({
     required this.name,
@@ -185,6 +209,9 @@ class CompanyProfileRequest {
     this.phone,
     this.email,
     this.nuiRccm,
+    this.logo,
+    this.slogan,
+    this.receiptLanguage = 'fr',
   });
 
   factory CompanyProfileRequest.fromJson(Map<String, dynamic> json) => _$CompanyProfileRequestFromJson(json);
@@ -200,6 +227,9 @@ class CompanyProfileRequest {
       phone: profile.phone,
       email: profile.email,
       nuiRccm: profile.nuiRccm,
+      logo: profile.logo,
+      slogan: profile.slogan,
+      receiptLanguage: profile.receiptLanguage,
     );
   }
 }

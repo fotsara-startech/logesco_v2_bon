@@ -42,7 +42,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ajustement de Stock'),
+        title: Text('inventory_adjustment_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Form(
@@ -61,14 +61,14 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Sélectionner un produit',
+                          'inventory_adjustment_select_product'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: _selectProduct,
                           icon: const Icon(Icons.search),
-                          label: const Text('Rechercher un produit'),
+                          label: Text('inventory_adjustment_search_product'.tr),
                         ),
                       ],
                     ),
@@ -108,7 +108,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                                   _selectedStock = null;
                                 });
                               },
-                              child: const Text('Changer'),
+                              child: Text('inventory_adjustment_change'.tr),
                             ),
                           ],
                         ),
@@ -117,7 +117,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                           children: [
                             Expanded(
                               child: _buildStockInfo(
-                                'Stock actuel',
+                                'inventory_adjustment_current_stock'.tr,
                                 _selectedStock!.quantiteDisponible.toString(),
                                 Icons.inventory,
                                 Colors.blue,
@@ -126,7 +126,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildStockInfo(
-                                'Seuil minimum',
+                                'inventory_adjustment_min_threshold'.tr,
                                 _selectedStock!.produit?.seuilStockMinimum.toString() ?? '0',
                                 Icons.warning,
                                 Colors.orange,
@@ -149,7 +149,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Type d\'ajustement',
+                          'inventory_adjustment_type'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
@@ -157,8 +157,8 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                           children: [
                             Expanded(
                               child: RadioListTile<bool>(
-                                title: const Text('Augmenter'),
-                                subtitle: const Text('Ajouter au stock'),
+                                title: Text('inventory_adjustment_increment'.tr),
+                                subtitle: Text('inventory_add_stock'.tr),
                                 value: true,
                                 groupValue: _isIncrement,
                                 onChanged: (value) {
@@ -171,8 +171,8 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                             ),
                             Expanded(
                               child: RadioListTile<bool>(
-                                title: const Text('Diminuer'),
-                                subtitle: const Text('Retirer du stock'),
+                                title: Text('inventory_adjustment_decrement'.tr),
+                                subtitle: Text('inventory_remove_stock'.tr),
                                 value: false,
                                 groupValue: _isIncrement,
                                 onChanged: (value) {
@@ -200,20 +200,21 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quantité',
+                          'inventory_adjustment_quantity'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _quantityController,
                           decoration: InputDecoration(
-                            labelText: 'Quantité à ${_isIncrement ? 'ajouter' : 'retirer'}',
+                            labelText: '${'inventory_adjustment_quantity'.tr} ${_isIncrement ? '(+)' : '(-)'}',
                             border: const OutlineInputBorder(),
                             prefixIcon: Icon(
                               _isIncrement ? Icons.add : Icons.remove,
                               color: _isIncrement ? Colors.green : Colors.red,
                             ),
                             suffixText: 'unités',
+                            hintText: 'inventory_adjustment_quantity_hint'.tr,
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -279,17 +280,17 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes (optionnel)',
+                          'inventory_adjustment_notes'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _notesController,
-                          decoration: const InputDecoration(
-                            labelText: 'Raison de l\'ajustement',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.note),
-                            hintText: 'Ex: Inventaire, casse, erreur de saisie...',
+                          decoration: InputDecoration(
+                            labelText: 'inventory_adjustment_notes'.tr,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.note),
+                            hintText: 'inventory_adjustment_notes_hint'.tr,
                           ),
                           maxLines: 3,
                           maxLength: 500,
@@ -310,7 +311,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                   child: _isLoading
                       ? const CircularProgressIndicator()
                       : Text(
-                          'Ajuster le stock',
+                          'inventory_adjustment_save'.tr,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -376,7 +377,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
     // TODO: Implémenter la sélection de produit
     // Pour l'instant, on affiche un message
     Get.snackbar(
-      'Information',
+      'info'.tr,
       'Sélection de produit - À implémenter',
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 2),
@@ -405,8 +406,8 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
 
       if (success) {
         Get.snackbar(
-          'Succès',
-          'Stock ajusté avec succès (${_isIncrement ? '+' : ''}$changement)',
+          'success'.tr,
+          'inventory_adjustment_success'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -415,7 +416,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
         Get.back();
       } else {
         Get.snackbar(
-          'Erreur',
+          'error'.tr,
           controller.error ?? 'Erreur lors de l\'ajustement',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
@@ -425,7 +426,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
+        'error'.tr,
         'Erreur: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,

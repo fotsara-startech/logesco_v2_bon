@@ -80,10 +80,26 @@ class FinancialMovementService {
         throw new Error('Impossible de générer une référence unique');
       }
 
+      // Récupérer la session active de l'utilisateur
+      const activeSession = await this.prisma.cashSession.findFirst({
+        where: {
+          utilisateurId: data.utilisateurId,
+          isActive: true,
+          dateFermeture: null
+        }
+      });
+
+      const sessionId = activeSession ? activeSession.id : null;
+      
+      if (!activeSession) {
+        console.log('⚠️ Aucune session active trouvée - le mouvement sera créé sans session');
+      }
+
       // Créer le mouvement
       const movement = await this.prisma.financialMovement.create({
         data: {
           reference,
+          sessionId: sessionId,
           montant: parseFloat(data.montant),
           categorieId: data.categorieId,
           description: data.description.trim(),

@@ -23,6 +23,8 @@ import '../../features/customers/bindings/customer_binding.dart';
 import '../../features/suppliers/views/supplier_list_view.dart';
 import '../../features/suppliers/views/supplier_form_view.dart';
 import '../../features/suppliers/views/supplier_detail_view.dart';
+import '../../features/suppliers/views/supplier_transactions_view.dart';
+import '../../features/suppliers/views/supplier_account_view.dart';
 import '../../features/suppliers/bindings/supplier_binding.dart';
 import '../../features/inventory/views/inventory_getx_page.dart';
 import '../../features/inventory/views/stock_adjustment_page.dart';
@@ -205,6 +207,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.supplierDetail,
       page: () => const SupplierDetailView(),
+      binding: SupplierBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.supplierTransactions,
+      page: () => const SupplierTransactionsView(),
+      binding: SupplierBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.supplierAccount,
+      page: () => const SupplierAccountView(),
       binding: SupplierBinding(),
     ),
 

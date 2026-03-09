@@ -63,14 +63,12 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          final fournisseurs = (data['data']['fournisseurs'] as List)
-              .map((json) => Supplier.fromJson(json))
-              .toList();
-          
+          final fournisseurs = (data['data']['fournisseurs'] as List).map((json) => Supplier.fromJson(json)).toList();
+
           setState(() {
             _availableSuppliers.clear();
             _availableSuppliers.addAll(fournisseurs);
-            
+
             // Sélectionner automatiquement le premier fournisseur
             if (fournisseurs.isNotEmpty && _selectedSupplier == null) {
               _selectedSupplier = fournisseurs.first;
@@ -109,7 +107,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Suggestions d\'Approvisionnement'),
+        title: Text('procurement_suggestions_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -138,15 +136,15 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
               final suggestions = _getFilteredSuggestions();
 
               if (suggestions.isEmpty) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inventory_2, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
+                      const Icon(Icons.inventory_2, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
                       Text(
-                        'Aucune suggestion d\'approvisionnement',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        'procurement_suggestions_no_data'.tr,
+                        style: const TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -169,7 +167,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
           ? FloatingActionButton.extended(
               onPressed: _showGenerateOrderDialog,
               icon: const Icon(Icons.add_shopping_cart),
-              label: Text('Générer commande (${_selectedSuggestions.length})'),
+              label: Text('procurement_suggestions_selected_count'.tr.replaceAll('@count', _selectedSuggestions.length.toString())),
             )
           : null,
     );
@@ -184,7 +182,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Filtres',
+              'procurement_suggestions_filters'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -197,17 +195,17 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     value: _periodeAnalyse,
-                    decoration: const InputDecoration(
-                      labelText: 'Période d\'analyse',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.calendar_today),
+                    decoration: InputDecoration(
+                      labelText: 'procurement_suggestions_period'.tr,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.calendar_today),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 7, child: Text('7 jours')),
-                      DropdownMenuItem(value: 15, child: Text('15 jours')),
-                      DropdownMenuItem(value: 30, child: Text('30 jours')),
-                      DropdownMenuItem(value: 60, child: Text('60 jours')),
-                      DropdownMenuItem(value: 90, child: Text('90 jours')),
+                    items: [
+                      DropdownMenuItem(value: 7, child: Text('procurement_period_7_days'.tr)),
+                      DropdownMenuItem(value: 15, child: Text('procurement_period_15_days'.tr)),
+                      DropdownMenuItem(value: 30, child: Text('procurement_period_30_days'.tr)),
+                      DropdownMenuItem(value: 60, child: Text('procurement_period_60_days'.tr)),
+                      DropdownMenuItem(value: 90, child: Text('procurement_period_90_days'.tr)),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -223,15 +221,15 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _filtreUrgence,
-                    decoration: const InputDecoration(
-                      labelText: 'Urgence',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.priority_high),
+                    decoration: InputDecoration(
+                      labelText: 'procurement_suggestions_urgency'.tr,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.priority_high),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'tous', child: Text('Toutes')),
-                      DropdownMenuItem(value: 'urgentes', child: Text('Urgentes')),
-                      DropdownMenuItem(value: 'normales', child: Text('Normales')),
+                    items: [
+                      DropdownMenuItem(value: 'tous', child: Text('procurement_suggestions_all'.tr)),
+                      DropdownMenuItem(value: 'urgentes', child: Text('procurement_suggestions_urgent'.tr)),
+                      DropdownMenuItem(value: 'normales', child: Text('procurement_suggestions_normal'.tr)),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -312,7 +310,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                 children: [
                   Expanded(
                     child: _buildInfoItem(
-                      'Stock actuel',
+                      'procurement_suggestion_current_stock',
                       suggestion.stockActuel.toString(),
                       Icons.inventory,
                       suggestion.estEnRupture ? Colors.red : Colors.blue,
@@ -320,7 +318,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                   ),
                   Expanded(
                     child: _buildInfoItem(
-                      'Seuil min.',
+                      'procurement_suggestion_min_threshold',
                       suggestion.seuilMinimum.toString(),
                       Icons.warning,
                       Colors.orange,
@@ -328,7 +326,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                   ),
                   Expanded(
                     child: _buildInfoItem(
-                      'Jours restants',
+                      'procurement_suggestion_days_remaining',
                       suggestion.joursStockRestant.toString(),
                       Icons.schedule,
                       suggestion.joursStockRestant <= 3 ? Colors.red : Colors.green,
@@ -347,7 +345,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                   ),
                   Expanded(
                     child: _buildInfoItem(
-                      'Coût unitaire',
+                      'procurement_suggestion_unit_cost',
                       _currencyFormat.format(suggestion.coutUnitaireEstime),
                       Icons.attach_money,
                       Colors.purple,
@@ -355,7 +353,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                   ),
                   Expanded(
                     child: _buildInfoItem(
-                      'Total',
+                      'procurement_suggestion_total_cost',
                       _currencyFormat.format(_calculateTotal(suggestion)),
                       Icons.calculate,
                       Colors.indigo,
@@ -377,13 +375,13 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Raison: ${suggestion.raison}',
+                      '${'procurement_suggestion_reason'.tr}: ${suggestion.raison}',
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Ventes moy./jour: ${suggestion.moyenneVentesJournalieres.toStringAsFixed(1)} • '
-                      'Taux rotation: ${(suggestion.tauxRotation * 100).toStringAsFixed(1)}%',
+                      '${'procurement_suggestion_avg_sales'.tr}: ${suggestion.moyenneVentesJournalieres.toStringAsFixed(1)} • '
+                      '${'procurement_suggestion_rotation_rate'.tr}: ${(suggestion.tauxRotation * 100).toStringAsFixed(1)}%',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -407,7 +405,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
           Text(
-            label,
+            label.tr,
             style: TextStyle(
               fontSize: 10,
               color: color,
@@ -452,10 +450,12 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
         icon = Icons.help;
     }
 
+    String translationKey = 'procurement_priority_${priorite}';
+
     return Chip(
       avatar: Icon(icon, size: 16, color: Colors.white),
       label: Text(
-        priorite.toUpperCase(),
+        translationKey.tr,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 10,
@@ -481,9 +481,9 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
         children: [
           const Icon(Icons.edit, color: Colors.green, size: 20),
           const SizedBox(height: 4),
-          const Text(
-            'Qté suggérée',
-            style: TextStyle(
+          Text(
+            'procurement_suggestion_suggested_qty'.tr,
+            style: const TextStyle(
               fontSize: 10,
               color: Colors.green,
               fontWeight: FontWeight.w500,
@@ -572,33 +572,33 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Générer une commande'),
+          title: Text('procurement_generate_dialog_title'.tr),
           content: SizedBox(
             width: 400,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${_selectedSuggestions.length} produits sélectionnés'),
+                Text('procurement_generate_products_selected'.tr.replaceAll('@count', _selectedSuggestions.length.toString())),
                 const SizedBox(height: 8),
                 Text(
-                  'Montant total: ${_currencyFormat.format(_calculateSelectedTotal())}',
+                  'procurement_generate_total_amount'.tr.replaceAll('@amount', _currencyFormat.format(_calculateSelectedTotal())),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
 
                 // Sélection du fournisseur
-                const Text(
-                  'Fournisseur:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+                Text(
+                  'procurement_generate_supplier'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<Supplier>(
                   value: _selectedSupplier,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Sélectionner un fournisseur',
-                    prefixIcon: Icon(Icons.business),
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: 'procurement_generate_select_supplier'.tr,
+                    prefixIcon: const Icon(Icons.business),
                   ),
                   items: _getAvailableSuppliers().map((supplier) {
                     return DropdownMenuItem<Supplier>(
@@ -614,14 +614,14 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                 ),
 
                 const SizedBox(height: 16),
-                const Text('Cette action va créer une nouvelle commande d\'approvisionnement avec les quantités modifiées.'),
+                Text('procurement_generate_message'.tr),
 
                 // Résumé des quantités modifiées
                 if (_modifiedQuantities.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text(
-                    'Quantités modifiées:',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                  Text(
+                    'procurement_generate_modified_quantities'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -671,7 +671,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text('cancel'.tr),
             ),
             ElevatedButton(
               onPressed: _selectedSupplier != null
@@ -680,7 +680,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                       _generateOrder();
                     }
                   : null,
-              child: const Text('Générer'),
+              child: Text('procurement_generate_button'.tr),
             ),
           ],
         ),
@@ -696,8 +696,8 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
   void _generateOrder() async {
     if (_selectedSupplier == null) {
       Get.snackbar(
-        'Erreur',
-        'Veuillez sélectionner un fournisseur',
+        'error'.tr,
+        'procurement_generate_error_no_supplier'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -742,8 +742,8 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
       _loadSuggestions();
 
       Get.snackbar(
-        'Succès',
-        'Commande générée avec les quantités personnalisées',
+        'success'.tr,
+        'procurement_generate_success'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,

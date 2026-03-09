@@ -20,25 +20,25 @@ class MovementReportsPage extends StatelessWidget {
       builder: (controller) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Rapports et Statistiques'),
+            title: Text('financial_movements_reports_title'.tr),
             backgroundColor: Colors.blue.shade600,
             foregroundColor: Colors.white,
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () => controller.refreshAllReportData(),
-                tooltip: 'Actualiser',
+                tooltip: 'refresh'.tr,
               ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.file_download),
-                tooltip: 'Exporter',
+                tooltip: 'financial_movements_reports_export'.tr,
                 onSelected: (value) async {
                   if (value == 'pdf') {
                     final filePath = await controller.exportToPdf();
                     if (filePath != null) {
                       Get.snackbar(
-                        'Export réussi',
-                        'Rapport PDF sauvegardé',
+                        'financial_movements_reports_export_success'.tr,
+                        'financial_movements_reports_pdf_saved'.tr,
                         backgroundColor: Colors.green.shade100,
                         colorText: Colors.green.shade800,
                         duration: const Duration(seconds: 3),
@@ -48,8 +48,8 @@ class MovementReportsPage extends StatelessWidget {
                     final filePath = await controller.exportToExcel();
                     if (filePath != null) {
                       Get.snackbar(
-                        'Export réussi',
-                        'Rapport Excel sauvegardé',
+                        'financial_movements_reports_export_success'.tr,
+                        'financial_movements_reports_excel_saved'.tr,
                         backgroundColor: Colors.green.shade100,
                         colorText: Colors.green.shade800,
                         duration: const Duration(seconds: 3),
@@ -58,23 +58,23 @@ class MovementReportsPage extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'pdf',
                     child: Row(
                       children: [
-                        Icon(Icons.picture_as_pdf, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Exporter en PDF'),
+                        const Icon(Icons.picture_as_pdf, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text('financial_movements_reports_export_pdf'.tr),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'excel',
                     child: Row(
                       children: [
-                        Icon(Icons.table_chart, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Exporter en Excel'),
+                        const Icon(Icons.table_chart, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text('financial_movements_reports_export_excel'.tr),
                       ],
                     ),
                   ),
@@ -84,13 +84,13 @@ class MovementReportsPage extends StatelessWidget {
           ),
           body: Obx(() {
             if (controller.isLoading.value && !controller.hasData) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Chargement des rapports...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text('financial_movements_reports_loading'.tr),
                   ],
                 ),
               );
@@ -133,8 +133,8 @@ class MovementReportsPage extends StatelessWidget {
                         final filePath = await controller.exportToPdf();
                         if (filePath != null) {
                           Get.snackbar(
-                            'Export réussi',
-                            'Rapport PDF sauvegardé',
+                            'financial_movements_reports_export_success'.tr,
+                            'financial_movements_reports_pdf_saved'.tr,
                             backgroundColor: Colors.green.shade100,
                             colorText: Colors.green.shade800,
                           );
@@ -144,8 +144,8 @@ class MovementReportsPage extends StatelessWidget {
                         final filePath = await controller.exportToExcel();
                         if (filePath != null) {
                           Get.snackbar(
-                            'Export réussi',
-                            'Rapport Excel sauvegardé',
+                            'financial_movements_reports_export_success'.tr,
+                            'financial_movements_reports_excel_saved'.tr,
                             backgroundColor: Colors.green.shade100,
                             colorText: Colors.green.shade800,
                           );
@@ -221,9 +221,9 @@ class MovementReportsPage extends StatelessWidget {
               children: [
                 Icon(Icons.category, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Détail par catégorie',
-                  style: TextStyle(
+                Text(
+                  'financial_movements_reports_category_analysis'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -255,7 +255,7 @@ class MovementReportsPage extends StatelessWidget {
                     category.categoryDisplayName,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  subtitle: Text('${category.count} mouvements'),
+                  subtitle: Text('${category.count} ${'financial_movements_title'.tr.toLowerCase()}'),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -299,7 +299,7 @@ class MovementReportsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucune donnée disponible',
+              'no_data'.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -308,7 +308,7 @@ class MovementReportsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.hasPeriodSelected ? 'Aucun mouvement financier trouvé pour la période sélectionnée' : 'Sélectionnez une période pour voir les rapports',
+              controller.hasPeriodSelected ? 'financial_movements_no_results'.tr : 'Sélectionnez une période pour voir les rapports',
               style: TextStyle(
                 color: Colors.grey.shade500,
               ),
@@ -319,7 +319,7 @@ class MovementReportsPage extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => controller.loadAllReportData(),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Actualiser'),
+                label: Text('refresh'.tr),
               ),
             ],
           ],

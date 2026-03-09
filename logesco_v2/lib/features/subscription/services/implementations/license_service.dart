@@ -6,6 +6,7 @@ import '../../models/license_errors.dart';
 import 'crypto_service.dart';
 import 'secure_license_storage.dart';
 import 'license_management_service.dart';
+import 'secure_time_service.dart';
 
 /// Implémentation du service de validation des licences
 class LicenseService implements ILicenseService {
@@ -13,6 +14,7 @@ class LicenseService implements ILicenseService {
   final IDeviceService _deviceService;
   final SecureLicenseStorage _secureStorage;
   final LicenseManagementService _managementService;
+  final SecureTimeService _secureTimeService;
 
   // Cache pour éviter les validations répétées
   LicenseData? _cachedLicense;
@@ -29,6 +31,7 @@ class LicenseService implements ILicenseService {
     required IDeviceService deviceService,
     SecureLicenseStorage? secureStorage,
     LicenseManagementService? managementService,
+    SecureTimeService? secureTimeService,
   })  : _cryptoService = cryptoService,
         _deviceService = deviceService,
         _secureStorage = secureStorage ??
@@ -45,11 +48,13 @@ class LicenseService implements ILicenseService {
                     cryptoService: cryptoService,
                     deviceService: deviceService,
                   ),
-            );
+            ),
+        _secureTimeService = secureTimeService ?? SecureTimeService();
 
   /// Initialise le service de licence
   Future<void> initialize() async {
     await _secureStorage.initialize();
+    await _secureTimeService.initialize();
   }
 
   @override
@@ -113,7 +118,7 @@ class LicenseService implements ILicenseService {
       }
 
       // 5. Validation des dates d'expiration
-      final expirationValid = _validateExpiration(payload);
+      final expirationValid = await _validateExpiration(payload);
       if (!expirationValid.isValid) {
         return expirationValid;
       }
@@ -350,19 +355,42 @@ class LicenseService implements ILicenseService {
     }
   }
 
-  /// Valide les dates d'expiration
-  LicenseValidationResult _validateExpiration(LicenseKeyPayload payload) {
+  /// Valide les dates d'expiration avec temps sécurisé
+  Future<LicenseValidationResult> _validateExpiration(LicenseKeyPayload payload) async {
     try {
-      final now = DateTime.now();
+      // Obtenir l'heure sécurisée
+      final timeResult = await _secureTimeService.getSecureTime(
+        throwOnManipulation: true,
+      );
+
+      final secureTime = timeResult.trustedTime;
       final expirationDate = DateTime.parse(payload.expires);
 
-      if (now.isAfter(expirationDate)) {
+      print('🕐 [LicenseService] Validation expiration:');
+      print('   Heure sécurisée: $secureTime');
+      print('   Date expiration: $expirationDate');
+      print('   NTP disponible: ${timeResult.ntpAvailable}');
+      print('   Heure système fiable: ${timeResult.isSystemTimeReliable}');
+
+      if (timeResult.hasWarnings) {
+        print('   ⚠️  Avertissements:');
+        for (final warning in timeResult.warnings) {
+          print('      - $warning');
+        }
+      }
+
+      if (secureTime.isAfter(expirationDate)) {
         // Vérifier si on est dans la période de grâce
         final gracePeriodEnd = expirationDate.add(const Duration(days: 3));
-        if (now.isBefore(gracePeriodEnd)) {
+        if (secureTime.isBefore(gracePeriodEnd)) {
+          final warnings = ['Licence expirée mais dans la période de grâce'];
+          if (timeResult.hasWarnings) {
+            warnings.addAll(timeResult.warnings);
+          }
+
           return LicenseValidationResult.success(
             payload.toLicenseData(''),
-            ['Licence expirée mais dans la période de grâce'],
+            warnings,
           );
         } else {
           return LicenseValidationResult.failure(
@@ -374,12 +402,30 @@ class LicenseService implements ILicenseService {
         }
       }
 
-      return LicenseValidationResult.success(payload.toLicenseData(''));
+      // Licence valide
+      final warnings = <String>[];
+      if (timeResult.hasWarnings) {
+        warnings.addAll(timeResult.warnings);
+      }
+
+      return LicenseValidationResult.success(
+        payload.toLicenseData(''),
+        warnings,
+      );
+    } on TimeValidationException catch (e) {
+      print('❌ [LicenseService] Erreur validation temps: $e');
+      return LicenseValidationResult.failure(
+        LicenseException(
+          LicenseError.expiredLicense,
+          e.message,
+        ),
+      );
     } catch (e) {
+      print('❌ [LicenseService] Erreur validation expiration: $e');
       return LicenseValidationResult.failure(
         LicenseException(
           LicenseError.invalidKey,
-          'Format de date invalide',
+          'Erreur lors de la validation de la date d\'expiration',
         ),
       );
     }

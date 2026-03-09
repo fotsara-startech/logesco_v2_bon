@@ -14,79 +14,117 @@ class ProductSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ProductController>();
+    final salesController = Get.find<SalesController>();
 
     return Column(
       children: [
         // Barre de recherche et bouton de rafraîchissement
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Rechercher un produit',
-                  hintText: 'Nom, référence, code-barre...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    onPressed: () => _showBarcodeSearch(controller),
-                    icon: const Icon(Icons.qr_code_scanner),
-                    tooltip: 'Recherche par code-barre',
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'sales_search_product'.tr,
+                    hintText: 'sales_search_product_hint'.tr,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      onPressed: () => _showBarcodeSearch(salesController),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      tooltip: 'Recherche par code-barre',
+                    ),
+                    border: const OutlineInputBorder(),
                   ),
-                  border: const OutlineInputBorder(),
+                  onChanged: (value) {
+                    salesController.updateProductSearchQuery(value);
+                  },
                 ),
-                onChanged: (value) {
-                  controller.updateSearchQuery(value);
-                },
               ),
-            ),
-            Obx(() => IconButton(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () {
-                          controller.loadProducts(refresh: true);
-                        },
-                  icon: controller.isLoading.value
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh),
-                  tooltip: 'Actualiser les produits',
-                )),
-            const SizedBox(width: 8),
-            GetX<SalesController>(
-              builder: (salesController) => IconButton(
-                onPressed: salesController.isLoading
-                    ? null
-                    : () async {
-                        await salesController.refreshStocks();
-                        await controller.loadProducts(refresh: true);
-                      },
-                icon: salesController.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh),
-                tooltip: 'Actualiser les stocks',
-              ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Obx(() => IconButton(
+                    onPressed: salesController.isLoading
+                        ? null
+                        : () async {
+                            await salesController.refreshProductsAndStocks();
+                          },
+                    icon: salesController.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    tooltip: 'Actualiser produits et stocks',
+                  )),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
+
+        // Barre de tri
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Row(
+            children: [
+              Text('sales_sort_by'.tr, style: const TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Obx(() => Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text('sales_sort_name'.tr),
+                          selected: salesController.productSortBy == 'nom',
+                          onSelected: (selected) {
+                            if (selected) salesController.setProductSortBy('nom');
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('sales_sort_reference'.tr),
+                          selected: salesController.productSortBy == 'reference',
+                          onSelected: (selected) {
+                            if (selected) salesController.setProductSortBy('reference');
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('sales_sort_price'.tr),
+                          selected: salesController.productSortBy == 'prix',
+                          onSelected: (selected) {
+                            if (selected) salesController.setProductSortBy('prix');
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('sales_sort_category'.tr),
+                          selected: salesController.productSortBy == 'categorie',
+                          onSelected: (selected) {
+                            if (selected) salesController.setProductSortBy('categorie');
+                          },
+                        ),
+                      ],
+                    )),
+              ),
+              Obx(() => IconButton(
+                    icon: Icon(
+                      salesController.productSortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                    ),
+                    onPressed: salesController.toggleProductSort,
+                    tooltip: salesController.productSortAscending ? 'Croissant' : 'Décroissant',
+                  )),
+            ],
+          ),
+        ),
+        const Divider(),
 
         // Liste des produits
         Expanded(
           child: Obx(() {
-            if (controller.isLoading.value && controller.products.isEmpty) {
+            if (salesController.isLoading && salesController.productsForSale.isEmpty) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
             }
 
-            if (controller.products.isEmpty) {
+            if (salesController.productsForSale.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -98,7 +136,7 @@ class ProductSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Aucun produit',
+                      'sales_no_products'.tr,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -107,25 +145,84 @@ class ProductSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Aucun produit disponible pour la vente',
+                      'sales_no_products_available'.tr,
                       style: TextStyle(
                         color: Colors.grey[500],
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await salesController.refreshProductsAndStocks();
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: Text('sales_reload'.tr),
                     ),
                   ],
                 ),
               );
             }
 
-            return ListView.builder(
-              itemCount: controller.products.length,
-              itemBuilder: (context, index) {
-                final product = controller.products[index];
-                return _ProductItem(
-                  product: product,
-                  onSelected: onProductSelected,
-                );
-              },
+            // Afficher un avertissement si aucun stock n'est chargé
+            return Column(
+              children: [
+                if (salesController.getProductStock(1) == null && salesController.productsForSale.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      border: Border.all(color: Colors.orange[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: Colors.orange[700]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'sales_stocks_not_loaded'.tr,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange[900],
+                                ),
+                              ),
+                              Text(
+                                'sales_stocks_not_loaded_help'.tr,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange[800],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: () async {
+                            await salesController.refreshProductsAndStocks();
+                          },
+                          tooltip: 'sales_refresh_products'.tr,
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: salesController.productsForSale.length,
+                    itemBuilder: (context, index) {
+                      final product = salesController.productsForSale[index];
+                      return _ProductItem(
+                        product: product,
+                        onSelected: onProductSelected,
+                      );
+                    },
+                  ),
+                ),
+              ],
             );
           }),
         ),
@@ -134,19 +231,20 @@ class ProductSelector extends StatelessWidget {
   }
 
   /// Affiche la recherche par code-barre pour les ventes
-  void _showBarcodeSearch(ProductController controller) {
+  void _showBarcodeSearch(SalesController salesController) {
     final textController = TextEditingController();
+    final productController = Get.find<ProductController>();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Recherche par code-barre'),
+        title: Text('sales_barcode_search_title'.tr),
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Code-barre',
-            hintText: 'Scanner ou saisir le code-barre',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.qr_code_scanner),
+          decoration: InputDecoration(
+            labelText: 'sales_barcode_label'.tr,
+            hintText: 'sales_barcode_hint'.tr,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.qr_code_scanner),
           ),
           keyboardType: TextInputType.number,
           autofocus: true,
@@ -154,17 +252,17 @@ class ProductSelector extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
               final barcode = textController.text.trim();
               if (barcode.isNotEmpty) {
                 Get.back();
-                await _searchByBarcode(barcode, controller);
+                await _searchByBarcode(barcode, productController, salesController);
               }
             },
-            child: const Text('Rechercher'),
+            child: Text('search'.tr),
           ),
         ],
       ),
@@ -172,39 +270,45 @@ class ProductSelector extends StatelessWidget {
   }
 
   /// Effectue une recherche spécifique par code-barres dans les ventes
-  Future<void> _searchByBarcode(String barcode, ProductController controller) async {
+  Future<void> _searchByBarcode(String barcode, ProductController productController, SalesController salesController) async {
     try {
       // Utiliser la méthode spécialisée de recherche par code-barres
-      final product = await controller.searchByBarcode(barcode);
+      final product = await productController.searchByBarcode(barcode);
 
       if (product != null) {
-        // Produit trouvé, l'afficher dans la liste et proposer de l'ajouter
-        controller.setSearchResults([product]);
+        // Produit trouvé, mettre à jour la recherche dans le sales controller
+        salesController.updateProductSearchQuery(product.nom);
 
         // Proposer d'ajouter directement au panier
         final shouldAdd = await Get.dialog<bool>(
               AlertDialog(
-                title: const Text('Produit trouvé'),
+                title: Text('sales_product_found'.tr),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Produit: ${product.nom}'),
-                    Text('Référence: ${product.reference}'),
-                    Text('Prix: ${product.prixUnitaire.toStringAsFixed(0)} FCFA'),
-                    if (product.codeBarre != null) Text('Code-barre: ${product.codeBarre}'),
+                    Text('${'sales_product_label'.tr}: ${product.nom}'),
+                    Text('${'sales_product_reference'.tr}: ${product.reference}'),
+                    Text('${'sales_product_price'.tr}: ${product.prixUnitaire.toStringAsFixed(0)} FCFA'),
+                    if (product.codeBarre != null) Text('${'sales_barcode_label'.tr}: ${product.codeBarre}'),
+                    const SizedBox(height: 8),
+                    Text('${'sales_stock_available'.tr}: ${salesController.getRawStockQuantity(product.id)}',
+                        style: TextStyle(
+                          color: salesController.getRawStockQuantity(product.id) > 0 ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        )),
                     const SizedBox(height: 16),
-                    const Text('Voulez-vous l\'ajouter au panier ?'),
+                    Text('sales_add_to_cart_question'.tr),
                   ],
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Get.back(result: false),
-                    child: const Text('Non'),
+                    child: Text('no'.tr),
                   ),
                   ElevatedButton(
                     onPressed: () => Get.back(result: true),
-                    child: const Text('Ajouter au panier'),
+                    child: Text('sales_add_to_cart'.tr),
                   ),
                 ],
               ),
@@ -216,18 +320,17 @@ class ProductSelector extends StatelessWidget {
         }
 
         Get.snackbar(
-          'Produit trouvé',
-          'Produit "${product.nom}" trouvé avec le code-barre $barcode',
+          'sales_product_found'.tr,
+          'sales_product_found_detail'.trParams({'product': product.nom, 'barcode': barcode}),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green.shade100,
           colorText: Colors.green.shade800,
         );
       } else {
         // Aucun produit trouvé
-        controller.setSearchResults([]);
         Get.snackbar(
-          'Aucun résultat',
-          'Aucun produit trouvé avec le code-barre $barcode',
+          'sales_no_product_found'.tr,
+          'sales_no_product_barcode'.trParams({'barcode': barcode}),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.orange.shade100,
           colorText: Colors.orange.shade800,
@@ -235,8 +338,8 @@ class ProductSelector extends StatelessWidget {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la recherche par code-barre: $e',
+        'error'.tr,
+        'sales_barcode_search_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -279,9 +382,9 @@ class _ProductItem extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Référence: ${product.reference}'),
-                Text('Prix: ${product.prixUnitaire.toStringAsFixed(0)} FCFA'),
-                Text('Catégorie: ${product.categorie ?? 'Non définie'}'),
+                Text('${'sales_product_reference'.tr}: ${product.reference}'),
+                Text('${'sales_product_price'.tr}: ${product.prixUnitaire.toStringAsFixed(0)} FCFA'),
+                Text('${'sales_product_category'.tr}: ${product.categorie ?? 'sales_product_category_undefined'.tr}'),
 
                 // Affichage du stock
                 if (product.estService)
@@ -418,11 +521,11 @@ class _ProductItem extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Ajouter ${product.nom}'),
+        title: Text('sales_add_product_title'.trParams({'product': product.nom})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Produit: ${product.nom}'),
+            Text('${'sales_product_label'.tr}: ${product.nom}'),
             if (!product.estService) ...[
               const SizedBox(height: 8),
               Text(
@@ -437,9 +540,9 @@ class _ProductItem extends StatelessWidget {
             TextField(
               controller: quantityController,
               decoration: InputDecoration(
-                labelText: 'Quantité',
+                labelText: 'sales_quantity_label'.tr,
                 border: const OutlineInputBorder(),
-                helperText: product.estService ? 'Service - quantité libre' : 'Maximum: $availableQuantity',
+                helperText: product.estService ? 'sales_service_quantity_free'.tr : 'sales_quantity_max'.trParams({'max': availableQuantity.toString()}),
               ),
               keyboardType: TextInputType.number,
               autofocus: true,
@@ -449,7 +552,7 @@ class _ProductItem extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -458,8 +561,8 @@ class _ProductItem extends StatelessWidget {
                 // Vérifier le stock pour les produits physiques
                 if (!product.estService && quantity > availableQuantity) {
                   Get.snackbar(
-                    'Stock insuffisant',
-                    'Quantité demandée: $quantity, Disponible: $availableQuantity',
+                    'sales_stock_insufficient'.tr,
+                    'sales_stock_insufficient_detail'.trParams({'requested': quantity.toString(), 'available': availableQuantity.toString()}),
                     snackPosition: SnackPosition.BOTTOM,
                     backgroundColor: Colors.red.withOpacity(0.8),
                     colorText: Colors.white,
@@ -471,13 +574,13 @@ class _ProductItem extends StatelessWidget {
                 await onSelected(product, quantity);
               } else {
                 Get.snackbar(
-                  'Erreur',
-                  'Veuillez saisir une quantité valide',
+                  'error'.tr,
+                  'sales_invalid_quantity'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                 );
               }
             },
-            child: const Text('Ajouter'),
+            child: Text('add'.tr),
           ),
         ],
       ),

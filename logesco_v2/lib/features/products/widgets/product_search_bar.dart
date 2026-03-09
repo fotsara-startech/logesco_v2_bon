@@ -29,7 +29,7 @@ class ProductSearchBar extends StatelessWidget {
             child: TextField(
               onChanged: controller.updateSearchQuery,
               decoration: InputDecoration(
-                hintText: 'Rechercher par nom ou référence...',
+                hintText: 'product_search_placeholder'.tr,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
                     ? IconButton(
@@ -54,7 +54,7 @@ class ProductSearchBar extends StatelessWidget {
           IconButton(
             onPressed: _showSearchOptions,
             icon: const Icon(Icons.tune),
-            tooltip: 'Options de recherche',
+            tooltip: 'product_search_options'.tr,
           ),
         ],
       ),
@@ -76,9 +76,9 @@ class ProductSearchBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Options de recherche',
-              style: TextStyle(
+            Text(
+              'product_search_options'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -88,8 +88,8 @@ class ProductSearchBar extends StatelessWidget {
             // Recherche par référence exacte
             ListTile(
               leading: const Icon(Icons.tag),
-              title: const Text('Recherche par référence exacte'),
-              subtitle: const Text('Rechercher une référence précise'),
+              title: Text('product_search_by_reference'.tr),
+              subtitle: Text('product_search_by_reference_subtitle'.tr),
               onTap: () {
                 Get.back();
                 _showReferenceSearch();
@@ -99,8 +99,8 @@ class ProductSearchBar extends StatelessWidget {
             // Recherche par code-barre
             ListTile(
               leading: const Icon(Icons.qr_code_scanner),
-              title: const Text('Recherche par code-barre'),
-              subtitle: const Text('Scanner ou saisir un code-barre'),
+              title: Text('product_search_by_barcode'.tr),
+              subtitle: Text('product_search_by_barcode_subtitle'.tr),
               onTap: () {
                 Get.back();
                 _showBarcodeSearch();
@@ -110,8 +110,8 @@ class ProductSearchBar extends StatelessWidget {
             // Recherche par catégorie
             ListTile(
               leading: const Icon(Icons.category),
-              title: const Text('Filtrer par catégorie'),
-              subtitle: const Text('Afficher seulement une catégorie'),
+              title: Text('product_search_by_category'.tr),
+              subtitle: Text('product_search_by_category_subtitle'.tr),
               onTap: () {
                 Get.back();
                 _showCategoryFilter();
@@ -121,8 +121,8 @@ class ProductSearchBar extends StatelessWidget {
             // Recherche par prix
             ListTile(
               leading: const Icon(Icons.attach_money),
-              title: const Text('Filtrer par prix'),
-              subtitle: const Text('Définir une fourchette de prix'),
+              title: Text('product_search_by_price'.tr),
+              subtitle: Text('product_search_by_price_subtitle'.tr),
               onTap: () {
                 Get.back();
                 _showPriceFilter();
@@ -141,7 +141,7 @@ class ProductSearchBar extends StatelessWidget {
                         Get.back();
                       },
                       icon: const Icon(Icons.clear_all),
-                      label: const Text('Effacer tous les filtres'),
+                      label: Text('product_search_clear_all'.tr),
                     ),
                   )
                 : const SizedBox.shrink()),
@@ -158,13 +158,13 @@ class ProductSearchBar extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Recherche par référence'),
+        title: Text('product_search_reference_title'.tr),
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Référence exacte',
-            hintText: 'Ex: REF001',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'product_search_reference_label'.tr,
+            hintText: 'product_search_reference_hint'.tr,
+            border: const OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.characters,
           autofocus: true,
@@ -172,14 +172,14 @@ class ProductSearchBar extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('product_search_reference_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               controller.updateSearchQuery(textController.text.trim());
               Get.back();
             },
-            child: const Text('Rechercher'),
+            child: Text('product_search_reference_button'.tr),
           ),
         ],
       ),
@@ -192,7 +192,7 @@ class ProductSearchBar extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Filtrer par catégorie'),
+        title: Text('product_search_category_title'.tr),
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         content: SizedBox(
           width: double.maxFinite,
@@ -201,7 +201,7 @@ class ProductSearchBar extends StatelessWidget {
                 children: [
                   // Option "Toutes les catégories"
                   ListTile(
-                    title: const Text('Toutes les catégories'),
+                    title: Text('product_search_category_all'.tr),
                     leading: Radio<String>(
                       value: '',
                       groupValue: controller.selectedCategory.value,
@@ -213,11 +213,11 @@ class ProductSearchBar extends StatelessWidget {
                   // Liste scrollable des catégories
                   Flexible(
                     child: controller.categories.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(24.0),
+                        ? Padding(
+                            padding: const EdgeInsets.all(24.0),
                             child: Text(
-                              'Aucune catégorie disponible',
-                              style: TextStyle(color: Colors.grey),
+                              'product_search_category_empty'.tr,
+                              style: const TextStyle(color: Colors.grey),
                               textAlign: TextAlign.center,
                             ),
                           )
@@ -243,7 +243,7 @@ class ProductSearchBar extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('product_search_category_close'.tr),
           ),
         ],
       ),
@@ -257,14 +257,14 @@ class ProductSearchBar extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Recherche par code-barre'),
+        title: Text('product_search_barcode_title'.tr),
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Code-barre',
-            hintText: 'Scanner ou saisir le code-barre',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.qr_code_scanner),
+          decoration: InputDecoration(
+            labelText: 'product_search_barcode_label'.tr,
+            hintText: 'product_search_barcode_hint'.tr,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.qr_code_scanner),
           ),
           keyboardType: TextInputType.number,
           autofocus: true,
@@ -272,7 +272,7 @@ class ProductSearchBar extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('product_search_reference_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -282,7 +282,7 @@ class ProductSearchBar extends StatelessWidget {
                 await _searchByBarcode(barcode);
               }
             },
-            child: const Text('Rechercher'),
+            child: Text('product_search_reference_button'.tr),
           ),
         ],
       ),
@@ -301,8 +301,8 @@ class ProductSearchBar extends StatelessWidget {
         // Produit trouvé, l'afficher dans la liste
         controller.setSearchResults([product]);
         Get.snackbar(
-          'Produit trouvé',
-          'Produit "${product.nom}" trouvé avec le code-barre $barcode',
+          'product_search_barcode_found'.tr,
+          'product_search_barcode_found_message'.tr.replaceAll('@name', product.nom).replaceAll('@barcode', barcode),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green.shade100,
           colorText: Colors.green.shade800,
@@ -311,8 +311,8 @@ class ProductSearchBar extends StatelessWidget {
         // Aucun produit trouvé
         controller.setSearchResults([]);
         Get.snackbar(
-          'Aucun résultat',
-          'Aucun produit trouvé avec le code-barre $barcode',
+          'product_search_barcode_not_found'.tr,
+          'product_search_barcode_not_found_message'.tr.replaceAll('@barcode', barcode),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.orange.shade100,
           colorText: Colors.orange.shade800,
@@ -320,8 +320,8 @@ class ProductSearchBar extends StatelessWidget {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la recherche par code-barre: $e',
+        'product_search_barcode_error'.tr,
+        'product_search_barcode_error_message'.tr.replaceAll('@error', e.toString()),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -332,8 +332,8 @@ class ProductSearchBar extends StatelessWidget {
   /// Affiche le filtre par prix
   void _showPriceFilter() {
     Get.snackbar(
-      'Fonctionnalité',
-      'Filtre par prix à implémenter',
+      'product_search_price_feature'.tr,
+      'product_search_price_feature_message'.tr,
       snackPosition: SnackPosition.BOTTOM,
     );
   }

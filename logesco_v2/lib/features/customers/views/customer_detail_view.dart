@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/widgets/permission_widget.dart';
 import '../models/customer.dart';
-import '../../../shared/widgets/debug_banner.dart';
 
 /// Vue de détail d'un client (version simplifiée)
 class CustomerDetailView extends StatelessWidget {
@@ -23,7 +22,7 @@ class CustomerDetailView extends StatelessWidget {
             child: IconButton(
               onPressed: () => Get.toNamed('/customers/${customer.id}/edit', arguments: customer),
               icon: const Icon(Icons.edit),
-              tooltip: 'Modifier',
+              tooltip: 'edit'.tr,
             ),
           ),
         ],
@@ -64,7 +63,7 @@ class CustomerDetailView extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                'Client #${customer.id}',
+                                'customers_client_id'.trParams({'id': customer.id.toString()}),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -84,11 +83,11 @@ class CustomerDetailView extends StatelessWidget {
 
             // Informations de contact
             _buildInfoSection(
-              'Informations de contact',
+              'customers_contact_info'.tr,
               [
-                if (customer.telephone != null) _buildInfoRow(Icons.phone, 'Téléphone', customer.telephone!),
-                if (customer.email != null) _buildInfoRow(Icons.email, 'Email', customer.email!),
-                if (customer.adresse != null) _buildInfoRow(Icons.location_on, 'Adresse', customer.adresse!),
+                if (customer.telephone != null) _buildInfoRow(Icons.phone, 'customers_phone'.tr, customer.telephone!),
+                if (customer.email != null) _buildInfoRow(Icons.email, 'customers_email'.tr, customer.email!),
+                if (customer.adresse != null) _buildInfoRow(Icons.location_on, 'customers_address'.tr, customer.adresse!),
               ],
             ),
 
@@ -105,9 +104,9 @@ class CustomerDetailView extends StatelessWidget {
                       children: [
                         const Icon(Icons.account_balance_wallet, color: Colors.blue),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Compte client',
-                          style: TextStyle(
+                        Text(
+                          'customers_account'.tr,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                           ),
@@ -115,9 +114,9 @@ class CustomerDetailView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Consultez l\'historique des transactions et le solde du compte',
-                      style: TextStyle(color: Colors.grey),
+                    Text(
+                      'customers_account_history'.tr,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -128,7 +127,7 @@ class CustomerDetailView extends StatelessWidget {
                           arguments: customer,
                         ),
                         icon: const Icon(Icons.history),
-                        label: const Text('Voir les transactions et le solde'),
+                        label: Text('customers_view_transactions'.tr),
                       ),
                     ),
                   ],
@@ -140,16 +139,16 @@ class CustomerDetailView extends StatelessWidget {
 
             // Informations système
             _buildInfoSection(
-              'Informations système',
+              'customers_system_info'.tr,
               [
                 _buildInfoRow(
                   Icons.calendar_today,
-                  'Date de création',
+                  'customers_created_date'.tr,
                   _formatDate(customer.dateCreation),
                 ),
                 _buildInfoRow(
                   Icons.update,
-                  'Dernière modification',
+                  'customers_modified_date'.tr,
                   _formatDate(customer.dateModification),
                 ),
               ],
@@ -167,7 +166,7 @@ class CustomerDetailView extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => Get.toNamed('/customers/${customer.id}/edit', arguments: customer),
                       icon: const Icon(Icons.edit),
-                      label: const Text('Modifier'),
+                      label: Text('edit'.tr),
                     ),
                   ),
                 ),

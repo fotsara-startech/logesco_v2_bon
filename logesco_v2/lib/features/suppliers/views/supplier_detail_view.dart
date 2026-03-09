@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../controllers/supplier_detail_controller.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/error_widget.dart';
-import '../../../shared/widgets/debug_banner.dart';
 
 /// Vue de détail d'un fournisseur
 class SupplierDetailView extends StatelessWidget {
@@ -15,7 +14,7 @@ class SupplierDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détails du fournisseur'),
+        title: Text('suppliers_detail'.tr),
         elevation: 0,
         actions: [
           Obx(() => controller.supplier.value != null
@@ -31,19 +30,19 @@ class SupplierDetailView extends StatelessWidget {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Modifier'),
+                        leading: const Icon(Icons.edit),
+                        title: Text('suppliers_edit'.tr),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                        leading: const Icon(Icons.delete, color: Colors.red),
+                        title: Text('suppliers_delete'.tr, style: const TextStyle(color: Colors.red)),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
@@ -54,7 +53,7 @@ class SupplierDetailView extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const LoadingWidget(message: 'Chargement du fournisseur...');
+          return LoadingWidget(message: 'suppliers_loading'.tr);
         }
 
         if (controller.hasError.value) {
@@ -66,8 +65,8 @@ class SupplierDetailView extends StatelessWidget {
 
         final supplier = controller.supplier.value;
         if (supplier == null) {
-          return const Center(
-            child: Text('Fournisseur non trouvé'),
+          return Center(
+            child: Text('suppliers_not_found'.tr),
           );
         }
 
@@ -82,35 +81,80 @@ class SupplierDetailView extends StatelessWidget {
 
               // Informations générales
               _buildInfoCard(
-                title: 'Informations générales',
+                title: 'suppliers_info_general'.tr,
                 icon: Icons.business,
                 children: [
-                  _buildInfoRow('Nom', supplier.nom),
-                  if (supplier.personneContact != null) _buildInfoRow('Contact', supplier.personneContact!),
+                  _buildInfoRow('suppliers_name'.tr, supplier.nom),
+                  if (supplier.personneContact != null) _buildInfoRow('suppliers_contact'.tr, supplier.personneContact!),
                 ],
               ),
               const SizedBox(height: 16),
 
               // Coordonnées
               _buildInfoCard(
-                title: 'Coordonnées',
+                title: 'suppliers_contact_info'.tr,
                 icon: Icons.contact_phone,
                 children: [
-                  if (supplier.telephone != null) _buildInfoRow('Téléphone', supplier.telephone!, actionIcon: Icons.call, onActionTap: () => controller.callSupplier(supplier.telephone!)),
-                  if (supplier.email != null) _buildInfoRow('Email', supplier.email!, actionIcon: Icons.email, onActionTap: () => controller.emailSupplier(supplier.email!)),
-                  if (supplier.adresse != null) _buildInfoRow('Adresse', supplier.adresse!, actionIcon: Icons.map, onActionTap: () => controller.showAddressOnMap(supplier.adresse!)),
+                  if (supplier.telephone != null) _buildInfoRow('suppliers_phone'.tr, supplier.telephone!, actionIcon: Icons.call, onActionTap: () => controller.callSupplier(supplier.telephone!)),
+                  if (supplier.email != null) _buildInfoRow('suppliers_email'.tr, supplier.email!, actionIcon: Icons.email, onActionTap: () => controller.emailSupplier(supplier.email!)),
+                  if (supplier.adresse != null) _buildInfoRow('suppliers_address'.tr, supplier.adresse!, actionIcon: Icons.map, onActionTap: () => controller.showAddressOnMap(supplier.adresse!)),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Section Compte et Transactions
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
+                          const SizedBox(width: 8),
+                          Text(
+                            'suppliers_account'.tr,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'suppliers_account_description'.tr,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => Get.toNamed(
+                            '/suppliers/${supplier.id}/account',
+                            arguments: supplier,
+                          ),
+                          icon: const Icon(Icons.history),
+                          label: Text('suppliers_view_account'.tr),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
 
               // Informations système
               _buildInfoCard(
-                title: 'Informations système',
+                title: 'suppliers_system_info'.tr,
                 icon: Icons.info_outline,
                 children: [
-                  _buildInfoRow('ID', '#${supplier.id}'),
-                  _buildInfoRow('Créé le', _formatDate(supplier.dateCreation)),
-                  _buildInfoRow('Modifié le', _formatDate(supplier.dateModification)),
+                  _buildInfoRow('suppliers_id'.tr, '#${supplier.id}'),
+                  _buildInfoRow('suppliers_created_at'.tr, _formatDate(supplier.dateCreation)),
+                  _buildInfoRow('suppliers_updated_at'.tr, _formatDate(supplier.dateModification)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -239,9 +283,9 @@ class SupplierDetailView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Actions rapides',
-          style: TextStyle(
+        Text(
+          'suppliers_quick_actions'.tr,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -253,7 +297,7 @@ class SupplierDetailView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: controller.editSupplier,
                 icon: const Icon(Icons.edit),
-                label: const Text('Modifier'),
+                label: Text('suppliers_edit'.tr),
               ),
             ),
             const SizedBox(width: 12),
@@ -261,7 +305,7 @@ class SupplierDetailView extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: controller.viewOrders,
                 icon: const Icon(Icons.shopping_cart),
-                label: const Text('Commandes'),
+                label: Text('suppliers_orders'.tr),
               ),
             ),
           ],

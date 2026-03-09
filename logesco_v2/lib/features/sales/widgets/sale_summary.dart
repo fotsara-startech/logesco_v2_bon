@@ -38,9 +38,9 @@ class SaleSummary extends StatelessWidget {
               ),
               value: salesController.selectedCustomer,
               items: [
-                const DropdownMenuItem<Customer?>(
+                DropdownMenuItem<Customer?>(
                   value: null,
-                  child: Text('Vente sans client'),
+                  child: Text('sales_sale_without_customer'.tr),
                 ),
                 ...customersController.customers.map(
                   (customer) => DropdownMenuItem<Customer?>(
@@ -61,9 +61,9 @@ class SaleSummary extends StatelessWidget {
                 border: OutlineInputBorder(),
               ),
               value: salesController.paymentMode,
-              items: const [
-                DropdownMenuItem(value: 'comptant', child: Text('Comptant')),
-                DropdownMenuItem(value: 'credit', child: Text('Crédit')),
+              items: [
+                DropdownMenuItem(value: 'comptant', child: Text('sales_payment_cash_mode'.tr)),
+                DropdownMenuItem(value: 'credit', child: Text('sales_payment_credit_mode'.tr)),
               ],
               onChanged: (value) {
                 if (value != null) {

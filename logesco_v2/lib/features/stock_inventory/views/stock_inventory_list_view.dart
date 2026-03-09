@@ -15,7 +15,7 @@ class StockInventoryListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventaire de Stock'),
+        title: Text('inventory_title'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -40,7 +40,7 @@ class StockInventoryListView extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateInventoryDialog(controller),
         icon: const Icon(Icons.add),
-        label: const Text('Nouvel Inventaire'),
+        label: Text('inventory_new'.tr),
       ),
     );
   }
@@ -53,7 +53,7 @@ class StockInventoryListView extends StatelessWidget {
           TextField(
             onChanged: (value) => controller.updateSearchQuery(value),
             decoration: InputDecoration(
-              hintText: 'Rechercher un inventaire...',
+              hintText: 'inventory_search'.tr,
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -67,9 +67,9 @@ class StockInventoryListView extends StatelessWidget {
             children: [
               Expanded(
                 child: DropdownButtonFormField<InventoryStatus>(
-                  decoration: const InputDecoration(
-                    labelText: 'Statut',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'inventory_status'.tr,
+                    border: const OutlineInputBorder(),
                   ),
                   items: InventoryStatus.values.map((status) {
                     return DropdownMenuItem(
@@ -85,9 +85,9 @@ class StockInventoryListView extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<InventoryType>(
-                  decoration: const InputDecoration(
-                    labelText: 'Type',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'inventory_type'.tr,
+                    border: const OutlineInputBorder(),
                   ),
                   items: InventoryType.values.map((type) {
                     return DropdownMenuItem(
@@ -127,7 +127,7 @@ class StockInventoryListView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Aucun inventaire trouvé',
+                'inventory_no_inventory'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.grey.shade600,
@@ -135,7 +135,7 @@ class StockInventoryListView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Créez votre premier inventaire pour commencer',
+                'inventory_create_first'.tr,
                 style: TextStyle(
                   color: Colors.grey.shade500,
                 ),
@@ -224,7 +224,7 @@ class StockInventoryListView extends StatelessWidget {
                   ),
                 const Spacer(),
                 Text(
-                  'Par ${inventory.nomUtilisateur ?? 'Utilisateur'}',
+                  'inventory_by_user'.trParams({'user': inventory.nomUtilisateur}),
                   style: TextStyle(
                     color: Colors.grey.shade600,
                     fontSize: 12,
@@ -243,7 +243,7 @@ class StockInventoryListView extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _viewInventoryDetails(inventory, controller),
                     icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('Voir'),
+                    label: Text('inventory_view'.tr),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -252,7 +252,7 @@ class StockInventoryListView extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _continueInventory(inventory, controller),
                       icon: const Icon(Icons.edit, size: 16),
-                      label: const Text('Continuer'),
+                      label: Text('inventory_continue'.tr),
                     ),
                   ),
                 if (inventory.status == InventoryStatus.TERMINE)
@@ -260,7 +260,7 @@ class StockInventoryListView extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _printInventory(inventory, controller),
                       icon: const Icon(Icons.print, size: 16),
-                      label: const Text('Imprimer'),
+                      label: Text('inventory_print'.tr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -314,7 +314,7 @@ class StockInventoryListView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Progression: ${stats.countedItems}/${stats.totalItems} articles',
+              'inventory_progress'.trParams({'counted': stats.countedItems.toString(), 'total': stats.totalItems.toString()}),
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             Text(
@@ -338,7 +338,7 @@ class StockInventoryListView extends StatelessWidget {
               Icon(Icons.warning, size: 16, color: Colors.orange.shade600),
               const SizedBox(width: 4),
               Text(
-                '${stats.itemsWithVariance} écart(s) détecté(s)',
+                'inventory_variances'.trParams({'count': stats.itemsWithVariance.toString()}),
                 style: TextStyle(
                   color: Colors.orange.shade600,
                   fontSize: 12,
@@ -367,26 +367,26 @@ class StockInventoryListView extends StatelessWidget {
   void _showCreateInventoryDialog(StockInventoryController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Nouvel Inventaire'),
-        content: const Text('Choisissez le type d\'inventaire à créer:'),
+        title: Text('inventory_form_title'.tr),
+        content: Text('inventory_choose_type'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           OutlinedButton(
             onPressed: () {
               Get.back();
               _createInventory(InventoryType.PARTIEL, controller);
             },
-            child: const Text('Inventaire Partiel'),
+            child: Text('inventory_partial'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               _createInventory(InventoryType.TOTAL, controller);
             },
-            child: const Text('Inventaire Total'),
+            child: Text('inventory_total'.tr),
           ),
         ],
       ),

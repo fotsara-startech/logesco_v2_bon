@@ -17,9 +17,9 @@ class InventoriesSortBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            const Text(
-              'Trier par:',
-              style: TextStyle(
+            Text(
+              'inventory_sort_by'.tr,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -29,26 +29,26 @@ class InventoriesSortBar extends StatelessWidget {
               context: context,
               controller: controller,
               sortField: 'nom',
-              label: 'Nom',
+              label: 'inventory_sort_name'.tr,
             ),
             const SizedBox(width: 8),
             _buildSortButton(
               context: context,
               controller: controller,
               sortField: 'date',
-              label: 'Date',
+              label: 'inventory_sort_date'.tr,
             ),
             const SizedBox(width: 8),
             _buildSortButton(
               context: context,
               controller: controller,
               sortField: 'statut',
-              label: 'Statut',
+              label: 'inventory_sort_status'.tr,
             ),
             const SizedBox(width: 12),
             // Bouton pour basculer l'ordre
             Obx(() => Tooltip(
-                  message: controller.sortAscending.value ? 'Ordre croissant' : 'Ordre décroissant',
+                  message: controller.sortAscending.value ? 'inventory_sort_ascending'.tr : 'inventory_sort_descending'.tr,
                   child: GestureDetector(
                     onTap: controller.toggleInventoriesSort,
                     child: Icon(

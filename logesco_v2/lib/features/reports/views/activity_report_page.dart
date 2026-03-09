@@ -19,7 +19,7 @@ class ActivityReportPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bilan Comptable d\'Activités'),
+        title: Text('reports_activity_title'.tr),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -28,33 +28,33 @@ class ActivityReportPage extends StatelessWidget {
               ? PopupMenuButton<String>(
                   onSelected: (value) => _handleMenuAction(value, controller),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'refresh',
                       child: Row(
                         children: [
-                          Icon(Icons.refresh),
-                          SizedBox(width: 8),
-                          Text('Actualiser'),
+                          const Icon(Icons.refresh),
+                          const SizedBox(width: 8),
+                          Text('reports_refresh'.tr),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'export_pdf',
                       child: Row(
                         children: [
-                          Icon(Icons.picture_as_pdf),
-                          SizedBox(width: 8),
-                          Text('Exporter PDF'),
+                          const Icon(Icons.picture_as_pdf),
+                          const SizedBox(width: 8),
+                          Text('reports_export_pdf'.tr),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'reset',
                       child: Row(
                         children: [
-                          Icon(Icons.clear),
-                          SizedBox(width: 8),
-                          Text('Nouveau bilan'),
+                          const Icon(Icons.clear),
+                          const SizedBox(width: 8),
+                          Text('reports_new_report'.tr),
                         ],
                       ),
                     ),
@@ -70,18 +70,18 @@ class ActivityReportPage extends StatelessWidget {
             color: Colors.blue.shade700,
             child: const PeriodSelectorWidget(),
           ),
-          
+
           // Contenu principal
           Expanded(
             child: Obx(() {
               if (controller.isLoading) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Génération du bilan en cours...'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text('reports_generating'.tr),
                     ],
                   ),
                 );
@@ -109,7 +109,7 @@ class ActivityReportPage extends StatelessWidget {
                       ),
                     )
                   : const Icon(Icons.picture_as_pdf),
-              label: Text(controller.isGeneratingPdf ? 'Export...' : 'Export PDF'),
+              label: Text(controller.isGeneratingPdf ? 'reports_export_progress'.tr : 'reports_export_pdf_button'.tr),
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
             )
@@ -132,7 +132,7 @@ class ActivityReportPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Aucun bilan généré',
+              'reports_no_report'.tr,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ class ActivityReportPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Sélectionnez une période et générez votre bilan comptable d\'activités pour obtenir une vue d\'ensemble de vos performances.',
+              'reports_no_report_subtitle'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -152,7 +152,7 @@ class ActivityReportPage extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: controller.generateReport,
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Générer le bilan'),
+              label: Text('reports_generate'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade700,
                 foregroundColor: Colors.white,
@@ -162,12 +162,12 @@ class ActivityReportPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Obx(() => Text(
-              'Période sélectionnée: ${controller.periodLabel}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
-            )),
+                  'reports_period_selected'.tr.replaceAll('@period', controller.periodLabel),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                )),
           ],
         ),
       ),
@@ -205,7 +205,7 @@ class ActivityReportPage extends StatelessWidget {
 
           // Recommandations
           RecommendationsWidget(recommendations: report.summary.recommendations),
-          
+
           // Espace pour le FAB
           const SizedBox(height: 80),
         ],
@@ -232,12 +232,12 @@ class ActivityReportPage extends StatelessWidget {
   void _showResetConfirmation(ActivityReportController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Nouveau bilan'),
-        content: const Text('Voulez-vous créer un nouveau bilan ? Le bilan actuel sera perdu.'),
+        title: Text('reports_new_report_confirm_title'.tr),
+        content: Text('reports_new_report_confirm_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('reports_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -248,7 +248,7 @@ class ActivityReportPage extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Confirmer'),
+            child: Text('reports_confirm'.tr),
           ),
         ],
       ),

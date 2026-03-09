@@ -73,6 +73,9 @@ class CompanySettingsService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
+          slogan: companyData['slogan'],
+          receiptLanguage: companyData['langueFacture'] ?? 'fr',
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -84,6 +87,8 @@ class CompanySettingsService {
         print('✅ Téléphone: ${profile.phone ?? 'Non défini'}');
         print('✅ Email: ${profile.email ?? 'Non défini'}');
         print('✅ NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
+        print('✅ Logo: ${profile.logo ?? 'Non défini'}');
+        print('✅ Slogan: ${profile.slogan ?? 'Non défini'}');
         print('✅ ================================================');
 
         // Mettre en cache le profil
@@ -143,6 +148,9 @@ class CompanySettingsService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
+          slogan: companyData['slogan'],
+          receiptLanguage: companyData['langueFacture'] ?? 'fr',
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -188,6 +196,8 @@ class CompanySettingsService {
       phone: '+237 682471185 / +237 6 58 96 2546',
       email: 'contact@monentreprise.com',
       nuiRccm: 'NUI/RCCM',
+      logo: null,
+      slogan: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -211,6 +221,8 @@ class CompanySettingsService {
       phone: request.phone,
       email: request.email,
       nuiRccm: request.nuiRccm,
+      logo: request.logo,
+      slogan: request.slogan,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -240,6 +252,8 @@ class CompanySettingsService {
         phone: request.phone,
         email: request.email,
         nuiRccm: request.nuiRccm,
+        logo: request.logo,
+        slogan: request.slogan,
       );
 
       final validationErrors = tempProfile.validate();
@@ -291,6 +305,9 @@ class CompanySettingsService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
+          slogan: companyData['slogan'],
+          receiptLanguage: companyData['langueFacture'] ?? 'fr',
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -330,6 +347,8 @@ class CompanySettingsService {
         phone: request.phone,
         email: request.email,
         nuiRccm: request.nuiRccm,
+        logo: request.logo,
+        slogan: request.slogan,
       );
 
       final validationErrors = tempProfile.validate();
@@ -380,6 +399,9 @@ class CompanySettingsService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
+          slogan: companyData['slogan'],
+          receiptLanguage: companyData['langueFacture'] ?? 'fr',
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -469,6 +491,9 @@ class CompanySettingsService {
             phone: jsonData['telephone'],
             email: jsonData['email'],
             nuiRccm: jsonData['nuiRccm'],
+            logo: jsonData['logo'],
+            slogan: jsonData['slogan'],
+            receiptLanguage: jsonData['langueFacture'] ?? 'fr',
             createdAt: jsonData['dateCreation'] != null ? DateTime.parse(jsonData['dateCreation']) : DateTime.now(),
             updatedAt: jsonData['dateModification'] != null ? DateTime.parse(jsonData['dateModification']) : DateTime.now(),
           );

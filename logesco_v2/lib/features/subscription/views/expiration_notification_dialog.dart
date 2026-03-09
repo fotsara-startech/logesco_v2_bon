@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/subscription_status.dart';
 import '../models/license_data.dart';
 import 'license_activation_page.dart';
@@ -78,7 +79,7 @@ class ExpirationNotificationDialog extends StatelessWidget {
               children: [
                 _buildDetailRow('Type', _getSubscriptionTypeLabel()),
                 const SizedBox(height: 8),
-                if (status.expirationDate != null) _buildDetailRow('Expire le', _formatDate(status.expirationDate!)),
+                if (status.expirationDate != null) _buildDetailRow('subscription_expires_on'.tr, _formatDate(status.expirationDate!)),
                 const SizedBox(height: 8),
                 _buildDetailRow(
                   'Jours restants',
@@ -106,7 +107,7 @@ class ExpirationNotificationDialog extends StatelessWidget {
         if (!isUrgent)
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Plus tard'),
+            child: Text('subscription_later'.tr),
           ),
 
         // Bouton "Activer une licence"
@@ -123,7 +124,7 @@ class ExpirationNotificationDialog extends StatelessWidget {
             backgroundColor: isExpiringSoon ? Colors.red : Colors.orange,
             foregroundColor: Colors.white,
           ),
-          child: const Text('Activer une licence'),
+          child: Text('subscription_activate_license'.tr),
         ),
       ],
     );
@@ -152,11 +153,12 @@ class ExpirationNotificationDialog extends StatelessWidget {
     final remainingDays = status.remainingDays ?? 0;
 
     if (remainingDays == 0) {
-      return status.type == SubscriptionType.trial ? 'Votre période d\'essai expire aujourd\'hui.' : 'Votre abonnement expire aujourd\'hui.';
+      return status.type == SubscriptionType.trial ? 'subscription_trial_expires_today'.tr : 'subscription_expires_today'.tr;
     } else if (remainingDays == 1) {
-      return status.type == SubscriptionType.trial ? 'Votre période d\'essai expire demain.' : 'Votre abonnement expire demain.';
+      return status.type == SubscriptionType.trial ? 'subscription_trial_expires_tomorrow'.tr : 'subscription_expires_tomorrow'.tr;
     } else {
-      return status.type == SubscriptionType.trial ? 'Votre période d\'essai expire dans $remainingDays jours.' : 'Votre abonnement expire dans $remainingDays jours.';
+      final key = status.type == SubscriptionType.trial ? 'subscription_trial_expires_in_days' : 'subscription_expires_in_days';
+      return key.trParams({'days': remainingDays.toString()});
     }
   }
 
@@ -164,22 +166,22 @@ class ExpirationNotificationDialog extends StatelessWidget {
     final remainingDays = status.remainingDays ?? 0;
 
     if (remainingDays <= 1) {
-      return 'Activez une nouvelle licence maintenant pour éviter l\'interruption du service.';
+      return 'subscription_activate_now'.tr;
     } else {
-      return 'Nous vous recommandons de renouveler votre abonnement pour continuer à profiter de toutes les fonctionnalités.';
+      return 'subscription_renew_recommended'.tr;
     }
   }
 
   String _getSubscriptionTypeLabel() {
     switch (status.type) {
       case SubscriptionType.trial:
-        return 'Période d\'essai';
+        return 'subscription_type_trial'.tr;
       case SubscriptionType.monthly:
-        return 'Mensuel';
+        return 'subscription_type_monthly'.tr;
       case SubscriptionType.annual:
-        return 'Annuel';
+        return 'subscription_type_annual'.tr;
       case SubscriptionType.lifetime:
-        return 'Vie entière';
+        return 'subscription_type_lifetime'.tr;
     }
   }
 

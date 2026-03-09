@@ -13,7 +13,7 @@ class RoleFormPage extends GetView<RoleController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(role == null ? 'Nouveau rôle' : 'Modifier le rôle'),
+        title: Text(role == null ? 'roles_add'.tr : 'roles_edit'.tr),
         elevation: 0,
       ),
       body: const RoleFormView(),
@@ -102,7 +102,7 @@ class _RoleFormViewState extends State<RoleFormView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations de base',
+              'roles_basic_info'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -110,18 +110,18 @@ class _RoleFormViewState extends State<RoleFormView> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _nomController,
-              decoration: const InputDecoration(
-                labelText: 'Nom du rôle *',
-                hintText: 'Ex: MANAGER, EMPLOYEE',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.badge),
+              decoration: InputDecoration(
+                labelText: 'roles_name'.tr + ' *',
+                hintText: 'roles_name_hint'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.badge),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Le nom du rôle est obligatoire';
+                  return 'roles_name_required'.tr;
                 }
                 if (value.trim().length < 2) {
-                  return 'Le nom doit contenir au moins 2 caractères';
+                  return 'roles_name_min_length'.tr;
                 }
                 return null;
               },
@@ -130,15 +130,15 @@ class _RoleFormViewState extends State<RoleFormView> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _displayNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom d\'affichage *',
-                hintText: 'Ex: Gestionnaire, Employé',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.label),
+              decoration: InputDecoration(
+                labelText: 'roles_display_name'.tr + ' *',
+                hintText: 'roles_display_name_hint'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.label),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Le nom d\'affichage est obligatoire';
+                  return 'roles_display_name_required'.tr;
                 }
                 return null;
               },
@@ -157,15 +157,15 @@ class _RoleFormViewState extends State<RoleFormView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Type de rôle',
+              'roles_type_section'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 8),
             SwitchListTile(
-              title: const Text('Administrateur'),
-              subtitle: const Text('Accès complet à toutes les fonctionnalités'),
+              title: Text('roles_is_admin'.tr),
+              subtitle: Text('roles_admin_description'.tr),
               value: _isAdmin,
               onChanged: (value) {
                 setState(() {
@@ -202,7 +202,7 @@ class _RoleFormViewState extends State<RoleFormView> {
             Row(
               children: [
                 Text(
-                  'Privilèges par module',
+                  'roles_privileges_section'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -211,13 +211,13 @@ class _RoleFormViewState extends State<RoleFormView> {
                 TextButton.icon(
                   onPressed: _selectAllPrivileges,
                   icon: const Icon(Icons.select_all, size: 16),
-                  label: const Text('Tout sélectionner'),
+                  label: Text('roles_select_all'.tr),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: _clearAllPrivileges,
                   icon: const Icon(Icons.clear_all, size: 16),
-                  label: const Text('Tout désélectionner'),
+                  label: Text('roles_deselect_all'.tr),
                 ),
               ],
             ),
@@ -237,7 +237,7 @@ class _RoleFormViewState extends State<RoleFormView> {
 
     return ExpansionTile(
       title: Text(moduleDisplayName),
-      subtitle: Text('${selectedForModule.length}/${availablePrivileges.length} privilèges'),
+      subtitle: Text('roles_privileges_summary'.trParams({'selected': selectedForModule.length.toString(), 'total': availablePrivileges.length.toString()})),
       leading: Icon(
         _getModuleIcon(module),
         color: selectedForModule.isNotEmpty ? Colors.green : Colors.grey,
@@ -253,12 +253,12 @@ class _RoleFormViewState extends State<RoleFormView> {
                   TextButton.icon(
                     onPressed: () => _selectAllModulePrivileges(module),
                     icon: const Icon(Icons.check_box, size: 16),
-                    label: const Text('Tout'),
+                    label: Text('roles_select_all_module'.tr),
                   ),
                   TextButton.icon(
                     onPressed: () => _clearModulePrivileges(module),
                     icon: const Icon(Icons.check_box_outline_blank, size: 16),
-                    label: const Text('Aucun'),
+                    label: Text('roles_deselect_all_module'.tr),
                   ),
                 ],
               ),
@@ -317,7 +317,7 @@ class _RoleFormViewState extends State<RoleFormView> {
           Expanded(
             child: OutlinedButton(
               onPressed: () => Get.back(),
-              child: const Text('Annuler'),
+              child: Text('common_cancel'.tr),
             ),
           ),
           const SizedBox(width: 16),
@@ -333,7 +333,7 @@ class _RoleFormViewState extends State<RoleFormView> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(controller.selectedRole.value == null ? 'Créer' : 'Modifier'),
+                    : Text(controller.selectedRole.value == null ? 'users_create'.tr : 'users_update'.tr),
               );
             }),
           ),
@@ -425,8 +425,8 @@ class _RoleFormViewState extends State<RoleFormView> {
 
     if (!isNameAvailable) {
       Get.snackbar(
-        'Erreur',
-        'Un rôle avec ce nom existe déjà',
+        'common_error'.tr,
+        'roles_name_exists'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red[100],
         colorText: Colors.red[800],
@@ -452,16 +452,16 @@ class _RoleFormViewState extends State<RoleFormView> {
     if (success) {
       Get.back();
       Get.snackbar(
-        'Succès',
-        existingRole == null ? 'Rôle créé avec succès' : 'Rôle modifié avec succès',
+        'common_success'.tr,
+        existingRole == null ? 'roles_created_success'.tr : 'roles_updated_success'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green[100],
         colorText: Colors.green[800],
       );
     } else {
       Get.snackbar(
-        'Erreur',
-        controller.error.value.isNotEmpty ? controller.error.value : 'Une erreur est survenue',
+        'common_error'.tr,
+        controller.error.value.isNotEmpty ? controller.error.value : 'roles_error_occurred'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red[100],
         colorText: Colors.red[800],

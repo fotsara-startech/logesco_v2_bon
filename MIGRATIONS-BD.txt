@@ -1,0 +1,254 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║           MIGRATIONS BASE DE DONNEES - MANUEL                  ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+
+PRINCIPE:
+=========
+
+La migration du CODE (Backend + Frontend) se fait automatiquement
+avec le script MIGRATION-SIMPLE.bat.
+
+Les modifications de STRUCTURE de la base de données se font
+MANUELLEMENT avec des scripts SQL.
+
+
+POURQUOI MANUEL?
+================
+
+✅ SECURITE: Vos données ne sont JAMAIS touchées automatiquement
+✅ CONTROLE: Vous savez exactement ce qui est modifié
+✅ SIMPLICITE: Pas de scripts complexes qui peuvent échouer
+✅ FIABILITE: Si erreur, vous pouvez restaurer facilement
+
+
+QUAND FAIRE UNE MIGRATION BD?
+==============================
+
+Seulement si la nouvelle version nécessite:
+- Nouvelles tables
+- Nouvelles colonnes
+- Nouveaux index
+- Modifications de structure
+
+Si aucune modification de structure: RIEN A FAIRE!
+
+
+SCRIPTS SQL DISPONIBLES:
+=========================
+
+Les scripts SQL sont dans:
+backend\prisma\migrations\
+
+Scripts disponibles:
+--------------------
+
+📄 add_cash_sessions.sql
+   → Ajoute la table des sessions de caisse
+   → Nécessaire si vous utilisez les sessions de caisse
+
+📄 add_logo_slogan_to_company_settings.sql
+   → Ajoute les champs logo et slogan
+   → Nécessaire si vous voulez personnaliser les factures
+
+📄 add_session_id_to_ventes_and_movements.sql
+   → Ajoute session_id aux ventes et mouvements
+   → Nécessaire pour lier les ventes aux sessions
+
+
+COMMENT APPLIQUER UNE MIGRATION SQL?
+=====================================
+
+METHODE 1: Avec sqlite3 (ligne de commande)
+--------------------------------------------
+
+1. Ouvrez un terminal dans le dossier backend
+
+2. Exécutez:
+   sqlite3 database\logesco.db < prisma\migrations\add_cash_sessions.sql
+
+3. Vérifiez qu'il n'y a pas d'erreur
+
+
+METHODE 2: Avec un outil graphique (DB Browser for SQLite)
+-----------------------------------------------------------
+
+1. Téléchargez DB Browser for SQLite:
+   https://sqlitebrowser.org/
+
+2. Ouvrez: backend\database\logesco.db
+
+3. Allez dans: Execute SQL
+
+4. Copiez le contenu du fichier .sql
+
+5. Cliquez sur: Execute
+
+6. Sauvegardez
+
+
+METHODE 3: Avec un outil en ligne
+----------------------------------
+
+1. Allez sur: https://sqliteonline.com/
+
+2. Cliquez sur: File → Open DB
+
+3. Sélectionnez: backend\database\logesco.db
+
+4. Copiez le contenu du fichier .sql
+
+5. Cliquez sur: Run
+
+6. Téléchargez la base modifiée
+
+7. Remplacez: backend\database\logesco.db
+
+
+EXEMPLE COMPLET:
+================
+
+Vous venez de migrer vers une version qui supporte les sessions de caisse.
+
+ETAPE 1: Migration du code
+---------------------------
+✅ Déjà fait avec MIGRATION-SIMPLE.bat
+
+ETAPE 2: Vérifier si migration BD nécessaire
+---------------------------------------------
+Consultez les notes de version ou README.
+
+Si la version nécessite les sessions de caisse:
+→ Migration BD nécessaire
+
+ETAPE 3: Sauvegarder la base
+-----------------------------
+copy backend\database\logesco.db backend\database\logesco_backup.db
+
+ETAPE 4: Appliquer la migration SQL
+------------------------------------
+sqlite3 backend\database\logesco.db < backend\prisma\migrations\add_cash_sessions.sql
+
+ETAPE 5: Vérifier
+-----------------
+Démarrez l'application et testez.
+
+Si problème:
+copy backend\database\logesco_backup.db backend\database\logesco.db
+
+
+CREER VOS PROPRES MIGRATIONS:
+==============================
+
+Si vous modifiez le schema Prisma, créez un fichier SQL:
+
+1. Créez: backend\prisma\migrations\ma_migration.sql
+
+2. Écrivez les commandes SQL:
+
+   -- Ma migration personnalisée
+   ALTER TABLE produits ADD COLUMN nouveau_champ TEXT;
+   CREATE INDEX idx_nouveau_champ ON produits(nouveau_champ);
+
+3. Testez sur une copie de la base
+
+4. Appliquez sur la base de production
+
+
+VERIFIER LES MIGRATIONS APPLIQUEES:
+====================================
+
+Pour savoir quelles migrations ont été appliquées:
+
+1. Ouvrez la base avec sqlite3 ou DB Browser
+
+2. Exécutez:
+   SELECT name FROM sqlite_master WHERE type='table';
+
+3. Vérifiez que les nouvelles tables existent
+
+
+ROLLBACK (ANNULER UNE MIGRATION):
+==================================
+
+Si une migration pose problème:
+
+1. Restaurez la sauvegarde:
+   copy sauvegarde_XXXXXX\logesco.db backend\database\logesco.db
+
+2. Ou créez un script SQL inverse:
+   DROP TABLE cash_sessions;
+   ALTER TABLE ventes DROP COLUMN session_id;
+
+
+BONNES PRATIQUES:
+=================
+
+✅ TOUJOURS sauvegarder avant une migration BD
+✅ Tester sur une copie de la base d'abord
+✅ Lire le script SQL avant de l'appliquer
+✅ Vérifier qu'il n'y a pas d'erreur après application
+✅ Tester l'application après migration
+✅ Garder les sauvegardes pendant quelques jours
+
+
+MIGRATIONS COURANTES:
+=====================
+
+Ajouter une colonne:
+--------------------
+ALTER TABLE produits ADD COLUMN description TEXT;
+
+Créer un index:
+---------------
+CREATE INDEX idx_produits_nom ON produits(nom);
+
+Créer une table:
+----------------
+CREATE TABLE IF NOT EXISTS ma_table (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+Modifier une valeur par défaut:
+--------------------------------
+-- SQLite ne supporte pas ALTER COLUMN
+-- Il faut recréer la table
+
+Supprimer une colonne:
+----------------------
+-- SQLite ne supporte pas DROP COLUMN facilement
+-- Il faut recréer la table sans la colonne
+
+
+SUPPORT:
+========
+
+Si vous avez besoin d'aide pour une migration BD:
+
+1. Consultez la documentation Prisma:
+   https://www.prisma.io/docs/
+
+2. Consultez la documentation SQLite:
+   https://www.sqlite.org/docs.html
+
+3. Contactez le support avec:
+   - Le fichier .sql que vous voulez appliquer
+   - Le message d'erreur (si erreur)
+   - Une sauvegarde de votre base
+
+
+RESUME:
+=======
+
+✅ Migration CODE: Automatique (MIGRATION-SIMPLE.bat)
+✅ Migration BD: Manuelle (scripts SQL)
+✅ Sécurité: Vos données ne sont jamais touchées automatiquement
+✅ Contrôle: Vous savez exactement ce qui est modifié
+
+
+VERSION: 1.0
+DATE: 2026-03-07

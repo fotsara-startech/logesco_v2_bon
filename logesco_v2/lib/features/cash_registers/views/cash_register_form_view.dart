@@ -52,7 +52,7 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Modifier Caisse' : 'Nouvelle Caisse'),
+        title: Text(isEditing ? 'cash_register_form_edit'.tr : 'cash_register_form_new'.tr),
         actions: [
           if (isEditing)
             IconButton(
@@ -93,27 +93,27 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
               children: [
                 Icon(Icons.point_of_sale, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations de base',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'cash_register_basic_info'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de la caisse *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.label),
-                hintText: 'Ex: Caisse Principale',
+              decoration: InputDecoration(
+                labelText: '${'cash_register_name'.tr} *',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.label),
+                hintText: 'cash_register_name_hint'.tr,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Le nom de la caisse est requis';
+                  return 'cash_register_name_required'.tr;
                 }
                 if (value.length < 3) {
-                  return 'Le nom doit contenir au moins 3 caractères';
+                  return 'cash_register_name_min_length'.tr;
                 }
                 return null;
               },
@@ -121,16 +121,16 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-                hintText: 'Description optionnelle de la caisse',
+              decoration: InputDecoration(
+                labelText: 'cash_register_description'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.description),
+                hintText: 'cash_register_description_hint'.tr,
               ),
               maxLines: 3,
               validator: (value) {
                 if (value != null && value.length > 255) {
-                  return 'La description ne peut pas dépasser 255 caractères';
+                  return 'cash_register_description_max_length'.tr;
                 }
                 return null;
               },
@@ -152,19 +152,19 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
               children: [
                 Icon(Icons.account_balance_wallet, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Configuration financière',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'cash_register_financial_config'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _initialBalanceController,
-              decoration: const InputDecoration(
-                labelText: 'Solde initial *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
+              decoration: InputDecoration(
+                labelText: '${'cash_register_initial_balance'.tr} *',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.attach_money),
                 suffixText: 'FCFA',
                 hintText: '0.00',
               ),
@@ -174,14 +174,14 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
               ],
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Le solde initial est requis';
+                  return 'cash_register_initial_balance_required'.tr;
                 }
                 final amount = double.tryParse(value);
                 if (amount == null) {
-                  return 'Veuillez entrer un montant valide';
+                  return 'cash_register_invalid_amount'.tr;
                 }
                 if (amount < 0) {
-                  return 'Le solde initial ne peut pas être négatif';
+                  return 'cash_register_negative_balance'.tr;
                 }
                 return null;
               },
@@ -190,7 +190,7 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
             if (isEditing) ...[
               const SizedBox(height: 8),
               Text(
-                'Le solde initial ne peut pas être modifié après la création',
+                'cash_register_initial_balance_locked'.tr,
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 12,
@@ -214,17 +214,17 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
               children: [
                 Icon(Icons.toggle_on, color: Colors.orange.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Statut de la caisse',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'cash_register_status_section'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Caisse active'),
+              title: Text('cash_register_active'.tr),
               subtitle: Text(
-                _isActive ? 'La caisse peut être utilisée pour les transactions' : 'La caisse est désactivée et ne peut pas être utilisée',
+                _isActive ? 'cash_register_active_description'.tr : 'cash_register_inactive_description'.tr,
               ),
               value: _isActive,
               onChanged: (value) => setState(() => _isActive = value),
@@ -242,7 +242,7 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
         Expanded(
           child: OutlinedButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
         ),
         const SizedBox(width: 16),
@@ -256,7 +256,7 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(isEditing ? 'Mettre à jour' : 'Créer'),
+                  : Text(isEditing ? 'cash_register_update'.tr : 'cash_register_create'.tr),
             );
           }),
         ),
@@ -298,12 +298,12 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer la caisse "${cashRegister.nom}" ?'),
+        title: Text('cash_register_delete_confirm_title'.tr),
+        content: Text('cash_register_delete_confirm_message'.trParams({'name': cashRegister.nom})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -317,7 +317,7 @@ class _CashRegisterFormViewState extends State<CashRegisterFormView> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('delete'.tr),
           ),
         ],
       ),

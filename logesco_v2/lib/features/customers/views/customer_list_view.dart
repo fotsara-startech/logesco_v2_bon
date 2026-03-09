@@ -13,15 +13,55 @@ class CustomerListView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Clients'),
+        title: Text('customers_title'.tr),
         actions: [
+          // Bouton Import/Export
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.import_export),
+            tooltip: 'customers_import_export'.tr,
+            onSelected: (value) {
+              if (value == 'export') {
+                controller.exportToExcel();
+              } else if (value == 'import') {
+                controller.importFromExcel();
+              } else if (value == 'template') {
+                controller.downloadTemplate();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'export',
+                child: ListTile(
+                  leading: const Icon(Icons.download),
+                  title: Text('customers_export_excel'.tr),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: ListTile(
+                  leading: const Icon(Icons.upload),
+                  title: Text('customers_import_excel'.tr),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'template',
+                child: ListTile(
+                  leading: const Icon(Icons.file_download),
+                  title: Text('customers_download_template'.tr),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
           PermissionWidget(
             module: 'customers',
             privilege: 'CREATE',
             child: IconButton(
               icon: const Icon(Icons.add),
               onPressed: controller.goToCreateCustomer,
-              tooltip: 'Ajouter un client',
+              tooltip: 'customers_add'.tr,
             ),
           ),
         ],
@@ -34,7 +74,7 @@ class CustomerListView extends GetView<CustomerController> {
             child: TextField(
               onChanged: controller.updateSearchQuery,
               decoration: InputDecoration(
-                hintText: 'Rechercher par nom, prénom, téléphone ou email...',
+                hintText: 'customers_search_placeholder'.tr,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
                     ? IconButton(
@@ -77,7 +117,7 @@ class CustomerListView extends GetView<CustomerController> {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: controller.refreshCustomers,
-                        child: const Text('Réessayer'),
+                        child: Text('customers_retry'.tr),
                       ),
                     ],
                   ),
@@ -96,7 +136,7 @@ class CustomerListView extends GetView<CustomerController> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Aucun client trouvé',
+                        'customers_no_customers'.tr,
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 18,
@@ -104,7 +144,7 @@ class CustomerListView extends GetView<CustomerController> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Commencez par ajouter votre premier client',
+                        'customers_add_first'.tr,
                         style: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 14,
@@ -117,7 +157,7 @@ class CustomerListView extends GetView<CustomerController> {
                         child: ElevatedButton.icon(
                           onPressed: controller.goToCreateCustomer,
                           icon: const Icon(Icons.add),
-                          label: const Text('Ajouter un client'),
+                          label: Text('customers_add'.tr),
                         ),
                       ),
                     ],
@@ -197,9 +237,9 @@ class _CustomerListItem extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (customer.telephone != null) Text('Tél: ${customer.telephone}'),
-            if (customer.email != null) Text('Email: ${customer.email}'),
-            if (customer.adresse != null) Text('Adresse: ${customer.adresse}'),
+            if (customer.telephone != null) Text('${'customers_phone'.tr}: ${customer.telephone}'),
+            if (customer.email != null) Text('${'customers_email'.tr}: ${customer.email}'),
+            if (customer.adresse != null) Text('${'customers_address'.tr}: ${customer.adresse}'),
           ],
         ),
         trailing: _buildActionsMenu(context, onEdit, onDelete),
@@ -222,11 +262,11 @@ class _CustomerListItem extends StatelessWidget {
 
     if (canUpdate) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: ListTile(
-            leading: Icon(Icons.edit),
-            title: Text('Modifier'),
+            leading: const Icon(Icons.edit),
+            title: Text('edit'.tr),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -235,11 +275,11 @@ class _CustomerListItem extends StatelessWidget {
 
     if (canDelete) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
             contentPadding: EdgeInsets.zero,
           ),
         ),

@@ -41,21 +41,19 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Renouvellement'),
-        content: const Text(
-          'Pour renouveler votre abonnement, contactez notre équipe commerciale ou utilisez votre espace client en ligne.',
-        ),
+        title: Text('subscription_renewal_dialog_title'.tr),
+        content: Text('subscription_renewal_dialog_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               // TODO: Implémenter l'ouverture de l'espace client
             },
-            child: const Text('Espace client'),
+            child: Text('subscription_customer_portal'.tr),
           ),
         ],
       ),
@@ -66,25 +64,25 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statut d\'abonnement'),
+        title: Text('subscription_status_title'.tr),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshStatus,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
       body: Obx(() {
         if (_subscriptionController.isLoading) {
-          return const LoadingWidget(message: 'Chargement du statut...');
+          return LoadingWidget(message: 'subscription_loading_status'.tr);
         }
 
         if (_subscriptionController.errorMessage.isNotEmpty) {
           return ErrorDisplayWidget(
             message: _subscriptionController.errorMessage,
-            title: 'Erreur de chargement',
+            title: 'subscription_error_loading'.tr,
             onRetry: _refreshStatus,
           );
         }
@@ -195,7 +193,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   ),
                 ),
                 child: Text(
-                  '${status.remainingDays} jour${status.remainingDays! > 1 ? 's' : ''} restant${status.remainingDays! > 1 ? 's' : ''}',
+                  '${'subscription_days_remaining'.trParams({'days': status.remainingDays.toString()})}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _getRemainingDaysColor(status.remainingDays!),
                         fontWeight: FontWeight.w600,
@@ -220,7 +218,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Détails de l\'abonnement',
+              'subscription_details'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -229,14 +227,14 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
 
             // Type d'abonnement
             _buildDetailRow(
-              'Type d\'abonnement',
+              'subscription_type'.tr,
               details['type'] as String,
               Icons.card_membership,
             ),
 
             // Statut
             _buildDetailRow(
-              'Statut',
+              'status'.tr,
               details['status'] as String,
               Icons.info_outline,
               valueColor: isActive ? Colors.green : Colors.red,
@@ -245,7 +243,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             // Date d'expiration
             if (details['expirationDate'] != null)
               _buildDetailRow(
-                'Date d\'expiration',
+                'subscription_expiration_date'.tr,
                 DateFormat('dd/MM/yyyy').format(details['expirationDate'] as DateTime),
                 Icons.calendar_today,
               ),
@@ -253,8 +251,8 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             // Jours restants
             if (details['remainingDays'] != null && details['remainingDays'] as int > 0)
               _buildDetailRow(
-                'Jours restants',
-                '${details['remainingDays']} jour${(details['remainingDays'] as int) > 1 ? 's' : ''}',
+                'subscription_remaining_days'.tr,
+                '${details['remainingDays']} ${'days'.tr}',
                 Icons.timer,
                 valueColor: _getRemainingDaysColor(details['remainingDays'] as int),
               ),
@@ -262,8 +260,8 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             // Période de grâce
             if (details['isInGracePeriod'] as bool)
               _buildDetailRow(
-                'Période de grâce',
-                'Active',
+                'subscription_grace_period'.tr,
+                'subscription_active'.tr,
                 Icons.warning,
                 valueColor: Colors.orange,
               ),
@@ -300,7 +298,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Clé de licence',
+              'subscription_license_key'.tr,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -324,13 +322,13 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   future: _subscriptionController.getCurrentLicenseKey(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Text('Chargement...');
+                      return Text('subscription_loading'.tr);
                     }
 
                     if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                      return const Text(
-                        'Clé non disponible',
-                        style: TextStyle(fontStyle: FontStyle.italic),
+                      return Text(
+                        'subscription_key_not_available'.tr,
+                        style: const TextStyle(fontStyle: FontStyle.italic),
                       );
                     }
 
@@ -354,15 +352,15 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   if (key != null && mounted) {
                     await _subscriptionController.copyLicenseKeyToClipboard(key);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Clé copiée dans le presse-papiers'),
+                      SnackBar(
+                        content: Text('subscription_license_key_copied'.tr),
                         backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   }
                 },
-                tooltip: 'Copier la clé',
+                tooltip: 'subscription_copy_key'.tr,
                 style: IconButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 ),
@@ -372,7 +370,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Conservez cette clé en lieu sûr pour réinstaller l\'application',
+          'subscription_keep_key_safe'.tr,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
                 fontStyle: FontStyle.italic,
@@ -430,7 +428,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  isCritical ? 'Attention requise' : 'Notifications',
+                  isCritical ? 'warning'.tr : 'info'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isCritical ? Colors.red : Colors.orange,
@@ -477,7 +475,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Actions disponibles',
+              'subscription_available_actions'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -490,7 +488,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
               child: ElevatedButton.icon(
                 onPressed: _navigateToActivation,
                 icon: const Icon(Icons.vpn_key),
-                label: const Text('Activer une licence'),
+                label: Text('subscription_activate_license'.tr),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -506,7 +504,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                 child: OutlinedButton.icon(
                   onPressed: _showRenewalDialog,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Renouveler l\'abonnement'),
+                  label: Text('subscription_renew'.tr),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -525,8 +523,8 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                       await _subscriptionController.startTrial();
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Période d\'essai démarrée avec succès'),
+                          SnackBar(
+                            content: Text('subscription_trial_started'.tr),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -535,7 +533,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erreur: ${e.toString()}'),
+                            content: Text('${'error'.tr}: ${e.toString()}'),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -543,7 +541,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                     }
                   },
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Démarrer la période d\'essai'),
+                  label: Text('subscription_start_trial'.tr),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -560,7 +558,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   await _subscriptionController.forceValidation();
                 },
                 icon: const Icon(Icons.sync),
-                label: const Text('Vérifier la licence'),
+                label: Text('subscription_verify_license'.tr),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -580,7 +578,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations supplémentaires',
+              'subscription_additional_info'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -588,20 +586,20 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             const SizedBox(height: 16),
             _buildInfoRow(
               Icons.help_outline,
-              'Besoin d\'aide ?',
-              'Contactez notre support technique pour toute question concernant votre abonnement.',
+              'subscription_need_help'.tr,
+              'subscription_contact_support'.tr,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.security,
-              'Sécurité',
-              'Votre licence est vérifiée automatiquement pour garantir la sécurité de l\'application.',
+              'subscription_security'.tr,
+              'subscription_security_info'.tr,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.update,
-              'Mises à jour',
-              'Les mises à jour sont disponibles automatiquement avec un abonnement actif.',
+              'subscription_updates'.tr,
+              'subscription_updates_info'.tr,
             ),
           ],
         ),
@@ -667,13 +665,13 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
   String _getSubscriptionTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
-        return 'Période d\'essai';
+        return 'subscription_type_trial'.tr;
       case SubscriptionType.monthly:
-        return 'Abonnement mensuel';
+        return 'subscription_type_monthly'.tr;
       case SubscriptionType.annual:
-        return 'Abonnement annuel';
+        return 'subscription_type_annual'.tr;
       case SubscriptionType.lifetime:
-        return 'Licence à vie';
+        return 'subscription_type_lifetime'.tr;
     }
   }
 
@@ -697,7 +695,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Clé de l\'appareil',
+              'subscription_device_key'.tr,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -721,13 +719,13 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   future: _subscriptionController.getDeviceFingerprint(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Text('Chargement...');
+                      return Text('subscription_loading'.tr);
                     }
 
                     if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                      return const Text(
-                        'Clé non disponible',
-                        style: TextStyle(fontStyle: FontStyle.italic),
+                      return Text(
+                        'subscription_key_not_available'.tr,
+                        style: const TextStyle(fontStyle: FontStyle.italic),
                       );
                     }
 
@@ -751,15 +749,15 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                   if (key != null && mounted) {
                     await _subscriptionController.copyLicenseKeyToClipboard(key);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Clé de l\'appareil copiée'),
+                      SnackBar(
+                        content: Text('subscription_device_key_copied'.tr),
                         backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   }
                 },
-                tooltip: 'Copier la clé',
+                tooltip: 'subscription_copy_key'.tr,
                 style: IconButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 ),
@@ -769,7 +767,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Cette clé identifie votre appareil de manière unique',
+          'subscription_device_key_description'.tr,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
                 fontStyle: FontStyle.italic,

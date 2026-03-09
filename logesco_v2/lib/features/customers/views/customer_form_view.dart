@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/customer_form_controller.dart';
 import '../../../shared/widgets/loading_widget.dart';
-import '../../../shared/widgets/debug_banner.dart';
 
 /// Vue de formulaire pour créer/modifier un client
 class CustomerFormView extends StatelessWidget {
@@ -14,7 +13,7 @@ class CustomerFormView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() => Text(controller.isEditing.value ? 'Modifier le client' : 'Nouveau client')),
+        title: Obx(() => Text(controller.isEditing.value ? 'customers_edit_title'.tr : 'customers_new'.tr)),
         elevation: 0,
         actions: [
           Obx(() => controller.isLoading.value
@@ -29,13 +28,13 @@ class CustomerFormView extends StatelessWidget {
               : IconButton(
                   onPressed: controller.saveCustomer,
                   icon: const Icon(Icons.save),
-                  tooltip: 'Enregistrer',
+                  tooltip: 'save'.tr,
                 )),
         ],
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.isEditing.value) {
-          return const LoadingWidget(message: 'Chargement du client...');
+          return LoadingWidget(message: 'customers_loading'.tr);
         }
 
         return SingleChildScrollView(
@@ -46,13 +45,13 @@ class CustomerFormView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Informations générales
-                _buildSectionTitle('Informations générales'),
+                _buildSectionTitle('customers_general_info'.tr),
                 const SizedBox(height: 16),
 
                 _buildTextField(
                   controller: controller.nomController,
-                  label: 'Nom *',
-                  hint: 'Ex: Dupont',
+                  label: '${'customers_last_name'.tr} *',
+                  hint: 'customers_last_name_hint'.tr,
                   icon: Icons.person,
                   validator: controller.validateNom,
                   textCapitalization: TextCapitalization.words,
@@ -62,8 +61,8 @@ class CustomerFormView extends StatelessWidget {
 
                 _buildTextField(
                   controller: controller.prenomController,
-                  label: 'Prénom',
-                  hint: 'Ex: Jean',
+                  label: 'customers_first_name'.tr,
+                  hint: 'customers_first_name_hint'.tr,
                   icon: Icons.person_outline,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -71,13 +70,13 @@ class CustomerFormView extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Coordonnées
-                _buildSectionTitle('Coordonnées'),
+                _buildSectionTitle('customers_contact_info'.tr),
                 const SizedBox(height: 16),
 
                 _buildTextField(
                   controller: controller.telephoneController,
-                  label: 'Téléphone',
-                  hint: 'Ex: +225 01 02 03 04 05',
+                  label: 'customers_phone'.tr,
+                  hint: 'customers_phone_hint'.tr,
                   icon: Icons.phone,
                   keyboardType: TextInputType.phone,
                   validator: controller.validateTelephone,
@@ -87,8 +86,8 @@ class CustomerFormView extends StatelessWidget {
 
                 _buildTextField(
                   controller: controller.emailController,
-                  label: 'Email',
-                  hint: 'Ex: jean.dupont@email.com',
+                  label: 'customers_email'.tr,
+                  hint: 'customers_email_hint'.tr,
                   icon: Icons.email,
                   keyboardType: TextInputType.emailAddress,
                   validator: controller.validateEmail,
@@ -97,13 +96,13 @@ class CustomerFormView extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Adresse
-                _buildSectionTitle('Adresse'),
+                _buildSectionTitle('customers_address_info'.tr),
                 const SizedBox(height: 16),
 
                 _buildTextField(
                   controller: controller.adresseController,
-                  label: 'Adresse complète',
-                  hint: 'Ex: Cocody, Abidjan',
+                  label: 'customers_address_full'.tr,
+                  hint: 'customers_address_hint'.tr,
                   icon: Icons.location_on,
                   maxLines: 3,
                   textCapitalization: TextCapitalization.sentences,
@@ -117,7 +116,7 @@ class CustomerFormView extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: controller.isLoading.value ? null : () => Get.back(),
-                        child: const Text('Annuler'),
+                        child: Text('cancel'.tr),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -131,7 +130,7 @@ class CustomerFormView extends StatelessWidget {
                                 height: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : Text(controller.isEditing.value ? 'Modifier' : 'Créer'),
+                            : Text(controller.isEditing.value ? 'edit'.tr : 'customers_create'.tr),
                       ),
                     ),
                   ],

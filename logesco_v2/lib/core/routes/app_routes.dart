@@ -22,6 +22,8 @@ class AppRoutes {
   // Routes de détail
   static const String productDetail = '/products/:id';
   static const String supplierDetail = '/suppliers/:id';
+  static const String supplierTransactions = '/suppliers/:supplierId/transactions';
+  static const String supplierAccount = '/suppliers/:supplierId/account';
   static const String customerDetail = '/customers/:id';
   static const String customerTransactions = '/customers/:customerId/transactions';
   static const String procurementDetail = '/procurement/:id';

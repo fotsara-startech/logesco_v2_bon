@@ -30,18 +30,18 @@ class SalesListItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Vente ${sale.numeroVente}',
+          'sales_sale_number'.trParams({'number': sale.numeroVente}),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (sale.client != null) Text('Client: ${sale.client!.nom} ${sale.client!.prenom ?? ''}'),
-            Text('Total: ${sale.montantFinal.toStringAsFixed(0)} FCFA'),
+            if (sale.client != null) Text('sales_client_name'.trParams({'name': '${sale.client!.nom} ${sale.client!.prenom ?? ''}'})),
+            Text('sales_total_label'.trParams({'amount': sale.montantFinal.toStringAsFixed(0)})),
             // SOLUTION 2: Ne plus afficher les détails de paiement partiel
             // La dette est gérée au niveau du compte client
             Text(
-              'Payé: ${sale.montantPaye.toStringAsFixed(0)} FCFA',
+              'sales_paid_label'.trParams({'amount': sale.montantPaye.toStringAsFixed(0)}),
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
@@ -71,7 +71,7 @@ class SalesListItem extends StatelessWidget {
                 IconButton(
                   onPressed: () => _reprintReceipt(context),
                   icon: const Icon(Icons.print),
-                  tooltip: 'Réimprimer le reçu',
+                  tooltip: 'sales_reprint_receipt'.tr,
                   iconSize: 20,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -103,10 +103,10 @@ class SalesListItem extends StatelessWidget {
     // SOLUTION 2: Toutes les ventes sont "Terminée" sauf si annulées
     // La gestion des dettes se fait au niveau du compte client
     if (sale.isCancelled) {
-      label = 'Annulée';
+      label = 'sales_status_cancelled'.tr;
       color = Colors.red;
     } else {
-      label = 'Terminée';
+      label = 'sales_status_completed'.tr;
       color = Colors.green;
     }
 
@@ -146,8 +146,8 @@ class SalesListItem extends StatelessWidget {
 
       if (companyController.companyProfile == null) {
         Get.snackbar(
-          'Erreur',
-          'Profil d\'entreprise non configuré.\nAllez dans Paramètres > Entreprise pour configurer les informations.',
+          'sales_error'.tr,
+          'sales_company_not_configured'.tr,
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.red.shade100,
@@ -171,8 +171,8 @@ class SalesListItem extends StatelessWidget {
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Impossible de générer le reçu pour cette vente',
+          'sales_error'.tr,
+          'sales_cannot_generate_receipt'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -180,8 +180,8 @@ class SalesListItem extends StatelessWidget {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la génération du reçu: $e',
+        'sales_error'.tr,
+        'sales_receipt_generation_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,

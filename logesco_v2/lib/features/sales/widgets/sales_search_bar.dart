@@ -41,7 +41,7 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher par nom client ou numéro de vente...',
+                hintText: 'sales_search_hint_full'.tr,
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
                 suffixIcon: _searchController.text.isNotEmpty

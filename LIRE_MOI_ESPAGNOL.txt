@@ -1,0 +1,114 @@
+================================================================================
+  INTÉGRATION DE LA LANGUE ESPAGNOLE - LOGESCO v2
+================================================================================
+
+STATUT : ✅ Intégration terminée - Redémarrage backend requis
+
+================================================================================
+  PROBLÈME RÉSOLU
+================================================================================
+
+Erreur rencontrée :
+  "langueFacture" must be one of [fr, en]
+
+Cause :
+  Le backend ne validait que 'fr' et 'en', pas 'es'
+
+Solution :
+  Fichier backend/src/validation/schemas.js modifié pour accepter 'es'
+
+================================================================================
+  ACTION IMMÉDIATE REQUISE
+================================================================================
+
+ÉTAPE 1 : REDÉMARRER LE BACKEND
+--------------------------------
+
+Option A - Script automatique :
+  Double-cliquer sur : restart-backend-with-spanish.bat
+
+Option B - Manuel :
+  1. Arrêter le backend actuel (Ctrl+C ou fermer la fenêtre)
+  2. Ouvrir un terminal dans le dossier "backend"
+  3. Exécuter : node src/server.js
+
+ÉTAPE 2 : TESTER L'APPLICATION
+-------------------------------
+
+1. Ouvrir l'application Flutter
+2. Aller dans Administration → Paramètres de l'entreprise
+3. Sélectionner "Español 🇪🇸" dans "Langue des factures"
+4. Cliquer sur "Enregistrer"
+
+Résultat attendu : ✅ Sauvegarde réussie
+
+================================================================================
+  FICHIERS MODIFIÉS
+================================================================================
+
+Backend (1 fichier) :
+  ✅ backend/src/validation/schemas.js
+
+Flutter (9 fichiers) :
+  ✅ logesco_v2/lib/core/translations/es_translations.dart
+  ✅ logesco_v2/lib/core/translations/app_translations.dart
+  ✅ logesco_v2/lib/core/translations/fr_translations.dart
+  ✅ logesco_v2/lib/core/translations/en_translations.dart
+  ✅ logesco_v2/lib/core/controllers/language_controller.dart
+  ✅ logesco_v2/lib/core/widgets/language_selector.dart
+  ✅ logesco_v2/lib/main.dart
+  ✅ logesco_v2/lib/features/company_settings/views/company_settings_page.dart
+  ✅ logesco_v2/lib/features/printing/utils/receipt_translations.dart
+
+================================================================================
+  LANGUES SUPPORTÉES
+================================================================================
+
+  🇫🇷 Français (fr)  - Interface + Factures
+  🇬🇧 English (en)   - Interface + Factures
+  🇪🇸 Español (es)   - Interface + Factures
+
+================================================================================
+  DOCUMENTATION DISPONIBLE
+================================================================================
+
+  📄 INTEGRATION_ESPAGNOL_COMPLETE.md
+     → Documentation technique complète
+
+  📄 GUIDE_ACTIVATION_ESPAGNOL.md
+     → Guide pas à pas avec dépannage
+
+  📄 RESUME_CORRECTION_ESPAGNOL.md
+     → Résumé de la correction de validation
+
+  🔧 restart-backend-with-spanish.bat
+     → Script de redémarrage automatique
+
+================================================================================
+  VÉRIFICATION RAPIDE
+================================================================================
+
+Après redémarrage du backend, vérifier :
+
+  ☐ Backend démarre sans erreur
+  ☐ Interface changeable en Español
+  ☐ Paramètres entreprise acceptent Español
+  ☐ Sauvegarde sans erreur de validation
+  ☐ Factures générées en espagnol
+
+================================================================================
+  BESOIN D'AIDE ?
+================================================================================
+
+Si l'erreur persiste après redémarrage :
+  1. Vérifier qu'aucun processus node.exe ne tourne
+  2. Consulter GUIDE_ACTIVATION_ESPAGNOL.md section "Dépannage"
+  3. Vérifier les logs du backend
+
+================================================================================
+
+Date : 8 mars 2026
+Version : LOGESCO v2
+Statut : ✅ Prêt après redémarrage backend
+
+================================================================================

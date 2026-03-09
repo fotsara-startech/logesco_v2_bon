@@ -39,7 +39,7 @@ class DegradedModeBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isInGracePeriod ? 'Mode consultation - Période de grâce' : 'Mode consultation uniquement',
+                  isInGracePeriod ? 'subscription_degraded_mode'.tr : 'subscription_read_only_mode'.tr,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.orange.shade800,
@@ -48,7 +48,7 @@ class DegradedModeBanner extends StatelessWidget {
                 ),
                 if (isInGracePeriod && remainingGraceDays != null)
                   Text(
-                    'Plus que $remainingGraceDays jour${(remainingGraceDays ?? 0) > 1 ? 's' : ''} restant${(remainingGraceDays ?? 0) > 1 ? 's' : ''}',
+                    'subscription_days_remaining'.trParams({'days': remainingGraceDays.toString()}),
                     style: TextStyle(
                       color: Colors.orange.shade700,
                       fontSize: 12,
@@ -69,9 +69,9 @@ class DegradedModeBanner extends StatelessWidget {
               foregroundColor: Colors.orange.shade800,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
-            child: const Text(
-              'Activer',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            child: Text(
+              'subscription_activate'.tr,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -155,7 +155,7 @@ class DegradedModeWrapper extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Fonctionnalité restreinte',
+                  'subscription_restricted_feature'.tr,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange.shade800,
@@ -164,7 +164,7 @@ class DegradedModeWrapper extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  restrictionMessage ?? 'Cette fonctionnalité n\'est pas disponible en mode consultation. Activez une licence pour débloquer toutes les fonctionnalités.',
+                  restrictionMessage ?? 'subscription_restricted_message'.tr,
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -176,7 +176,7 @@ class DegradedModeWrapper extends StatelessWidget {
                       onPressed: () {
                         // Fermer l'overlay (retour en mode consultation)
                       },
-                      child: const Text('Fermer'),
+                      child: Text('close'.tr),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton(
@@ -191,7 +191,7 @@ class DegradedModeWrapper extends StatelessWidget {
                         backgroundColor: Colors.orange.shade600,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text('Activer une licence'),
+                      child: Text('subscription_activate_license'.tr),
                     ),
                   ],
                 ),
@@ -235,20 +235,18 @@ mixin DegradedModeCheck {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Période de grâce'),
+            const Icon(Icons.warning, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text('subscription_grace_period'.tr),
           ],
         ),
-        content: const Text(
-          'Vous êtes en période de grâce. Seule la consultation est autorisée. Activez une licence pour retrouver toutes les fonctionnalités.',
-        ),
+        content: Text('subscription_grace_period_restriction'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -259,7 +257,7 @@ mixin DegradedModeCheck {
                 ),
               );
             },
-            child: const Text('Activer'),
+            child: Text('subscription_activate'.tr),
           ),
         ],
       ),
@@ -270,16 +268,14 @@ mixin DegradedModeCheck {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.block, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Accès bloqué'),
+            const Icon(Icons.block, color: Colors.red),
+            const SizedBox(width: 8),
+            Text('subscription_access_blocked'.tr),
           ],
         ),
-        content: const Text(
-          'Votre abonnement a expiré. Activez une licence pour continuer à utiliser l\'application.',
-        ),
+        content: Text('subscription_access_blocked_message'.tr),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -294,7 +290,7 @@ mixin DegradedModeCheck {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Activer une licence'),
+            child: Text('subscription_activate_license'.tr),
           ),
         ],
       ),

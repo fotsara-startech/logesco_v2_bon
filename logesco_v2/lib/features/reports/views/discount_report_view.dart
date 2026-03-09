@@ -15,13 +15,13 @@ class DiscountReportView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rapports de Remises'),
+        title: Text('reports_discount_title'.tr),
         elevation: 0,
         actions: [
           IconButton(
             onPressed: controller.refreshAllData,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -69,9 +69,9 @@ class DiscountReportView extends StatelessWidget {
               children: [
                 const Icon(Icons.filter_list, color: Colors.blue),
                 const SizedBox(width: 8),
-                const Text(
-                  'Filtres',
-                  style: TextStyle(
+                Text(
+                  'reports_discount_filters'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -80,7 +80,7 @@ class DiscountReportView extends StatelessWidget {
                 TextButton.icon(
                   onPressed: controller.clearDateFilters,
                   icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('Effacer'),
+                  label: Text('reports_discount_clear'.tr),
                 ),
               ],
             ),
@@ -92,16 +92,16 @@ class DiscountReportView extends StatelessWidget {
                 Expanded(
                   child: Obx(() => DropdownButtonFormField<String>(
                         value: controller.selectedGroupBy.value,
-                        decoration: const InputDecoration(
-                          labelText: 'Grouper par',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: InputDecoration(
+                          labelText: 'reports_discount_group_by'.tr,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'vendeur', child: Text('Vendeur')),
-                          DropdownMenuItem(value: 'produit', child: Text('Produit')),
-                          DropdownMenuItem(value: 'jour', child: Text('Jour')),
-                          DropdownMenuItem(value: 'mois', child: Text('Mois')),
+                        items: [
+                          DropdownMenuItem(value: 'vendeur', child: Text('reports_discount_group_vendor'.tr)),
+                          DropdownMenuItem(value: 'produit', child: Text('reports_discount_group_product'.tr)),
+                          DropdownMenuItem(value: 'jour', child: Text('reports_discount_group_day'.tr)),
+                          DropdownMenuItem(value: 'mois', child: Text('reports_discount_group_month'.tr)),
                         ],
                         onChanged: (value) {
                           if (value != null) controller.updateGroupBy(value);
@@ -118,11 +118,11 @@ class DiscountReportView extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.dateDebutController,
-                    decoration: const InputDecoration(
-                      labelText: 'Date de début',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.calendar_today),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: InputDecoration(
+                      labelText: 'reports_discount_date_start'.tr,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.calendar_today),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     readOnly: true,
                     onTap: () => _selectDate(controller, true),
@@ -132,11 +132,11 @@ class DiscountReportView extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.dateFinController,
-                    decoration: const InputDecoration(
-                      labelText: 'Date de fin',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.calendar_today),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: InputDecoration(
+                      labelText: 'reports_discount_date_end'.tr,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.calendar_today),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     readOnly: true,
                     onTap: () => _selectDate(controller, false),
@@ -169,7 +169,7 @@ class DiscountReportView extends StatelessWidget {
         children: [
           Expanded(
             child: _buildStatCard(
-              'Total des Remises',
+              'reports_discount_total'.tr,
               '${stats['totalRemises']?.toStringAsFixed(0) ?? '0'} ${CurrencyConstants.defaultCurrency}',
               Icons.discount,
               Colors.green,
@@ -178,7 +178,7 @@ class DiscountReportView extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _buildStatCard(
-              'Nombre de Remises',
+              'reports_discount_count'.tr,
               '${stats['nombreRemises'] ?? 0}',
               Icons.receipt_long,
               Colors.blue,
@@ -187,7 +187,7 @@ class DiscountReportView extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _buildStatCard(
-              'Remise Moyenne',
+              'reports_discount_average'.tr,
               '${stats['remiseMoyenne']?.toStringAsFixed(0) ?? '0'} ${CurrencyConstants.defaultCurrency}',
               Icons.trending_up,
               Colors.orange,
@@ -256,10 +256,10 @@ class DiscountReportView extends StatelessWidget {
           child: Container(
             height: 300,
             padding: const EdgeInsets.all(16),
-            child: const EmptyState(
+            child: EmptyState(
               icon: Icons.pie_chart_outline,
-              title: 'Aucune donnée',
-              subtitle: 'Aucune remise trouvée pour la période sélectionnée',
+              title: 'reports_discount_no_data'.tr,
+              subtitle: 'reports_discount_no_data_subtitle'.tr,
             ),
           ),
         );
@@ -275,9 +275,9 @@ class DiscountReportView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Répartition des Remises',
-                      style: TextStyle(
+                    Text(
+                      'reports_discount_distribution'.tr,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -301,9 +301,9 @@ class DiscountReportView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Remises par Groupe',
-                      style: TextStyle(
+                    Text(
+                      'reports_discount_by_group'.tr,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -422,13 +422,13 @@ class DiscountReportView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.emoji_events, color: Colors.amber),
-                SizedBox(width: 8),
+                const Icon(Icons.emoji_events, color: Colors.amber),
+                const SizedBox(width: 8),
                 Text(
-                  'Top des Remises',
-                  style: TextStyle(
+                  'reports_discount_top_title'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -445,12 +445,12 @@ class DiscountReportView extends StatelessWidget {
               }
 
               if (controller.topDiscounts.isEmpty) {
-                return const SizedBox(
+                return SizedBox(
                   height: 200,
                   child: EmptyState(
                     icon: Icons.emoji_events_outlined,
-                    title: 'Aucune remise',
-                    subtitle: 'Aucune remise accordée pour le moment',
+                    title: 'reports_discount_no_discounts'.tr,
+                    subtitle: 'reports_discount_no_discounts_subtitle'.tr,
                   ),
                 );
               }
@@ -488,10 +488,10 @@ class DiscountReportView extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Réf: ${discount.produit.reference}'),
+          Text('reports_discount_reference'.trParams({'reference': discount.produit.reference})),
           if (discount.justification != null)
             Text(
-              'Justification: ${discount.justification}',
+              'reports_discount_justification'.trParams({'text': discount.justification!}),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.shade600,
@@ -511,7 +511,7 @@ class DiscountReportView extends StatelessWidget {
             ),
           ),
           Text(
-            '${discount.pourcentageUtilise.toStringAsFixed(1)}% utilisé',
+            'reports_discount_percent_used'.trParams({'percent': discount.pourcentageUtilise.toStringAsFixed(1)}),
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade600,
@@ -543,13 +543,13 @@ class DiscountReportView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.people, color: Colors.green),
-                SizedBox(width: 8),
+                const Icon(Icons.people, color: Colors.green),
+                const SizedBox(width: 8),
                 Text(
-                  'Remises par Vendeur',
-                  style: TextStyle(
+                  'reports_discount_by_vendor'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -567,12 +567,12 @@ class DiscountReportView extends StatelessWidget {
 
               final report = controller.vendorReport.value;
               if (report == null || report.statistiques.isEmpty) {
-                return const SizedBox(
+                return SizedBox(
                   height: 200,
                   child: EmptyState(
                     icon: Icons.people_outline,
-                    title: 'Aucune donnée',
-                    subtitle: 'Aucune remise accordée par les vendeurs',
+                    title: 'reports_discount_vendor_no_data'.tr,
+                    subtitle: 'reports_discount_vendor_no_data_subtitle'.tr,
                   ),
                 );
               }
@@ -607,7 +607,8 @@ class DiscountReportView extends StatelessWidget {
         ),
       ),
       title: Text(stats.vendeur.nomUtilisateur),
-      subtitle: Text('${stats.nombreVentes} ventes • ${stats.nombreProduits} produits'),
+      subtitle:
+          Text('reports_discount_vendor_sales'.trParams({'count': stats.nombreVentes.toString()}) + ' • ' + 'reports_discount_vendor_products'.trParams({'count': stats.nombreProduits.toString()})),
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -620,7 +621,7 @@ class DiscountReportView extends StatelessWidget {
             ),
           ),
           Text(
-            'Moy: ${stats.remiseMoyenne.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
+            'reports_discount_vendor_average'.trParams({'amount': '${stats.remiseMoyenne.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}'}),
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade600,

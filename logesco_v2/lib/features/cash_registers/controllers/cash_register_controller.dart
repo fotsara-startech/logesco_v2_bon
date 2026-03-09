@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/cash_register_model.dart';
@@ -15,10 +16,89 @@ class CashRegisterController extends GetxController {
   // Caisse sélectionnée pour modification
   final Rx<CashRegister?> selectedCashRegister = Rx<CashRegister?>(null);
 
+  // Timer pour l'actualisation automatique du solde
+  Timer? _refreshTimer;
+
   @override
   void onInit() {
     super.onInit();
     loadCashRegisters();
+    _startAutoRefresh();
+  }
+
+  @override
+  void onClose() {
+    _stopAutoRefresh();
+    super.onClose();
+  }
+
+  /// Démarrer l'actualisation automatique toutes les 10 secondes
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _refreshCashRegisterBalances();
+    });
+  }
+
+  /// Arrêter l'actualisation automatique
+  void _stopAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  /// Actualiser les soldes des caisses sans afficher le loader
+  Future<void> _refreshCashRegisterBalances() async {
+    try {
+      print('🔄 [CashRegisterController] ========== DEBUT ACTUALISATION AUTO ==========');
+      print('🔄 [CashRegisterController] Actualisation automatique des soldes...');
+
+      // Ne pas afficher le loader pour ne pas perturber l'utilisateur
+      final cashRegisterList = ApiConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
+
+      print('📊 [CashRegisterController] ${cashRegisterList.length} caisse(s) récupérée(s) de l\'API');
+
+      // Mettre à jour uniquement les soldes sans remplacer toute la liste
+      int updated = 0;
+      int added = 0;
+
+      for (var updatedCashRegister in cashRegisterList) {
+        final index = cashRegisters.indexWhere((c) => c.id == updatedCashRegister.id);
+        if (index != -1) {
+          // Vérifier si le solde a changé avant de mettre à jour
+          final oldSolde = cashRegisters[index].soldeActuel;
+          final newSolde = updatedCashRegister.soldeActuel;
+
+          if (oldSolde != newSolde || cashRegisters[index].isActive != updatedCashRegister.isActive) {
+            print('💰 [CashRegisterController] Mise à jour caisse: ${updatedCashRegister.nom}');
+            print('   Ancien solde: $oldSolde FCFA → Nouveau solde: $newSolde FCFA');
+            cashRegisters[index] = updatedCashRegister;
+            updated++;
+          }
+        } else {
+          // Nouvelle caisse ajoutée
+          print('➕ [CashRegisterController] Nouvelle caisse ajoutée: ${updatedCashRegister.nom}');
+          cashRegisters.add(updatedCashRegister);
+          added++;
+        }
+      }
+
+      // Supprimer les caisses qui n'existent plus
+      final initialCount = cashRegisters.length;
+      cashRegisters.removeWhere((c) => !cashRegisterList.any((updated) => updated.id == c.id));
+      final removed = initialCount - cashRegisters.length;
+
+      print('📊 [CashRegisterController] Résumé actualisation:');
+      print('   - Caisses mises à jour: $updated');
+      print('   - Caisses ajoutées: $added');
+      print('   - Caisses supprimées: $removed');
+      print('   - Total caisses: ${cashRegisters.length}');
+      print('🔄 [CashRegisterController] ========== FIN ACTUALISATION AUTO ==========');
+    } catch (e, stackTrace) {
+      // Erreur silencieuse pour ne pas perturber l'utilisateur
+      print('❌ [CashRegisterController] ========== ERREUR ACTUALISATION ==========');
+      print('❌ [CashRegisterController] Erreur lors de l\'actualisation automatique des caisses: $e');
+      print('❌ [CashRegisterController] Stack trace: $stackTrace');
+      print('❌ [CashRegisterController] ========================================');
+    }
   }
 
   /// Charger toutes les caisses
@@ -38,6 +118,11 @@ class CashRegisterController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Rafraîchir manuellement les soldes des caisses
+  Future<void> refreshCashRegisters() async {
+    await _refreshCashRegisterBalances();
   }
 
   /// Caisses filtrées selon la recherche

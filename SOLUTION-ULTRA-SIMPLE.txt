@@ -1,0 +1,52 @@
+═══════════════════════════════════════════════════════════════════════════════
+                        SOLUTION ULTRA SIMPLE
+                  Donnees presentes mais non affichees
+═══════════════════════════════════════════════════════════════════════════════
+
+
+EXECUTER CE SCRIPT:
+───────────────────
+
+    SYNCHRONISER-PRISMA-MAINTENANT.bat
+
+
+ATTENDRE 1-2 MINUTES
+
+
+PUIS DEMARRER:
+──────────────
+
+    DEMARRER-LOGESCO.bat
+
+
+C'EST TOUT!
+───────────
+
+
+SI CA NE MARCHE PAS:
+────────────────────
+
+Executer manuellement:
+
+cd backend
+rmdir /s /q node_modules\.prisma\client
+npx prisma generate
+npx prisma db push --accept-data-loss
+npx prisma generate
+cd ..
+
+
+PUIS:
+
+DEMARRER-LOGESCO.bat
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RESUME:
+
+1. SYNCHRONISER-PRISMA-MAINTENANT.bat
+2. DEMARRER-LOGESCO.bat
+3. Verifier les donnees
+
+═══════════════════════════════════════════════════════════════════════════════

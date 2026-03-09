@@ -19,7 +19,7 @@ class SalesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ventes'),
+        title: Text('sales_title'.tr),
         actions: [
           // Bouton pour recharger les stocks réels
           IconButton(
@@ -27,13 +27,13 @@ class SalesPage extends StatelessWidget {
               await controller.refreshStocks();
             },
             icon: const Icon(Icons.refresh),
-            tooltip: 'Recharger stocks réels',
+            tooltip: 'sales_refresh_stocks'.tr,
           ),
 
           ElevatedButton.icon(
             onPressed: () => Get.to(() => const CreateSalePage()),
             icon: const Icon(Icons.add),
-            label: const Text('Nouvelle vente'),
+            label: Text('sales_new'.tr),
           ),
         ],
       ),
@@ -70,14 +70,14 @@ class SalesPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Aucune vente',
+                          'sales_no_sales'.tr,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 color: Colors.grey[600],
                               ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Commencez par créer votre première vente',
+                          'sales_start_first_sale'.tr,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey[500],
                               ),
@@ -127,23 +127,23 @@ class SalesPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Vente ${sale.numeroVente}'),
+        title: Text('sales_sale_details'.trParams({'number': sale.numeroVente})),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               if (sale.client != null) ...[
-                Text('Client: ${sale.client!.nom} ${sale.client!.prenom ?? ''}'),
+                Text('sales_client_name'.trParams({'name': '${sale.client!.nom} ${sale.client!.prenom ?? ''}'})),
                 const SizedBox(height: 8),
               ],
-              Text('Mode de paiement: ${sale.modePaiement}'),
-              Text('Montant total: ${sale.montantTotal.toStringAsFixed(0)} FCFA'),
+              Text('sales_payment_mode'.tr + ': ${sale.modePaiement}'),
+              Text('sales_total_amount_label'.tr + ': ${sale.montantTotal.toStringAsFixed(0)} FCFA'),
               if (sale.montantRemise > 0) ...[
-                Text('Remise: ${sale.montantRemise.toStringAsFixed(0)} FCFA'),
+                Text('sales_discount_label'.tr + ': ${sale.montantRemise.toStringAsFixed(0)} FCFA'),
               ],
-              Text('Montant final: ${sale.montantFinal.toStringAsFixed(0)} FCFA'),
-              Text('Montant payé lors de cette vente: ${sale.montantPaye.toStringAsFixed(0)} FCFA'),
+              Text('sales_final_amount'.tr + ': ${sale.montantFinal.toStringAsFixed(0)} FCFA'),
+              Text('sales_amount_paid_this_sale'.tr + ': ${sale.montantPaye.toStringAsFixed(0)} FCFA'),
               // SOLUTION 2: Ne plus afficher le montant restant car la dette est gérée au niveau du compte client
               if (sale.client != null && sale.montantRestant > 0) ...[
                 const SizedBox(height: 8),
@@ -161,33 +161,34 @@ class SalesPage extends StatelessWidget {
                         children: [
                           Icon(Icons.info, size: 16, color: Colors.blue.shade700),
                           const SizedBox(width: 4),
-                          const Text(
-                            'Dette gérée au compte client',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          Text(
+                            'sales_debt_managed_client'.tr,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Consultez le compte du client pour voir sa dette totale.',
+                        'sales_check_client_account'.tr,
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                       ),
                     ],
                   ),
                 ),
               ],
-              Text('Statut: ${sale.statut}'),
+              Text('sales_status'.tr + ': ${sale.statut}'),
               const SizedBox(height: 16),
-              const Text('Détails:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('sales_details'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
               if (sale.details != null && sale.details.isNotEmpty) ...[
                 ...sale.details.map((detail) => Padding(
                       padding: const EdgeInsets.only(left: 16, top: 4),
-                      child: Text('${detail.produit?.nom ?? 'Produit ${detail.produitId}'} x${detail.quantite} = ${detail.montantLigne.toStringAsFixed(0)} FCFA'),
+                      child: Text('sales_product_line'
+                          .trParams({'product': detail.produit?.nom ?? 'Produit ${detail.produitId}', 'quantity': detail.quantite.toString(), 'amount': detail.montantLigne.toStringAsFixed(0)})),
                     )),
               ] else ...[
-                const Padding(
-                  padding: EdgeInsets.only(left: 16, top: 4),
-                  child: Text('Aucun détail disponible'),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 4),
+                  child: Text('sales_no_details'.tr),
                 ),
               ],
             ],
@@ -201,7 +202,7 @@ class SalesPage extends StatelessWidget {
                 _reprintReceipt(context, sale);
               },
               icon: const Icon(Icons.print),
-              label: const Text('Réimprimer reçu'),
+              label: Text('sales_reprint'.tr),
             ),
           ],
           // SOLUTION 2: Suppression du bouton "Ajouter paiement"
@@ -212,12 +213,12 @@ class SalesPage extends StatelessWidget {
                 Navigator.of(context).pop();
                 _confirmCancelSale(context, sale);
               },
-              child: const Text('Annuler vente'),
+              child: Text('sales_cancel_sale'.tr),
             ),
           ],
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text('sales_close'.tr),
           ),
         ],
       ),
@@ -290,12 +291,12 @@ class SalesPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmer l\'annulation'),
-        content: Text('Êtes-vous sûr de vouloir annuler la vente ${sale.numeroVente} ?'),
+        title: Text('sales_confirm_cancel'.tr),
+        content: Text('sales_confirm_cancel_message'.trParams({'number': sale.numeroVente})),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Non'),
+            child: Text('no'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -303,7 +304,7 @@ class SalesPage extends StatelessWidget {
               await controller.cancelSale(sale.id);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Oui, annuler'),
+            child: Text('sales_yes_cancel'.tr),
           ),
         ],
       ),
@@ -323,8 +324,8 @@ class SalesPage extends StatelessWidget {
 
       if (companyController.companyProfile == null) {
         Get.snackbar(
-          'Erreur',
-          'Profil d\'entreprise non configuré.\nAllez dans Paramètres > Entreprise pour configurer les informations.',
+          'sales_error'.tr,
+          'sales_company_not_configured'.tr,
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.red.shade100,
@@ -348,8 +349,8 @@ class SalesPage extends StatelessWidget {
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Impossible de générer le reçu pour cette vente',
+          'sales_error'.tr,
+          'sales_cannot_generate_receipt'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -357,8 +358,8 @@ class SalesPage extends StatelessWidget {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la génération du reçu: $e',
+        'sales_error'.tr,
+        'sales_receipt_generation_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,

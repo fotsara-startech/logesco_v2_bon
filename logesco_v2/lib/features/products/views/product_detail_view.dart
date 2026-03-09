@@ -25,7 +25,7 @@ class ProductDetailView extends StatelessWidget {
 
       final product = controller.product.value;
       if (product == null) {
-        return _buildErrorView('Produit non trouvé');
+        return _buildErrorView('product_detail_not_found'.tr);
       }
 
       return Scaffold(
@@ -39,7 +39,7 @@ class ProductDetailView extends StatelessWidget {
               child: IconButton(
                 onPressed: () => Get.toNamed('/products/${product.id}/edit', arguments: product),
                 icon: const Icon(Icons.edit),
-                tooltip: 'Modifier',
+                tooltip: 'product_detail_edit'.tr,
               ),
             ),
             PermissionWidget(
@@ -57,19 +57,19 @@ class ProductDetailView extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'duplicate',
                     child: ListTile(
-                      leading: Icon(Icons.copy),
-                      title: Text('Dupliquer'),
+                      leading: const Icon(Icons.copy),
+                      title: Text('product_detail_duplicate'.tr),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      leading: const Icon(Icons.delete, color: Colors.red),
+                      title: Text('product_detail_delete'.tr, style: const TextStyle(color: Colors.red)),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -89,50 +89,50 @@ class ProductDetailView extends StatelessWidget {
 
               // Informations principales
               _buildInfoCard(
-                'Informations générales',
+                'product_detail_general_info'.tr,
                 Icons.info_outline,
                 [
-                  _buildInfoRow('Référence', product.reference),
-                  _buildInfoRow('Nom', product.nom),
-                  if (product.description != null && product.description!.isNotEmpty) _buildInfoRow('Description', product.description!),
-                  if (product.categorie != null && product.categorie!.isNotEmpty) _buildInfoRow('Catégorie', product.categorie!),
+                  _buildInfoRow('product_detail_reference'.tr, product.reference),
+                  _buildInfoRow('product_detail_name'.tr, product.nom),
+                  if (product.description != null && product.description!.isNotEmpty) _buildInfoRow('product_detail_description'.tr, product.description!),
+                  if (product.categorie != null && product.categorie!.isNotEmpty) _buildInfoRow('product_detail_category'.tr, product.categorie!),
                 ],
               ),
               const SizedBox(height: 16),
 
               // Informations commerciales
               _buildInfoCard(
-                'Informations commerciales',
+                'product_detail_commercial_info'.tr,
                 Icons.attach_money,
                 [
-                  _buildInfoRow('Prix de vente', CurrencyConstants.formatAmount(product.prixUnitaire)),
+                  _buildInfoRow('product_detail_sale_price'.tr, CurrencyConstants.formatAmount(product.prixUnitaire)),
                   if (product.prixAchat != null) ...[
-                    _buildInfoRow('Prix d\'achat', CurrencyConstants.formatAmount(product.prixAchat!)),
-                    _buildInfoRow('Marge', product.marge != null ? CurrencyConstants.formatAmount(product.marge!) : 'N/A'),
-                    _buildInfoRow('% Marge', product.pourcentageMarge != null ? '${product.pourcentageMarge!.toStringAsFixed(1)}%' : 'N/A'),
+                    _buildInfoRow('product_detail_purchase_price'.tr, CurrencyConstants.formatAmount(product.prixAchat!)),
+                    _buildInfoRow('product_detail_margin'.tr, product.marge != null ? CurrencyConstants.formatAmount(product.marge!) : 'product_detail_na'.tr),
+                    _buildInfoRow('product_detail_margin_percent'.tr, product.pourcentageMarge != null ? '${product.pourcentageMarge!.toStringAsFixed(1)}%' : 'product_detail_na'.tr),
                   ],
-                  if (product.codeBarre != null && product.codeBarre!.isNotEmpty) _buildInfoRow('Code-barre', product.codeBarre!),
+                  if (product.codeBarre != null && product.codeBarre!.isNotEmpty) _buildInfoRow('product_detail_barcode'.tr, product.codeBarre!),
                   if (product.categorie != null && product.categorie!.isNotEmpty)
-                    _buildInfoRow('Catégorie', product.categorie!)
+                    _buildInfoRow('product_detail_category'.tr, product.categorie!)
                   else if (product.categorieId != null)
-                    _buildInfoRow('Catégorie', 'ID: ${product.categorieId} (nom non résolu)')
+                    _buildInfoRow('product_detail_category'.tr, 'product_detail_category_unresolved'.tr.replaceAll('@id', product.categorieId.toString()))
                   else
-                    _buildInfoRow('Catégorie', 'Aucune'),
-                  if (!product.estService) _buildInfoRow('Seuil de stock', '${product.seuilStockMinimum} unités'),
+                    _buildInfoRow('product_detail_category'.tr, 'product_detail_category_none'.tr),
+                  if (!product.estService) _buildInfoRow('product_detail_stock_threshold'.tr, '${product.seuilStockMinimum} ${'product_detail_units'.tr}'),
                 ],
               ),
               const SizedBox(height: 16),
 
               // Informations système
               _buildInfoCard(
-                'Informations système',
+                'product_detail_system_info'.tr,
                 Icons.schedule,
                 [
-                  _buildInfoRow('Date de création', _formatDate(product.dateCreation)),
-                  _buildInfoRow('Dernière modification', _formatDate(product.dateModification)),
-                  _buildInfoRow('Type', product.estService ? 'Service' : 'Produit physique'),
-                  _buildInfoRow('Statut', product.estActif ? 'Actif' : 'Inactif'),
-                  _buildInfoRow('Gestion péremption', product.gestionPeremption ? 'Activée' : 'Désactivée'),
+                  _buildInfoRow('product_detail_creation_date'.tr, _formatDate(product.dateCreation)),
+                  _buildInfoRow('product_detail_modification_date'.tr, _formatDate(product.dateModification)),
+                  _buildInfoRow('product_detail_type'.tr, product.estService ? 'product_detail_service'.tr : 'product_detail_physical'.tr),
+                  _buildInfoRow('product_detail_status'.tr, product.estActif ? 'product_detail_active_status'.tr : 'product_detail_inactive_status'.tr),
+                  _buildInfoRow('product_detail_expiration_management'.tr, product.gestionPeremption ? 'product_detail_expiration_enabled'.tr : 'product_detail_expiration_disabled'.tr),
                 ],
               ),
               const SizedBox(height: 16),
@@ -150,7 +150,7 @@ class ProductDetailView extends StatelessWidget {
           privilege: 'UPDATE',
           child: FloatingActionButton(
             onPressed: () => Get.toNamed('/products/${product.id}/edit', arguments: product),
-            tooltip: 'Modifier le produit',
+            tooltip: 'product_detail_edit'.tr,
             child: const Icon(Icons.edit),
           ),
         ),
@@ -182,14 +182,14 @@ class ProductDetailView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.estActif ? 'Produit actif' : 'Produit inactif',
+                  product.estActif ? 'product_detail_active'.tr : 'product_detail_inactive'.tr,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: product.estActif ? Colors.green.shade800 : Colors.red.shade800,
                   ),
                 ),
                 Text(
-                  product.estActif ? 'Ce produit est disponible pour les ventes' : 'Ce produit est désactivé et non disponible pour les ventes',
+                  product.estActif ? 'product_detail_active_subtitle'.tr : 'product_detail_inactive_subtitle'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: product.estActif ? Colors.green.shade600 : Colors.red.shade600,
@@ -290,22 +290,21 @@ class ProductDetailView extends StatelessWidget {
   void _showDeleteDialog(Product product) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('product_detail_delete_confirm_title'.tr),
         content: Text(
-          'Êtes-vous sûr de vouloir supprimer le produit "${product.nom}" ?\n\n'
-          'Cette action est irréversible.',
+          'product_detail_delete_confirm_message'.tr.replaceAll('@name', product.nom),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('product_detail_delete_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               // TODO: Implémenter la suppression
               Get.snackbar(
-                'Suppression',
+                'product_detail_delete'.tr,
                 'Fonctionnalité à implémenter',
                 snackPosition: SnackPosition.BOTTOM,
               );
@@ -314,7 +313,7 @@ class ProductDetailView extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('product_detail_delete_button'.tr),
           ),
         ],
       ),
@@ -333,7 +332,7 @@ class ProductDetailView extends StatelessWidget {
   Widget _buildErrorView([String? message]) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Erreur'),
+        title: Text('product_detail_not_found'.tr),
       ),
       body: Center(
         child: Column(
@@ -346,19 +345,19 @@ class ProductDetailView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              message ?? 'Produit non trouvé',
+              message ?? 'product_detail_not_found'.tr,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Impossible d\'afficher les détails du produit.',
-              style: TextStyle(color: Colors.grey),
+            Text(
+              'product_detail_error'.tr,
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => Get.offAllNamed('/products'),
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Retour aux produits'),
+              label: Text('product_detail_back'.tr),
             ),
           ],
         ),
@@ -370,7 +369,7 @@ class ProductDetailView extends StatelessWidget {
   Widget _buildLoadingView([String? productId]) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chargement...'),
+        title: Text('product_detail_loading'.tr),
       ),
       body: Center(
         child: Column(
@@ -378,11 +377,11 @@ class ProductDetailView extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text('Chargement du produit${productId != null ? ' $productId' : ''}...'),
+            Text('${'product_detail_loading'.tr}${productId != null ? ' $productId' : ''}...'),
             const SizedBox(height: 24),
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text('Annuler'),
+              child: Text('product_detail_delete_cancel'.tr),
             ),
           ],
         ),

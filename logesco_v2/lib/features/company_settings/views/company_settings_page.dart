@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/company_settings_controller.dart';
+import '../../../core/widgets/language_selector.dart';
 
 class CompanySettingsPage extends StatelessWidget {
   const CompanySettingsPage({super.key});
@@ -21,12 +22,12 @@ class CompanySettingsPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Paramètres de l\'entreprise'),
+          title: Text('company_settings_title'.tr),
           actions: [
             IconButton(
               onPressed: controller.refresh,
               icon: const Icon(Icons.refresh),
-              tooltip: 'Actualiser',
+              tooltip: 'refresh'.tr,
             ),
             Obx(() {
               if (!controller.canEdit) return const SizedBox.shrink();
@@ -34,7 +35,7 @@ class CompanySettingsPage extends StatelessWidget {
               return IconButton(
                 onPressed: controller.hasUnsavedChanges ? controller.resetForm : null,
                 icon: const Icon(Icons.undo),
-                tooltip: 'Annuler les modifications',
+                tooltip: 'company_settings_undo'.tr,
               );
             }),
           ],
@@ -55,6 +56,10 @@ class CompanySettingsPage extends StatelessWidget {
                 children: [
                   // En-tête avec statut
                   _buildStatusCard(controller),
+                  const SizedBox(height: 24),
+
+                  // Sélecteur de langue de l'application
+                  const LanguageSelector(),
                   const SizedBox(height: 24),
 
                   // Formulaire
@@ -229,10 +234,175 @@ class CompanySettingsPage extends StatelessWidget {
               settingsController: controller,
               enabled: controller.canEdit,
             ),
+            const SizedBox(height: 16),
+
+            // Slogan (optionnel)
+            _buildTextField(
+              controller: controller.sloganController,
+              label: 'Slogan (optionnel)',
+              icon: Icons.format_quote,
+              validator: null,
+              fieldKey: 'slogan',
+              settingsController: controller,
+              enabled: controller.canEdit,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+
+            // Langue des factures
+            _buildLanguageDropdown(controller),
+            const SizedBox(height: 16),
+
+            // Logo (optionnel)
+            _buildLogoSection(controller),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildLogoSection(CompanySettingsController controller) {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.image, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Logo (optionnel)',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (controller.logoPath != null) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Logo sélectionné',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ),
+                  if (controller.canEdit)
+                    IconButton(
+                      onPressed: controller.removeLogo,
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      tooltip: 'Supprimer le logo',
+                    ),
+                ],
+              ),
+            ),
+          ] else ...[
+            OutlinedButton.icon(
+              onPressed: controller.canEdit ? controller.selectLogo : null,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Sélectionner un logo'),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Le logo sera affiché sur les factures A4/A5',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ],
+      );
+    });
+  }
+
+  Widget _buildLanguageDropdown(CompanySettingsController controller) {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.language, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Langue des factures',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: controller.selectedLanguage,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              enabled: controller.canEdit,
+              hintText: 'Sélectionner la langue',
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'fr',
+                child: Row(
+                  children: [
+                    Text('🇫🇷'),
+                    SizedBox(width: 8),
+                    Text('Français'),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'en',
+                child: Row(
+                  children: [
+                    Text('🇬🇧'),
+                    SizedBox(width: 8),
+                    Text('English'),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'es',
+                child: Row(
+                  children: [
+                    Text('🇪🇸'),
+                    SizedBox(width: 8),
+                    Text('Español'),
+                  ],
+                ),
+              ),
+            ],
+            onChanged: controller.canEdit
+                ? (value) {
+                    if (value != null) {
+                      controller.setLanguage(value);
+                    }
+                  }
+                : null,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'La langue sélectionnée sera utilisée pour toutes les factures',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildTextField({

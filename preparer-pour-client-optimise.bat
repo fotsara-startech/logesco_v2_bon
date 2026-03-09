@@ -29,13 +29,42 @@ REM Nettoyer les anciens builds
 echo [1/6] Nettoyage...
 if exist "dist-portable" rmdir /s /q "dist-portable" 2>nul
 if exist "release\LOGESCO-Client-Optimise" rmdir /s /q "release\LOGESCO-Client-Optimise" 2>nul
+
+REM CRITIQUE: Supprimer la base de développement pour éviter de la copier
+echo.
+echo    Suppression base de developpement...
+if exist "backend\database" (
+    rmdir /s /q "backend\database" 2>nul
+    echo    ✅ Base de dev supprimee (ne sera pas copiee)
+) else (
+    echo    ✅ Aucune base de dev a supprimer
+)
+
 echo ✅ Nettoyage termine
 echo.
 
-REM Construire le backend portable OPTIMISÉ
-echo [2/6] Construction backend OPTIMISE...
-echo       (Prisma pre-genere, DB template incluse)
+REM Construire le backend portable OPTIMISÉ avec base de données VIERGE
+echo [2/6] Construction backend OPTIMISE avec DB VIERGE...
+echo       (Prisma pre-genere, DB vierge pour production)
 echo.
+
+REM Supprimer TOUTES les bases de données de développement
+echo       Nettoyage complet des bases de donnees de developpement...
+if exist "backend\database" (
+    rmdir /s /q "backend\database" 2>nul
+    echo       ✅ Dossier database de developpement supprime
+)
+if exist "backend\prisma\dev.db" (
+    del /f /q "backend\prisma\dev.db" 2>nul
+    echo       ✅ Base dev.db supprimee
+)
+if exist "backend\logesco.db" (
+    del /f /q "backend\logesco.db" 2>nul
+    echo       ✅ Base logesco.db supprimee
+)
+echo       ✅ Nettoyage complet termine
+echo.
+
 cd backend
 node build-portable-optimized.js
 if errorlevel 1 (
@@ -45,7 +74,7 @@ if errorlevel 1 (
     exit /b 1
 )
 cd ..
-echo ✅ Backend portable OPTIMISE construit
+echo ✅ Backend portable OPTIMISE construit avec DB VIERGE
 echo.
 
 REM Construire l'application Flutter
@@ -80,11 +109,34 @@ mkdir "release\LOGESCO-Client-Optimise\app"
 echo Copie backend optimise...
 xcopy /E /I /Y /Q "dist-portable\*" "release\LOGESCO-Client-Optimise\backend\" >nul
 
+REM Vérification finale: S'assurer qu'aucune base de développement n'est présente
+echo Verification finale base de donnees...
+if exist "release\LOGESCO-Client-Optimise\backend\database\logesco.db" (
+    echo       ✅ Base de donnees VIERGE presente
+) else (
+    echo       ⚠️  Base de donnees sera creee au premier demarrage
+)
+
+REM Supprimer toute base de données de développement qui aurait pu être copiée par erreur
+if exist "release\LOGESCO-Client-Optimise\backend\dev.db" (
+    del /f /q "release\LOGESCO-Client-Optimise\backend\dev.db" 2>nul
+    echo       🗑️  Base dev.db supprimee
+)
+if exist "release\LOGESCO-Client-Optimise\backend\prisma\dev.db" (
+    del /f /q "release\LOGESCO-Client-Optimise\backend\prisma\dev.db" 2>nul
+    echo       🗑️  Base prisma/dev.db supprimee
+)
+
 echo Copie application...
 xcopy /E /I /Y /Q "logesco_v2\build\windows\x64\runner\Release\*" "release\LOGESCO-Client-Optimise\app\" >nul
 
 echo ✅ Package client OPTIMISE cree
 echo.
+
+REM Copier le script de réinitialisation dans le package
+echo Copie script reinitialisation...
+copy "REINITIALISER-BASE-CLIENT.bat" "release\LOGESCO-Client-Optimise\REINITIALISER-BASE-DONNEES.bat" >nul
+echo ✅ Script reinitialisation copie
 
 REM Créer les scripts de démarrage OPTIMISÉS
 echo [5/6] Creation scripts demarrage OPTIMISES...
@@ -169,7 +221,7 @@ echo ^) else ^(
 echo     echo ❌ Prisma Client manquant
 echo ^)
 echo if exist "backend\database\logesco.db" ^(
-echo     echo ✅ Base de donnees template presente
+echo     echo ✅ Base de donnees VIERGE presente
 echo ^) else ^(
 echo     echo ⚠️  Base de donnees sera creee au demarrage
 echo ^)
@@ -209,10 +261,11 @@ echo. >> "release\LOGESCO-Client-Optimise\README.txt"
 echo OPTIMISATIONS >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ============== >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ✅ Prisma Client pre-genere (pas de generation au demarrage) >> "release\LOGESCO-Client-Optimise\README.txt"
-echo ✅ Base de donnees template incluse >> "release\LOGESCO-Client-Optimise\README.txt"
+echo ✅ Base de donnees VIERGE pour production >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ✅ Backend demarre en arriere-plan (pas de fenetre visible) >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ✅ Scripts intelligents (verifications conditionnelles) >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ✅ Demarrage 4x plus rapide (7-9s au lieu de 30-40s) >> "release\LOGESCO-Client-Optimise\README.txt"
+echo ⚠️  AUCUNE donnee de developpement incluse >> "release\LOGESCO-Client-Optimise\README.txt"
 echo. >> "release\LOGESCO-Client-Optimise\README.txt"
 echo PREREQUIS >> "release\LOGESCO-Client-Optimise\README.txt"
 echo --------- >> "release\LOGESCO-Client-Optimise\README.txt"
@@ -222,9 +275,10 @@ echo - 500 MB d'espace disque libre >> "release\LOGESCO-Client-Optimise\README.t
 echo. >> "release\LOGESCO-Client-Optimise\README.txt"
 echo SCRIPTS DISPONIBLES >> "release\LOGESCO-Client-Optimise\README.txt"
 echo =================== >> "release\LOGESCO-Client-Optimise\README.txt"
-echo DEMARRER-LOGESCO.bat      - Lance le systeme (ultra-rapide!) >> "release\LOGESCO-Client-Optimise\README.txt"
-echo ARRETER-LOGESCO.bat       - Arrete tous les processus >> "release\LOGESCO-Client-Optimise\README.txt"
-echo VERIFIER-PREREQUIS.bat    - Verifie l'installation >> "release\LOGESCO-Client-Optimise\README.txt"
+echo DEMARRER-LOGESCO.bat           - Lance le systeme (ultra-rapide!) >> "release\LOGESCO-Client-Optimise\README.txt"
+echo ARRETER-LOGESCO.bat            - Arrete tous les processus >> "release\LOGESCO-Client-Optimise\README.txt"
+echo VERIFIER-PREREQUIS.bat         - Verifie l'installation >> "release\LOGESCO-Client-Optimise\README.txt"
+echo REINITIALISER-BASE-DONNEES.bat - Reinitialise la base (DANGER!) >> "release\LOGESCO-Client-Optimise\README.txt"
 echo. >> "release\LOGESCO-Client-Optimise\README.txt"
 echo CONNEXION PAR DEFAUT >> "release\LOGESCO-Client-Optimise\README.txt"
 echo ==================== >> "release\LOGESCO-Client-Optimise\README.txt"
@@ -249,10 +303,11 @@ echo    release\LOGESCO-Client-Optimise\
 echo.
 echo 🚀 OPTIMISATIONS:
 echo    ✅ Prisma Client pre-genere
-echo    ✅ Base de donnees template incluse
+echo    ✅ Base de donnees VIERGE pour production
 echo    ✅ Demarrage en arriere-plan
 echo    ✅ Scripts intelligents
 echo    ✅ 4x plus rapide (7-9s au lieu de 30-40s)
+echo    ⚠️  AUCUNE donnee de developpement incluse
 echo.
 echo 📂 Contenu:
 echo    ✅ DEMARRER-LOGESCO.bat (Lance tout - RAPIDE!)

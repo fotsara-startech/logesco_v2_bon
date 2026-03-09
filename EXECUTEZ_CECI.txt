@@ -1,0 +1,93 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                    EXÉCUTEZ CECI                             ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+Je comprends votre frustration.
+
+Arrêtons de deviner. Faisons un diagnostic PRÉCIS.
+
+
+═══════════════════════════════════════════════════════════════
+  🎯 CE QUE VOUS DEVEZ FAIRE
+═══════════════════════════════════════════════════════════════
+
+1. Allez dans le dossier d'installation client
+   (celui qui a des données)
+
+2. Exécutez:
+
+   > DIAGNOSTIC-FINAL.bat
+
+3. Suivez les instructions à l'écran
+
+4. À la fin, copiez-moi TOUT le résultat
+
+
+═══════════════════════════════════════════════════════════════
+  📋 CE QUE LE SCRIPT VA FAIRE
+═══════════════════════════════════════════════════════════════
+
+Le script va:
+
+1. Compter vos données AVANT (SQLite + Prisma)
+2. Sauvegarder votre base
+3. Simuler une migration (supprimer + restaurer)
+4. Générer Prisma
+5. Compter vos données APRÈS (SQLite + Prisma)
+6. Vous dire EXACTEMENT où ça échoue
+
+
+═══════════════════════════════════════════════════════════════
+  ✅ RÉSULTAT ATTENDU
+═══════════════════════════════════════════════════════════════
+
+À la fin, vous verrez:
+
+AVANT MIGRATION:
+  Prisma: 165 produits
+
+APRES GENERATION PRISMA:
+  Prisma: 165 produits
+
+✅ SUCCES! ou ❌ ECHEC!
+
+
+Si ECHEC, le script vous dira EXACTEMENT:
+- Est-ce la copie de la base qui échoue?
+- Est-ce la génération Prisma qui échoue?
+- SQLite voit-il les données?
+
+
+═══════════════════════════════════════════════════════════════
+  📝 ENSUITE
+═══════════════════════════════════════════════════════════════
+
+Copiez-moi le résultat complet, notamment:
+
+- Prisma avant: X
+- Prisma après: Y
+- SQLite après: Z
+- Le message d'analyse
+
+Avec ça, je saurai EXACTEMENT quel est le problème
+et je pourrai le corriger définitivement.
+
+
+═══════════════════════════════════════════════════════════════
+  🚀 COMMANDES
+═══════════════════════════════════════════════════════════════
+
+cd "E:\Stage 2025\LOGESCO-Client-Optimise"
+DIAGNOSTIC-FINAL.bat
+
+
+═══════════════════════════════════════════════════════════════
+
+Exécutez ce diagnostic et donnez-moi le résultat.
+
+Je ne devine plus. Je vais identifier le problème EXACT.
+
+═══════════════════════════════════════════════════════════════

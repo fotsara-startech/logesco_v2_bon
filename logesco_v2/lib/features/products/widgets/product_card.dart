@@ -50,7 +50,7 @@ class ProductCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Réf: ${product.reference}',
+                          'product_card_reference'.tr.replaceAll('@reference', product.reference),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -59,7 +59,7 @@ class ProductCard extends StatelessWidget {
                         ),
                         if (product.codeBarre != null && product.codeBarre!.isNotEmpty)
                           Text(
-                            'Code: ${product.codeBarre}',
+                            'product_card_code'.tr.replaceAll('@code', product.codeBarre!),
                             style: TextStyle(
                               fontSize: 10,
                               color: Colors.grey[500],
@@ -82,7 +82,7 @@ class ProductCard extends StatelessWidget {
                   Expanded(
                     child: _buildInfoItem(
                       Icons.attach_money,
-                      'Prix vente',
+                      'product_card_sale_price'.tr,
                       CurrencyConstants.formatAmount(product.prixUnitaire),
                     ),
                   ),
@@ -90,7 +90,7 @@ class ProductCard extends StatelessWidget {
                     Expanded(
                       child: _buildInfoItem(
                         Icons.shopping_cart,
-                        'Prix achat',
+                        'product_card_purchase_price'.tr,
                         CurrencyConstants.formatAmount(product.prixAchat!),
                       ),
                     )
@@ -98,7 +98,7 @@ class ProductCard extends StatelessWidget {
                     Expanded(
                       child: _buildInfoItem(
                         Icons.category,
-                        'Catégorie',
+                        'product_card_category'.tr,
                         product.categorie!,
                       ),
                     ),
@@ -113,22 +113,22 @@ class ProductCard extends StatelessWidget {
                     Expanded(
                       child: _buildInfoItem(
                         Icons.warning_amber,
-                        'Seuil stock',
-                        '${product.seuilStockMinimum} unités',
+                        'product_card_stock_threshold'.tr,
+                        'product_card_units'.tr.replaceAll('@count', product.seuilStockMinimum.toString()),
                       ),
                     )
                   else
                     Expanded(
                       child: _buildInfoItem(
                         Icons.design_services,
-                        'Type',
-                        'Service',
+                        'product_card_type'.tr,
+                        'product_card_service'.tr,
                       ),
                     ),
                   Expanded(
                     child: _buildInfoItem(
                       Icons.schedule,
-                      'Modifié',
+                      'product_card_modified'.tr,
                       _formatDate(product.dateModification),
                     ),
                   ),
@@ -180,11 +180,11 @@ class ProductCard extends StatelessWidget {
     // Option Modifier
     if (canUpdate) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: ListTile(
-            leading: Icon(Icons.edit),
-            title: Text('Modifier'),
+            leading: const Icon(Icons.edit),
+            title: Text('product_card_edit'.tr),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -200,7 +200,7 @@ class ProductCard extends StatelessWidget {
             leading: Icon(
               product.estActif ? Icons.visibility_off : Icons.visibility,
             ),
-            title: Text(product.estActif ? 'Désactiver' : 'Activer'),
+            title: Text(product.estActif ? 'product_card_deactivate'.tr : 'product_card_activate'.tr),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -210,11 +210,11 @@ class ProductCard extends StatelessWidget {
     // Option Supprimer
     if (canDelete) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: Text('product_card_delete'.tr, style: const TextStyle(color: Colors.red)),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -257,7 +257,7 @@ class ProductCard extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            product.estActif ? 'Actif' : 'Inactif',
+            product.estActif ? 'product_card_active'.tr : 'product_card_inactive'.tr,
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
@@ -312,11 +312,11 @@ class ProductCard extends StatelessWidget {
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return 'Aujourd\'hui';
+      return 'product_card_today'.tr;
     } else if (difference.inDays == 1) {
-      return 'Hier';
+      return 'product_card_yesterday'.tr;
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} jours';
+      return 'product_card_days_ago'.tr.replaceAll('@days', difference.inDays.toString());
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

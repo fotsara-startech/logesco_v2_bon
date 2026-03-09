@@ -142,41 +142,35 @@ function createInventoryRouter(models) {
 
         // Filtrer par alerte de stock si demandé
         if (alerteStock === true || alerteStock === 'true') {
-          // Récupérer tous les produits actifs en alerte avec pagination
-          const produits = await models.prisma.produit.findMany({
+          // Récupérer TOUS les produits actifs pour filtrer les alertes
+          const allProduits = await models.prisma.produit.findMany({
             where: produitWhere,
             include: {
               stock: true,
               categorie: true
             },
-            orderBy: { nom: 'asc' },
-            skip: offset,
-            take: limitNum
+            orderBy: { nom: 'asc' }
           });
 
-          // Filtrer côté JavaScript pour les alertes
-          const alertStocks = produits
-            .filter(p => !p.stock || p.stock.quantiteDisponible <= p.seuilStockMinimum)
-            .map(p => ({
-              id: p.stock?.id || `alert_${p.id}`,
-              produitId: p.id,
-              quantiteDisponible: p.stock?.quantiteDisponible ?? 0,
-              quantiteReservee: p.stock?.quantiteReservee ?? 0,
-              derniereMaj: p.stock?.derniereMaj || new Date(),
-              produit: p
-            }));
-
-          // Compter le total
-          const allProduitsAlerte = await models.prisma.produit.findMany({
-            where: produitWhere,
-            include: {
-              stock: true
-            }
-          });
-
-          const totalAlerts = allProduitsAlerte.filter(
+          // Filtrer pour ne garder que les produits en alerte
+          const produitsEnAlerte = allProduits.filter(
             p => !p.stock || p.stock.quantiteDisponible <= p.seuilStockMinimum
-          ).length;
+          );
+
+          // Appliquer la pagination APRÈS le filtrage
+          const paginatedAlerts = produitsEnAlerte.slice(offset, offset + limitNum);
+
+          // Mapper vers le format attendu
+          const alertStocks = paginatedAlerts.map(p => ({
+            id: p.stock?.id || `alert_${p.id}`,
+            produitId: p.id,
+            quantiteDisponible: p.stock?.quantiteDisponible ?? 0,
+            quantiteReservee: p.stock?.quantiteReservee ?? 0,
+            derniereMaj: p.stock?.derniereMaj || new Date(),
+            produit: p
+          }));
+
+          const totalAlerts = produitsEnAlerte.length;
 
           const stocksDTO = StockDTO.fromEntities(alertStocks);
           const response = new PaginatedResponseDTO(
@@ -605,13 +599,12 @@ function createInventoryRouter(models) {
             }
           }),
 
-          // Produits en alerte (stock <= seuil)
+          // Produits en alerte (stock <= seuil, incluant les ruptures)
           models.prisma.$queryRaw`
             SELECT COUNT(*) as count
             FROM stock s
             INNER JOIN produits p ON s.produit_id = p.id
             WHERE s.quantite_disponible <= p.seuil_stock_minimum
-            AND s.quantite_disponible > 0
             AND p.est_actif = 1
           `,
 

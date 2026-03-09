@@ -93,9 +93,9 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Comptage Inventaire'),
+              Text('inventory_count_title'.tr),
               Text(
-                inventory?.nom ?? 'Inventaire',
+                inventory?.nom ?? 'inventory_title'.tr,
                 style: const TextStyle(fontSize: 12),
               ),
             ],
@@ -105,28 +105,28 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           IconButton(
             icon: const Icon(Icons.print),
             onPressed: _printInventorySheet,
-            tooltip: 'Imprimer feuille de comptage',
+            tooltip: 'inventory_count_print_sheet'.tr,
           ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export',
                 child: Row(
                   children: [
-                    Icon(Icons.file_download),
-                    SizedBox(width: 8),
-                    Text('Exporter'),
+                    const Icon(Icons.file_download),
+                    const SizedBox(width: 8),
+                    Text('inventory_count_export'.tr),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'close_inventory',
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text('Clôturer inventaire'),
+                    const Icon(Icons.check_circle, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text('inventory_count_finalize'.tr),
                   ],
                 ),
               ),
@@ -164,7 +164,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Progression: $countedItems/$totalItems articles',
+                  'inventory_progress'.trParams({'counted': countedItems.toString(), 'total': totalItems.toString()}),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
@@ -188,7 +188,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                   Icon(Icons.warning, size: 16, color: Colors.orange.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    '$varianceItems écart(s) détecté(s)',
+                    'inventory_variances'.trParams({'count': varianceItems.toString()}),
                     style: TextStyle(
                       color: Colors.orange.shade600,
                       fontSize: 12,
@@ -211,7 +211,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Rechercher par nom ou code produit...',
+              hintText: 'inventory_count_search'.tr,
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -230,7 +230,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
             children: [
               Expanded(
                 child: CheckboxListTile(
-                  title: const Text('Afficher seulement les écarts'),
+                  title: Text('inventory_count_show_variances'.tr),
                   value: _showOnlyVariances,
                   onChanged: (value) {
                     setState(() {
@@ -252,8 +252,8 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       final filteredItems = _getFilteredItems();
 
       if (filteredItems.isEmpty) {
-        return const Center(
-          child: Text('Aucun article trouvé'),
+        return Center(
+          child: Text('inventory_count_no_items'.tr),
         );
       }
 
@@ -315,7 +315,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                       if (item.codeProduit != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Code: ${item.codeProduit}',
+                          'inventory_count_code'.trParams({'code': item.codeProduit!}),
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -365,9 +365,9 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Text(
-          'À compter',
-          style: TextStyle(fontSize: 12),
+        child: Text(
+          'inventory_count_to_count'.tr,
+          style: const TextStyle(fontSize: 12),
         ),
       );
     }
@@ -385,7 +385,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
             Icon(Icons.warning, size: 12, color: Colors.orange.shade700),
             const SizedBox(width: 4),
             Text(
-              'Écart',
+              'inventory_count_variance'.tr,
               style: TextStyle(
                 color: Colors.orange.shade700,
                 fontSize: 12,
@@ -408,7 +408,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           Icon(Icons.check, size: 12, color: Colors.green.shade700),
           const SizedBox(width: 4),
           Text(
-            'OK',
+            'inventory_count_ok'.tr,
             style: TextStyle(
               color: Colors.green.shade700,
               fontSize: 12,
@@ -435,9 +435,9 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Qté Système',
-                      style: TextStyle(
+                    Text(
+                      'inventory_count_qty_system'.tr,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -457,9 +457,9 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Qté Comptée',
-                      style: TextStyle(
+                    Text(
+                      'inventory_count_qty_counted'.tr,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -512,9 +512,9 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Écart',
-                        style: TextStyle(
+                      Text(
+                        'inventory_count_variance'.tr,
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -554,7 +554,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
           Icon(Icons.person, size: 14, color: Colors.blue.shade600),
           const SizedBox(width: 4),
           Text(
-            'Compté par ${item.nomUtilisateurComptage} le ${_formatDateTime(item.dateComptage!)}',
+            'inventory_count_counted_by'.trParams({'user': item.nomUtilisateurComptage ?? 'N/A', 'date': _formatDateTime(item.dateComptage!)}),
             style: TextStyle(
               fontSize: 11,
               color: Colors.blue.shade600,
@@ -569,7 +569,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                 Icon(Icons.edit, size: 12, color: Colors.blue.shade600),
                 const SizedBox(width: 2),
                 Text(
-                  'Modifier',
+                  'inventory_count_edit'.tr,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.blue.shade600,
@@ -609,7 +609,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
               child: OutlinedButton.icon(
                 onPressed: _printInventorySheet,
                 icon: const Icon(Icons.print),
-                label: const Text('Imprimer feuille'),
+                label: Text('inventory_count_print_sheet_btn'.tr),
               ),
             ),
             const SizedBox(width: 12),
@@ -617,7 +617,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
               child: ElevatedButton.icon(
                 onPressed: isComplete ? _finalizeInventory : null,
                 icon: const Icon(Icons.check_circle),
-                label: Text(isComplete ? 'Finaliser' : 'Incomplet'),
+                label: Text(isComplete ? 'inventory_count_finalize_btn'.tr : 'inventory_count_incomplete'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isComplete ? Colors.green : null,
                   foregroundColor: isComplete ? Colors.white : null,
@@ -637,7 +637,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
 
     final count = double.tryParse(countText);
     if (count == null) {
-      Get.snackbar('Erreur', 'Veuillez entrer un nombre valide');
+      Get.snackbar('common_error'.tr, 'inventory_count_save_error'.tr);
       return;
     }
 
@@ -655,18 +655,18 @@ class _InventoryCountViewState extends State<InventoryCountView> {
 
     Get.dialog(
       AlertDialog(
-        title: Text('Modifier le comptage - ${item.nomProduit}'),
+        title: Text('inventory_count_edit_title'.trParams({'product': item.nomProduit})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Quantité système: ${item.quantiteSysteme.toStringAsFixed(0)}'),
+            Text('inventory_count_system_qty'.trParams({'qty': item.quantiteSysteme.toStringAsFixed(0)})),
             const SizedBox(height: 16),
             TextField(
               controller: countController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nouvelle quantité comptée',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'inventory_count_new_qty'.tr,
+                border: const OutlineInputBorder(),
               ),
               autofocus: true,
             ),
@@ -675,14 +675,14 @@ class _InventoryCountViewState extends State<InventoryCountView> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               _saveCount(item);
             },
-            child: const Text('Enregistrer'),
+            child: Text('common_save'.tr),
           ),
         ],
       ),
@@ -694,8 +694,8 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       _controller.printCountingSheet(_inventoryId!);
     } else {
       Get.snackbar(
-        'Erreur',
-        'ID d\'inventaire manquant',
+        'common_error'.tr,
+        'inventory_error_id'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -709,15 +709,15 @@ class _InventoryCountViewState extends State<InventoryCountView> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Finaliser l\'inventaire'),
+        title: Text('inventory_count_finalize_title'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Résumé de l\'inventaire:'),
+            Text('inventory_count_summary'.tr),
             const SizedBox(height: 8),
-            Text('• Articles comptés: ${items.where((i) => i.isCounted).length}'),
-            Text('• Écarts détectés: $varianceItems'),
+            Text('inventory_count_items_counted'.trParams({'count': items.where((i) => i.isCounted).length.toString()})),
+            Text('inventory_count_variances_detected'.trParams({'count': varianceItems.toString()})),
             const SizedBox(height: 16),
             if (varianceItems > 0)
               Container(
@@ -727,18 +727,18 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Attention: $varianceItems écart(s) seront appliqués au stock.',
+                  'inventory_count_warning'.trParams({'count': varianceItems.toString()}),
                   style: TextStyle(color: Colors.orange.shade800),
                 ),
               ),
             const SizedBox(height: 8),
-            const Text('Voulez-vous finaliser cet inventaire ?'),
+            Text('inventory_count_confirm_question'.tr),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -749,7 +749,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Finaliser'),
+            child: Text('inventory_count_finalize_btn'.tr),
           ),
         ],
       ),
@@ -770,7 +770,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
   void _handleMenuAction(String action) {
     switch (action) {
       case 'export':
-        Get.snackbar('Export', 'Exportation en cours...');
+        Get.snackbar('inventory_count_export'.tr, 'common_in_progress'.tr);
         break;
       case 'close_inventory':
         _finalizeInventory();

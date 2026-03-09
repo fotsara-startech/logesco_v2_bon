@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
+import '../utils/receipt_translations.dart';
 
 /// Template de reçu pour imprimante thermique (80mm)
 class ReceiptTemplateThermal extends ReceiptTemplateBase {
@@ -116,7 +117,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
         // Téléphone
         if (company.phone?.isNotEmpty == true)
           Text(
-            'Tel: ${company.phone}',
+            '${t('phone')}: ${company.phone}',
             style: textStyle,
             textAlign: TextAlign.center,
           ),
@@ -124,7 +125,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
         // NUI RCCM
         if (company.nuiRccm?.isNotEmpty == true)
           Text(
-            'NUI: ${company.nuiRccm}',
+            '${t('nuiRccm')}: ${company.nuiRccm}',
             style: textStyle,
             textAlign: TextAlign.center,
           ),
@@ -136,6 +137,12 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
 
   /// Construit les informations de vente pour thermique
   Widget _buildThermalSaleInfo(BuildContext context) {
+    // Test de la méthode t()
+    print('🧪 TEST TRADUCTION dans thermal template:');
+    print('  t("invoice") = ${t("invoice")}');
+    print('  t("saleNumber") = ${t("saleNumber")}');
+    print('  receipt.language = ${receipt.language}');
+
     final headerStyle = TextStyle(
       fontSize: template.headerFontSize,
       fontWeight: FontWeight.bold,
@@ -151,7 +158,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
       children: [
         // Titre du reçu
         Text(
-          'Recu de vente',
+          t('invoice'),
           style: headerStyle,
           textAlign: TextAlign.center,
         ),
@@ -161,7 +168,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
-              receipt.reprintIndicator,
+              t('reprint'),
               style: TextStyle(
                 fontSize: template.fontSize,
                 fontWeight: FontWeight.bold,
@@ -179,11 +186,11 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('N° Vente: ${receipt.saleNumber}', style: textStyle),
-              Text('Date: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: textStyle),
+              Text('${t('saleNumber')}: ${receipt.saleNumber}', style: textStyle),
+              Text('${t('date')}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: textStyle),
               Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: textStyle),
-              if (receipt.customer != null) Text('Client: ${_truncateText(receipt.customer!.nom, 15)}', style: textStyle),
-              Text('Paiement: ${receipt.paymentMethod}', style: textStyle),
+              if (receipt.customer != null) Text('${t('customer')}: ${_truncateText(receipt.customer!.nom, 15)}', style: textStyle),
+              Text('${t('paymentMethod')}: ${receipt.paymentMethod}', style: textStyle),
             ],
           ),
         ),
@@ -207,7 +214,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
       children: [
         // En-tête simple
         Text(
-          'ARTICLES:',
+          '${t('article').toUpperCase()}S:',
           style: TextStyle(
             fontSize: template.fontSize,
             fontWeight: FontWeight.bold,
@@ -248,7 +255,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
                         ),
                         // Remise appliquée
                         Text(
-                          'Remise: -${item.totalDiscountAmount.toStringAsFixed(0)} FCFA',
+                          '${t('discount')}: -${item.totalDiscountAmount.toStringAsFixed(0)} FCFA',
                           style: TextStyle(
                             fontSize: template.fontSize - 1,
                             color: Colors.green[600],
@@ -256,7 +263,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
                         ),
                         // Prix payé
                         Text(
-                          'Prix payé: ${item.formattedTotalPrice}',
+                          '${t('paid')}: ${item.formattedTotalPrice}',
                           style: TextStyle(
                             fontSize: template.fontSize - 1,
                             fontWeight: FontWeight.bold,
@@ -326,10 +333,10 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Sous-total (aligné à gauche)
-        Text('Sous-total: ${correctSubtotal.toStringAsFixed(0)} FCFA', style: textStyle),
+        Text('${t('subtotal')}: ${correctSubtotal.toStringAsFixed(0)} FCFA', style: textStyle),
 
         // Remise si applicable
-        if (actualDiscountAmount > 0) Text('Remise: -${actualDiscountAmount.toStringAsFixed(0)} FCFA', style: TextStyle(fontSize: template.fontSize, color: Colors.green[600])),
+        if (actualDiscountAmount > 0) Text('${t('discount')}: -${actualDiscountAmount.toStringAsFixed(0)} FCFA', style: TextStyle(fontSize: template.fontSize, color: Colors.green[600])),
 
         // Ligne de séparation
         Container(
@@ -341,15 +348,15 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
         ),
 
         // Total
-        Text('TOTAL: ${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
+        Text('${t('totalAmount')}: ${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
 
         // Montant payé - TOUJOURS afficher avec formatage amélioré
-        Text('Paye: ${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: textStyle),
+        Text('${t('paid')}: ${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: textStyle),
 
         // Monnaie (change) si applicable - CORRECTION LOGIQUE
         if (receipt.paidAmount > receipt.totalAmount) ...[
           Text(
-            'Monnaie: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)} FCFA',
+            '${t('change')}: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)} FCFA',
             style: TextStyle(
               fontSize: template.fontSize,
               fontWeight: FontWeight.bold,
@@ -361,7 +368,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
         // Reste à payer / Dette si applicable - CORRECTION LOGIQUE
         if (receipt.remainingAmount > 0) ...[
           Text(
-            'Reste: ${receipt.remainingAmount.toStringAsFixed(0)} FCFA',
+            '${t('remaining')}: ${receipt.remainingAmount.toStringAsFixed(0)} FCFA',
             style: TextStyle(
               fontSize: template.fontSize,
               fontWeight: FontWeight.bold,
@@ -375,6 +382,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
 
   /// Construit le pied de page pour thermique
   Widget _buildThermalFooter(BuildContext context) {
+    final company = receipt.companyInfo;
     final smallStyle = TextStyle(
       fontSize: template.fontSize - 0.5,
       color: Colors.black87,
@@ -384,10 +392,27 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
       children: [
         const SizedBox(height: 6),
 
+        // Slogan de l'entreprise (si disponible)
+        if (company.slogan != null && company.slogan!.isNotEmpty) ...[
+          Text(
+            company.slogan!,
+            style: TextStyle(
+              fontSize: template.fontSize,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+        ],
+
         // Informations de réimpression si applicable
         if (receipt.isReprint && receipt.lastReprintDate != null) ...[
           Text(
-            'Reimprime le ${receipt.lastReprintDate!.day.toString().padLeft(2, '0')}/'
+            '${t('reprintedOn')} ${receipt.lastReprintDate!.day.toString().padLeft(2, '0')}/'
             '${receipt.lastReprintDate!.month.toString().padLeft(2, '0')}/'
             '${receipt.lastReprintDate!.year}',
             style: smallStyle,
@@ -395,7 +420,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
           ),
           if (receipt.reprintBy?.isNotEmpty == true)
             Text(
-              'par ${receipt.reprintBy}',
+              '${t('by')} ${receipt.reprintBy}',
               style: smallStyle,
               textAlign: TextAlign.center,
             ),
@@ -404,7 +429,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
 
         // Message de remerciement personnalisé
         Text(
-          'Merci pour votre confiance !',
+          t('thankYou'),
           style: TextStyle(
             fontSize: template.fontSize,
             fontWeight: FontWeight.bold,

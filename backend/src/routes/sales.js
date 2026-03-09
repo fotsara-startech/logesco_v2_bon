@@ -394,6 +394,15 @@ function createSalesRouter({ prisma, authService }) {
       try {
         const { clientId, modePaiement, montantRemise, montantPaye, details, dateVente } = req.body;
 
+        // DEBUG: Log des données reçues
+        console.log('📥 Données reçues pour création vente:');
+        console.log(`   - clientId: ${clientId}`);
+        console.log(`   - modePaiement: ${modePaiement}`);
+        console.log(`   - montantRemise: ${montantRemise}`);
+        console.log(`   - montantPaye: ${montantPaye} (type: ${typeof montantPaye})`);
+        console.log(`   - dateVente: ${dateVente}`);
+        console.log(`   - nombre de détails: ${details?.length}`);
+
         // Vérifier les privilèges d'antidatage si une date personnalisée est fournie
         if (dateVente) {
           const customDate = new Date(dateVente);
@@ -605,11 +614,33 @@ function createSalesRouter({ prisma, authService }) {
         console.log(`Montant restant: ${montantRestant} FCFA`);
         console.log(`Monnaie à rendre: ${monnaieARendre} FCFA`);
 
+        // Calculer le montant payé pour CETTE vente uniquement (pour le reçu)
+        // Si le client a une dette, l'excédent sert à la rembourser, pas à payer cette vente
+        const montantPayePourCetteVente = Math.min(montantVerse, montantVenteNet);
+        console.log(`💰 Montant payé pour cette vente (reçu): ${montantPayePourCetteVente} FCFA`);
+
         // Générer le numéro de vente
         const numeroVente = await generateSaleNumber(prisma);
 
         // Créer la vente dans une transaction
         const vente = await prisma.$transaction(async (tx) => {
+          // Récupérer la session active de l'utilisateur
+          const activeSession = await tx.cashSession.findFirst({
+            where: {
+              utilisateurId: req.user?.id || 1,
+              isActive: true,
+              dateFermeture: null
+            }
+          });
+
+          const sessionId = activeSession ? activeSession.id : null;
+          
+          if (!activeSession) {
+            console.log('⚠️ Aucune session active trouvée - la vente sera créée sans session');
+          } else {
+            console.log(`✅ Session active trouvée: ID ${activeSession.id}`);
+          }
+
           // Créer la vente avec la logique automatique
           // SOLUTION 2: Toutes les ventes sont marquées "terminee"
           // Le compte client gère les dettes, pas le statut de la vente
@@ -617,12 +648,13 @@ function createSalesRouter({ prisma, authService }) {
             data: {
               numeroVente,
               clientId: clientId || null,
+              sessionId: sessionId,
               modePaiement: modeDeTermine, // Mode déterminé automatiquement
               sousTotal: montantVente,
               montantRemise: montantRemise || 0,
               montantTotal: montantVenteNet, // Montant de cette vente uniquement
-              montantPaye: montantVerse, // Montant versé pour cette vente
-              montantRestant: Math.max(0, montantVenteNet - montantVerse), // Reste pour CETTE vente uniquement
+              montantPaye: montantPayePourCetteVente, // CORRECTION: Montant payé pour CETTE vente uniquement (pas le total avec dette)
+              montantRestant: Math.max(0, montantVenteNet - montantPayePourCetteVente), // Reste pour CETTE vente uniquement
               statut: 'terminee', // Toujours "terminee" - le compte client gère les dettes
               vendeurId: req.user?.id || null,
               dateVente: dateVente ? new Date(dateVente) : new Date(), // Date personnalisée ou actuelle
@@ -850,6 +882,33 @@ function createSalesRouter({ prisma, authService }) {
             }
           }
 
+          // CORRECTION: Créer un mouvement de caisse pour traçabilité (DANS la transaction)
+          if (sessionId && montantVerse > 0) {
+            const clientInfo = nouvelleVente.client;
+            await tx.cashMovement.create({
+              data: {
+                caisseId: activeSession.caisseId,
+                sessionId: sessionId,
+                type: 'vente',
+                montant: montantVerse,
+                description: `Vente ${nouvelleVente.numeroVente}${clientInfo ? ` - Client: ${clientInfo.nom} ${clientInfo.prenom || ''}` : ''}`,
+                utilisateurId: req.user?.id || null,
+                metadata: JSON.stringify({
+                  categorie: 'vente',
+                  referenceType: 'vente',
+                  referenceId: nouvelleVente.id,
+                  venteReference: nouvelleVente.numeroVente,
+                  clientId: clientInfo?.id || null,
+                  clientNom: clientInfo ? `${clientInfo.nom} ${clientInfo.prenom || ''}` : null,
+                  montantTotal: montantVenteNet,
+                  montantVerse: montantVerse,
+                  montantRestant: montantRestant
+                })
+              }
+            });
+            console.log(`✅ Mouvement de caisse créé pour la vente (${montantVerse} FCFA)`);
+          }
+
           return nouvelleVente;
         });
 
@@ -878,6 +937,18 @@ function createSalesRouter({ prisma, authService }) {
             console.log(`   Solde attendu avant: ${currentSoldeAttendu} FCFA`);
             console.log(`   Montant vente: +${montantVerse} FCFA`);
             console.log(`   Solde attendu après: ${newSoldeAttendu} FCFA`);
+
+            // CORRECTION: Mettre à jour aussi le solde de la caisse (pas seulement la session)
+            console.log(`💰 Mise à jour atomique du solde de la caisse (ID: ${activeSession.caisseId})`);
+            const caisseUpdated = await prisma.cashRegister.update({
+              where: { id: activeSession.caisseId },
+              data: {
+                soldeActuel: {
+                  increment: montantVerse
+                }
+              }
+            });
+            console.log(`✅ Solde caisse mis à jour: ${caisseUpdated.soldeActuel} FCFA`);
           }
         } catch (error) {
           console.error('⚠️ Erreur lors de la mise à jour de la session de caisse:', error);

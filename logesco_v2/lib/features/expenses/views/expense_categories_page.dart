@@ -14,13 +14,13 @@ class ExpenseCategoriesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catégories de Dépenses'),
+        title: Text('expenses_categories_title'.tr),
         elevation: 0,
         actions: [
           IconButton(
             onPressed: controller.loadCategories,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -34,9 +34,9 @@ class ExpenseCategoriesPage extends StatelessWidget {
         if (controller.categories.isEmpty) {
           return EmptyState(
             icon: Icons.category_outlined,
-            title: 'Aucune catégorie',
-            subtitle: 'Créez votre première catégorie de dépense pour organiser vos finances',
-            actionText: 'Créer une catégorie',
+            title: 'expenses_categories_empty'.tr,
+            subtitle: 'expenses_categories_empty_subtitle'.tr,
+            actionText: 'expenses_category_create'.tr,
             onAction: () => Get.to(() => const CreateExpenseCategoryPage()),
           );
         }
@@ -56,7 +56,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.to(() => const CreateExpenseCategoryPage()),
         icon: const Icon(Icons.add),
-        label: const Text('Nouvelle catégorie'),
+        label: Text('expenses_category_new'.tr),
       ),
     );
   }
@@ -94,7 +94,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          'Nom système: ${category.nom}',
+          'expenses_category_system_name'.trParams({'name': category.nom}),
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey.shade600,
@@ -112,19 +112,19 @@ class ExpenseCategoriesPage extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Modifier'),
+                leading: const Icon(Icons.edit),
+                title: Text('edit'.tr),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -140,7 +140,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Modifier la catégorie'),
+        title: Text('expenses_category_edit'.tr),
         content: Form(
           key: formKey,
           child: Column(
@@ -148,13 +148,13 @@ class ExpenseCategoriesPage extends StatelessWidget {
             children: [
               TextFormField(
                 controller: nomController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom d\'affichage',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'expenses_category_display_name'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Le nom est obligatoire';
+                    return 'expenses_category_name_required'.tr;
                   }
                   return null;
                 },
@@ -165,7 +165,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -182,7 +182,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
                 }
               }
             },
-            child: const Text('Modifier'),
+            child: Text('edit'.tr),
           ),
         ],
       ),
@@ -192,12 +192,12 @@ class ExpenseCategoriesPage extends StatelessWidget {
   void _showDeleteDialog(ExpenseCategory category, ExpenseCategoryController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer la catégorie'),
-        content: Text('Êtes-vous sûr de vouloir supprimer la catégorie "${category.displayName}" ?'),
+        title: Text('expenses_category_delete'.tr),
+        content: Text('expenses_category_delete_confirm'.trParams({'name': category.displayName})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -210,7 +210,7 @@ class ExpenseCategoriesPage extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('delete'.tr),
           ),
         ],
       ),

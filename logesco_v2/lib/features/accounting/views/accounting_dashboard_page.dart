@@ -22,14 +22,14 @@ class AccountingDashboardPage extends StatelessWidget {
       builder: (controller) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Comptabilité & Rentabilité'),
+            title: Text('accounting_title'.tr),
             backgroundColor: Colors.green.shade600,
             foregroundColor: Colors.white,
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () => controller.refreshAllData(),
-                tooltip: 'Actualiser',
+                tooltip: 'refresh'.tr,
               ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
@@ -47,34 +47,34 @@ class AccountingDashboardPage extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'export_pdf',
                     child: Row(
                       children: [
-                        Icon(Icons.picture_as_pdf, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Exporter PDF'),
+                        const Icon(Icons.picture_as_pdf, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text('accounting_export_pdf'.tr),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'export_excel',
                     child: Row(
                       children: [
-                        Icon(Icons.table_chart, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Exporter Excel'),
+                        const Icon(Icons.table_chart, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text('accounting_export_excel'.tr),
                       ],
                     ),
                   ),
                   const PopupMenuDivider(),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'settings',
                     child: Row(
                       children: [
-                        Icon(Icons.settings, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text('Paramètres'),
+                        const Icon(Icons.settings, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text('settings'.tr),
                       ],
                     ),
                   ),
@@ -84,13 +84,13 @@ class AccountingDashboardPage extends StatelessWidget {
           ),
           body: Obx(() {
             if (controller.isLoading.value && !controller.hasData) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Calcul du bilan financier...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text('accounting_calculating'.tr),
                   ],
                 ),
               );
@@ -154,7 +154,7 @@ class AccountingDashboardPage extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Chargement...',
+                                    'loading'.tr,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.blue.shade600,
@@ -183,9 +183,9 @@ class AccountingDashboardPage extends StatelessWidget {
                                 children: [
                                   Icon(Icons.filter_list, size: 20, color: Colors.blue[700]),
                                   const SizedBox(width: 8),
-                                  const Text(
-                                    'Filtrer par catégorie de produit',
-                                    style: TextStyle(
+                                  Text(
+                                    'accounting_filter_by_category'.tr,
+                                    style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -196,16 +196,16 @@ class AccountingDashboardPage extends StatelessWidget {
                               DropdownButtonFormField<int?>(
                                 value: controller.selectedCategoryId.value,
                                 decoration: InputDecoration(
-                                  labelText: 'Catégorie',
+                                  labelText: 'categories_title'.tr,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<int?>(
+                                  DropdownMenuItem<int?>(
                                     value: null,
-                                    child: Text('Toutes les catégories'),
+                                    child: Text('accounting_all_categories'.tr),
                                   ),
                                   ...controller.productCategories.map((category) {
                                     return DropdownMenuItem<int?>(
@@ -232,7 +232,7 @@ class AccountingDashboardPage extends StatelessWidget {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          'Affichage des ventes contenant des produits de cette catégorie',
+                                          'accounting_category_filter_info'.tr,
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.blue[700],
@@ -327,7 +327,7 @@ class AccountingDashboardPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucune donnée comptable',
+              'accounting_no_data'.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -336,7 +336,7 @@ class AccountingDashboardPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.hasPeriodSelected ? 'Aucune transaction trouvée pour la période ${controller.periodFormatted}' : 'Sélectionnez une période pour voir le bilan financier',
+              controller.hasPeriodSelected ? 'accounting_no_data_period'.trParams({'period': controller.periodFormatted}) : 'accounting_select_period'.tr,
               style: TextStyle(
                 color: Colors.grey.shade500,
               ),
@@ -347,7 +347,7 @@ class AccountingDashboardPage extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => controller.loadFinancialBalance(),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Actualiser'),
+                label: Text('refresh'.tr),
               ),
             ],
           ],
@@ -360,8 +360,8 @@ class AccountingDashboardPage extends StatelessWidget {
   void _exportToPdf(AccountingController controller) {
     // TODO: Implémenter l'export PDF
     Get.snackbar(
-      'Export PDF',
-      'Fonctionnalité en cours de développement',
+      'accounting_export_pdf'.tr,
+      'accounting_feature_in_development'.tr,
       backgroundColor: Colors.blue.shade100,
       colorText: Colors.blue.shade800,
     );
@@ -371,8 +371,8 @@ class AccountingDashboardPage extends StatelessWidget {
   void _exportToExcel(AccountingController controller) {
     // TODO: Implémenter l'export Excel
     Get.snackbar(
-      'Export Excel',
-      'Fonctionnalité en cours de développement',
+      'accounting_export_excel'.tr,
+      'accounting_feature_in_development'.tr,
       backgroundColor: Colors.green.shade100,
       colorText: Colors.green.shade800,
     );
@@ -382,8 +382,8 @@ class AccountingDashboardPage extends StatelessWidget {
   void _showSettings() {
     // TODO: Implémenter les paramètres comptables
     Get.snackbar(
-      'Paramètres',
-      'Fonctionnalité en cours de développement',
+      'settings'.tr,
+      'accounting_feature_in_development'.tr,
       backgroundColor: Colors.grey.shade100,
       colorText: Colors.grey.shade800,
     );

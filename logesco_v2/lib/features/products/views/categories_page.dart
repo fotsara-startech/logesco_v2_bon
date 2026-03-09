@@ -15,24 +15,24 @@ class CategoriesPage extends StatelessWidget {
     final controller = Get.put(CategoryController());
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des catégories'),
+        title: Text('categories_management'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: controller.refresh,
-            tooltip: 'Actualiser',
+            tooltip: 'categories_refresh'.tr,
           ),
         ],
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.categories.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Chargement des catégories...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('categories_loading'.tr),
               ],
             ),
           );
@@ -50,7 +50,7 @@ class CategoriesPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Erreur de chargement',
+                  'categories_error_loading'.tr,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
@@ -63,7 +63,7 @@ class CategoriesPage extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: controller.loadCategories,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Réessayer'),
+                  label: Text('categories_retry'.tr),
                 ),
               ],
             ),
@@ -82,21 +82,21 @@ class CategoriesPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Aucune catégorie',
+                  'categories_empty'.tr,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: Colors.grey[600],
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Commencez par créer votre première catégorie',
+                  'categories_empty_subtitle'.tr,
                   style: TextStyle(color: Colors.grey[500]),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () => _showAddCategoryDialog(controller),
                   icon: const Icon(Icons.add),
-                  label: const Text('Créer une catégorie'),
+                  label: Text('categories_create'.tr),
                 ),
               ],
             ),
@@ -120,7 +120,7 @@ class CategoriesPage extends StatelessWidget {
         privilege: 'CREATE',
         child: FloatingActionButton(
           onPressed: () => _showAddCategoryDialog(controller),
-          tooltip: 'Ajouter une catégorie',
+          tooltip: 'categories_add'.tr,
           child: const Icon(Icons.add),
         ),
       ),
@@ -161,7 +161,7 @@ class CategoriesPage extends StatelessWidget {
             ],
             const SizedBox(height: 4),
             Text(
-              'Créée le ${_formatDate(category.dateCreation)}',
+              'categories_created_on'.tr.replaceAll('@date', _formatDate(category.dateCreation)),
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 12,
@@ -189,11 +189,11 @@ class CategoriesPage extends StatelessWidget {
 
     if (canUpdate) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: ListTile(
-            leading: Icon(Icons.edit, size: 20),
-            title: Text('Modifier'),
+            leading: const Icon(Icons.edit, size: 20),
+            title: Text('categories_edit'.tr),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -202,11 +202,11 @@ class CategoriesPage extends StatelessWidget {
 
     if (canDelete) {
       items.add(
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: ListTile(
-            leading: Icon(Icons.delete, color: Colors.red, size: 20),
-            title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.delete, color: Colors.red, size: 20),
+            title: Text('categories_delete'.tr, style: const TextStyle(color: Colors.red)),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -275,7 +275,7 @@ class CategoriesPage extends StatelessWidget {
           }
         },
         child: AlertDialog(
-          title: Text(category == null ? 'Nouvelle catégorie' : 'Modifier la catégorie'),
+          title: Text(category == null ? 'categories_new'.tr : 'categories_edit_title'.tr),
           content: Form(
             key: formKey,
             child: Column(
@@ -284,14 +284,14 @@ class CategoriesPage extends StatelessWidget {
                 TextFormField(
                   controller: nameController,
                   focusNode: nameFocusNode,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom de la catégorie *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category),
+                  decoration: InputDecoration(
+                    labelText: 'categories_name_label'.tr,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.category),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Le nom est obligatoire';
+                      return 'categories_name_required'.tr;
                     }
                     return null;
                   },
@@ -311,10 +311,10 @@ class CategoriesPage extends StatelessWidget {
                 TextFormField(
                   controller: descriptionController,
                   focusNode: descriptionFocusNode,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optionnel)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.description),
+                  decoration: InputDecoration(
+                    labelText: 'categories_description_label'.tr,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.description),
                   ),
                   maxLines: 2,
                   textInputAction: TextInputAction.done,
@@ -336,7 +336,7 @@ class CategoriesPage extends StatelessWidget {
                 // Fermer sans nettoyer (PopScope s'en charge)
                 Get.back();
               },
-              child: const Text('Annuler'),
+              child: Text('categories_cancel'.tr),
             ),
             Obx(() => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : () => _submitCategoryForm(formKey, nameController, descriptionController, category, controller),
@@ -346,7 +346,7 @@ class CategoriesPage extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(category == null ? 'Créer' : 'Modifier'),
+                      : Text(category == null ? 'categories_create_button'.tr : 'categories_update_button'.tr),
                 )),
           ],
         ),
@@ -391,7 +391,7 @@ class CategoriesPage extends StatelessWidget {
 
       // Attendre un peu avant d'afficher le message pour éviter les conflits
       Future.delayed(const Duration(milliseconds: 300), () {
-        _showSuccessMessage(category == null ? 'Catégorie créée avec succès' : 'Catégorie modifiée avec succès');
+        _showSuccessMessage(category == null ? 'categories_created_success'.tr : 'categories_updated_success'.tr);
       });
     } else {
       // Afficher l'erreur si disponible
@@ -404,12 +404,12 @@ class CategoriesPage extends StatelessWidget {
   void _showDeleteCategoryDialog(Category category, CategoryController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer la catégorie'),
+        title: Text('categories_delete_title'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Êtes-vous sûr de vouloir supprimer la catégorie :'),
+            Text('categories_delete_confirm'.tr),
             const SizedBox(height: 8),
             Text(
               '"${category.nom}"',
@@ -417,7 +417,7 @@ class CategoriesPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cette action est irréversible.',
+              'categories_delete_warning'.tr,
               style: TextStyle(color: Colors.red[600]),
             ),
           ],
@@ -425,7 +425,7 @@ class CategoriesPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('categories_cancel'.tr),
           ),
           Obx(() => ElevatedButton(
                 onPressed: controller.isLoading.value
@@ -437,7 +437,7 @@ class CategoriesPage extends StatelessWidget {
 
                           // Attendre un peu avant d'afficher le message
                           Future.delayed(const Duration(milliseconds: 300), () {
-                            _showSuccessMessage('Catégorie supprimée avec succès');
+                            _showSuccessMessage('categories_deleted_success'.tr);
                           });
                         } else {
                           // Afficher l'erreur si disponible
@@ -456,7 +456,7 @@ class CategoriesPage extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Supprimer'),
+                    : Text('categories_delete'.tr),
               )),
         ],
       ),

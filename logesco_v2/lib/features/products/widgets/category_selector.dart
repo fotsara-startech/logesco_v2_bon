@@ -16,12 +16,12 @@ class CategorySelector extends GetView<ProductController> {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: DropdownButtonFormField<String>(
-          value: controller.selectedCategory.value.isEmpty ? 'Toutes' : controller.selectedCategory.value,
-          decoration: const InputDecoration(
-            labelText: 'Catégorie',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.category),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          value: controller.selectedCategory.value.isEmpty ? 'category_selector_all'.tr : controller.selectedCategory.value,
+          decoration: InputDecoration(
+            labelText: 'category_selector_label'.tr,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.category),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           isExpanded: true,
           items: controller.categories.map((category) {
@@ -34,7 +34,7 @@ class CategorySelector extends GetView<ProductController> {
             );
           }).toList(),
           onChanged: (value) {
-            if (value == 'Toutes') {
+            if (value == 'category_selector_all'.tr) {
               controller.updateSelectedCategory('');
             } else {
               controller.updateSelectedCategory(value ?? '');
@@ -60,7 +60,7 @@ class CompactCategorySelector extends GetView<ProductController> {
       return Container(
         constraints: const BoxConstraints(maxWidth: 200),
         child: DropdownButton<String>(
-          value: controller.selectedCategory.value.isEmpty ? 'Toutes' : controller.selectedCategory.value,
+          value: controller.selectedCategory.value.isEmpty ? 'category_selector_all'.tr : controller.selectedCategory.value,
           isExpanded: true,
           underline: Container(),
           items: controller.categories.map((category) {
@@ -74,7 +74,7 @@ class CompactCategorySelector extends GetView<ProductController> {
             );
           }).toList(),
           onChanged: (value) {
-            if (value == 'Toutes') {
+            if (value == 'category_selector_all'.tr) {
               controller.updateSelectedCategory('');
             } else {
               controller.updateSelectedCategory(value ?? '');

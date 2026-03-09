@@ -31,7 +31,7 @@ class CartWidget extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Panier vide',
+                'sales_cart_empty'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -40,7 +40,7 @@ class CartWidget extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Sélectionnez des produits à ajouter',
+                'sales_cart_select_products'.tr,
                 style: TextStyle(
                   color: Colors.grey[500],
                 ),
@@ -78,7 +78,7 @@ class CartWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Sous-total:'),
+                    Text('sales_cart_subtotal'.tr),
                     Text(
                       '${controller.cartSubtotal.toStringAsFixed(0)} FCFA',
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -89,7 +89,7 @@ class CartWidget extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Remise:'),
+                      Text('sales_cart_discount'.tr),
                       Text(
                         '-${controller.discount.toStringAsFixed(0)} FCFA',
                         style: const TextStyle(color: Colors.green),
@@ -101,9 +101,9 @@ class CartWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Total:',
-                      style: TextStyle(
+                    Text(
+                      'sales_cart_total'.tr,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -123,17 +123,18 @@ class CartWidget extends StatelessWidget {
           ),
 
           // Bouton vider le panier
-          if (controller.cartItems.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _confirmClearCart(context, controller),
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Vider le panier'),
+          if (controller.cartItems.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _confirmClearCart(context, controller),
+                  icon: const Icon(Icons.clear_all),
+                  label: Text('sales_cart_clear'.tr),
+                ),
               ),
             ),
-          ],
         ],
       );
     });
@@ -143,19 +144,19 @@ class CartWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Vider le panier'),
-        content: const Text('Êtes-vous sûr de vouloir vider le panier ?'),
+        title: Text('sales_cart_clear_confirm'.tr),
+        content: Text('sales_cart_clear_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               controller.clearCart();
             },
-            child: const Text('Vider'),
+            child: Text('sales_cart_clear_button'.tr),
           ),
         ],
       ),
@@ -164,7 +165,7 @@ class CartWidget extends StatelessWidget {
 }
 
 class _CartItem extends StatelessWidget {
-  final item;
+  final dynamic item;
   final Function(int productId, int quantity) onQuantityChanged;
   final Function(int productId, double price) onPriceChanged;
   final Function(int productId) onRemove;
@@ -204,7 +205,7 @@ class _CartItem extends StatelessWidget {
 
             // Référence
             Text(
-              'Réf: ${item.productReference}',
+              'sales_cart_reference'.trParams({'ref': item.productReference}),
               style: Theme.of(context).textTheme.bodySmall,
             ),
 
@@ -247,8 +248,8 @@ class _CartItem extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     initialValue: item.unitPrice.toStringAsFixed(2),
-                    decoration: const InputDecoration(
-                      labelText: 'Prix unitaire',
+                    decoration: InputDecoration(
+                      labelText: 'sales_cart_unit_price'.tr,
                       suffixText: 'FCFA',
                       isDense: true,
                     ),
@@ -270,7 +271,7 @@ class _CartItem extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total ligne:'),
+                Text('sales_cart_line_total'.tr),
                 Text(
                   '${item.totalPrice.toStringAsFixed(0)} FCFA',
                   style: const TextStyle(

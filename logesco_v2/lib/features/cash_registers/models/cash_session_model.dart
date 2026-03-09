@@ -12,6 +12,8 @@ class CashSession {
   final DateTime dateOuverture;
   final DateTime? dateFermeture;
   final bool isActive;
+  final double totalEntrees;
+  final double totalSorties;
   final Map<String, dynamic>? metadata;
 
   CashSession({
@@ -27,6 +29,8 @@ class CashSession {
     required this.dateOuverture,
     this.dateFermeture,
     this.isActive = true,
+    this.totalEntrees = 0.0,
+    this.totalSorties = 0.0,
     this.metadata,
   });
 
@@ -52,6 +56,8 @@ class CashSession {
       dateOuverture: DateTime.parse(json['dateOuverture']),
       dateFermeture: json['dateFermeture'] != null ? DateTime.parse(json['dateFermeture']) : null,
       isActive: json['isActive'] ?? true,
+      totalEntrees: (json['totalEntrees'] ?? 0.0).toDouble(),
+      totalSorties: (json['totalSorties'] ?? 0.0).toDouble(),
       metadata: json['metadata'],
     );
   }
@@ -70,6 +76,8 @@ class CashSession {
       'dateOuverture': dateOuverture.toIso8601String(),
       'dateFermeture': dateFermeture?.toIso8601String(),
       'isActive': isActive,
+      'totalEntrees': totalEntrees,
+      'totalSorties': totalSorties,
       'metadata': metadata,
     };
   }
@@ -87,6 +95,8 @@ class CashSession {
     DateTime? dateOuverture,
     DateTime? dateFermeture,
     bool? isActive,
+    double? totalEntrees,
+    double? totalSorties,
     Map<String, dynamic>? metadata,
   }) {
     return CashSession(
@@ -102,6 +112,8 @@ class CashSession {
       dateOuverture: dateOuverture ?? this.dateOuverture,
       dateFermeture: dateFermeture ?? this.dateFermeture,
       isActive: isActive ?? this.isActive,
+      totalEntrees: totalEntrees ?? this.totalEntrees,
+      totalSorties: totalSorties ?? this.totalSorties,
       metadata: metadata ?? this.metadata,
     );
   }

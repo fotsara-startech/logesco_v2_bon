@@ -20,7 +20,7 @@ class FinancialMovementsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mouvements Financiers'),
+        title: Text('financial_movements_title'.tr),
         actions: [
           // Bouton de rafraîchissement
           Obx(() => IconButton(
@@ -32,7 +32,7 @@ class FinancialMovementsPage extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.refresh),
-                tooltip: 'Actualiser',
+                tooltip: 'refresh'.tr,
               )),
 
           // Bouton de filtres
@@ -56,7 +56,7 @@ class FinancialMovementsPage extends StatelessWidget {
                       ),
                   ],
                 )),
-            tooltip: 'Filtres',
+            tooltip: 'financial_movements_filters'.tr,
           ),
 
           // Sélecteur de mode de pagination
@@ -71,14 +71,14 @@ class FinancialMovementsPage extends StatelessWidget {
           IconButton(
             onPressed: () => _navigateToReports(),
             icon: const Icon(Icons.analytics),
-            tooltip: 'Rapports et statistiques',
+            tooltip: 'financial_movements_reports'.tr,
           ),
 
           // Bouton nouveau mouvement
           IconButton(
             onPressed: () => _navigateToCreateMovement(),
             icon: const Icon(Icons.add),
-            tooltip: 'Nouveau mouvement',
+            tooltip: 'financial_movements_new'.tr,
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class FinancialMovementsPage extends StatelessWidget {
         privilege: 'CREATE',
         child: FloatingActionButton(
           onPressed: () => _navigateToCreateMovement(),
-          tooltip: 'Nouveau mouvement',
+          tooltip: 'financial_movements_new'.tr,
           child: const Icon(Icons.add),
         ),
       ),
@@ -139,7 +139,7 @@ class FinancialMovementsPage extends StatelessWidget {
                   Icon(Icons.search, size: 16, color: Colors.blue.shade700),
                   const SizedBox(width: 4),
                   Text(
-                    'Recherche: "${controller.searchQuery.value}"',
+                    'financial_movements_search'.trParams({'query': controller.searchQuery.value}),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.blue.shade700,
@@ -177,9 +177,9 @@ class FinancialMovementsPage extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Text(
-                  'Filtres actifs:',
-                  style: TextStyle(
+                Text(
+                  'financial_movements_filter_active'.tr,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey,
@@ -188,7 +188,7 @@ class FinancialMovementsPage extends StatelessWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => controller.resetFilters(),
-                  child: const Text('Effacer tout'),
+                  child: Text('financial_movements_filter_clear'.tr),
                 ),
               ],
             ),
@@ -281,7 +281,7 @@ class FinancialMovementsPage extends StatelessWidget {
           ),
         ),
         Text(
-          label,
+          label.tr,
           style: const TextStyle(
             fontSize: 12,
             color: Colors.grey,
@@ -321,7 +321,7 @@ class FinancialMovementsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rapports et Statistiques',
+                        'financial_movements_reports'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -330,7 +330,7 @@ class FinancialMovementsPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Analysez vos mouvements financiers en détail',
+                        'financial_movements_reports_summary'.tr,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -356,8 +356,8 @@ class FinancialMovementsPage extends StatelessWidget {
     return Obx(() {
       // État de chargement initial
       if (controller.isInitialLoading) {
-        return const Center(
-          child: LoadingWidget(message: 'Chargement des mouvements...'),
+        return Center(
+          child: LoadingWidget(message: 'financial_movements_loading'.tr),
         );
       }
 
@@ -374,7 +374,7 @@ class FinancialMovementsPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Erreur',
+                'error'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -392,7 +392,7 @@ class FinancialMovementsPage extends StatelessWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => controller.loadMovements(),
-                child: const Text('Réessayer'),
+                child: Text('customers_retry'.tr),
               ),
             ],
           ),
@@ -421,7 +421,7 @@ class FinancialMovementsPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            controller.hasActiveFilters ? 'Aucun mouvement trouvé' : 'Aucun mouvement financier',
+            controller.hasActiveFilters ? 'financial_movements_no_results'.tr : 'no_data'.tr,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -440,13 +440,13 @@ class FinancialMovementsPage extends StatelessWidget {
           if (controller.hasActiveFilters)
             OutlinedButton(
               onPressed: () => controller.resetFilters(),
-              child: const Text('Effacer les filtres'),
+              child: Text('financial_movements_filter_clear'.tr),
             )
           else
             ElevatedButton.icon(
               onPressed: () => _navigateToCreateMovement(),
               icon: const Icon(Icons.add),
-              label: const Text('Créer un mouvement'),
+              label: Text('financial_movements_new'.tr),
             ),
         ],
       ),
@@ -471,12 +471,12 @@ class FinancialMovementsPage extends StatelessWidget {
   ) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer le mouvement'),
+        title: Text('financial_movements_delete'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Êtes-vous sûr de vouloir supprimer ce mouvement ?'),
+            Text('financial_movements_delete_confirm'.tr),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -488,11 +488,11 @@ class FinancialMovementsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Référence: ${movement.reference}',
+                    '${'financial_movements_reference'.tr}: ${movement.reference}',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  Text('Montant: ${movement.montantFormate}'),
-                  Text('Description: ${movement.description}'),
+                  Text('${'financial_movements_amount'.tr}: ${movement.montantFormate}'),
+                  Text('${'financial_movements_description'.tr}: ${movement.description}'),
                 ],
               ),
             ),
@@ -509,7 +509,7 @@ class FinancialMovementsPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: controller.isDeleting.value
@@ -519,7 +519,7 @@ class FinancialMovementsPage extends StatelessWidget {
                     Get.back();
                     if (success) {
                       Get.snackbar(
-                        'Succès',
+                        'success'.tr,
                         'Mouvement supprimé avec succès',
                         snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: Colors.green.shade100,
@@ -537,7 +537,7 @@ class FinancialMovementsPage extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Supprimer'),
+                : Text('delete'.tr),
           ),
         ],
       ),
@@ -790,7 +790,7 @@ class FinancialMovementsPage extends StatelessWidget {
         final permissionService = Get.find<PermissionService>();
         final canUpdate = permissionService.hasPermission('financial_movements', 'UPDATE');
         final canDelete = permissionService.hasPermission('financial_movements', 'DELETE');
-        
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: MovementCard(
@@ -815,7 +815,7 @@ class FinancialMovementsPage extends StatelessWidget {
         final permissionService = Get.find<PermissionService>();
         final canUpdate = permissionService.hasPermission('financial_movements', 'UPDATE');
         final canDelete = permissionService.hasPermission('financial_movements', 'DELETE');
-        
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: MovementCard(

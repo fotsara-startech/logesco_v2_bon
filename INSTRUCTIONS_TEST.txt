@@ -1,0 +1,119 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║              INSTRUCTIONS TEST SIMPLE                        ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+Le script DIAGNOSTIC-FINAL.bat se ferme? Pas de problème.
+
+Utilisez ce script plus simple.
+
+
+═══════════════════════════════════════════════════════════════
+  🎯 EXÉCUTEZ CECI
+═══════════════════════════════════════════════════════════════
+
+1. Allez dans le dossier client:
+   cd "E:\Stage 2025\LOGESCO-Client-Optimise"
+
+2. Copiez le script:
+   copy "chemin\vers\TEST-ULTRA-SIMPLE.bat" .
+
+3. Exécutez:
+   TEST-ULTRA-SIMPLE.bat
+
+4. Attendez la fin (1-2 minutes)
+
+5. Ouvrez le fichier: test-resultat.txt
+
+6. Copiez-moi le contenu
+
+
+═══════════════════════════════════════════════════════════════
+  📋 CE QUE VOUS VERREZ
+═══════════════════════════════════════════════════════════════
+
+Le script va afficher:
+
+[1] Comptage AVANT...
+AVANT: 165 produits
+
+[2] Sauvegarde...
+OK
+
+[3] Suppression Prisma...
+OK
+
+[4] Restauration base...
+OK
+
+[5] Generation Prisma...
+(Cela prend 10-15 secondes)
+OK
+
+[6] Comptage APRES...
+APRES: 165 produits
+
+========================================
+  RESULTAT
+========================================
+
+AVANT:  165 produits
+APRES:  165 produits
+
+SUCCES! Les donnees sont preservees
+
+
+═══════════════════════════════════════════════════════════════
+  ✅ SI SUCCES
+═══════════════════════════════════════════════════════════════
+
+Si vous voyez "SUCCES!", cela signifie que le processus
+de migration fonctionne correctement.
+
+Le problème est ailleurs (peut-être dans le script de
+migration lui-même).
+
+
+═══════════════════════════════════════════════════════════════
+  ❌ SI ECHEC
+═══════════════════════════════════════════════════════════════
+
+Si vous voyez "ECHEC!", cela signifie que:
+- Soit la copie de la base échoue
+- Soit la génération Prisma échoue
+
+Copiez-moi le contenu de test-resultat.txt
+
+
+═══════════════════════════════════════════════════════════════
+  📝 ALTERNATIVE: DIAGNOSTIC-SIMPLE.bat
+═══════════════════════════════════════════════════════════════
+
+Si TEST-ULTRA-SIMPLE.bat ne fonctionne pas non plus,
+essayez:
+
+> DIAGNOSTIC-SIMPLE.bat
+
+Celui-ci affiche chaque étape et attend que vous
+appuyiez sur une touche.
+
+
+═══════════════════════════════════════════════════════════════
+  🚀 RÉSUMÉ
+═══════════════════════════════════════════════════════════════
+
+1. TEST-ULTRA-SIMPLE.bat
+2. Attendre la fin
+3. Ouvrir test-resultat.txt
+4. Me copier le contenu
+
+C'EST TOUT!
+
+
+═══════════════════════════════════════════════════════════════
+
+Exécutez et donnez-moi le résultat.
+
+═══════════════════════════════════════════════════════════════

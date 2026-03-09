@@ -23,13 +23,13 @@ class ProductListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des Produits'),
+        title: Text('product_list_title'.tr),
         elevation: 0,
         actions: [
           IconButton(
             onPressed: () => Get.toNamed(AppRoutes.categories),
             icon: const Icon(Icons.category),
-            tooltip: 'Gérer les catégories',
+            tooltip: 'product_list_categories'.tr,
           ),
           PermissionWidget(
             module: 'products',
@@ -47,23 +47,23 @@ class ProductListView extends StatelessWidget {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'import_export',
                   child: Row(
                     children: [
-                      Icon(Icons.import_export),
-                      SizedBox(width: 8),
-                      Text('Import/Export Excel'),
+                      const Icon(Icons.import_export),
+                      const SizedBox(width: 8),
+                      Text('product_list_import_export'.tr),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'add_product',
                   child: Row(
                     children: [
-                      Icon(Icons.add),
-                      SizedBox(width: 8),
-                      Text('Ajouter un produit'),
+                      const Icon(Icons.add),
+                      const SizedBox(width: 8),
+                      Text('product_list_add_product'.tr),
                     ],
                   ),
                 ),
@@ -73,7 +73,7 @@ class ProductListView extends StatelessWidget {
           IconButton(
             onPressed: controller.refreshProducts,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
+            tooltip: 'product_list_refresh'.tr,
           ),
         ],
       ),
@@ -95,7 +95,7 @@ class ProductListView extends StatelessWidget {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value && controller.products.isEmpty) {
-                return const LoadingWidget(message: 'Chargement des produits...');
+                return LoadingWidget(message: 'product_list_loading'.tr);
               }
 
               if (controller.hasError.value && controller.products.isEmpty) {
@@ -122,7 +122,7 @@ class ProductListView extends StatelessWidget {
         privilege: 'CREATE',
         child: FloatingActionButton(
           onPressed: controller.goToCreateProduct,
-          tooltip: 'Ajouter un produit',
+          tooltip: 'product_list_add_product'.tr,
           child: const Icon(Icons.add),
         ),
       ),
@@ -142,7 +142,7 @@ class ProductListView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            controller.searchQuery.value.isNotEmpty || controller.selectedCategory.value.isNotEmpty ? 'Aucun produit trouvé' : 'Aucun produit enregistré',
+            controller.searchQuery.value.isNotEmpty || controller.selectedCategory.value.isNotEmpty ? 'product_list_no_results'.tr : 'product_list_empty'.tr,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -151,7 +151,7 @@ class ProductListView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.searchQuery.value.isNotEmpty || controller.selectedCategory.value.isNotEmpty ? 'Essayez de modifier vos critères de recherche' : 'Commencez par ajouter votre premier produit',
+            controller.searchQuery.value.isNotEmpty || controller.selectedCategory.value.isNotEmpty ? 'product_list_no_results_subtitle'.tr : 'product_list_empty_subtitle'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -163,7 +163,7 @@ class ProductListView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: controller.clearFilters,
               icon: const Icon(Icons.clear),
-              label: const Text('Effacer les filtres'),
+              label: Text('product_list_clear_filters'.tr),
             )
           else
             PermissionWidget(
@@ -172,7 +172,7 @@ class ProductListView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: controller.goToCreateProduct,
                 icon: const Icon(Icons.add),
-                label: const Text('Ajouter un produit'),
+                label: Text('product_list_add_product'.tr),
               ),
             ),
         ],

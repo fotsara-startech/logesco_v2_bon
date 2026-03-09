@@ -15,9 +15,9 @@ class PeriodSelectorWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Période d\'analyse',
-            style: TextStyle(
+          Text(
+            'reports_period_analysis'.tr,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -30,15 +30,15 @@ class PeriodSelectorWidget extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildPeriodChip('today', 'Aujourd\'hui', controller),
-              _buildPeriodChip('yesterday', 'Hier', controller),
-              _buildPeriodChip('thisWeek', 'Cette semaine', controller),
-              _buildPeriodChip('lastWeek', 'Semaine dernière', controller),
-              _buildPeriodChip('thisMonth', 'Ce mois', controller),
-              _buildPeriodChip('lastMonth', 'Mois dernier', controller),
-              _buildPeriodChip('thisQuarter', 'Ce trimestre', controller),
-              _buildPeriodChip('thisYear', 'Cette année', controller),
-              _buildPeriodChip('lastYear', 'Année dernière', controller),
+              _buildPeriodChip('today', 'reports_period_today'.tr, controller),
+              _buildPeriodChip('yesterday', 'reports_period_yesterday'.tr, controller),
+              _buildPeriodChip('thisWeek', 'reports_period_this_week'.tr, controller),
+              _buildPeriodChip('lastWeek', 'reports_period_last_week'.tr, controller),
+              _buildPeriodChip('thisMonth', 'reports_period_this_month'.tr, controller),
+              _buildPeriodChip('lastMonth', 'reports_period_last_month'.tr, controller),
+              _buildPeriodChip('thisQuarter', 'reports_period_this_quarter'.tr, controller),
+              _buildPeriodChip('thisYear', 'reports_period_this_year'.tr, controller),
+              _buildPeriodChip('lastYear', 'reports_period_last_year'.tr, controller),
             ],
           ),
 
@@ -49,7 +49,7 @@ class PeriodSelectorWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildDateSelector(
-                  'Date de début',
+                  'reports_period_start_date'.tr,
                   controller.selectedStartDate,
                   () => controller.selectStartDate(context),
                 ),
@@ -57,7 +57,7 @@ class PeriodSelectorWidget extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildDateSelector(
-                  'Date de fin',
+                  'reports_period_end_date'.tr,
                   controller.selectedEndDate,
                   () => controller.selectEndDate(context),
                 ),
@@ -82,7 +82,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.assessment),
-                  label: Text(controller.isLoading ? 'Génération...' : 'Générer le bilan'),
+                  label: Text(controller.isLoading ? 'reports_period_generating'.tr : 'reports_period_generate_button'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.blue.shade700,
@@ -172,7 +172,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  selectedDate != null ? '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}' : 'Sélectionner',
+                  selectedDate != null ? '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}' : 'reports_period_select'.tr,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.white,

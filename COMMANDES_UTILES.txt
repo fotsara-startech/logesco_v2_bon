@@ -1,0 +1,342 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    COMMANDES UTILES - SECURETIMESERVICE                    ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  📦 INSTALLATION                                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Installation automatique (Windows)
+installer-securite-licence.bat
+
+# Installation manuelle
+cd logesco_v2
+flutter pub get
+
+# Vérifier l'installation du package NTP
+flutter pub deps | findstr "ntp"
+
+# Nettoyer et réinstaller
+flutter clean
+flutter pub get
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🧪 TESTS                                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Test complet du service
+dart test-secure-time-service.dart
+
+# Test avec logs détaillés
+dart --verbose test-secure-time-service.dart
+
+# Test de l'application Flutter
+cd logesco_v2
+flutter run
+
+# Test de build
+flutter build windows --release
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔍 DIAGNOSTIC                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Vérifier les dépendances
+cd logesco_v2
+flutter pub deps
+
+# Vérifier la version de Flutter
+flutter --version
+
+# Analyser le code
+flutter analyze
+
+# Vérifier les problèmes
+flutter doctor
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  📝 GÉNÉRATION DE CODE                                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Générer les fichiers .g.dart (si nécessaire)
+cd logesco_v2
+flutter pub run build_runner build
+
+# Générer avec suppression des anciens fichiers
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Watch mode (régénération automatique)
+flutter pub run build_runner watch
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔧 DÉVELOPPEMENT                                                          │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Lancer l'app en mode debug
+cd logesco_v2
+flutter run
+
+# Lancer avec logs détaillés
+flutter run --verbose
+
+# Hot reload (dans l'app en cours)
+r
+
+# Hot restart (dans l'app en cours)
+R
+
+# Quitter l'app
+q
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🏗️ BUILD                                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Build Windows (release)
+cd logesco_v2
+flutter build windows --release
+
+# Build avec verbose
+flutter build windows --release --verbose
+
+# Build sans obfuscation (pour debug)
+flutter build windows --release --no-obfuscate
+
+# Nettoyer avant build
+flutter clean
+flutter pub get
+flutter build windows --release
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🗂️ FICHIERS ET DOSSIERS                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Lister les fichiers du service
+dir logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart
+
+# Lister la documentation
+dir *.md
+
+# Rechercher dans les fichiers
+findstr /s /i "SecureTimeService" logesco_v2\lib\*.dart
+
+# Compter les lignes de code
+powershell "Get-Content logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart | Measure-Object -Line"
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔐 TESTS DE SÉCURITÉ                                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Test 1: Fonctionnement normal
+dart test-secure-time-service.dart
+
+# Test 2: Manipulation de l'horloge
+# 1. Lancer l'app
+# 2. Reculer l'horloge système (Paramètres Windows)
+# 3. Relancer l'app
+# 4. Vérifier la détection
+
+# Test 3: Hors ligne
+# 1. Désactiver WiFi/Ethernet
+# 2. Lancer l'app
+# 3. Vérifier le fonctionnement avec cache
+
+# Test 4: Performance
+# Mesurer le temps de réponse dans les logs
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  📊 LOGS ET MONITORING                                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Voir les logs Flutter
+cd logesco_v2
+flutter run --verbose
+
+# Filtrer les logs SecureTimeService
+flutter run | findstr "SecureTimeService"
+
+# Logs avec timestamps
+flutter run --verbose 2>&1 | powershell "ForEach-Object { \"$(Get-Date -Format 'HH:mm:ss') $_\" }"
+
+# Sauvegarder les logs dans un fichier
+flutter run --verbose > logs.txt 2>&1
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🧹 NETTOYAGE                                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Nettoyer le projet Flutter
+cd logesco_v2
+flutter clean
+
+# Supprimer les fichiers générés
+del /s *.g.dart
+
+# Nettoyer et réinstaller
+flutter clean
+flutter pub get
+
+# Nettoyer le cache pub
+flutter pub cache repair
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  📚 DOCUMENTATION                                                          │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Ouvrir la documentation principale
+notepad README_SECURITE_TEMPS.md
+
+# Ouvrir le guide d'utilisation
+notepad GUIDE_SECURE_TIME_SERVICE.md
+
+# Ouvrir le guide de test
+notepad TEST_MANIPULATION_HORLOGE.md
+
+# Lister tous les fichiers de documentation
+dir *.md
+
+# Rechercher dans la documentation
+findstr /s /i "NTP" *.md
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔄 GIT (si applicable)                                                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Voir les fichiers modifiés
+git status
+
+# Voir les différences
+git diff
+
+# Ajouter les nouveaux fichiers
+git add logesco_v2/lib/features/subscription/services/implementations/secure_time_service.dart
+git add *.md
+git add *.txt
+git add *.bat
+
+# Commit
+git commit -m "Ajout SecureTimeService - Protection contre manipulation horloge"
+
+# Push
+git push origin main
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🎯 COMMANDES RAPIDES (COPIER-COLLER)                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Installation complète
+cd logesco_v2 && flutter pub get && cd .. && dart test-secure-time-service.dart
+
+# Build release
+cd logesco_v2 && flutter clean && flutter pub get && flutter build windows --release
+
+# Test complet
+dart test-secure-time-service.dart && cd logesco_v2 && flutter run
+
+# Diagnostic complet
+cd logesco_v2 && flutter doctor && flutter pub deps | findstr "ntp" && flutter analyze
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🐛 DÉPANNAGE                                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Problème: Package NTP non trouvé
+cd logesco_v2
+flutter pub cache repair
+flutter pub get
+
+# Problème: Erreur de build
+flutter clean
+flutter pub get
+flutter build windows --release
+
+# Problème: Erreur de génération de code
+flutter pub run build_runner clean
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Problème: Logs non visibles
+flutter run --verbose
+
+# Problème: Performance lente
+# Vérifier les logs pour voir si NTP est en cache
+# Chercher: "Utilisation du cache NTP"
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  📱 TESTS SUR DIFFÉRENTES PLATEFORMES                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Windows
+cd logesco_v2
+flutter run -d windows
+
+# Android (si émulateur/device connecté)
+flutter run -d android
+
+# Linux (si disponible)
+flutter run -d linux
+
+# Lister les devices disponibles
+flutter devices
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔍 INSPECTION DU CODE                                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Voir le code du service
+type logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart
+
+# Compter les lignes
+powershell "Get-Content logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart | Measure-Object -Line"
+
+# Rechercher une fonction
+findstr /n "getSecureTime" logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart
+
+# Voir les imports
+findstr /n "^import" logesco_v2\lib\features\subscription\services\implementations\secure_time_service.dart
+
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  ⚡ RACCOURCIS UTILES                                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+# Alias pour installation
+doskey install=cd logesco_v2 $T flutter pub get $T cd ..
+
+# Alias pour test
+doskey test=dart test-secure-time-service.dart
+
+# Alias pour build
+doskey build=cd logesco_v2 $T flutter build windows --release $T cd ..
+
+# Alias pour run
+doskey run=cd logesco_v2 $T flutter run $T cd ..
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    COMMANDES LES PLUS UTILISÉES                            ║
+║                                                                            ║
+║  1. installer-securite-licence.bat                                         ║
+║  2. dart test-secure-time-service.dart                                     ║
+║  3. cd logesco_v2 && flutter run                                           ║
+║  4. cd logesco_v2 && flutter build windows --release                       ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝

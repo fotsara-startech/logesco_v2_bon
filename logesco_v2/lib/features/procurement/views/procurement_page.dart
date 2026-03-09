@@ -67,7 +67,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
       privilege: 'READ',
       fallback: Scaffold(
         appBar: AppBar(
-          title: const Text('Accès refusé'),
+          title: Text('procurement_access_denied'.tr),
         ),
         body: Center(
           child: Column(
@@ -80,7 +80,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Accès refusé',
+                'procurement_access_denied'.tr,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Vous n\'avez pas les privilèges nécessaires\npour accéder à la gestion des approvisionnements',
+                'procurement_no_permission'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -100,7 +100,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               ElevatedButton.icon(
                 onPressed: () => Get.back(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('Retour'),
+                label: Text('back'.tr),
               ),
             ],
           ),
@@ -109,7 +109,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
       showFallback: true,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Approvisionnements'),
+          title: Text('procurement_title'.tr),
           actions: [
             // Badge pour les alertes
             Obx(() => controller.nombreAlertes.value > 0
@@ -129,7 +129,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               child: IconButton(
                 icon: const Icon(Icons.lightbulb_outline),
                 onPressed: () => _showSuggestions(context),
-                tooltip: 'Suggestions d\'approvisionnement',
+                tooltip: 'procurement_suggestions_tooltip'.tr,
               ),
             ),
 
@@ -178,14 +178,14 @@ class _ProcurementPageState extends State<ProcurementPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Aucune commande d\'approvisionnement',
+                          'procurement_no_orders'.tr,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.grey[600],
                               ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Créez votre première commande',
+                          'procurement_create_first'.tr,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey[500],
                               ),
@@ -234,7 +234,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
           child: FloatingActionButton.extended(
             onPressed: () => _showCreateCommandeDialog(context, controller),
             icon: const Icon(Icons.add),
-            label: const Text('Nouvelle commande'),
+            label: Text('procurement_new_order'.tr),
           ),
         ),
       ),
@@ -254,7 +254,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
           children: [
             Expanded(
               child: _buildStatCard(
-                'En attente',
+                'procurement_stats_pending',
                 enAttente.toString(),
                 Colors.orange,
                 Icons.schedule,
@@ -263,7 +263,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
-                'Partielles',
+                'procurement_stats_partial',
                 partielles.toString(),
                 Colors.blue,
                 Icons.hourglass_bottom,
@@ -272,7 +272,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
-                'Terminées',
+                'procurement_stats_completed',
                 terminees.toString(),
                 Colors.green,
                 Icons.check_circle,
@@ -301,7 +301,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               ),
             ),
             Text(
-              title,
+              title.tr,
               style: const TextStyle(fontSize: 12),
               textAlign: TextAlign.center,
             ),
@@ -388,9 +388,9 @@ class _ProcurementPageState extends State<ProcurementPage> {
         // Afficher un message de succès avec option d'ouvrir le fichier
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Commande exportée: ${filePath.split('/').last}'),
+            content: Text('procurement_export_success'.tr.replaceAll('@filename', filePath.split('/').last)),
             action: SnackBarAction(
-              label: 'Ouvrir',
+              label: 'procurement_export_open'.tr,
               onPressed: () {
                 // TODO: Implémenter l'ouverture du fichier PDF
                 // Utiliser un package comme open_file ou url_launcher
@@ -402,7 +402,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors de l\'export: $e'),
+          content: Text('procurement_export_error'.tr.replaceAll('@error', e.toString())),
           backgroundColor: Colors.red,
         ),
       );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
@@ -67,6 +68,8 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
 
   /// Construit un en-tête compact pour A5
   Widget _buildCompactHeader(BuildContext context) {
+    final company = receipt.companyInfo;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: template.showBorder
@@ -77,8 +80,35 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
           : null,
       child: Column(
         children: [
-          // Logo plus petit si activé
-          if (template.showLogo) ...[
+          // Logo plus petit si activé et disponible
+          if (template.showLogo && company.logo != null && company.logo!.isNotEmpty) ...[
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.file(
+                  File(company.logo!),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(
+                        Icons.business,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ] else if (template.showLogo) ...[
+            // Placeholder si pas de logo configuré
             Container(
               width: 60,
               height: 60,
@@ -104,6 +134,7 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
 
   /// Construit les informations légales compactes
   Widget _buildCompactLegalInfo(BuildContext context) {
+    final company = receipt.companyInfo;
     final textStyle = TextStyle(
       fontSize: template.fontSize - 2,
       color: Colors.grey[600],
@@ -119,6 +150,23 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
       ),
       child: Column(
         children: [
+          // Slogan de l'entreprise (si disponible)
+          if (company.slogan != null && company.slogan!.isNotEmpty) ...[
+            Text(
+              company.slogan!,
+              style: TextStyle(
+                fontSize: template.fontSize - 1,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+          ],
+
           // Informations du système
           Center(
             child: Text(

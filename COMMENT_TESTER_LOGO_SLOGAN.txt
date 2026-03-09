@@ -1,0 +1,155 @@
+================================================================================
+  COMMENT TESTER LE LOGO ET LE SLOGAN
+================================================================================
+
+IMPLEMENTATION TERMINEE - PRET A TESTER!
+
+================================================================================
+  ETAPE 1: CONFIGURER LE LOGO ET LE SLOGAN
+================================================================================
+
+1. Lancer l'application Flutter
+
+2. Se connecter en tant qu'administrateur
+
+3. Aller dans: Menu → Paramètres de l'entreprise
+
+4. Ajouter un slogan:
+   - Remplir le champ "Slogan (optionnel)"
+   - Exemple: "Votre satisfaction, notre priorité"
+
+5. Ajouter un logo:
+   - Cliquer sur "Sélectionner un logo"
+   - Choisir une image (PNG, JPG, etc.)
+   - Max 5MB
+
+6. Cliquer sur "Sauvegarder"
+
+7. Vérifier le message: "Profil sauvegardé avec succès"
+
+================================================================================
+  ETAPE 2: GENERER UNE FACTURE
+================================================================================
+
+1. Créer une nouvelle vente:
+   - Menu → Ventes → Nouvelle vente
+   - Ajouter des articles
+   - Finaliser la vente
+
+2. Imprimer ou voir l'aperçu:
+   - Cliquer sur "Imprimer" ou "Aperçu"
+   - Choisir le format (A4, A5, ou Thermal)
+
+================================================================================
+  ETAPE 3: VERIFIER LE RENDU
+================================================================================
+
+FORMAT A4:
+  ✓ Logo visible en haut à gauche (100x100 pixels)
+  ✓ Slogan visible en pied de page, centré, en italique
+
+FORMAT A5:
+  ✓ Logo visible en haut, centré (80x80 pixels)
+  ✓ Slogan visible en pied de page, centré, en italique
+
+FORMAT THERMAL (80mm):
+  ✓ Pas de logo (espace limité)
+  ✓ Slogan visible en pied de page, centré, en italique
+
+================================================================================
+  VERIFICATION RAPIDE
+================================================================================
+
+Le logo et le slogan sont-ils sauvegardés en base?
+
+  cd backend
+  node -e "const { PrismaClient } = require('@prisma/client'); const p = new PrismaClient(); p.parametresEntreprise.findFirst().then(r => { console.log('Logo:', r.logo); console.log('Slogan:', r.slogan); p.$disconnect(); });"
+
+================================================================================
+  CAS DE TEST
+================================================================================
+
+TEST 1: Avec logo et slogan
+  - Configurer les deux
+  - Générer une facture A4
+  - Vérifier que les deux apparaissent
+
+TEST 2: Slogan uniquement
+  - Ne pas sélectionner de logo
+  - Ajouter un slogan
+  - Générer une facture
+  - Vérifier que le slogan apparaît
+
+TEST 3: Logo uniquement
+  - Sélectionner un logo
+  - Ne pas ajouter de slogan
+  - Générer une facture
+  - Vérifier que le logo apparaît
+
+TEST 4: Sans logo ni slogan
+  - Ne rien configurer
+  - Générer une facture
+  - Vérifier qu'il n'y a pas d'erreur
+
+================================================================================
+  PROBLEMES COURANTS
+================================================================================
+
+PROBLEME: Le logo ne s'affiche pas
+SOLUTION:
+  - Vérifier que le fichier existe
+  - Essayer avec une autre image
+  - Vérifier que l'image fait moins de 5MB
+
+PROBLEME: Le slogan ne s'affiche pas
+SOLUTION:
+  - Vérifier qu'il est sauvegardé (voir "Vérification rapide")
+  - Redémarrer l'application
+  - Vérifier les logs
+
+PROBLEME: Erreur lors de la sélection du logo
+SOLUTION:
+  - Choisir une image plus petite
+  - Vérifier les permissions Windows
+  - Essayer depuis un autre dossier
+
+================================================================================
+  DOCUMENTATION COMPLETE
+================================================================================
+
+Pour plus de détails, consulter:
+  - LOGO_SLOGAN_IMPLEMENTATION_COMPLETE.md (résumé complet)
+  - INTEGRATION_LOGO_SLOGAN_TERMINEE.md (détails techniques)
+  - GUIDE_TEST_LOGO_SLOGAN_FLUTTER.md (guide de test détaillé)
+
+================================================================================
+  RESULTAT ATTENDU
+================================================================================
+
+Facture A4 avec logo et slogan:
+
+  ┌─────────────────────────────────────────┐
+  │  [LOGO]  NOM DE L'ENTREPRISE            │
+  │  100x100 Adresse                        │
+  │          Téléphone                      │
+  ├─────────────────────────────────────────┤
+  │                                         │
+  │  FACTURE N° 001                         │
+  │  Date: 28/02/2026                       │
+  │                                         │
+  │  Articles:                              │
+  │  1. Produit A .......... 1000 FCFA      │
+  │  2. Produit B .......... 2000 FCFA      │
+  │                                         │
+  │  TOTAL: 3000 FCFA                       │
+  │                                         │
+  ├─────────────────────────────────────────┤
+  │  "Votre satisfaction, notre priorité"  │
+  │  Tél: xxx • Email: xxx                 │
+  │  Document généré par Logesco V2        │
+  └─────────────────────────────────────────┘
+
+================================================================================
+Date: 28 février 2026
+Statut: ✅ PRET A TESTER
+================================================================================

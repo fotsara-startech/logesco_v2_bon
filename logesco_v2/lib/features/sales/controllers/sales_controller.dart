@@ -42,6 +42,12 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des stocks
   final RxMap<int, Stock> _productStocks = <int, Stock>{}.obs;
 
+  // Gestion des produits pour la vente (copie locale avec tri)
+  final RxList<Product> _productsForSale = <Product>[].obs;
+  final RxString _productSearchQuery = ''.obs;
+  final RxString _productSortBy = 'nom'.obs; // nom, prix, reference, categorie
+  final RxBool _productSortAscending = true.obs;
+
   // Panier de vente
   final RxList<CartItem> _cartItems = <CartItem>[].obs;
   final Rx<Customer?> _selectedCustomer = Rx<Customer?>(null);
@@ -90,6 +96,12 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   String get statusFilter => _statusFilter.value;
   String get paymentModeFilter => _paymentModeFilter.value;
 
+  // Getters pour les produits de vente
+  List<Product> get productsForSale => _productsForSale;
+  String get productSearchQuery => _productSearchQuery.value;
+  String get productSortBy => _productSortBy.value;
+  bool get productSortAscending => _productSortAscending.value;
+
   // Calculs du panier
   double get cartSubtotal => _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
   double get cartOriginalSubtotal => _cartItems.fold(0.0, (sum, item) => sum + (item.originalPrice * item.quantity));
@@ -102,6 +114,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     loadSales();
     _initializeStocks();
     _loadCompanyProfile();
+    loadProductsForSale(); // Charger les produits pour la vente
 
     // Vérifier l'abonnement au démarrage
     _initializeSubscriptionChecks();
@@ -175,12 +188,48 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   // Méthode pour recharger les stocks manuellement
   Future<void> refreshStocks() async {
+    print('🔄 Rafraîchissement manuel des stocks...');
     await loadStocks();
+
+    // Afficher un résumé des stocks chargés
+    if (_productStocks.isNotEmpty) {
+      final stocksWithQuantity = _productStocks.values.where((s) => s.quantiteDisponible > 0).length;
+      final stocksEmpty = _productStocks.values.where((s) => s.quantiteDisponible == 0).length;
+
+      print('📊 Résumé des stocks:');
+      print('   - Total produits: ${_productStocks.length}');
+      print('   - Avec stock: $stocksWithQuantity');
+      print('   - Stock vide: $stocksEmpty');
+
+      // Afficher quelques exemples
+      print('📦 Exemples de stocks:');
+      _productStocks.entries.take(5).forEach((entry) {
+        print('   - Produit ${entry.key}: ${entry.value.quantiteDisponible} unités');
+      });
+    }
   }
 
   // Méthode de débogage pour afficher les stocks
   void debugPrintStocks() {
     print('=== DEBUG STOCKS ===');
+    print('Total stocks en mémoire: ${_productStocks.length}');
+
+    if (_productStocks.isEmpty) {
+      print('⚠️ AUCUN STOCK EN MÉMOIRE!');
+      print('💡 Cliquez sur le bouton de rafraîchissement pour charger les stocks');
+      return;
+    }
+
+    print('\n📦 Liste des stocks:');
+    _productStocks.forEach((produitId, stock) {
+      print('Produit $produitId: ${stock.quantiteDisponible} disponible, ${stock.quantiteReservee} réservé');
+    });
+
+    print('\n📊 Statistiques:');
+    final totalDisponible = _productStocks.values.fold(0, (sum, stock) => sum + stock.quantiteDisponible);
+    final totalReserve = _productStocks.values.fold(0, (sum, stock) => sum + stock.quantiteReservee);
+    print('Total disponible: $totalDisponible');
+    print('Total réservé: $totalReserve');
   }
 
   // Méthode pour forcer l'utilisation des données de test
@@ -351,26 +400,150 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des stocks
   Future<void> loadStocks() async {
     try {
-      print('Chargement des stocks...');
-      final response = await _inventoryService.getStock(limit: 100);
-      if (response.success && response.data != null) {
-        _productStocks.clear();
-        for (final stock in response.data!) {
-          _productStocks[stock.produitId] = stock;
-          print('Stock chargé - Produit ${stock.produitId}: ${stock.quantiteDisponible}');
+      print('🔄 Chargement des stocks...');
+      _productStocks.clear();
+
+      int page = 1;
+      bool hasMore = true;
+      int totalLoaded = 0;
+
+      // Charger toutes les pages de stocks
+      while (hasMore) {
+        final response = await _inventoryService.getStock(page: page, limit: 100);
+
+        if (response.success && response.data != null) {
+          for (final stock in response.data!) {
+            _productStocks[stock.produitId] = stock;
+            print('Stock chargé - Produit ${stock.produitId}: ${stock.quantiteDisponible}');
+          }
+
+          totalLoaded += response.data!.length;
+
+          // Vérifier s'il y a plus de données
+          if (response.pagination != null) {
+            hasMore = response.pagination!.hasNext;
+            page++;
+            print('📄 Page $page chargée, ${response.data!.length} stocks');
+          } else {
+            hasMore = false;
+          }
+        } else {
+          print('❌ Erreur lors du chargement des stocks page $page: ${response.message}');
+          hasMore = false;
         }
-        print('Total stocks chargés: ${_productStocks.length}');
-        if (_productStocks.isNotEmpty) {
-          // SnackbarUtils.showSuccess('${_productStocks.length} stocks réels chargés depuis l\'API');
-        }
+      }
+
+      print('✅ Total stocks chargés: ${_productStocks.length}');
+      if (_productStocks.isNotEmpty) {
+        SnackbarUtils.showSuccess('${_productStocks.length} stocks chargés');
       } else {
-        print('Erreur lors du chargement des stocks: ${response.message}');
-        SnackbarUtils.showError('Erreur lors du chargement des stocks: ${response.message}');
+        print('⚠️ Aucun stock chargé depuis l\'API');
       }
     } catch (e) {
-      print('Erreur lors du chargement des stocks: $e');
+      print('❌ Erreur lors du chargement des stocks: $e');
       SnackbarUtils.showError('Erreur de connexion lors du chargement des stocks');
     }
+  }
+
+  // Gestion des produits pour la vente
+  Future<void> loadProductsForSale() async {
+    try {
+      print('🔄 Chargement des produits pour la vente...');
+      final productController = Get.find<ProductController>();
+
+      // Charger les produits si nécessaire
+      if (productController.products.isEmpty) {
+        await productController.loadProducts();
+      }
+
+      // Copier les produits dans la liste locale
+      _productsForSale.assignAll(productController.products);
+
+      // Appliquer le tri
+      _applySortingToProducts();
+
+      print('✅ ${_productsForSale.length} produits chargés pour la vente');
+    } catch (e) {
+      print('❌ Erreur lors du chargement des produits: $e');
+      SnackbarUtils.showError('Erreur lors du chargement des produits');
+    }
+  }
+
+  /// Met à jour la recherche de produits
+  void updateProductSearchQuery(String query) {
+    _productSearchQuery.value = query;
+    _filterAndSortProducts();
+  }
+
+  /// Change l'ordre de tri des produits
+  void toggleProductSort() {
+    _productSortAscending.value = !_productSortAscending.value;
+    _applySortingToProducts();
+  }
+
+  /// Définit le critère de tri des produits
+  void setProductSortBy(String sortField) {
+    if (_productSortBy.value == sortField) {
+      // Si on clique sur le même critère, on bascule l'ordre
+      _productSortAscending.value = !_productSortAscending.value;
+    } else {
+      // Nouveau critère, trier en ordre croissant par défaut
+      _productSortBy.value = sortField;
+      _productSortAscending.value = true;
+    }
+    _applySortingToProducts();
+  }
+
+  /// Applique le tri à la liste des produits
+  void _applySortingToProducts() {
+    final productController = Get.find<ProductController>();
+    List<Product> sortedProducts = List.from(productController.products);
+
+    // Appliquer la recherche d'abord
+    if (_productSearchQuery.value.isNotEmpty) {
+      final query = _productSearchQuery.value.toLowerCase();
+      sortedProducts = sortedProducts.where((product) {
+        return product.nom.toLowerCase().contains(query) ||
+            product.reference.toLowerCase().contains(query) ||
+            (product.codeBarre?.toLowerCase().contains(query) ?? false) ||
+            (product.categorie?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    // Appliquer le tri
+    switch (_productSortBy.value) {
+      case 'nom':
+        sortedProducts.sort((a, b) => _productSortAscending.value ? a.nom.toLowerCase().compareTo(b.nom.toLowerCase()) : b.nom.toLowerCase().compareTo(a.nom.toLowerCase()));
+        break;
+      case 'prix':
+        sortedProducts.sort((a, b) => _productSortAscending.value ? a.prixUnitaire.compareTo(b.prixUnitaire) : b.prixUnitaire.compareTo(a.prixUnitaire));
+        break;
+      case 'reference':
+        sortedProducts.sort((a, b) => _productSortAscending.value ? a.reference.compareTo(b.reference) : b.reference.compareTo(a.reference));
+        break;
+      case 'categorie':
+        sortedProducts.sort((a, b) {
+          final catA = a.categorie ?? '';
+          final catB = b.categorie ?? '';
+          return _productSortAscending.value ? catA.toLowerCase().compareTo(catB.toLowerCase()) : catB.toLowerCase().compareTo(catA.toLowerCase());
+        });
+        break;
+    }
+
+    _productsForSale.assignAll(sortedProducts);
+  }
+
+  /// Filtre et trie les produits
+  void _filterAndSortProducts() {
+    _applySortingToProducts();
+  }
+
+  /// Rafraîchit les produits et les stocks
+  Future<void> refreshProductsAndStocks() async {
+    await Future.wait([
+      loadProductsForSale(),
+      loadStocks(),
+    ]);
   }
 
   Stock? getProductStock(int productId) {
@@ -505,18 +678,14 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   void setPaymentMode(String mode) {
     _paymentMode.value = mode;
-    // Si mode comptant, le montant payé = total
-    if (mode == 'comptant') {
-      _amountPaid.value = cartTotal;
-    }
+    // Ne plus écraser automatiquement le montant payé
+    // Le montant payé doit être défini explicitement via setAmountPaid
   }
 
   void setDiscount(double discount) {
     _discount.value = discount;
-    // Recalculer le montant payé si mode comptant
-    if (_paymentMode.value == 'comptant') {
-      _amountPaid.value = cartTotal;
-    }
+    // Ne plus écraser automatiquement le montant payé
+    // Le montant payé doit être défini explicitement via setAmountPaid
   }
 
   void setAmountPaid(double amount) {
@@ -576,6 +745,21 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _isCreating.value = true;
 
     try {
+      // 🔍 DEBUG: Afficher les valeurs avant création de la vente
+      print('=== DEBUG CRÉATION VENTE ===');
+      print('Client: ${_selectedCustomer.value?.nomComplet ?? "Aucun"}');
+      print('Mode paiement: ${_paymentMode.value}');
+      print('Montant remise: ${_discount.value}');
+      print('Montant payé: ${_amountPaid.value} (type: ${_amountPaid.value.runtimeType})');
+      print('Sous-total panier: $cartSubtotal');
+      print('Total panier: $cartTotal');
+      if (_selectedCustomer.value != null) {
+        final customerDebt = _selectedCustomer.value!.solde < 0 ? -_selectedCustomer.value!.solde : 0.0;
+        print('Dette client: $customerDebt');
+        print('Total à payer (commande + dette): ${cartTotal + customerDebt}');
+      }
+      print('===========================');
+
       // 🔍 DEBUG: Vérifier les remises avant envoi au backend
       for (var item in _cartItems) {
         final discount = item.originalPrice - item.unitPrice;

@@ -31,9 +31,9 @@ class _SalesFiltersState extends State<SalesFilters> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Filtres',
-                  style: TextStyle(
+                Text(
+                  'sales_filters'.tr,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -53,7 +53,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                             });
                           },
                           icon: const Icon(Icons.clear),
-                          label: const Text('Effacer les filtres'),
+                          label: Text('sales_clear_filters'.tr),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -68,10 +68,10 @@ class _SalesFiltersState extends State<SalesFilters> {
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
-                              const Flexible(
+                              Flexible(
                                 child: Text(
-                                  'Filtrer par période',
-                                  style: TextStyle(
+                                  'sales_filter_by_period'.tr,
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -94,24 +94,24 @@ class _SalesFiltersState extends State<SalesFilters> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildPeriodButton('Aujourd\'hui', 'today', controller),
-                  _buildPeriodButton('Hier', 'yesterday', controller),
-                  _buildPeriodButton('Cette semaine', 'this_week', controller),
-                  _buildPeriodButton('Semaine dernière', 'last_week', controller),
-                  _buildPeriodButton('Ce mois', 'this_month', controller),
-                  _buildPeriodButton('Mois dernier', 'last_month', controller),
+                  _buildPeriodButton('sales_today'.tr, 'today', controller),
+                  _buildPeriodButton('sales_yesterday'.tr, 'yesterday', controller),
+                  _buildPeriodButton('sales_this_week'.tr, 'this_week', controller),
+                  _buildPeriodButton('sales_last_week'.tr, 'last_week', controller),
+                  _buildPeriodButton('sales_this_month'.tr, 'this_month', controller),
+                  _buildPeriodButton('sales_last_month'.tr, 'last_month', controller),
                   _buildPeriodButton('Ce trimestre', 'this_quarter', controller),
                   _buildPeriodButton('Trimestre dernier', 'last_quarter', controller),
-                  _buildPeriodButton('Cette année', 'this_year', controller),
+                  _buildPeriodButton('sales_this_year'.tr, 'this_year', controller),
                   _buildPeriodButton('Année dernière', 'last_year', controller),
                 ],
               ),
               const SizedBox(height: 12),
               const Divider(),
               const SizedBox(height: 12),
-              const Text(
-                'Période personnalisée',
-                style: TextStyle(
+              Text(
+                'sales_custom_period'.tr,
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -140,7 +140,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                       },
                       icon: const Icon(Icons.calendar_today),
                       label: Text(
-                        _selectedStartDate != null ? 'Du: ${_selectedStartDate!.day}/${_selectedStartDate!.month}/${_selectedStartDate!.year}' : 'Date de début',
+                        _selectedStartDate != null ? 'Du: ${_selectedStartDate!.day}/${_selectedStartDate!.month}/${_selectedStartDate!.year}' : 'sales_start_date'.tr,
                       ),
                     ),
                   ),
@@ -166,7 +166,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                       },
                       icon: const Icon(Icons.calendar_today),
                       label: Text(
-                        _selectedEndDate != null ? 'Au: ${_selectedEndDate!.day}/${_selectedEndDate!.month}/${_selectedEndDate!.year}' : 'Date de fin',
+                        _selectedEndDate != null ? 'Au: ${_selectedEndDate!.day}/${_selectedEndDate!.month}/${_selectedEndDate!.year}' : 'sales_end_date'.tr,
                       ),
                     ),
                   ),

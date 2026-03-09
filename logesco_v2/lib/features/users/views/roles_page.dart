@@ -12,24 +12,24 @@ class RolesPage extends GetView<RoleController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des rôles'),
+        title: Text('roles_title'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: controller.refresh,
-            tooltip: 'Actualiser',
+            tooltip: 'users_refresh'.tr,
           ),
         ],
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.roles.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Chargement des rôles...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('roles_loading'.tr),
               ],
             ),
           );
@@ -47,7 +47,7 @@ class RolesPage extends GetView<RoleController> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Erreur de chargement',
+                  'roles_loading_error'.tr,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
@@ -60,7 +60,7 @@ class RolesPage extends GetView<RoleController> {
                 ElevatedButton.icon(
                   onPressed: controller.loadRoles,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Réessayer'),
+                  label: Text('roles_retry'.tr),
                 ),
               ],
             ),
@@ -79,21 +79,21 @@ class RolesPage extends GetView<RoleController> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Aucun rôle',
+                  'roles_no_roles'.tr,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: Colors.grey[600],
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Commencez par créer votre premier rôle',
+                  'roles_no_roles_hint'.tr,
                   style: TextStyle(color: Colors.grey[500]),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: _showCreateRoleDialog,
                   icon: const Icon(Icons.add),
-                  label: const Text('Créer un rôle'),
+                  label: Text('roles_create_role'.tr),
                 ),
               ],
             ),
@@ -121,7 +121,7 @@ class RolesPage extends GetView<RoleController> {
       }),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateRoleDialog,
-        tooltip: 'Ajouter un rôle',
+        tooltip: 'roles_add_role'.tr,
         child: const Icon(Icons.add),
       ),
     );
@@ -219,7 +219,7 @@ class RolesPage extends GetView<RoleController> {
           children: [
             const SizedBox(height: 4),
             Text(
-              'Code: ${role.nom}',
+              '${'roles_code'.tr}: ${role.nom}',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontFamily: 'monospace',
@@ -234,9 +234,9 @@ class RolesPage extends GetView<RoleController> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.red.withOpacity(0.3)),
                 ),
-                child: const Text(
-                  'ADMINISTRATEUR',
-                  style: TextStyle(
+                child: Text(
+                  'roles_admin_badge'.tr,
+                  style: const TextStyle(
                     color: Colors.red,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -254,27 +254,27 @@ class RolesPage extends GetView<RoleController> {
         trailing: PopupMenuButton<String>(
           onSelected: (action) => _handleRoleAction(action, role),
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'view',
               child: ListTile(
-                leading: Icon(Icons.visibility, size: 20),
-                title: Text('Voir les détails'),
+                leading: const Icon(Icons.visibility, size: 20),
+                title: Text('roles_view_details'.tr),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit, size: 20),
-                title: Text('Modifier'),
+                leading: const Icon(Icons.edit, size: 20),
+                title: Text('roles_modify'.tr),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red, size: 20),
-                title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete, color: Colors.red, size: 20),
+                title: Text('roles_delete'.tr, style: const TextStyle(color: Colors.red)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -296,9 +296,9 @@ class RolesPage extends GetView<RoleController> {
             color: Colors.grey.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text(
-            'Aucun privilège',
-            style: TextStyle(
+          child: Text(
+            'roles_no_privileges'.tr,
+            style: const TextStyle(
               fontSize: 10,
               color: Colors.grey,
             ),
@@ -315,7 +315,7 @@ class RolesPage extends GetView<RoleController> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          '$totalPrivileges privilège${totalPrivileges > 1 ? 's' : ''}',
+          totalPrivileges > 1 ? 'roles_privileges_count_plural'.trParams({'count': totalPrivileges.toString()}) : 'roles_privileges_count'.trParams({'count': totalPrivileges.toString()}),
           style: const TextStyle(
             fontSize: 10,
             color: Colors.green,
@@ -359,13 +359,13 @@ class RolesPage extends GetView<RoleController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Code', role.nom),
-              _buildDetailRow('Type', role.isAdmin ? 'Administrateur' : 'Standard'),
+              _buildDetailRow('roles_code'.tr, role.nom),
+              _buildDetailRow('roles_type'.tr, role.isAdmin ? 'roles_administrator'.tr : 'roles_stats_standard'.tr),
               const SizedBox(height: 16),
               if (!role.isAdmin) ...[
-                const Text(
-                  'Privilèges par module:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  'roles_privileges_by_module'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ...role.privileges.entries.map((entry) {
@@ -401,14 +401,14 @@ class RolesPage extends GetView<RoleController> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('roles_close'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               _showEditRoleDialog(role);
             },
-            child: const Text('Modifier'),
+            child: Text('roles_modify'.tr),
           ),
         ],
       ),
@@ -439,12 +439,12 @@ class RolesPage extends GetView<RoleController> {
   void _showDeleteRoleDialog(UserRole role) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer le rôle'),
+        title: Text('roles_delete_confirm_title'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Êtes-vous sûr de vouloir supprimer le rôle :'),
+            Text('roles_delete_confirm_message'.tr),
             const SizedBox(height: 8),
             Text(
               '"${role.displayName}"',
@@ -452,7 +452,7 @@ class RolesPage extends GetView<RoleController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cette action est irréversible.',
+              'roles_delete_irreversible'.tr,
               style: TextStyle(color: Colors.red[600]),
             ),
           ],
@@ -460,7 +460,7 @@ class RolesPage extends GetView<RoleController> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           Obx(() => ElevatedButton(
                 onPressed: controller.isLoading.value
@@ -470,16 +470,16 @@ class RolesPage extends GetView<RoleController> {
                         if (success) {
                           Get.back();
                           Get.snackbar(
-                            'Succès',
-                            'Rôle supprimé avec succès',
+                            'common_success'.tr,
+                            'roles_deleted_success'.tr,
                             snackPosition: SnackPosition.BOTTOM,
                             backgroundColor: Colors.green[100],
                             colorText: Colors.green[800],
                           );
                         } else {
                           Get.snackbar(
-                            'Erreur',
-                            controller.error.value.isNotEmpty ? controller.error.value : 'Erreur lors de la suppression',
+                            'common_error'.tr,
+                            controller.error.value.isNotEmpty ? controller.error.value : 'roles_delete_error'.tr,
                             snackPosition: SnackPosition.BOTTOM,
                             backgroundColor: Colors.red[100],
                             colorText: Colors.red[800],
@@ -496,7 +496,7 @@ class RolesPage extends GetView<RoleController> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Supprimer'),
+                    : Text('roles_delete'.tr),
               )),
         ],
       ),

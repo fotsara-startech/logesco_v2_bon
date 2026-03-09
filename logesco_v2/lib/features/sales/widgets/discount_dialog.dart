@@ -96,8 +96,8 @@ class _DiscountDialogState extends State<DiscountDialog> {
         children: [
           const Icon(Icons.discount, color: Colors.orange),
           const SizedBox(width: 8),
-          const Expanded(
-            child: Text('Appliquer une Remise'),
+          Expanded(
+            child: Text('sales_apply_discount'.tr),
           ),
         ],
       ),
@@ -127,7 +127,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Réf: ${widget.cartItem.productReference}',
+                    'sales_product_reference'.trParams({'ref': widget.cartItem.productReference}),
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 12,
@@ -137,12 +137,12 @@ class _DiscountDialogState extends State<DiscountDialog> {
                   Row(
                     children: [
                       Text(
-                        'Prix: ${widget.cartItem.originalPrice.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
+                        'sales_product_price'.trParams({'price': widget.cartItem.originalPrice.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const Spacer(),
                       Text(
-                        'Remise max: ${widget.cartItem.maxDiscountAllowed.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
+                        'sales_discount_max'.trParams({'max': widget.cartItem.maxDiscountAllowed.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
                         style: TextStyle(
                           color: Colors.orange.shade700,
                           fontWeight: FontWeight.w500,
@@ -202,7 +202,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                     children: [
                       Row(
                         children: [
-                          const Text('Prix original:'),
+                          Text('sales_discount_original_price'.tr),
                           const Spacer(),
                           Text(
                             '${widget.cartItem.originalPrice.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
@@ -214,7 +214,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Text('Remise:'),
+                            Text('sales_discount_applied'.tr),
                             const Spacer(),
                             Text(
                               '- ${currentDiscount.value.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
@@ -251,7 +251,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Text('Économie client:'),
+                            Text('sales_discount_customer_savings'.tr),
                             const Spacer(),
                             Text(
                               '${(currentDiscount.value * widget.cartItem.quantity).toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
@@ -272,11 +272,11 @@ class _DiscountDialogState extends State<DiscountDialog> {
       actions: [
         TextButton(
           onPressed: () => Get.back(),
-          child: const Text('Annuler'),
+          child: Text('cancel'.tr),
         ),
         Obx(() => ElevatedButton(
               onPressed: isValid.value ? _applyDiscount : null,
-              child: const Text('Appliquer'),
+              child: Text('sales_discount_apply'.tr),
             )),
       ],
     );

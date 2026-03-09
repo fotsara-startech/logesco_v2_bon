@@ -59,39 +59,39 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion du Stock'),
+        title: Text('inventory_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => controller.refreshAll(),
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_stock',
                 child: ListTile(
-                  leading: Icon(Icons.download),
-                  title: Text('Exporter stocks (Excel)'),
+                  leading: const Icon(Icons.download),
+                  title: Text('inventory_export_stock'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_movements',
                 child: ListTile(
-                  leading: Icon(Icons.history),
-                  title: Text('Exporter mouvements (Excel)'),
+                  leading: const Icon(Icons.history),
+                  title: Text('inventory_export_movements'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'bulk_adjust',
                 child: ListTile(
-                  leading: Icon(Icons.edit_note),
-                  title: Text('Ajustement en lot'),
+                  leading: const Icon(Icons.edit_note),
+                  title: Text('inventory_bulk_adjust'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -118,25 +118,25 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 const SizedBox(height: 8),
                 _buildVerticalTab(
                   icon: Icons.inventory,
-                  label: 'Stocks',
+                  label: 'inventory_stocks'.tr,
                   index: 0,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.warning,
-                  label: 'Alertes',
+                  label: 'inventory_alerts'.tr,
                   index: 1,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.history,
-                  label: 'Mouvements',
+                  label: 'inventory_movements'.tr,
                   index: 2,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.event_busy,
-                  label: 'Péremptions',
+                  label: 'inventory_expirations'.tr,
                   index: 3,
                   controller: _tabController,
                 ),

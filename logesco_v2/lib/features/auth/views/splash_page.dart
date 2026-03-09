@@ -85,9 +85,9 @@ class _SplashPageState extends State<SplashPage> {
             const SizedBox(height: 8),
 
             // Sous-titre
-            const Text(
-              'Système de gestion commerciale',
-              style: TextStyle(
+            Text(
+              'auth_splash_subtitle'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.white70,
               ),
@@ -96,9 +96,9 @@ class _SplashPageState extends State<SplashPage> {
             const SizedBox(height: 48),
 
             // Indicateur de chargement
-            const LoadingWidget(
+            LoadingWidget(
               color: Colors.white,
-              message: 'Initialisation...',
+              message: 'auth_initializing'.tr,
             ),
           ],
         ),

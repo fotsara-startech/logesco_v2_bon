@@ -15,10 +15,12 @@ const {
 
 /**
  * Crée le routeur pour les comptes
- * @param {Object} models - Factory de modèles
+ * @param {Object} params - Paramètres du routeur
+ * @param {Object} params.prisma - Instance Prisma
+ * @param {Object} params.authService - Service d'authentification
  * @returns {Object} Routeur Express
  */
-function createAccountRouter(models) {
+function createAccountRouter({ prisma, authService, ...models }) {
   const router = express.Router();
 
   /**
@@ -83,8 +85,8 @@ function createAccountRouter(models) {
         }
 
         const [comptes, total] = await Promise.all([
-          models.prisma.compteClient.findMany(options),
-          models.prisma.compteClient.count({ where: options.where })
+          prisma.compteClient.findMany(options),
+          prisma.compteClient.count({ where: options.where })
         ]);
 
         // Transformer les données
@@ -187,8 +189,8 @@ function createAccountRouter(models) {
         }
 
         const [comptes, total] = await Promise.all([
-          models.prisma.compteFournisseur.findMany(options),
-          models.prisma.compteFournisseur.count({ where: options.where })
+          prisma.compteFournisseur.findMany(options),
+          prisma.compteFournisseur.count({ where: options.where })
         ]);
 
         // Transformer les données
@@ -235,7 +237,7 @@ function createAccountRouter(models) {
         const clientId = parseInt(req.params.id);
 
         // Vérifier que le client existe
-        const client = await models.prisma.client.findUnique({
+        const client = await prisma.client.findUnique({
           where: { id: clientId },
           select: {
             id: true,
@@ -251,7 +253,7 @@ function createAccountRouter(models) {
         }
 
         // Créer le compte client s'il n'existe pas
-        let compte = await models.prisma.compteClient.findUnique({
+        let compte = await prisma.compteClient.findUnique({
           where: { clientId },
           include: {
             client: {
@@ -266,7 +268,7 @@ function createAccountRouter(models) {
 
         if (!compte) {
           console.log(`📝 Création automatique du compte pour le client ${clientId}`);
-          compte = await models.prisma.compteClient.create({
+          compte = await prisma.compteClient.create({
             data: {
               clientId,
               soldeActuel: 0,
@@ -322,7 +324,7 @@ function createAccountRouter(models) {
       try {
         const fournisseurId = parseInt(req.params.id);
 
-        const compte = await models.prisma.compteFournisseur.findUnique({
+        const compte = await prisma.compteFournisseur.findUnique({
           where: { fournisseurId },
           include: {
             fournisseur: {
@@ -374,7 +376,7 @@ function createAccountRouter(models) {
         const clientId = parseInt(req.params.id);
 
         // Récupérer les ventes du client avec montantRestant > 0
-        const ventesImpayees = await models.prisma.vente.findMany({
+        const ventesImpayees = await prisma.vente.findMany({
           where: {
             clientId,
             montantRestant: { gt: 0 },
@@ -436,7 +438,7 @@ function createAccountRouter(models) {
         const { montant, typeTransaction, description, venteId, typeTransactionDetail } = req.body;
 
         // Vérifier que le client existe
-        const client = await models.prisma.client.findUnique({
+        const client = await prisma.client.findUnique({
           where: { id: clientId }
         });
 
@@ -450,7 +452,7 @@ function createAccountRouter(models) {
 
         // Si une vente est spécifiée, récupérer sa référence et mettre à jour le paiement
         if (venteId) {
-          const vente = await models.prisma.vente.findUnique({
+          const vente = await prisma.vente.findUnique({
             where: { id: venteId },
             select: { id: true, numeroVente: true, montantPaye: true, montantTotal: true, clientId: true }
           });
@@ -470,7 +472,7 @@ function createAccountRouter(models) {
             const nouveauMontantPaye = parseFloat(vente.montantPaye) + parseFloat(montant);
             const montantRestant = parseFloat(vente.montantTotal) - nouveauMontantPaye;
 
-            await models.prisma.vente.update({
+            await prisma.vente.update({
               where: { id: venteId },
               data: {
                 montantPaye: nouveauMontantPaye,
@@ -481,12 +483,12 @@ function createAccountRouter(models) {
         }
 
         // Créer ou récupérer le compte client
-        let compte = await models.prisma.compteClient.findUnique({
+        let compte = await prisma.compteClient.findUnique({
           where: { clientId }
         });
 
         if (!compte) {
-          compte = await models.prisma.compteClient.create({
+          compte = await prisma.compteClient.create({
             data: {
               clientId,
               soldeActuel: 0,
@@ -520,7 +522,7 @@ function createAccountRouter(models) {
         }
 
         // Transaction atomique pour mettre à jour le compte et créer l'historique
-        const result = await models.prisma.$transaction(async (prisma) => {
+        const result = await prisma.$transaction(async (prisma) => {
           // Mettre à jour le compte
           const compteUpdated = await prisma.compteClient.update({
             where: { clientId },
@@ -593,17 +595,35 @@ function createAccountRouter(models) {
   /**
    * POST /accounts/suppliers/:id/transactions
    * Crée une transaction sur un compte fournisseur (crédit/débit/paiement)
+   * Supporte la création de mouvement financier et le lien avec une commande
    */
   router.post('/suppliers/:id/transactions',
+    authenticateToken(authService),
     validateId,
     validate(compteSchemas.updateSolde, 'body'),
     async (req, res) => {
       try {
         const fournisseurId = parseInt(req.params.id);
-        const { montant, typeTransaction, description } = req.body;
+        const { 
+          montant, 
+          typeTransaction, 
+          description,
+          referenceType,
+          referenceId,
+          createFinancialMovement = false
+        } = req.body;
+
+        console.log('💰 Création transaction fournisseur:', {
+          fournisseurId,
+          montant,
+          typeTransaction,
+          referenceType,
+          referenceId,
+          createFinancialMovement
+        });
 
         // Vérifier que le fournisseur existe
-        const fournisseur = await models.prisma.fournisseur.findUnique({
+        const fournisseur = await prisma.fournisseur.findUnique({
           where: { id: fournisseurId }
         });
 
@@ -613,13 +633,48 @@ function createAccountRouter(models) {
           );
         }
 
+        // Si création de mouvement financier demandée, vérifier la session de caisse
+        let sessionCaisse = null;
+        if (createFinancialMovement && (typeTransaction === 'paiement' || typeTransaction === 'credit')) {
+          // Vérifier que l'utilisateur est authentifié
+          if (!req.user || !req.user.id) {
+            console.error('❌ Utilisateur non authentifié pour créer un mouvement financier');
+            return res.status(401).json(
+              BaseResponseDTO.error('Authentification requise pour créer un mouvement financier')
+            );
+          }
+
+          // Récupérer la session de caisse active de l'utilisateur
+          sessionCaisse = await prisma.cashSession.findFirst({
+            where: {
+              utilisateurId: req.user.id,
+              isActive: true
+            },
+            include: {
+              caisse: true
+            }
+          });
+
+          if (!sessionCaisse) {
+            return res.status(400).json(
+              BaseResponseDTO.error('Aucune session de caisse active. Veuillez ouvrir une session de caisse.')
+            );
+          }
+
+          console.log('✅ Session de caisse active trouvée:', {
+            sessionId: sessionCaisse.id,
+            caisseId: sessionCaisse.caisseId,
+            soldeOuverture: sessionCaisse.soldeOuverture
+          });
+        }
+
         // Créer ou récupérer le compte fournisseur
-        let compte = await models.prisma.compteFournisseur.findUnique({
+        let compte = await prisma.compteFournisseur.findUnique({
           where: { fournisseurId }
         });
 
         if (!compte) {
-          compte = await models.prisma.compteFournisseur.create({
+          compte = await prisma.compteFournisseur.create({
             data: {
               fournisseurId,
               soldeActuel: 0,
@@ -653,8 +708,8 @@ function createAccountRouter(models) {
           nouveauSolde = 0;
         }
 
-        // Transaction atomique pour mettre à jour le compte et créer l'historique
-        const result = await models.prisma.$transaction(async (prisma) => {
+        // Transaction atomique pour mettre à jour le compte, créer l'historique et le mouvement financier
+        const result = await prisma.$transaction(async (prisma) => {
           // Mettre à jour le compte
           const compteUpdated = await prisma.compteFournisseur.update({
             where: { fournisseurId },
@@ -678,11 +733,121 @@ function createAccountRouter(models) {
               typeTransaction,
               montant: parseFloat(montant),
               description: description || `Transaction ${typeTransaction}`,
-              soldeApres: nouveauSolde
+              soldeApres: nouveauSolde,
+              referenceType: referenceType || null,
+              referenceId: referenceId ? parseInt(referenceId) : null
             }
           });
 
-          return { compte: compteUpdated, transaction };
+          // Mettre à jour le montant payé de la commande si c'est un paiement lié à une commande
+          if ((typeTransaction === 'paiement' || typeTransaction === 'credit') && 
+              referenceType === 'approvisionnement' && referenceId) {
+            const commande = await prisma.commandeApprovisionnement.findUnique({
+              where: { id: parseInt(referenceId) },
+              select: { id: true, numeroCommande: true, montantPaye: true, montantTotal: true }
+            });
+
+            if (commande) {
+              const nouveauMontantPaye = parseFloat(commande.montantPaye || 0) + parseFloat(montant);
+              const montantRestant = parseFloat(commande.montantTotal) - nouveauMontantPaye;
+
+              await prisma.commandeApprovisionnement.update({
+                where: { id: parseInt(referenceId) },
+                data: {
+                  montantPaye: nouveauMontantPaye,
+                  montantRestant: montantRestant > 0 ? montantRestant : 0
+                }
+              });
+
+              console.log('✅ Commande mise à jour:', {
+                commandeId: referenceId,
+                numeroCommande: commande.numeroCommande,
+                ancienMontantPaye: parseFloat(commande.montantPaye || 0),
+                nouveauMontantPaye,
+                montantRestant: montantRestant > 0 ? montantRestant : 0
+              });
+            }
+          }
+
+          let mouvementFinancier = null;
+          let mouvementFinancierRecord = null;
+
+          // Créer le mouvement financier si demandé
+          if (createFinancialMovement && sessionCaisse) {
+            console.log('💸 Création du mouvement de caisse...');
+
+            // Créer le mouvement de caisse
+            mouvementFinancier = await prisma.cashMovement.create({
+              data: {
+                caisseId: sessionCaisse.caisseId,
+                type: 'sortie',
+                montant: parseFloat(montant),
+                description: description || `Paiement fournisseur ${fournisseur.nom}${referenceId ? ` - Commande #${referenceId}` : ''}`,
+                utilisateurId: req.user.id,
+                metadata: JSON.stringify({
+                  typeTransaction: 'paiement_fournisseur',
+                  fournisseurId,
+                  transactionCompteId: transaction.id,
+                  referenceType: referenceType || null,
+                  referenceId: referenceId || null,
+                  sessionCaisseId: sessionCaisse.id
+                })
+              }
+            });
+
+            console.log('✅ Mouvement de caisse créé:', {
+              mouvementId: mouvementFinancier.id,
+              type: 'sortie',
+              montant: parseFloat(montant),
+              caisseId: sessionCaisse.caisseId
+            });
+
+            // Mettre à jour le solde attendu de la session de caisse
+            const currentSoldeAttendu = sessionCaisse.soldeAttendu ? parseFloat(sessionCaisse.soldeAttendu) : parseFloat(sessionCaisse.soldeOuverture);
+            const newSoldeAttendu = currentSoldeAttendu - parseFloat(montant);
+
+            await prisma.cashSession.update({
+              where: { id: sessionCaisse.id },
+              data: {
+                soldeAttendu: newSoldeAttendu
+              }
+            });
+
+            console.log('💰 Solde de la session de caisse mis à jour:', {
+              sessionId: sessionCaisse.id,
+              soldeAvant: currentSoldeAttendu,
+              montantSortie: parseFloat(montant),
+              soldeApres: newSoldeAttendu
+            });
+
+            // Créer aussi un mouvement financier pour la traçabilité
+            console.log('💰 Création du mouvement financier...');
+            
+            // Générer une référence unique
+            const timestamp = Date.now();
+            const random = Math.floor(Math.random() * 1000);
+            const reference = `MF-${timestamp}-${random}`;
+
+            mouvementFinancierRecord = await prisma.financialMovement.create({
+              data: {
+                reference,
+                montant: parseFloat(montant),
+                categorieId: 11, // Catégorie "approvisionnement"
+                description: description || `Paiement fournisseur ${fournisseur.nom}${referenceId ? ` - Commande #${referenceId}` : ''}`,
+                date: new Date(),
+                utilisateurId: req.user.id,
+                notes: `Paiement fournisseur ${fournisseur.nom} - Transaction compte ID: ${transaction.id}`
+              }
+            });
+
+            console.log('✅ Mouvement financier créé:', {
+              mouvementId: mouvementFinancierRecord.id,
+              reference: mouvementFinancierRecord.reference,
+              montant: parseFloat(montant)
+            });
+          }
+
+          return { compte: compteUpdated, transaction, mouvementFinancier, mouvementFinancierRecord };
         });
 
         const compteFormatted = {
@@ -699,8 +864,15 @@ function createAccountRouter(models) {
             typeTransaction: result.transaction.typeTransaction,
             montant: parseFloat(result.transaction.montant),
             description: result.transaction.description,
-            dateTransaction: result.transaction.dateTransaction
-          }
+            dateTransaction: result.transaction.dateTransaction,
+            referenceType: result.transaction.referenceType,
+            referenceId: result.transaction.referenceId
+          },
+          mouvementFinancier: result.mouvementFinancier ? {
+            id: result.mouvementFinancier.id,
+            montant: parseFloat(result.mouvementFinancier.montant),
+            description: result.mouvementFinancier.description
+          } : null
         };
 
         res.status(201).json(
@@ -729,7 +901,7 @@ function createAccountRouter(models) {
         const { page, limit } = req.query;
 
         // Vérifier que le client existe
-        const client = await models.prisma.client.findUnique({
+        const client = await prisma.client.findUnique({
           where: { id: clientId }
         });
 
@@ -740,13 +912,13 @@ function createAccountRouter(models) {
         }
 
         // Créer le compte client s'il n'existe pas
-        let compte = await models.prisma.compteClient.findUnique({
+        let compte = await prisma.compteClient.findUnique({
           where: { clientId }
         });
 
         if (!compte) {
           console.log(`📝 Création automatique du compte pour le client ${clientId}`);
-          compte = await models.prisma.compteClient.create({
+          compte = await prisma.compteClient.create({
             data: {
               clientId,
               soldeActuel: 0,
@@ -764,8 +936,8 @@ function createAccountRouter(models) {
         options.orderBy = { dateTransaction: 'desc' };
 
         const [transactions, total] = await Promise.all([
-          models.prisma.transactionCompte.findMany(options),
-          models.prisma.transactionCompte.count({ where: options.where })
+          prisma.transactionCompte.findMany(options),
+          prisma.transactionCompte.count({ where: options.where })
         ]);
 
         const transactionsFormatted = transactions.map(t => ({
@@ -813,7 +985,7 @@ function createAccountRouter(models) {
         const { page, limit } = req.query;
 
         // Vérifier que le compte fournisseur existe
-        const compte = await models.prisma.compteFournisseur.findUnique({
+        const compte = await prisma.compteFournisseur.findUnique({
           where: { fournisseurId }
         });
 
@@ -831,8 +1003,8 @@ function createAccountRouter(models) {
         options.orderBy = { dateTransaction: 'desc' };
 
         const [transactions, total] = await Promise.all([
-          models.prisma.transactionCompte.findMany(options),
-          models.prisma.transactionCompte.count({ where: options.where })
+          prisma.transactionCompte.findMany(options),
+          prisma.transactionCompte.count({ where: options.where })
         ]);
 
         const transactionsFormatted = transactions.map(t => ({
@@ -868,6 +1040,248 @@ function createAccountRouter(models) {
   );
 
   /**
+   * GET /accounts/suppliers/:id/statement
+   * Récupère le relevé de compte complet d'un fournisseur (pour impression PDF)
+   */
+  router.get('/suppliers/:id/statement',
+    validateId,
+    async (req, res) => {
+      try {
+        const fournisseurId = parseInt(req.params.id);
+
+        console.log('📄 Récupération relevé fournisseur:', fournisseurId);
+
+        // Récupérer le fournisseur
+        const fournisseur = await prisma.fournisseur.findUnique({
+          where: { id: fournisseurId },
+          select: {
+            id: true,
+            nom: true,
+            personneContact: true,
+            telephone: true,
+            email: true,
+            adresse: true
+          }
+        });
+
+        if (!fournisseur) {
+          return res.status(404).json(
+            BaseResponseDTO.error('Fournisseur non trouvé')
+          );
+        }
+
+        // Récupérer ou créer le compte fournisseur
+        let compte = await prisma.compteFournisseur.findUnique({
+          where: { fournisseurId }
+        });
+
+        if (!compte) {
+          compte = await prisma.compteFournisseur.create({
+            data: {
+              fournisseurId,
+              soldeActuel: 0,
+              limiteCredit: 0
+            }
+          });
+        }
+
+        // Récupérer toutes les transactions (sans pagination pour le relevé)
+        const transactions = await prisma.transactionCompte.findMany({
+          where: {
+            typeCompte: 'fournisseur',
+            compteId: compte.id
+          },
+          orderBy: { dateTransaction: 'desc' },
+          take: 100 // Limiter à 100 dernières transactions pour le PDF
+        });
+
+        // Récupérer les informations de l'entreprise
+        const entreprise = await prisma.parametresEntreprise.findFirst({
+          select: {
+            nomEntreprise: true,
+            localisation: true,
+            telephone: true,
+            email: true
+          }
+        });
+
+        const statementData = {
+          entreprise: entreprise ? {
+            nom: entreprise.nomEntreprise,
+            adresse: entreprise.localisation,
+            telephone: entreprise.telephone,
+            email: entreprise.email
+          } : null,
+          fournisseur: {
+            id: fournisseur.id,
+            nom: fournisseur.nom,
+            personneContact: fournisseur.personneContact,
+            telephone: fournisseur.telephone,
+            email: fournisseur.email,
+            adresse: fournisseur.adresse
+          },
+          compte: {
+            solde: parseFloat(compte.soldeActuel),
+            limiteCredit: parseFloat(compte.limiteCredit)
+          },
+          transactions: transactions.map(t => ({
+            id: t.id,
+            typeTransaction: t.typeTransaction,
+            montant: parseFloat(t.montant),
+            description: t.description,
+            dateTransaction: t.dateTransaction,
+            soldeApres: parseFloat(t.soldeApres),
+            referenceType: t.referenceType,
+            referenceId: t.referenceId
+          }))
+        };
+
+        console.log('✅ Relevé généré:', {
+          fournisseur: fournisseur.nom,
+          solde: compte.soldeActuel,
+          nbTransactions: transactions.length
+        });
+
+        res.json(
+          BaseResponseDTO.success(statementData, 'Relevé de compte récupéré avec succès')
+        );
+
+      } catch (error) {
+        console.error('Erreur récupération relevé fournisseur:', error);
+        res.status(500).json(
+          BaseResponseDTO.error('Erreur lors de la récupération du relevé fournisseur')
+        );
+      }
+    }
+  );
+
+  /**
+   * GET /accounts/suppliers/:id/unpaid-procurements
+   * Récupère les commandes impayées d'un fournisseur
+   */
+  router.get('/suppliers/:id/unpaid-procurements',
+    validateId,
+    async (req, res) => {
+      try {
+        const fournisseurId = parseInt(req.params.id);
+
+        console.log('🔍 Récupération commandes impayées fournisseur:', fournisseurId);
+
+        // Récupérer toutes les commandes du fournisseur non annulées
+        const commandes = await prisma.commandeApprovisionnement.findMany({
+          where: {
+            fournisseurId,
+            statut: { not: 'annulee' }
+          },
+          select: {
+            id: true,
+            numeroCommande: true,
+            dateCommande: true,
+            montantTotal: true,
+            modePaiement: true,
+            statut: true,
+            details: {
+              select: {
+                produitId: true,
+                quantiteCommandee: true,
+                coutUnitaire: true
+              }
+            }
+          },
+          orderBy: { dateCommande: 'desc' }
+        });
+
+        console.log(`📦 ${commandes.length} commande(s) trouvée(s)`);
+
+        // Récupérer les transactions de paiement pour ce fournisseur
+        const compteFournisseur = await prisma.compteFournisseur.findUnique({
+          where: { fournisseurId }
+        });
+
+        let paiementsParCommande = {};
+        if (compteFournisseur) {
+          // Récupérer les transactions liées aux commandes
+          const transactions = await prisma.transactionCompte.findMany({
+            where: {
+              typeCompte: 'fournisseur',
+              compteId: compteFournisseur.id,
+              referenceType: 'approvisionnement'
+            },
+            select: {
+              referenceId: true,
+              montant: true,
+              typeTransaction: true
+            }
+          });
+
+          console.log(`💰 ${transactions.length} transaction(s) de paiement trouvée(s)`);
+
+          // Calculer le montant payé par commande
+          transactions.forEach(t => {
+            if (t.referenceId) {
+              if (!paiementsParCommande[t.referenceId]) {
+                paiementsParCommande[t.referenceId] = 0;
+              }
+              // Les paiements sont des crédits (positifs)
+              if (t.typeTransaction === 'paiement' || t.typeTransaction === 'credit') {
+                paiementsParCommande[t.referenceId] += parseFloat(t.montant);
+                console.log(`  ✅ Commande ${t.referenceId}: +${t.montant} (total: ${paiementsParCommande[t.referenceId]})`);
+              }
+            }
+          });
+        }
+
+        console.log('📊 Paiements par commande:', paiementsParCommande);
+
+        // Formater les commandes avec calcul du montant restant
+        const commandesFormatted = commandes
+          .map(c => {
+            const montantTotal = parseFloat(c.montantTotal || 0);
+            const montantPaye = paiementsParCommande[c.id] || 0;
+            const montantRestant = montantTotal - montantPaye;
+
+            console.log(`📋 Commande ${c.numeroCommande}:`, {
+              id: c.id,
+              montantTotal,
+              montantPaye,
+              montantRestant
+            });
+
+            return {
+              id: c.id,
+              reference: c.numeroCommande,
+              dateCommande: c.dateCommande,
+              montantTotal,
+              montantPaye,
+              montantRestant,
+              nombreArticles: c.details.length,
+              statut: c.statut
+            };
+          })
+          // Filtrer uniquement les commandes avec un montant restant > 0
+          .filter(c => {
+            const isUnpaid = c.montantRestant > 0;
+            console.log(`  ${isUnpaid ? '✅' : '❌'} Commande ${c.reference}: montantRestant=${c.montantRestant} (${isUnpaid ? 'INCLUSE' : 'EXCLUE'})`);
+            return isUnpaid;
+          });
+
+        console.log(`✅ ${commandesFormatted.length} commande(s) impayée(s) retournée(s)`);
+
+        res.json(BaseResponseDTO.success(
+          commandesFormatted,
+          'Commandes impayées récupérées avec succès'
+        ));
+
+      } catch (error) {
+        console.error('Erreur récupération commandes impayées:', error);
+        res.status(500).json(
+          BaseResponseDTO.error('Erreur lors de la récupération des commandes impayées')
+        );
+      }
+    }
+  );
+
+  /**
    * PUT /accounts/customers/:id/credit-limit
    * Met à jour la limite de crédit d'un client
    */
@@ -880,7 +1294,7 @@ function createAccountRouter(models) {
         const { limiteCredit } = req.body;
 
         // Vérifier que le client existe
-        const client = await models.prisma.client.findUnique({
+        const client = await prisma.client.findUnique({
           where: { id: clientId }
         });
 
@@ -891,7 +1305,7 @@ function createAccountRouter(models) {
         }
 
         // Créer ou mettre à jour le compte client
-        const compte = await models.prisma.compteClient.upsert({
+        const compte = await prisma.compteClient.upsert({
           where: { clientId },
           update: { limiteCredit: parseFloat(limiteCredit) },
           create: {
@@ -952,7 +1366,7 @@ function createAccountRouter(models) {
         const { limiteCredit } = req.body;
 
         // Vérifier que le fournisseur existe
-        const fournisseur = await models.prisma.fournisseur.findUnique({
+        const fournisseur = await prisma.fournisseur.findUnique({
           where: { id: fournisseurId }
         });
 
@@ -963,7 +1377,7 @@ function createAccountRouter(models) {
         }
 
         // Créer ou mettre à jour le compte fournisseur
-        const compte = await models.prisma.compteFournisseur.upsert({
+        const compte = await prisma.compteFournisseur.upsert({
           where: { fournisseurId },
           update: { limiteCredit: parseFloat(limiteCredit) },
           create: {

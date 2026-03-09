@@ -43,7 +43,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           _showSuccessDialog();
         } else {
           setState(() {
-            _validationError = 'Échec de l\'activation. Vérifiez votre clé.';
+            _validationError = 'subscription_activation_failed'.tr;
           });
         }
       } catch (e) {
@@ -51,7 +51,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           if (e is LicenseException) {
             _validationError = e.localizedMessage;
           } else {
-            _validationError = 'Erreur inattendue: ${e.toString()}';
+            _validationError = '${'error'.tr}: ${e.toString()}';
           }
         });
       } finally {
@@ -72,17 +72,15 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           color: Theme.of(context).colorScheme.primary,
           size: 48,
         ),
-        title: const Text('Activation réussie'),
-        content: const Text(
-          'Votre licence a été activée avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités de l\'application.',
-        ),
+        title: Text('subscription_activation_success'.tr),
+        content: Text('subscription_activation_success_message'.tr),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               Navigator.of(context).pop(); // Retour à l'écran précédent
             },
-            child: const Text('Continuer'),
+            child: Text('subscription_continue'.tr),
           ),
         ],
       ),
@@ -102,11 +100,11 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
     // Format long: LOGESCO_V1_... (>20 caractères)
     if (value.length < 19) {
       setState(() {
-        _validationError = 'La clé doit contenir au moins 19 caractères';
+        _validationError = 'subscription_license_key_min_length'.tr;
       });
     } else if (!RegExp(r'^[A-Za-z0-9+/=\-_]+$').hasMatch(value)) {
       setState(() {
-        _validationError = 'Format de clé invalide';
+        _validationError = 'subscription_license_key_invalid_format'.tr;
       });
     } else {
       setState(() {
@@ -119,13 +117,13 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activation de licence'),
+        title: Text('subscription_activation_title'.tr),
         centerTitle: true,
       ),
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isValidating,
-          loadingMessage: 'Validation de la licence...',
+          loadingMessage: 'subscription_validating'.tr,
           child: _buildActivationForm(context),
         ),
       ),
@@ -191,7 +189,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Activation de licence',
+          'subscription_activation_title'.tr,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -199,7 +197,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Saisissez votre clé d\'activation pour débloquer l\'application',
+          'subscription_enter_license_key'.tr,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
@@ -224,7 +222,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Instructions',
+                  'subscription_instructions_title'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -232,11 +230,11 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
               ],
             ),
             const SizedBox(height: 12),
-            const Text(
-              '• Copiez votre clé d\'activation depuis votre email de confirmation\n'
-              '• La clé est sensible à la casse et ne doit contenir aucun espace\n'
-              '• Une clé ne peut être utilisée que sur un seul appareil\n'
-              '• Contactez le support si vous rencontrez des difficultés',
+            Text(
+              '• ${'subscription_instructions_1'.tr}\n'
+              '• ${'subscription_instructions_2'.tr}\n'
+              '• ${'subscription_instructions_3'.tr}\n'
+              '• ${'subscription_instructions_4'.tr}',
             ),
           ],
         ),
@@ -248,8 +246,8 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
     return TextFormField(
       controller: _licenseKeyController,
       decoration: InputDecoration(
-        labelText: 'Clé d\'activation',
-        hintText: 'Collez votre clé d\'activation ici',
+        labelText: 'subscription_license_key_label'.tr,
+        hintText: 'subscription_license_key_hint'.tr,
         prefixIcon: const Icon(Icons.vpn_key),
         suffixIcon: _licenseKeyController.text.isNotEmpty
             ? IconButton(
@@ -262,7 +260,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                 },
               )
             : null,
-        helperText: 'Format: Chaîne de caractères alphanumériques',
+        helperText: 'subscription_license_key_format'.tr,
       ),
       maxLines: 3,
       textInputAction: TextInputAction.done,
@@ -270,10 +268,10 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
       onFieldSubmitted: (_) => _handleActivation(),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Veuillez saisir votre clé d\'activation';
+          return 'subscription_license_key_required'.tr;
         }
         if (value.trim().length < 19) {
-          return 'La clé doit contenir au moins 19 caractères';
+          return 'subscription_license_key_min_length'.tr;
         }
         return null;
       },
@@ -320,7 +318,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
             )
           : const Icon(Icons.check_circle),
       label: Text(
-        _isValidating ? 'Validation...' : 'Activer la licence',
+        _isValidating ? 'subscription_validating'.tr : 'subscription_activate_license'.tr,
         style: const TextStyle(fontSize: 16),
       ),
       style: ElevatedButton.styleFrom(
@@ -352,7 +350,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Besoin d\'aide ?',
+                      'subscription_need_help'.tr,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -360,9 +358,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Si vous n\'avez pas reçu votre clé d\'activation ou si vous rencontrez des problèmes, contactez notre équipe de support.',
-                ),
+                Text('subscription_no_license_key'.tr),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -371,7 +367,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                         // TODO: Implémenter l'ouverture du support
                       },
                       icon: const Icon(Icons.email),
-                      label: const Text('Contacter le support'),
+                      label: Text('subscription_contact_support_button'.tr),
                     ),
                     const SizedBox(width: 16),
                     TextButton.icon(
@@ -379,7 +375,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                         // TODO: Implémenter l'ouverture de la FAQ
                       },
                       icon: const Icon(Icons.help),
-                      label: const Text('FAQ'),
+                      label: Text('subscription_faq'.tr),
                     ),
                   ],
                 ),
@@ -424,7 +420,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                   child: ElevatedButton.icon(
                     onPressed: _showDeviceKey,
                     icon: const Icon(Icons.visibility),
-                    label: const Text('Afficher la clé de l\'appareil'),
+                    label: Text('subscription_show_device_key'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondary,
                       foregroundColor: Theme.of(context).colorScheme.onSecondary,
@@ -442,7 +438,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
   /// Affiche la clé de l'appareil dans une boîte de dialogue
   Future<void> _showDeviceKey() async {
     if (!mounted) return;
-    
+
     try {
       // Afficher un indicateur de chargement
       showDialog(
@@ -487,16 +483,14 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
               color: Theme.of(context).primaryColor,
             ),
             const SizedBox(width: 8),
-            const Text('Clé de l\'appareil'),
+            Text('subscription_device_fingerprint'.tr),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Voici la clé unique de votre appareil. Copiez-la et envoyez-la pour obtenir votre licence d\'activation :',
-            ),
+            Text('subscription_device_fingerprint_info'.tr + ':'),
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
@@ -544,9 +538,9 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                 await Clipboard.setData(ClipboardData(text: deviceKey));
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Clé copiée dans le presse-papiers'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: Text('subscription_license_key_copied'.tr),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 }
@@ -554,7 +548,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la copie: ${e.toString()}'),
+                      content: Text('${'error'.tr}: ${e.toString()}'),
                       backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
@@ -562,11 +556,11 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
               }
             },
             icon: const Icon(Icons.copy),
-            label: const Text('Copier'),
+            label: Text('subscription_copy_key'.tr),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
         ],
       ),
@@ -585,14 +579,14 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 8),
-            const Text('Erreur'),
+            Text('error'.tr),
           ],
         ),
         content: Text(message),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text('ok'.tr),
           ),
         ],
       ),

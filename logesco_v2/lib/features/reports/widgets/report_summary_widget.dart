@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/activity_report.dart';
 
 /// Widget pour afficher le résumé exécutif du bilan
@@ -32,9 +33,9 @@ class ReportSummaryWidget extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Résumé Exécutif',
-                        style: TextStyle(
+                      Text(
+                        'reports_summary_title'.tr,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -90,9 +91,9 @@ class ReportSummaryWidget extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Métriques clés
-            const Text(
-              'Indicateurs Clés',
-              style: TextStyle(
+            Text(
+              'reports_summary_key_indicators'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -104,9 +105,9 @@ class ReportSummaryWidget extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Points saillants
-            const Text(
-              'Points Saillants',
-              style: TextStyle(
+            Text(
+              'reports_summary_highlights'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -351,12 +352,12 @@ class ReportSummaryWidget extends StatelessWidget {
   /// Points saillants
   Widget _buildHighlights() {
     final highlights = [
-      'Chiffre d\'affaires: ${report.salesData.totalRevenueFormatted}',
-      'Nombre de ventes: ${report.salesData.totalSales}',
-      'Bénéfice net: ${report.profitData.netProfitFormatted}',
-      'Marge de profit: ${report.profitData.profitMarginFormatted}',
-      'Dettes clients: ${report.customerDebts.totalOutstandingDebtFormatted}',
-      'Flux de trésorerie: ${report.financialMovements.netCashFlowFormatted}',
+      'reports_summary_revenue'.tr.replaceAll('@amount', report.salesData.totalRevenueFormatted),
+      'reports_summary_sales_count'.tr.replaceAll('@count', report.salesData.totalSales.toString()),
+      'reports_summary_net_profit'.tr.replaceAll('@amount', report.profitData.netProfitFormatted),
+      'reports_summary_profit_margin'.tr.replaceAll('@percent', report.profitData.profitMarginFormatted),
+      'reports_summary_customer_debts'.tr.replaceAll('@amount', report.customerDebts.totalOutstandingDebtFormatted),
+      'reports_summary_cash_flow'.tr.replaceAll('@amount', report.financialMovements.netCashFlowFormatted),
     ];
 
     return Column(

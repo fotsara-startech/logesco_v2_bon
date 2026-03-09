@@ -26,9 +26,9 @@ class PeriodSelectorWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Période du rapport',
-              style: TextStyle(
+            Text(
+              'financial_movements_reports_period_selector'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

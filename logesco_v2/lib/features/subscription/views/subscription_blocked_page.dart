@@ -64,16 +64,16 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Empreinte copiée dans le presse-papiers'),
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('subscription_fingerprint_copied'.tr),
             ],
           ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -138,7 +138,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
 
                 // Titre principal
                 Text(
-                  'Accès bloqué',
+                  'subscription_blocked_title'.tr,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.red.shade700,
@@ -151,16 +151,16 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                 // Message d'explication
                 Obx(() {
                   final status = _subscriptionController.currentStatus;
-                  String message = 'Votre abonnement a expiré.';
+                  String message = 'subscription_expired_message'.tr;
 
                   if (status?.isInGracePeriod == true) {
-                    message = 'Votre période de grâce a expiré.';
+                    message = 'subscription_grace_expired_message'.tr;
                   } else if (status?.type == SubscriptionType.trial) {
-                    message = 'Votre période d\'essai gratuite a expiré.';
+                    message = 'subscription_trial_expired_message'.tr;
                   }
 
                   return Text(
-                    '$message\nActivez une licence pour continuer à utiliser l\'application.',
+                    '$message\n${'subscription_activate_to_continue'.tr}',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.grey.shade700,
                           height: 1.5,
@@ -194,7 +194,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Accès limité disponible',
+                            'subscription_limited_access_available'.tr,
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue.shade700,
@@ -204,7 +204,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Vous pouvez consulter vos données existantes en mode lecture seule, mais vous ne pouvez pas créer ou modifier d\'éléments.',
+                        'subscription_read_only_access'.tr,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.blue.shade700,
                             ),
@@ -226,7 +226,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                           Get.to(() => const LicenseActivationPage());
                         },
                         icon: const Icon(Icons.vpn_key),
-                        label: const Text('Activer une licence'),
+                        label: Text('subscription_activate_license'.tr),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
@@ -249,7 +249,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                           Get.to(() => const SubscriptionStatusPage());
                         },
                         icon: const Icon(Icons.info),
-                        label: const Text('Voir le statut d\'abonnement'),
+                        label: Text('subscription_view_status'.tr),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -267,7 +267,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                           Get.offAllNamed('/dashboard');
                         },
                         icon: const Icon(Icons.visibility),
-                        label: const Text('Accéder en lecture seule'),
+                        label: Text('subscription_access_read_only'.tr),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -288,14 +288,14 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                   child: Column(
                     children: [
                       Text(
-                        'Besoin d\'aide ?',
+                        'subscription_need_help'.tr,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Contactez notre équipe de support pour toute question concernant votre abonnement.',
+                        'subscription_contact_support'.tr,
                         style: Theme.of(context).textTheme.bodySmall,
                         textAlign: TextAlign.center,
                       ),
@@ -308,7 +308,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                               // TODO: Implémenter l'ouverture de l'email de support
                             },
                             icon: const Icon(Icons.email, size: 16),
-                            label: const Text('Support'),
+                            label: Text('subscription_support'.tr),
                             style: TextButton.styleFrom(
                               textStyle: const TextStyle(fontSize: 12),
                             ),
@@ -319,7 +319,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                               // TODO: Implémenter l'ouverture du site web
                             },
                             icon: const Icon(Icons.web, size: 16),
-                            label: const Text('Site web'),
+                            label: Text('subscription_website'.tr),
                             style: TextButton.styleFrom(
                               textStyle: const TextStyle(fontSize: 12),
                             ),
@@ -366,7 +366,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Obtenir l\'empreinte de l\'appareil',
+                      'subscription_get_device_fingerprint'.tr,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.orange.shade700,
@@ -391,7 +391,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Pour obtenir une licence, vous devez fournir l\'empreinte unique de cet appareil à votre fournisseur.',
+                    'subscription_device_fingerprint_info'.tr,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.orange.shade900,
                         ),
@@ -417,7 +417,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Votre empreinte :',
+                            'subscription_your_fingerprint'.tr,
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: Colors.grey.shade600,
                                 ),
@@ -442,7 +442,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                     ElevatedButton.icon(
                       onPressed: _copyFingerprint,
                       icon: const Icon(Icons.copy, size: 18),
-                      label: const Text('Copier l\'empreinte'),
+                      label: Text('subscription_copy_fingerprint'.tr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange.shade600,
                         foregroundColor: Colors.white,
@@ -471,7 +471,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Prochaines étapes :',
+                                'subscription_next_steps'.tr,
                                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.orange.shade900,
@@ -481,10 +481,10 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '1. Copiez l\'empreinte ci-dessus\n'
-                            '2. Envoyez-la à votre fournisseur de licence\n'
-                            '3. Recevez votre clé d\'activation\n'
-                            '4. Activez votre licence dans l\'application',
+                            '1. ${'subscription_next_step_1'.tr}\n'
+                            '2. ${'subscription_next_step_2'.tr}\n'
+                            '3. ${'subscription_next_step_3'.tr}\n'
+                            '4. ${'subscription_next_step_4'.tr}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.orange.shade900,
                                   height: 1.5,
@@ -499,12 +499,12 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
-                            const Text('Impossible de charger l\'empreinte'),
+                            Text('error'.tr),
                             const SizedBox(height: 8),
                             TextButton.icon(
                               onPressed: _loadDeviceFingerprint,
                               icon: const Icon(Icons.refresh),
-                              label: const Text('Réessayer'),
+                              label: Text('subscription_retry'.tr),
                             ),
                           ],
                         ),

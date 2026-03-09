@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Widget pour les actions rapides des rapports
 class ReportActionsWidget extends StatelessWidget {
@@ -27,9 +28,9 @@ class ReportActionsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.flash_on, color: Colors.orange.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Actions rapides',
-                  style: TextStyle(
+                Text(
+                  'financial_movements_reports_quick_actions'.tr,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -43,19 +44,19 @@ class ReportActionsWidget extends StatelessWidget {
               children: [
                 _buildActionButton(
                   icon: Icons.refresh,
-                  label: 'Actualiser',
+                  label: 'refresh'.tr,
                   onPressed: isLoading ? null : onRefresh,
                   color: Colors.blue,
                 ),
                 _buildActionButton(
                   icon: Icons.picture_as_pdf,
-                  label: 'Export PDF',
+                  label: 'financial_movements_reports_export_pdf'.tr,
                   onPressed: isLoading ? null : onExportPdf,
                   color: Colors.red,
                 ),
                 _buildActionButton(
                   icon: Icons.table_chart,
-                  label: 'Export Excel',
+                  label: 'financial_movements_reports_export_excel'.tr,
                   onPressed: isLoading ? null : onExportExcel,
                   color: Colors.green,
                 ),

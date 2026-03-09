@@ -64,8 +64,8 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
     } catch (e) {
       if (mounted) {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors du rafraîchissement: $e',
+          'error'.tr,
+          'inventory_refresh_error'.trParams({'error': e.toString()}),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red[100],
           colorText: Colors.red[800],
@@ -87,30 +87,30 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product?.nom ?? 'Détail du Stock'),
+        title: Text(product?.nom ?? 'inventory_detail_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshStockData,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'adjust',
                 child: ListTile(
-                  leading: Icon(Icons.tune),
-                  title: Text('Ajuster le stock'),
+                  leading: const Icon(Icons.tune),
+                  title: Text('inventory_detail_adjust'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'history',
                 child: ListTile(
-                  leading: Icon(Icons.history),
-                  title: Text('Voir l\'historique'),
+                  leading: const Icon(Icons.history),
+                  title: Text('inventory_detail_history'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -119,14 +119,14 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(
-              icon: Icon(Icons.info),
-              text: 'Informations',
+              icon: const Icon(Icons.info),
+              text: 'inventory_detail_info'.tr,
             ),
             Tab(
-              icon: Icon(Icons.history),
-              text: 'Mouvements',
+              icon: const Icon(Icons.history),
+              text: 'inventory_detail_movements'.tr,
             ),
           ],
         ),
@@ -140,7 +140,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAdjustment(stock),
-        tooltip: 'Ajuster le stock',
+        tooltip: 'inventory_detail_adjust'.tr,
         child: const Icon(Icons.tune),
       ),
     );

@@ -48,7 +48,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nouvel Inventaire'),
+        title: Text('inventory_form_title'.tr),
       ),
       body: Form(
         key: _formKey,
@@ -84,9 +84,9 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               children: [
                 Icon(Icons.inventory, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Type d\'inventaire',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'inventory_form_type_section'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -126,24 +126,24 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               children: [
                 Icon(Icons.info, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations générales',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'inventory_form_info_section'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de l\'inventaire *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.title),
-                hintText: 'Ex: Inventaire mensuel - Octobre 2024',
+              decoration: InputDecoration(
+                labelText: 'inventory_form_name'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.title),
+                hintText: 'inventory_form_name_hint'.tr,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Le nom est requis';
+                  return 'inventory_form_name_required'.tr;
                 }
                 return null;
               },
@@ -151,11 +151,11 @@ class _InventoryFormViewState extends State<InventoryFormView> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optionnel)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-                hintText: 'Description de l\'inventaire',
+              decoration: InputDecoration(
+                labelText: 'inventory_form_description'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.description),
+                hintText: 'inventory_form_description_hint'.tr,
               ),
               maxLines: 3,
             ),
@@ -176,19 +176,19 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               children: [
                 Icon(Icons.category, color: Colors.purple.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Sélection de catégorie',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'inventory_form_category_section'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Obx(() => DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
-                  decoration: const InputDecoration(
-                    labelText: 'Catégorie *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.folder),
+                  decoration: InputDecoration(
+                    labelText: 'inventory_form_category'.tr,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.folder),
                   ),
                   items: _controller.categories.map((category) {
                     return DropdownMenuItem<int>(
@@ -203,7 +203,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
                   },
                   validator: (value) {
                     if (_selectedType == InventoryType.PARTIEL && value == null) {
-                      return 'Veuillez sélectionner une catégorie';
+                      return 'inventory_form_category_required'.tr;
                     }
                     return null;
                   },
@@ -226,20 +226,20 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               children: [
                 Icon(Icons.summarize, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Résumé',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  'inventory_form_summary_section'.tr,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildSummaryRow('Type', _selectedType.displayName),
+            _buildSummaryRow('inventory_type'.tr, _selectedType.displayName),
             if (_selectedType == InventoryType.PARTIEL && _selectedCategoryId != null)
               _buildSummaryRow(
-                'Catégorie',
+                'inventory_form_category'.tr,
                 _controller.categories.firstWhere((c) => c['id'] == _selectedCategoryId)['nom'],
               ),
-            _buildSummaryRow('Statut initial', 'Brouillon'),
+            _buildSummaryRow('inventory_form_initial_status'.tr, 'inventory_form_draft'.tr),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -254,7 +254,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'L\'inventaire sera créé en mode brouillon. Vous pourrez le démarrer et commencer le comptage après sa création.',
+                      'inventory_form_info_message'.tr,
                       style: TextStyle(
                         color: Colors.amber.shade700,
                         fontSize: 12,
@@ -296,7 +296,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
         Expanded(
           child: OutlinedButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
         ),
         const SizedBox(width: 16),
@@ -309,7 +309,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Créer l\'inventaire'),
+                : Text('inventory_form_create'.tr),
           ),
         ),
       ],
@@ -347,8 +347,8 @@ class _InventoryFormViewState extends State<InventoryFormView> {
       // L'utilisateur peut toujours utiliser le bouton retour de l'AppBar
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Impossible de créer l\'inventaire: $e',
+        'common_error'.tr,
+        'inventory_form_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,

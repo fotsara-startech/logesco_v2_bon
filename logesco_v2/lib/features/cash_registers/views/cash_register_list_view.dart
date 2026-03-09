@@ -16,7 +16,7 @@ class CashRegisterListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des Caisses'),
+        title: Text('cash_register_management'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -48,7 +48,7 @@ class CashRegisterListView extends StatelessWidget {
       child: TextField(
         onChanged: (value) => controller.updateSearchQuery(value),
         decoration: InputDecoration(
-          hintText: 'Rechercher une caisse...',
+          hintText: 'cash_register_search'.tr,
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -80,7 +80,7 @@ class CashRegisterListView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Aucune caisse trouvée',
+                'cash_register_no_registers'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.grey.shade600,
@@ -88,7 +88,7 @@ class CashRegisterListView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Créez votre première caisse pour commencer',
+                'cash_register_create_first'.tr,
                 style: TextStyle(
                   color: Colors.grey.shade500,
                 ),
@@ -155,7 +155,7 @@ class CashRegisterListView extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Solde: ${CurrencyUtils.formatAmount(cashRegister.soldeActuel)}',
+                  'cash_register_balance_label'.trParams({'amount': CurrencyUtils.formatAmount(cashRegister.soldeActuel)}),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -169,44 +169,44 @@ class CashRegisterListView extends StatelessWidget {
           onSelected: (value) => _handleMenuAction(value, cashRegister, controller),
           itemBuilder: (context) => [
             if (!cashRegister.isOpen)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'open',
                 child: Row(
                   children: [
-                    Icon(Icons.lock_open, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text('Ouvrir'),
+                    const Icon(Icons.lock_open, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text('cash_register_open_action'.tr),
                   ],
                 ),
               ),
             if (cashRegister.isOpen)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'close',
                 child: Row(
                   children: [
-                    Icon(Icons.lock, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('Fermer'),
+                    const Icon(Icons.lock, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Text('cash_register_close_action'.tr),
                   ],
                 ),
               ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Modifier'),
+                  const Icon(Icons.edit),
+                  const SizedBox(width: 8),
+                  Text('cash_register_edit_action'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Supprimer', style: TextStyle(color: Colors.red)),
+                  const Icon(Icons.delete, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text('cash_register_delete_action'.tr, style: const TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -218,16 +218,14 @@ class CashRegisterListView extends StatelessWidget {
   }
 
   Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Ouverte':
-        return Colors.green;
-      case 'Fermée':
-        return Colors.orange;
-      case 'Inactive':
-        return Colors.grey;
-      default:
-        return Colors.blue;
+    if (status == 'cash_register_status_open'.tr || status == 'Ouverte') {
+      return Colors.green;
+    } else if (status == 'cash_register_status_closed'.tr || status == 'Fermée') {
+      return Colors.orange;
+    } else if (status == 'cash_register_status_inactive'.tr || status == 'Inactive') {
+      return Colors.grey;
     }
+    return Colors.blue;
   }
 
   void _createNewCashRegister(CashRegisterController controller) {
@@ -261,31 +259,31 @@ class CashRegisterListView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (cashRegister.description != null) Text('Description: ${cashRegister.description}'),
+            if (cashRegister.description != null) Text('cash_register_description_label'.trParams({'description': cashRegister.description!})),
             const SizedBox(height: 8),
-            Text('Statut: ${cashRegister.status}'),
+            Text('cash_register_status_label'.trParams({'status': cashRegister.status})),
             const SizedBox(height: 8),
-            Text('Solde initial: ${CurrencyUtils.formatAmount(cashRegister.soldeInitial)}'),
-            Text('Solde actuel: ${CurrencyUtils.formatAmount(cashRegister.soldeActuel)}'),
-            Text('Différence: ${CurrencyUtils.formatDifference(cashRegister.soldeActuel, cashRegister.soldeInitial)}'),
+            Text('cash_register_initial_balance_label'.trParams({'amount': CurrencyUtils.formatAmount(cashRegister.soldeInitial)})),
+            Text('cash_register_current_balance_label'.trParams({'amount': CurrencyUtils.formatAmount(cashRegister.soldeActuel)})),
+            Text('cash_register_difference_label'.trParams({'amount': CurrencyUtils.formatDifference(cashRegister.soldeActuel, cashRegister.soldeInitial)})),
             if (cashRegister.nomUtilisateur != null) ...[
               const SizedBox(height: 8),
-              Text('Utilisateur: ${cashRegister.nomUtilisateur}'),
+              Text('cash_register_user_label'.trParams({'user': cashRegister.nomUtilisateur!})),
             ],
             if (cashRegister.dateOuverture != null) ...[
               const SizedBox(height: 8),
-              Text('Ouverte le: ${_formatDateTime(cashRegister.dateOuverture!)}'),
+              Text('cash_register_opened_on'.trParams({'date': _formatDateTime(cashRegister.dateOuverture!)})),
             ],
             if (cashRegister.dateFermeture != null) ...[
               const SizedBox(height: 8),
-              Text('Fermée le: ${_formatDateTime(cashRegister.dateFermeture!)}'),
+              Text('cash_register_closed_on'.trParams({'date': _formatDateTime(cashRegister.dateFermeture!)})),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
         ],
       ),
@@ -297,11 +295,11 @@ class CashRegisterListView extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: Text('Ouvrir ${cashRegister.nom}'),
+        title: Text('cash_register_open_dialog_title'.trParams({'name': cashRegister.nom})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Entrez le montant initial en caisse:'),
+            Text('cash_register_open_dialog_message'.tr),
             const SizedBox(height: 16),
             TextField(
               controller: amountController,
@@ -309,10 +307,10 @@ class CashRegisterListView extends StatelessWidget {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
-              decoration: const InputDecoration(
-                labelText: 'Montant initial (FCFA)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
+              decoration: InputDecoration(
+                labelText: 'cash_register_initial_amount'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.attach_money),
               ),
             ),
           ],
@@ -320,7 +318,7 @@ class CashRegisterListView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -330,7 +328,7 @@ class CashRegisterListView extends StatelessWidget {
                 controller.openCashRegister(cashRegister.id!, amount);
               }
             },
-            child: const Text('Ouvrir'),
+            child: Text('cash_register_open_action'.tr),
           ),
         ],
       ),
@@ -340,12 +338,12 @@ class CashRegisterListView extends StatelessWidget {
   void _showCloseCashRegisterDialog(CashRegister cashRegister, CashRegisterController controller) {
     Get.dialog(
       AlertDialog(
-        title: Text('Fermer ${cashRegister.nom}'),
-        content: const Text('Êtes-vous sûr de vouloir fermer cette caisse ?'),
+        title: Text('cash_register_close_dialog_title'.trParams({'name': cashRegister.nom})),
+        content: Text('cash_register_close_dialog_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -356,7 +354,7 @@ class CashRegisterListView extends StatelessWidget {
               backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Fermer'),
+            child: Text('cash_register_close_action'.tr),
           ),
         ],
       ),

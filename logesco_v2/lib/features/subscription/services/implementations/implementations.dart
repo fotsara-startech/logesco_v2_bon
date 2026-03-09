@@ -4,6 +4,7 @@ export 'device_service.dart';
 export 'license_service.dart';
 export 'license_management_service.dart';
 export 'secure_license_storage.dart';
+export 'secure_time_service.dart';
 export 'key_manager.dart';
 export 'enhanced_crypto_service.dart';
 export 'public_key_integration_service.dart';

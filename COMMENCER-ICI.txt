@@ -1,0 +1,67 @@
+═══════════════════════════════════════════════════════════════════════════════
+                            COMMENCER ICI
+                  Solution au probleme de donnees non affichees
+═══════════════════════════════════════════════════════════════════════════════
+
+
+VOTRE PROBLEME:
+───────────────
+✓ Migration terminee
+✓ Base de donnees copiee
+✓ Donnees presentes (verifie avec sqlite)
+✗ Application n'affiche RIEN
+
+
+SOLUTION EN 1 COMMANDE:
+────────────────────────
+
+Depuis le dossier d'installation client, executer:
+
+    SOLUTION-SIMPLE-SYNCHRONISATION.bat
+
+
+C'EST TOUT!
+───────────
+
+Le script va:
+1. Verifier la base
+2. Arreter les processus
+3. Synchroniser Prisma (5 etapes)
+4. Tester que ca marche
+
+
+TEMPS: 2-3 minutes
+
+
+APRES:
+──────
+
+Demarrer LOGESCO normalement:
+
+    DEMARRER-LOGESCO.bat
+
+
+Se connecter:
+- Utilisateur: admin
+- Mot de passe: admin123
+
+
+Verifier que les donnees apparaissent.
+
+
+SI CA NE MARCHE PAS:
+────────────────────
+
+Consulter: GUIDE_DEPANNAGE_DONNEES_NON_AFFICHEES.md
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RESUME:
+
+1. Executer: SOLUTION-SIMPLE-SYNCHRONISATION.bat
+2. Attendre 2-3 minutes
+3. Demarrer: DEMARRER-LOGESCO.bat
+4. Verifier les donnees
+
+═══════════════════════════════════════════════════════════════════════════════

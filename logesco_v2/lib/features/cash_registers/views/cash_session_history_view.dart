@@ -20,18 +20,18 @@ class CashSessionHistoryView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique des sessions'),
+        title: Text('cash_session_history_title'.tr),
         elevation: 0,
         actions: [
           Obx(() => IconButton(
                 icon: Icon(showStatistics.value ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => showStatistics.value = !showStatistics.value,
-                tooltip: showStatistics.value ? 'Masquer les statistiques' : 'Afficher les statistiques',
+                tooltip: showStatistics.value ? 'cash_session_hide_stats'.tr : 'cash_session_show_stats'.tr,
               )),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => controller.loadSessionHistory(),
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -710,6 +710,77 @@ class CashSessionHistoryView extends StatelessWidget {
               _buildDetailRow('Solde ouverture', '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
               if (session.soldeAttendu != null) _buildDetailRow('Solde attendu', '${session.soldeAttendu!.toStringAsFixed(0)} FCFA'),
               if (session.soldeFermeture != null) _buildDetailRow('Solde déclaré', '${session.soldeFermeture!.toStringAsFixed(0)} FCFA'),
+              const Divider(height: 24),
+              // Afficher les totaux d'entrées et de sorties
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_downward, color: Colors.green.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total entrées:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${session.totalEntrees.toStringAsFixed(0)} FCFA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_upward, color: Colors.red.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total dépenses:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${session.totalSorties.toStringAsFixed(0)} FCFA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               if (session.ecart != null) ...[
                 const Divider(height: 24),
                 Container(

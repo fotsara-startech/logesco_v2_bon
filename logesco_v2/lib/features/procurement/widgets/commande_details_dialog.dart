@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/procurement_models.dart';
 import '../controllers/procurement_controller.dart';
 import 'receive_commande_dialog.dart';
@@ -36,7 +37,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Commande ${commande.numeroCommande}',
+                        'procurement_order_details'.tr.replaceAll('@number', commande.numeroCommande),
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -52,7 +53,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => _showReceptionDialog(context),
                     icon: const Icon(Icons.inventory),
-                    label: const Text('Réceptionner'),
+                    label: Text('procurement_receive'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -65,7 +66,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => _showCancelDialog(context),
                     icon: const Icon(Icons.cancel),
-                    label: const Text('Annuler'),
+                    label: Text('procurement_cancel'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -167,17 +168,17 @@ class CommandeDetailsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations générales',
+              'procurement_general_info'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.business, 'Fournisseur', commande.fournisseur?.nom ?? 'N/A'),
-            _buildInfoRow(Icons.calendar_today, 'Date commande', _formatDate(commande.dateCommande)),
-            _buildInfoRow(Icons.local_shipping, 'Livraison prévue', commande.dateLivraisonPrevue != null ? _formatDate(commande.dateLivraisonPrevue!) : 'Non définie'),
-            _buildInfoRow(Icons.payment, 'Mode de paiement', commande.modePaiement.label),
-            _buildInfoRow(Icons.attach_money, 'Montant total', commande.montantTotal != null ? '${_formatCurrency(commande.montantTotal!)} FCFA' : 'N/A'),
+            _buildInfoRow(Icons.business, 'procurement_supplier'.tr, commande.fournisseur?.nom ?? 'N/A'),
+            _buildInfoRow(Icons.calendar_today, 'procurement_order_date'.tr, _formatDate(commande.dateCommande)),
+            _buildInfoRow(Icons.local_shipping, 'procurement_delivery_expected'.tr, commande.dateLivraisonPrevue != null ? _formatDate(commande.dateLivraisonPrevue!) : 'procurement_not_defined'.tr),
+            _buildInfoRow(Icons.payment, 'procurement_payment_method'.tr, commande.modePaiement.label),
+            _buildInfoRow(Icons.attach_money, 'procurement_total_amount'.tr, commande.montantTotal != null ? '${_formatCurrency(commande.montantTotal!)} FCFA' : 'N/A'),
             if (commande.notes != null && commande.notes!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Row(
@@ -190,7 +191,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes',
+                          'procurement_notes'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: Colors.grey[700],
@@ -251,22 +252,22 @@ class CommandeDetailsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Statistiques de réception',
+              'procurement_reception_stats'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 16),
             _buildProgressInfo(
-              'Réception globale',
+              'procurement_global_reception'.tr,
               stats.pourcentageReception,
-              '${stats.totalQuantiteRecue}/${stats.totalQuantiteCommandee} unités',
+              '${stats.totalQuantiteRecue}/${stats.totalQuantiteCommandee} ${'procurement_units'.tr}',
             ),
             const SizedBox(height: 12),
             _buildProgressInfo(
-              'Produits complets',
+              'procurement_complete_products'.tr,
               stats.nombreProduits > 0 ? (stats.produitsCompletsRecus * 100 / stats.nombreProduits).round() : 0,
-              '${stats.produitsCompletsRecus}/${stats.nombreProduits} produits',
+              '${stats.produitsCompletsRecus}/${stats.nombreProduits} ${'procurement_products'.tr}',
             ),
           ],
         ),
@@ -319,7 +320,7 @@ class CommandeDetailsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Détails des produits (${commande.details.length})',
+              '${'procurement_products_details'.tr} (${commande.details.length})',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -358,7 +359,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        detail.produit?.nom ?? 'Produit inconnu',
+                        detail.produit?.nom ?? 'procurement_product_unknown'.tr,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -366,7 +367,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                       ),
                       if (detail.produit?.reference != null)
                         Text(
-                          'Réf: ${detail.produit!.reference}',
+                          '${'procurement_ref'.tr}: ${detail.produit!.reference}',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,
@@ -384,7 +385,7 @@ class CommandeDetailsDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    detail.estComplete ? 'Complet' : 'En cours',
+                    detail.estComplete ? 'procurement_complete'.tr : 'procurement_in_progress'.tr,
                     style: TextStyle(
                       color: detail.estComplete ? Colors.green[800] : Colors.orange[800],
                       fontSize: 12,
@@ -404,9 +405,9 @@ class CommandeDetailsDialog extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Commandé: ${detail.quantiteCommandee}', style: const TextStyle(fontSize: 13)),
-                      Text('Reçu: ${detail.quantiteRecue}', style: const TextStyle(fontSize: 13)),
-                      Text('Restant: ${detail.quantiteRestante}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orange[700])),
+                      Text('${'procurement_ordered'.tr}: ${detail.quantiteCommandee}', style: const TextStyle(fontSize: 13)),
+                      Text('${'procurement_received'.tr}: ${detail.quantiteRecue}', style: const TextStyle(fontSize: 13)),
+                      Text('${'procurement_remaining'.tr}: ${detail.quantiteRestante}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orange[700])),
                     ],
                   ),
                 ),
@@ -414,8 +415,8 @@ class CommandeDetailsDialog extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('Coût unitaire: ${_formatCurrency(detail.coutUnitaire)} FCFA', style: const TextStyle(fontSize: 13)),
-                      Text('Total: ${_formatCurrency(detail.coutTotal)} FCFA', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text('${'procurement_unit_cost'.tr}: ${_formatCurrency(detail.coutUnitaire)} FCFA', style: const TextStyle(fontSize: 13)),
+                      Text('${'procurement_total'.tr}: ${_formatCurrency(detail.coutTotal)} FCFA', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -436,7 +437,7 @@ class CommandeDetailsDialog extends StatelessWidget {
             const SizedBox(height: 4),
 
             Text(
-              '$progressPercentage% reçu',
+              'procurement_received_percentage'.tr.replaceAll('@percent', progressPercentage.toString()),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.grey[600],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/activity_report.dart';
 
 /// Widget pour afficher l'analyse des bénéfices
@@ -28,9 +29,9 @@ class ProfitAnalysisWidget extends StatelessWidget {
                   size: 28,
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Analyse des Bénéfices',
-                  style: TextStyle(
+                Text(
+                  'reports_profit_title'.tr,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -39,19 +40,19 @@ class ProfitAnalysisWidget extends StatelessWidget {
                 _buildProfitabilityBadge(),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Résumé des bénéfices
             _buildProfitSummary(),
-            
+
             const SizedBox(height: 20),
-            
+
             // Détails des coûts
             _buildCostBreakdown(),
-            
+
             const SizedBox(height: 20),
-            
+
             // Tendance
             _buildTrendAnalysis(),
           ],
@@ -69,7 +70,7 @@ class ProfitAnalysisWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        profitData.isProfitable ? 'RENTABLE' : 'DÉFICITAIRE',
+        profitData.isProfitable ? 'reports_profit_profitable'.tr : 'reports_profit_unprofitable'.tr,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -94,7 +95,7 @@ class ProfitAnalysisWidget extends StatelessWidget {
         children: [
           Expanded(
             child: _buildProfitItem(
-              'Marge Brute',
+              'reports_profit_gross'.tr,
               profitData.grossProfitFormatted,
               Icons.account_balance_wallet,
               Colors.blue.shade600,
@@ -107,7 +108,7 @@ class ProfitAnalysisWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildProfitItem(
-              'Bénéfice Net',
+              'reports_profit_net'.tr,
               profitData.netProfitFormatted,
               Icons.monetization_on,
               profitData.isProfitable ? Colors.green.shade600 : Colors.red.shade600,
@@ -120,7 +121,7 @@ class ProfitAnalysisWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildProfitItem(
-              'Marge (%)',
+              'reports_profit_margin_percent'.tr,
               profitData.profitMarginFormatted,
               Icons.percent,
               Colors.orange.shade600,
@@ -164,9 +165,9 @@ class ProfitAnalysisWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Répartition des Coûts',
-          style: TextStyle(
+        Text(
+          'reports_profit_cost_breakdown'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -182,13 +183,13 @@ class ProfitAnalysisWidget extends StatelessWidget {
           child: Column(
             children: [
               _buildCostItem(
-                'Coût des Marchandises Vendues',
+                'reports_profit_cogs'.tr,
                 profitData.costOfGoodsSoldFormatted,
                 Colors.orange.shade600,
               ),
               const SizedBox(height: 12),
               _buildCostItem(
-                'Dépenses Opérationnelles',
+                'reports_profit_operating_expenses'.tr,
                 profitData.operatingExpensesFormatted,
                 Colors.red.shade600,
               ),
@@ -235,9 +236,9 @@ class ProfitAnalysisWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Évolution',
-          style: TextStyle(
+        Text(
+          'reports_profit_trend'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -265,7 +266,7 @@ class ProfitAnalysisWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      profitData.profitTrend.isIncreasing ? 'Tendance Positive' : 'Tendance Négative',
+                      profitData.profitTrend.isIncreasing ? 'reports_profit_trend_positive'.tr : 'reports_profit_trend_negative'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -274,14 +275,14 @@ class ProfitAnalysisWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Période précédente: ${profitData.profitTrend.previousPeriodProfitFormatted}',
+                      'reports_profit_previous_period'.trParams({'amount': profitData.profitTrend.previousPeriodProfitFormatted}),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
                       ),
                     ),
                     Text(
-                      'Croissance: ${profitData.profitTrend.growthRateFormatted}',
+                      'reports_profit_growth'.trParams({'rate': profitData.profitTrend.growthRateFormatted}),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

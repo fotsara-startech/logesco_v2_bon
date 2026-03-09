@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/activity_report.dart';
 
 /// Widget pour afficher les mouvements financiers
@@ -23,7 +24,7 @@ class FinancialMovementsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.account_balance, color: Colors.blue.shade700, size: 28),
                 const SizedBox(width: 12),
-                const Text('Mouvements Financiers', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text('reports_financial_title'.tr, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 20),
@@ -36,36 +37,35 @@ class FinancialMovementsWidget extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Expanded(child: _buildMovementItem('Entrées', financialData.totalIncomeFormatted, Icons.arrow_downward, Colors.green.shade600)),
+                  Expanded(child: _buildMovementItem('reports_financial_income'.tr, financialData.totalIncomeFormatted, Icons.arrow_downward, Colors.green.shade600)),
                   Container(width: 1, height: 50, color: Colors.blue.shade200),
-                  Expanded(child: _buildMovementItem('Sorties', financialData.totalExpensesFormatted, Icons.arrow_upward, Colors.red.shade600)),
+                  Expanded(child: _buildMovementItem('reports_financial_expenses'.tr, financialData.totalExpensesFormatted, Icons.arrow_upward, Colors.red.shade600)),
                   Container(width: 1, height: 50, color: Colors.blue.shade200),
-                  Expanded(child: _buildMovementItem('Flux Net', financialData.netCashFlowFormatted, Icons.account_balance_wallet, Colors.blue.shade600)),
+                  Expanded(child: _buildMovementItem('reports_financial_net_flow'.tr, financialData.netCashFlowFormatted, Icons.account_balance_wallet, Colors.blue.shade600)),
                 ],
               ),
             ),
             if (financialData.movementsByCategory.isNotEmpty) ...[
               const SizedBox(height: 20),
-              const Text('Mouvements par Catégorie', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('reports_financial_by_category'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               ...financialData.movementsByCategory.take(3).map((movement) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(movement.isIncome ? Icons.add_circle : Icons.remove_circle, 
-                         color: movement.isIncome ? Colors.green : Colors.red),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(movement.categoryName)),
-                    Text(movement.amountFormatted, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              )),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(movement.isIncome ? Icons.add_circle : Icons.remove_circle, color: movement.isIncome ? Colors.green : Colors.red),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(movement.categoryName)),
+                        Text(movement.amountFormatted, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  )),
             ],
           ],
         ),

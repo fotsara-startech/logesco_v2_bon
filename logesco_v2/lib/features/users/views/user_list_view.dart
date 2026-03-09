@@ -15,12 +15,12 @@ class UserListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des Utilisateurs'),
+        title: Text('users_title'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
             onPressed: () => Get.toNamed('/roles'),
-            tooltip: 'Gérer les rôles',
+            tooltip: 'users_manage_roles'.tr,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -85,7 +85,7 @@ class UserListView extends StatelessWidget {
       child: TextField(
         onChanged: controller.updateSearchQuery,
         decoration: InputDecoration(
-          hintText: 'Rechercher un utilisateur...',
+          hintText: 'users_search_hint'.tr,
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -114,7 +114,7 @@ class UserListView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              hasRoles ? 'Aucun utilisateur trouvé' : 'Aucun rôle configuré',
+              hasRoles ? 'users_no_users'.tr : 'users_no_roles_configured'.tr,
               style: TextStyle(
                 fontSize: 18,
                 color: hasRoles ? Colors.grey.shade600 : Colors.orange.shade700,
@@ -124,7 +124,7 @@ class UserListView extends StatelessWidget {
             const SizedBox(height: 8),
             if (hasRoles) ...[
               Text(
-                'Appuyez sur + pour créer un nouvel utilisateur',
+                'users_no_users_hint'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade500,
@@ -132,7 +132,7 @@ class UserListView extends StatelessWidget {
               ),
             ] else ...[
               Text(
-                'Vous devez d\'abord créer des rôles',
+                'users_must_create_roles'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.orange.shade600,
@@ -152,7 +152,7 @@ class UserListView extends StatelessWidget {
                     Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
                     const SizedBox(height: 4),
                     Text(
-                      'Si vous voyez des rôles prédéfinis (ADMIN, MANAGER, etc.), supprimez-les d\'abord via l\'interface de gestion des rôles',
+                      'users_roles_info'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.blue.shade700,
@@ -166,7 +166,7 @@ class UserListView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => Get.toNamed('/roles'),
                 icon: const Icon(Icons.admin_panel_settings),
-                label: const Text('Gérer les rôles'),
+                label: Text('users_manage_roles'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
@@ -174,7 +174,7 @@ class UserListView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Créez vos propres rôles personnalisés',
+                'users_create_custom_roles'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.shade500,
@@ -235,7 +235,7 @@ class UserListView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    user.isActive ? 'Actif' : 'Inactif',
+                    user.isActive ? 'users_active'.tr : 'users_inactive'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       color: user.isActive ? Colors.green.shade800 : Colors.red.shade800,
@@ -249,13 +249,13 @@ class UserListView extends StatelessWidget {
         trailing: PopupMenuButton<String>(
           onSelected: (value) => _handleMenuAction(value, user, controller),
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Modifier'),
+                  const Icon(Icons.edit),
+                  const SizedBox(width: 8),
+                  Text('roles_modify'.tr),
                 ],
               ),
             ),
@@ -265,27 +265,27 @@ class UserListView extends StatelessWidget {
                 children: [
                   Icon(user.isActive ? Icons.block : Icons.check_circle),
                   const SizedBox(width: 8),
-                  Text(user.isActive ? 'Désactiver' : 'Activer'),
+                  Text(user.isActive ? 'users_deactivate'.tr : 'users_activate'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'change_password',
               child: Row(
                 children: [
-                  Icon(Icons.lock_reset),
-                  SizedBox(width: 8),
-                  Text('Changer mot de passe'),
+                  const Icon(Icons.lock_reset),
+                  const SizedBox(width: 8),
+                  Text('users_change_password_action'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Supprimer', style: TextStyle(color: Colors.red)),
+                  const Icon(Icons.delete, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text('users_delete'.tr, style: const TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -324,25 +324,25 @@ class UserListView extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: Text('Changer le mot de passe - ${user.nomUtilisateur}'),
+        title: Text('users_change_password_title'.trParams({'username': user.nomUtilisateur})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Nouveau mot de passe',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'users_new_password'.tr,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: confirmPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirmer le mot de passe',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'users_confirm_password'.tr,
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -350,22 +350,22 @@ class UserListView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               if (passwordController.text.isEmpty) {
-                Get.snackbar('Erreur', 'Le mot de passe ne peut pas être vide');
+                Get.snackbar('common_error'.tr, 'users_password_empty'.tr);
                 return;
               }
               if (passwordController.text != confirmPasswordController.text) {
-                Get.snackbar('Erreur', 'Les mots de passe ne correspondent pas');
+                Get.snackbar('common_error'.tr, 'users_passwords_not_match'.tr);
                 return;
               }
               Get.back();
               controller.changePassword(user.id!, passwordController.text);
             },
-            child: const Text('Changer'),
+            child: Text('users_change_password_action'.tr),
           ),
         ],
       ),

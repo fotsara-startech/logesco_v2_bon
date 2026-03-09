@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/movement_report_service.dart';
 
@@ -50,9 +51,9 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
       children: [
         Icon(Icons.analytics, color: Colors.blue.shade600),
         const SizedBox(width: 8),
-        const Text(
-          'Analyse par catégorie',
-          style: TextStyle(
+        Text(
+          'financial_movements_reports_category_analysis'.tr,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -66,7 +67,7 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
             border: Border.all(color: Colors.blue.shade200),
           ),
           child: Text(
-            '${widget.categorySummaries.length} catégories',
+            '${widget.categorySummaries.length} ${'categories_title'.tr.toLowerCase()}',
             style: TextStyle(
               fontSize: 12,
               color: Colors.blue.shade700,
@@ -361,9 +362,9 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
           children: [
             Icon(Icons.leaderboard, color: Colors.orange.shade600),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Classement des dépenses',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -446,7 +447,7 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
                   ),
                 ),
                 Text(
-                  '${category.count} mouvements',
+                  '${category.count} ${'financial_movements_title'.tr.toLowerCase()}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,

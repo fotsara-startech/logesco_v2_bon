@@ -63,9 +63,9 @@ class _MovementFiltersState extends State<MovementFilters> {
             // En-tête
             Row(
               children: [
-                const Text(
-                  'Filtres',
-                  style: TextStyle(
+                Text(
+                  'financial_movements_filters'.tr,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -75,11 +75,11 @@ class _MovementFiltersState extends State<MovementFilters> {
                 IconButton(
                   onPressed: _showPresets,
                   icon: const Icon(Icons.bookmark_border),
-                  tooltip: 'Presets sauvegardés',
+                  tooltip: 'financial_movements_filter_presets'.tr,
                 ),
                 TextButton(
                   onPressed: _resetFilters,
-                  child: const Text('Réinitialiser'),
+                  child: Text('financial_movements_filter_reset'.tr),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -131,21 +131,21 @@ class _MovementFiltersState extends State<MovementFilters> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Annuler'),
+                    child: Text('cancel'.tr),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _saveAsPreset,
-                    child: const Text('Sauvegarder'),
+                    child: Text('financial_movements_filter_save'.tr),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _applyFilters,
-                    child: const Text('Appliquer'),
+                    child: Text('financial_movements_filter_apply'.tr),
                   ),
                 ),
               ],

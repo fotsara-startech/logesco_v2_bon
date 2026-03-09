@@ -110,7 +110,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Annuler'),
+                        child: Text('cancel'.tr),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -125,7 +125,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
                                 : const Icon(Icons.check_circle),
-                            label: Text(salesController.isCreating ? 'Traitement...' : 'Confirmer'),
+                            label: Text(salesController.isCreating ? 'sales_creating'.tr : 'confirm'.tr),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               backgroundColor: Colors.blue[600],
@@ -166,7 +166,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Montant de la commande',
+                        'sales_order_amount'.tr,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[700],
@@ -215,7 +215,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                         Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Dette existante',
+                          'sales_existing_debt'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.red[700],
@@ -241,7 +241,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'TOTAL À PAYER',
+                      'sales_total_to_pay'.tr,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[700],
@@ -270,9 +270,9 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Montant payé par le client',
-          style: TextStyle(
+        Text(
+          'sales_amount_paid_by_customer'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -281,8 +281,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
         TextFormField(
           controller: _amountController,
           decoration: InputDecoration(
-            labelText: 'Montant',
-            hintText: 'Entrez le montant payé',
+            labelText: 'sales_amount_label'.tr,
+            hintText: 'sales_enter_amount'.tr,
             suffixText: 'FCFA',
             suffixStyle: TextStyle(
               fontSize: 16,
@@ -311,7 +311,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
           validator: (value) {
             final amount = double.tryParse(value ?? '') ?? 0.0;
             if (amount < 0) {
-              return 'Le montant ne peut pas être négatif';
+              return 'sales_amount_negative_error'.tr;
             }
             return null;
           },
@@ -332,7 +332,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Montants rapides',
+            'sales_quick_amounts'.tr,
             style: TextStyle(
               fontSize: 13,
               color: Colors.grey[600],
@@ -346,7 +346,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
             children: [
               // Bouton "Montant exact"
               _buildQuickButton(
-                label: 'Exact',
+                label: 'sales_exact_amount'.tr,
                 amount: totalWithDebt,
                 isExact: true,
               ),
@@ -428,7 +428,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  isChange ? 'Monnaie à rendre' : 'Reste à payer',
+                  isChange ? 'sales_change_to_return'.tr : 'sales_remaining_to_pay'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     color: color.shade700,
@@ -479,8 +479,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     // Validation : paiement partiel nécessite un client
     if (remaining > 0 && customer == null) {
       Get.snackbar(
-        'Client requis',
-        'Veuillez sélectionner un client pour un paiement partiel',
+        'sales_customer_required'.tr,
+        'sales_customer_required_partial'.tr,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.orange[100],
         colorText: Colors.orange[900],
@@ -494,11 +494,11 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     if (remaining > 0 && customer != null) {
       final confirmed = await Get.dialog<bool>(
             AlertDialog(
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                  SizedBox(width: 12),
-                  Text('Paiement partiel'),
+                  const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  const SizedBox(width: 12),
+                  Text('sales_partial_payment'.tr),
                 ],
               ),
               content: Column(
@@ -506,7 +506,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Le client ${customer.nomComplet} n\'a payé que ${_amountPaid.toStringAsFixed(0)} FCFA sur ${totalWithDebt.toStringAsFixed(0)} FCFA.',
+                    'sales_partial_payment_detail'.trParams({'customer': customer.nomComplet, 'paid': _amountPaid.toStringAsFixed(0), 'total': totalWithDebt.toStringAsFixed(0)}),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -523,19 +523,19 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                           children: [
                             Icon(Icons.account_balance_wallet, color: Colors.orange.shade700, size: 20),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Impact sur le compte client:',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            Text(
+                              'sales_account_impact'.tr,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (customerDebt > 0) Text('• Dette actuelle: ${customerDebt.toStringAsFixed(0)} FCFA'),
-                        Text('• Nouvelle commande: ${total.toStringAsFixed(0)} FCFA'),
-                        Text('• Montant payé: ${_amountPaid.toStringAsFixed(0)} FCFA'),
+                        if (customerDebt > 0) Text('• ${'sales_current_debt'.tr}: ${customerDebt.toStringAsFixed(0)} FCFA'),
+                        Text('• ${'sales_new_order'.tr}: ${total.toStringAsFixed(0)} FCFA'),
+                        Text('• ${'sales_amount_paid'.tr}: ${_amountPaid.toStringAsFixed(0)} FCFA'),
                         const Divider(height: 16),
                         Text(
-                          '• Dette finale: ${remaining.toStringAsFixed(0)} FCFA',
+                          '• ${'sales_final_debt'.tr}: ${remaining.toStringAsFixed(0)} FCFA',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -546,14 +546,14 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               actions: [
                 TextButton(
                   onPressed: () => Get.back(result: false),
-                  child: const Text('Annuler'),
+                  child: Text('cancel'.tr),
                 ),
                 ElevatedButton(
                   onPressed: () => Get.back(result: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                   ),
-                  child: const Text('Confirmer'),
+                  child: Text('confirm'.tr),
                 ),
               ],
             ),
@@ -564,6 +564,14 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     }
 
     // Configurer les paramètres de vente
+    print('=== DEBUG FINALIZE DIALOG ===');
+    print('Montant payé dans dialog: $_amountPaid');
+    print('Total avec dette: $totalWithDebt');
+    print('Reste à payer: $remaining');
+    print('Mode paiement: ${remaining > 0 ? 'credit' : 'comptant'}');
+    print('============================');
+
+    // Définir le montant payé EN PREMIER pour éviter qu'il soit écrasé
     salesController.setAmountPaid(_amountPaid);
     salesController.setPaymentMode(remaining > 0 ? 'credit' : 'comptant');
     salesController.setDiscount(0.0);
@@ -577,8 +585,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       Get.back(); // Retour à la page précédente
     } else {
       Get.snackbar(
-        'Erreur',
-        'Impossible de créer la vente',
+        'error'.tr,
+        'sales_cannot_create_sale'.tr,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red[100],
         colorText: Colors.red[900],
@@ -591,17 +599,17 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
   void _showPrintReceiptDialog() {
     Get.dialog(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 32),
-            SizedBox(width: 12),
-            Text('Vente créée !'),
+            const Icon(Icons.check_circle, color: Colors.green, size: 32),
+            const SizedBox(width: 12),
+            Text('sales_sale_created'.tr),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Le reçu va être imprimé automatiquement...'),
+            Text('sales_receipt_printing'.tr),
           ],
         ),
       ),
@@ -620,8 +628,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       if (salesController.lastCreatedSale == null) {
         Get.back();
         Get.snackbar(
-          'Erreur',
-          'Aucune vente trouvée pour l\'impression',
+          'error'.tr,
+          'sales_no_sale_for_print'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -653,8 +661,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
         );
 
         Get.snackbar(
-          'Succès',
-          'Reçu ${receipt.saleNumber} généré',
+          'success'.tr,
+          'sales_receipt_generated'.trParams({'number': receipt.saleNumber}),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -663,16 +671,16 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       } else {
         Get.back();
         Get.snackbar(
-          'Erreur',
-          'Impossible de générer le reçu',
+          'error'.tr,
+          'sales_cannot_generate_receipt'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (e) {
       Get.back();
       Get.snackbar(
-        'Erreur',
-        'Erreur: $e',
+        'error'.tr,
+        '${'error'.tr}: $e',
         snackPosition: SnackPosition.BOTTOM,
       );
     }

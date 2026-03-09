@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/supplier.dart';
 
 /// Widget de carte pour afficher un fournisseur dans la liste
@@ -98,19 +99,19 @@ class SupplierCard extends StatelessWidget {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
-                          leading: Icon(Icons.edit, size: 20),
-                          title: Text('Modifier'),
+                          leading: const Icon(Icons.edit, size: 20),
+                          title: Text('suppliers_edit'.tr),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(Icons.delete, color: Colors.red, size: 20),
-                          title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                          leading: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          title: Text('suppliers_delete'.tr, style: const TextStyle(color: Colors.red)),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -172,7 +173,7 @@ class SupplierCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Créé le ${_formatDate(supplier.dateCreation)}',
+                    'suppliers_created_on'.trParams({'date': _formatDate(supplier.dateCreation)}),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[500],
@@ -181,7 +182,7 @@ class SupplierCard extends StatelessWidget {
                   if (supplier.dateModification != supplier.dateCreation) ...[
                     const SizedBox(width: 12),
                     Text(
-                      '• Modifié le ${_formatDate(supplier.dateModification)}',
+                      '• ${'suppliers_updated_on'.trParams({'date': _formatDate(supplier.dateModification)})}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[500],

@@ -6,10 +6,12 @@ import '../models/customer.dart';
 import '../models/customer_transaction.dart';
 import '../services/customer_service.dart';
 import '../services/api_customer_service.dart';
+import '../services/customer_excel_service.dart';
 
 /// Contrôleur pour la gestion des clients avec GetX
 class CustomerController extends GetxController {
   final CustomerService _customerService = Get.find<CustomerService>();
+  final CustomerExcelService _excelService = CustomerExcelService();
 
   // Observables pour l'état de l'interface
   final RxList<Customer> customers = <Customer>[].obs;
@@ -495,6 +497,294 @@ class CustomerController extends GetxController {
     } catch (e) {
       print('❌ Erreur récupération relevé: $e');
       throw Exception('Erreur lors de la récupération du relevé: $e');
+    }
+  }
+
+  /// Exporte tous les clients vers Excel
+  Future<void> exportToExcel() async {
+    try {
+      Get.snackbar(
+        'Export en cours',
+        'Récupération des clients...',
+        snackPosition: SnackPosition.BOTTOM,
+        showProgressIndicator: true,
+        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
+      );
+
+      // Récupérer tous les clients par pagination
+      List<Customer> allCustomers = [];
+      int currentPage = 1;
+      const int pageSize = 100; // Limite maximale acceptée par l'API
+      bool hasMore = true;
+
+      while (hasMore) {
+        final pageCustomers = await _customerService.getCustomers(
+          page: currentPage,
+          limit: pageSize,
+        );
+
+        if (pageCustomers.isEmpty) {
+          hasMore = false;
+        } else {
+          allCustomers.addAll(pageCustomers);
+
+          // Si on a reçu moins que la limite, c'est la dernière page
+          if (pageCustomers.length < pageSize) {
+            hasMore = false;
+          } else {
+            currentPage++;
+          }
+        }
+      }
+
+      if (allCustomers.isEmpty) {
+        // Fermer le snackbar de progression
+        try {
+          if (Get.isSnackbarOpen == true) {
+            Get.closeCurrentSnackbar();
+          }
+        } catch (e) {
+          // Ignorer l'erreur de fermeture
+        }
+
+        Get.snackbar(
+          'Aucune donnée',
+          'Aucun client à exporter',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade800,
+        );
+        return;
+      }
+
+      // Fermer le snackbar de progression
+      try {
+        if (Get.isSnackbarOpen == true) {
+          Get.closeCurrentSnackbar();
+        }
+      } catch (e) {
+        // Ignorer l'erreur de fermeture
+      }
+
+      // Afficher la progression de génération
+      Get.snackbar(
+        'Export en cours',
+        'Génération du fichier Excel...',
+        snackPosition: SnackPosition.BOTTOM,
+        showProgressIndicator: true,
+        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
+      );
+
+      final filePath = await _excelService.exportCustomersToExcel(allCustomers);
+
+      // Fermer le snackbar de progression avec un délai
+      await Future.delayed(const Duration(milliseconds: 100));
+      try {
+        if (Get.isSnackbarOpen == true) {
+          Get.closeCurrentSnackbar();
+        }
+      } catch (e) {
+        // Ignorer l'erreur de fermeture
+      }
+
+      // Attendre que le snackbar soit complètement fermé
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (filePath != null) {
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Export réussi'),
+            content: Text(
+              'Export de ${allCustomers.length} client(s) réussi.\n'
+              'Fichier: ${filePath.split('/').last}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Fermer'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Get.snackbar(
+          'Erreur',
+          'Erreur lors de l\'export des clients',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade800,
+        );
+      }
+    } catch (e) {
+      // Fermer le snackbar de progression en cas d'erreur
+      try {
+        if (Get.isSnackbarOpen == true) {
+          Get.closeCurrentSnackbar();
+        }
+      } catch (e) {
+        // Ignorer l'erreur de fermeture
+      }
+
+      Get.snackbar(
+        'Erreur',
+        'Erreur lors de l\'export: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+    }
+  }
+
+  /// Importe des clients depuis Excel
+  Future<void> importFromExcel() async {
+    try {
+      print('🔄 Début de l\'import Excel...');
+
+      Get.snackbar(
+        'Import en cours',
+        'Sélection du fichier...',
+        snackPosition: SnackPosition.BOTTOM,
+        showProgressIndicator: true,
+        duration: const Duration(seconds: 2),
+      );
+
+      final importData = await _excelService.importCustomersFromExcel();
+
+      print('📊 Données importées: ${importData?.length ?? 0} clients');
+
+      if (importData == null || importData.isEmpty) {
+        print('⚠️  Aucune donnée à importer');
+        Get.snackbar(
+          'Annulé',
+          'Aucun fichier sélectionné ou fichier vide',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      print('✅ ${importData.length} clients trouvés dans le fichier');
+
+      // Afficher un aperçu et demander confirmation
+      final confirmed = await Get.dialog<bool>(
+        AlertDialog(
+          title: Text('Importer ${importData.length} client(s) ?'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: importData.length > 5 ? 5 : importData.length,
+              itemBuilder: (context, index) {
+                final data = importData[index];
+                return ListTile(
+                  title: Text('${data.nom} ${data.prenom ?? ''}'),
+                  subtitle: Text(data.telephone ?? 'Pas de téléphone'),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('Importer'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Importer les clients
+      int successCount = 0;
+      int errorCount = 0;
+
+      for (final data in importData) {
+        try {
+          await _customerService.createCustomer(
+            CustomerForm(
+              nom: data.nom,
+              prenom: data.prenom,
+              telephone: data.telephone,
+              email: data.email,
+              adresse: data.adresse,
+            ),
+          );
+          successCount++;
+        } catch (e) {
+          errorCount++;
+          print('❌ Erreur import client ${data.nom}: $e');
+        }
+      }
+
+      // Rafraîchir la liste
+      await refreshCustomers();
+
+      Get.dialog(
+        AlertDialog(
+          title: const Text('Import terminé'),
+          content: Text(
+            'Importés: $successCount\nErreurs: $errorCount',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Fermer'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Erreur',
+        'Erreur lors de l\'import: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+    }
+  }
+
+  /// Télécharge le template d'import
+  Future<void> downloadTemplate() async {
+    try {
+      final filePath = await _excelService.generateImportTemplate();
+
+      if (filePath != null) {
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Template généré'),
+            content: Text(
+              'Template d\'import généré avec succès.\n'
+              'Fichier: ${filePath.split('/').last}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Fermer'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Get.snackbar(
+          'Erreur',
+          'Erreur lors de la génération du template',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade800,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erreur',
+        'Erreur: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
     }
   }
 }

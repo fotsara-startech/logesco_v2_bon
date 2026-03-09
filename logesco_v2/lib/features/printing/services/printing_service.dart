@@ -39,6 +39,7 @@ class PrintingService {
       print('📋 Téléphone: ${profile.phone ?? 'Non défini'}');
       print('📋 Email: ${profile.email ?? 'Non défini'}');
       print('📋 NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
+      print('📋 Langue facture: ${profile.receiptLanguage ?? 'fr'}');
       print('📋 ============================================');
     } else {
       print('❌ TENTATIVE DE DÉFINIR UN PROFIL NULL');

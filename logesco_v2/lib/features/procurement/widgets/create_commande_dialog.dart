@@ -63,7 +63,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Nouvelle commande d\'approvisionnement',
+                      'procurement_create_dialog_title'.tr,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -131,7 +131,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                 children: [
                   // Montant total
                   Obx(() => Text(
-                        'Total: ${CurrencyConstants.formatAmount(widget.controller.montantTotalNouvelleCommande)}',
+                        '${'procurement_total'.tr}: ${CurrencyConstants.formatAmount(widget.controller.montantTotalNouvelleCommande)}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
@@ -143,7 +143,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Annuler'),
+                        child: Text('cancel'.tr),
                       ),
                       const SizedBox(width: 12),
                       Obx(() => ElevatedButton(
@@ -161,7 +161,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : const Text('Créer la commande'),
+                                : Text('procurement_create_order'.tr),
                           )),
                     ],
                   ),
@@ -179,7 +179,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Fournisseur *',
+          'procurement_supplier_required'.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -226,7 +226,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                           Icon(Icons.add, color: Colors.grey[600]),
                           const SizedBox(width: 8),
                           Text(
-                            'Sélectionner un fournisseur',
+                            'procurement_select_supplier'.tr,
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -242,7 +242,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Date de livraison prévue',
+          'procurement_delivery_date'.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -262,7 +262,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                     const Icon(Icons.calendar_today, color: Colors.blue),
                     const SizedBox(width: 8),
                     Text(
-                      widget.controller.dateLivraisonPrevue.value != null ? _formatDate(widget.controller.dateLivraisonPrevue.value!) : 'Sélectionner une date',
+                      widget.controller.dateLivraisonPrevue.value != null ? _formatDate(widget.controller.dateLivraisonPrevue.value!) : 'procurement_select_date'.tr,
                     ),
                   ],
                 ),
@@ -277,7 +277,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mode de paiement',
+          'procurement_payment_method'.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -303,7 +303,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Notes',
+          'procurement_notes'.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -311,9 +311,9 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _notesController,
-          decoration: const InputDecoration(
-            hintText: 'Notes optionnelles...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: 'procurement_notes_optional'.tr,
+            border: const OutlineInputBorder(),
           ),
           maxLines: 3,
           onChanged: (value) => widget.controller.notes.value = value,
@@ -330,7 +330,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
           children: [
             Expanded(
               child: Text(
-                'Produits *',
+                'procurement_products_required'.tr,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -339,7 +339,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
             ElevatedButton.icon(
               onPressed: _ajouterProduit,
               icon: const Icon(Icons.add),
-              label: const Text('Ajouter'),
+              label: Text('procurement_add_product'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
@@ -356,15 +356,15 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
             ),
             child: Obx(() {
               if (widget.controller.detailsCommande.isEmpty) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
+                      const Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                      const SizedBox(height: 8),
                       Text(
-                        'Aucun produit ajouté',
-                        style: TextStyle(color: Colors.grey),
+                        'procurement_no_products_added'.tr,
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
@@ -402,7 +402,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   Text(
-                    'Réf: ${detail.produit.reference}',
+                    '${'procurement_ref'.tr}: ${detail.produit.reference}',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
@@ -412,12 +412,12 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                   Row(
                     children: [
                       Text(
-                        'Qté: ${detail.quantite}',
+                        '${'procurement_qty'.tr}: ${detail.quantite}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        'Prix: ${CurrencyConstants.formatAmount(detail.coutUnitaire)}',
+                        '${'procurement_price'.tr}: ${CurrencyConstants.formatAmount(detail.coutUnitaire)}',
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],
@@ -459,8 +459,8 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
 
       if (supplierController.suppliers.isEmpty) {
         Get.snackbar(
-          'Aucun fournisseur',
-          'Veuillez d\'abord créer des fournisseurs',
+          'procurement_no_supplier'.tr,
+          'procurement_create_suppliers_first'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -469,7 +469,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       final selectedSupplier = await showDialog<Supplier>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Sélectionner un fournisseur'),
+          title: Text('procurement_select_supplier'.tr),
           content: SizedBox(
             width: 400,
             height: 400,
@@ -479,7 +479,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                 final supplier = supplierController.suppliers[index];
                 return ListTile(
                   title: Text(supplier.nom),
-                  subtitle: Text(supplier.telephone ?? 'Pas de téléphone'),
+                  subtitle: Text(supplier.telephone ?? 'phone'.tr),
                   onTap: () => Navigator.of(context).pop(supplier),
                 );
               },
@@ -493,8 +493,8 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Impossible de charger les fournisseurs: $e',
+        'error'.tr,
+        '${'error_load_failed'.tr}: $e',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -529,8 +529,8 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Impossible de charger les produits: $e',
+        'error'.tr,
+        '${'error_load_failed'.tr}: $e',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -683,7 +683,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Ajouter un produit',
+                      'procurement_add_product_dialog_title'.tr,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -701,11 +701,11 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
               // Recherche de produit
               TextField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'Rechercher un produit',
-                  hintText: 'Nom, référence ou description...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'procurement_search_product'.tr,
+                  hintText: 'procurement_search_placeholder'.tr,
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(),
                 ),
               ),
 
@@ -722,7 +722,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sélectionner un produit (${filteredProducts.length} sur $totalLoaded produits):',
+                        '${'procurement_select_product'.tr} (${filteredProducts.length} ${'procurement_products_count'.tr.replaceAll('@count', filteredProducts.length.toString()).replaceAll('@total', totalLoaded.toString())}):',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -741,15 +741,15 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                                     children: [
                                       const CircularProgressIndicator(),
                                       const SizedBox(height: 12),
-                                      Text('Chargement des produits...', style: TextStyle(color: Colors.grey[600])),
+                                      Text('procurement_loading_products'.tr, style: TextStyle(color: Colors.grey[600])),
                                     ],
                                   ),
                                 )
                               : filteredProducts.isEmpty
-                                  ? const Center(
+                                  ? Center(
                                       child: Text(
-                                        'Aucun produit trouvé',
-                                        style: TextStyle(color: Colors.grey),
+                                        'procurement_no_product_found'.tr,
+                                        style: const TextStyle(color: Colors.grey),
                                       ),
                                     )
                                   : Stack(
@@ -768,7 +768,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                                                       const CircularProgressIndicator(strokeWidth: 2),
                                                       const SizedBox(height: 8),
                                                       Text(
-                                                        'Chargement de plus...',
+                                                        'procurement_loading_more'.tr,
                                                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                                                       ),
                                                     ],
@@ -799,7 +799,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                                               subtitle: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Text('Réf: ${product.reference}'),
+                                                  Text('${'procurement_ref'.tr}: ${product.reference}'),
                                                   if (product.description != null && product.description!.isNotEmpty)
                                                     Text(
                                                       product.description!,
@@ -858,7 +858,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Produit sélectionné: ${selectedProduct!.nom}',
+                        '${'procurement_select_product'.tr}: ${selectedProduct!.nom}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -872,19 +872,19 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _quantityController,
-                              decoration: const InputDecoration(
-                                labelText: 'Quantité *',
-                                border: OutlineInputBorder(),
-                                suffixText: 'unités',
+                              decoration: InputDecoration(
+                                labelText: 'procurement_quantity'.tr + ' *',
+                                border: const OutlineInputBorder(),
+                                suffixText: 'procurement_units'.tr,
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Requis';
+                                  return 'required'.tr;
                                 }
                                 final quantity = int.tryParse(value);
                                 if (quantity == null || quantity <= 0) {
-                                  return 'Quantité invalide';
+                                  return 'procurement_quantity_positive'.tr;
                                 }
                                 return null;
                               },
@@ -897,19 +897,19 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _unitCostController,
-                              decoration: const InputDecoration(
-                                labelText: 'Coût unitaire *',
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                labelText: 'procurement_unit_cost'.tr + ' *',
+                                border: const OutlineInputBorder(),
                                 suffixText: CurrencyConstants.defaultCurrency,
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Requis';
+                                  return 'required'.tr;
                                 }
                                 final cost = double.tryParse(value);
                                 if (cost == null || cost <= 0) {
-                                  return 'Coût invalide';
+                                  return 'procurement_unit_cost_positive'.tr;
                                 }
                                 return null;
                               },
@@ -932,7 +932,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                             const Icon(Icons.calculate, size: 16, color: Colors.green),
                             const SizedBox(width: 8),
                             Text(
-                              'Total: ${CurrencyConstants.formatAmount(_calculateTotal())}',
+                              '${'procurement_total'.tr}: ${CurrencyConstants.formatAmount(_calculateTotal())}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -954,7 +954,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Annuler'),
+                    child: Text('cancel'.tr),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
@@ -963,7 +963,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Ajouter'),
+                    child: Text('procurement_add'.tr),
                   ),
                 ],
               ),
@@ -989,15 +989,15 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
       if (isOutOfStock) {
         stockColor = Colors.red;
         stockIcon = Icons.cancel;
-        stockText = 'Rupture de stock';
+        stockText = 'inventory_alerts_out_of_stock'.tr;
       } else if (isLowStock) {
         stockColor = Colors.orange;
         stockIcon = Icons.warning;
-        stockText = 'Stock faible: $rawStock unités';
+        stockText = '${'inventory_alerts_low_stock'.tr}: $rawStock ${'procurement_units'.tr}';
       } else {
         stockColor = Colors.green;
         stockIcon = Icons.check_circle;
-        stockText = 'Disponible: $rawStock unités';
+        stockText = '${'procurement_current_stock'.tr}: $rawStock ${'procurement_units'.tr}';
       }
 
       return Row(

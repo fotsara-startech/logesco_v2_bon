@@ -5,6 +5,8 @@ import '../controllers/customer_controller.dart';
 import '../services/statement_pdf_service.dart';
 import '../../accounts/models/account.dart';
 import '../../accounts/widgets/unpaid_sales_selector_dialog.dart';
+import '../../financial_movements/controllers/financial_movement_controller.dart';
+import '../../../core/services/cash_register_refresh_service.dart';
 
 /// Vue du compte client - SOLUTION 2: Système centralisé
 ///
@@ -41,19 +43,19 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   Widget build(BuildContext context) {
     if (_customer == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Erreur')),
-        body: const Center(child: Text('Client non trouvé')),
+        appBar: AppBar(title: Text('error'.tr)),
+        body: Center(child: Text('customers_not_found'.tr)),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Compte de ${_customer!.nomComplet}'),
+        title: Text('customers_account'.trParams({'name': _customer!.nomComplet})),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadTransactions,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -99,9 +101,9 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       ),
       child: Column(
         children: [
-          const Text(
-            'Solde du compte',
-            style: TextStyle(
+          Text(
+            'customers_account_balance'.tr,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -122,14 +124,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
             children: [
               if (aDette)
                 _buildSummaryCard(
-                  'Dette',
+                  'customers_has_debt'.tr,
                   '${montantDette.toStringAsFixed(0)} FCFA',
                   Icons.warning,
                   Colors.white.withOpacity(0.9),
                 )
               else
                 _buildSummaryCard(
-                  'Crédit disponible',
+                  'customers_available_credit'.tr,
                   '${creditDisponible.toStringAsFixed(0)} FCFA',
                   Icons.account_balance_wallet,
                   Colors.white.withOpacity(0.9),
@@ -145,7 +147,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                 ElevatedButton.icon(
                   onPressed: () => _showPaymentDialog(montantDette),
                   icon: const Icon(Icons.payment),
-                  label: const Text('Payer la dette'),
+                  label: Text('customers_pay_debt'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.red.shade700,
@@ -155,7 +157,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               OutlinedButton.icon(
                 onPressed: _printTransactions,
                 icon: const Icon(Icons.print),
-                label: const Text('Imprimer'),
+                label: Text('print'.tr),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white),
@@ -203,15 +205,15 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   Widget _buildTransactionsList() {
     return Obx(() {
       if (_controller.customerTransactions.isEmpty) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
+              const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
               Text(
-                'Aucune transaction',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                'customers_no_transactions'.tr,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
             ],
           ),
@@ -304,23 +306,22 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
   /// Affiche le dialogue de paiement de dette
   void _showPaymentDialog(double montantDette) {
-    final amountController = TextEditingController(text: montantDette.toStringAsFixed(0));
+    final amountController = TextEditingController();
     final descriptionController = TextEditingController();
     UnpaidSale? selectedSale;
-    bool isPayingSpecificSale = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Payer la dette'),
+          title: Text('customers_pay_debt_dialog_title'.tr),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Dette actuelle: ${montantDette.toStringAsFixed(0)} FCFA',
+                  'customers_current_debt'.trParams({'amount': montantDette.toStringAsFixed(0)}),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.red.shade700,
@@ -328,108 +329,98 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                 ),
                 const SizedBox(height: 16),
 
-                // Option pour payer une vente spécifique
-                CheckboxListTile(
-                  value: isPayingSpecificSale,
-                  onChanged: (value) {
-                    setState(() {
-                      isPayingSpecificSale = value ?? false;
-                      if (!isPayingSpecificSale) {
-                        selectedSale = null;
-                        amountController.clear();
-                        amountController.text = montantDette.toStringAsFixed(0);
-                        descriptionController.clear();
-                      }
-                    });
-                  },
-                  title: const Text('Payer une vente spécifique'),
-                  subtitle: const Text('Sélectionner une vente impayée'),
-                  contentPadding: EdgeInsets.zero,
+                // Sélection obligatoire d'une vente
+                Text(
+                  'customers_select_sale'.tr,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
                 ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await showDialog<Map<String, dynamic>>(
+                      context: context,
+                      builder: (context) => UnpaidSalesSelectorDialog(
+                        clientId: _customer!.id,
+                        onSaleSelected: (sale, montant) {
+                          Navigator.pop(context, {
+                            'sale': sale,
+                            'montant': montant,
+                          });
+                        },
+                      ),
+                    );
 
-                if (isPayingSpecificSale) ...[
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final result = await showDialog<Map<String, dynamic>>(
-                        context: context,
-                        builder: (context) => UnpaidSalesSelectorDialog(
-                          clientId: _customer!.id,
-                          onSaleSelected: (sale, montant) {
-                            Navigator.pop(context, {
-                              'sale': sale,
-                              'montant': montant,
-                            });
-                          },
+                    if (result != null) {
+                      setState(() {
+                        selectedSale = result['sale'] as UnpaidSale;
+                        amountController.text = (result['montant'] as double).toStringAsFixed(0);
+                        descriptionController.text = 'customers_debt_payment'.trParams({'reference': selectedSale!.reference});
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.receipt_long),
+                  label: Text(selectedSale == null ? 'customers_select_sale_button'.tr : 'customers_sale_selected'.trParams({'reference': selectedSale!.reference})),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    backgroundColor: selectedSale == null ? Colors.blue : Colors.green,
+                  ),
+                ),
+                if (selectedSale != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'customers_sale_selected'.trParams({'reference': selectedSale!.reference}),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      );
-
-                      if (result != null) {
-                        setState(() {
-                          selectedSale = result['sale'] as UnpaidSale;
-                          amountController.text = (result['montant'] as double).toStringAsFixed(0);
-                          descriptionController.text = 'Paiement Dette (Vente #${selectedSale!.reference})';
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.receipt_long),
-                    label: Text(selectedSale == null ? 'Sélectionner une vente' : 'Vente #${selectedSale!.reference}'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48),
+                        const SizedBox(height: 4),
+                        Text('customers_sale_date'.trParams({'date': selectedSale!.dateVenteFormatted})),
+                        Text('customers_sale_total'.trParams({'amount': selectedSale!.montantTotalFormatted})),
+                        Text('customers_sale_paid'.trParams({'amount': selectedSale!.montantPayeFormatted})),
+                        Text(
+                          'customers_sale_remaining'.trParams({'amount': selectedSale!.montantRestantFormatted}),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (selectedSale != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Vente #${selectedSale!.reference}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text('Date: ${selectedSale!.dateVenteFormatted}'),
-                          Text('Total: ${selectedSale!.montantTotalFormatted}'),
-                          Text('Déjà payé: ${selectedSale!.montantPayeFormatted}'),
-                          Text(
-                            'Reste: ${selectedSale!.montantRestantFormatted}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
                 ],
+                const SizedBox(height: 16),
 
                 TextField(
                   controller: amountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Montant à payer',
+                  decoration: InputDecoration(
+                    labelText: 'customers_amount_to_pay'.tr,
                     suffixText: 'FCFA',
-                    border: OutlineInputBorder(),
-                    helperText: 'Vous pouvez payer partiellement',
+                    border: const OutlineInputBorder(),
+                    helperText: 'customers_partial_payment_hint'.tr,
                   ),
                   keyboardType: TextInputType.number,
+                  enabled: selectedSale != null,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optionnel)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'customers_description_optional'.tr,
+                    border: const OutlineInputBorder(),
                   ),
                   maxLines: 2,
+                  enabled: selectedSale != null,
                 ),
               ],
             ),
@@ -437,37 +428,26 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text('cancel'.tr),
             ),
             ElevatedButton.icon(
-              onPressed: () {
-                print('🔵 [Dialog] Bouton "Confirmer le paiement" cliqué');
-                print('  - isPayingSpecificSale: $isPayingSpecificSale');
-                print('  - selectedSale: ${selectedSale?.reference}');
-                print('  - amountController.text: ${amountController.text}');
-                print('  - descriptionController.text: ${descriptionController.text}');
+              onPressed: selectedSale == null
+                  ? null
+                  : () {
+                      print('🔵 [Dialog] Bouton "Confirmer le paiement" cliqué');
+                      print('  - selectedSale: ${selectedSale?.reference}');
+                      print('  - amountController.text: ${amountController.text}');
+                      print('  - descriptionController.text: ${descriptionController.text}');
 
-                if (isPayingSpecificSale && selectedSale == null) {
-                  print('❌ [Dialog] Vente non sélectionnée');
-                  Get.snackbar(
-                    'Erreur',
-                    'Veuillez sélectionner une vente à payer',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                  return;
-                }
-
-                print('✅ [Dialog] Validation OK, appel de _processPayment');
-                _processPayment(
-                  amountController.text,
-                  descriptionController.text,
-                  selectedSale,
-                );
-              },
+                      print('✅ [Dialog] Validation OK, appel de _processPayment');
+                      _processPayment(
+                        amountController.text,
+                        descriptionController.text,
+                        selectedSale,
+                      );
+                    },
               icon: const Icon(Icons.check),
-              label: const Text('Confirmer le paiement'),
+              label: Text('customers_confirm_payment'.tr),
             ),
           ],
         ),
@@ -482,13 +462,26 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     print('  - description: $description');
     print('  - selectedSale: ${selectedSale?.reference}');
 
+    // Vérifier qu'une vente est sélectionnée (obligatoire)
+    if (selectedSale == null) {
+      print('❌ [_processPayment] Aucune vente sélectionnée');
+      Get.snackbar(
+        'error'.tr,
+        'customers_select_sale_error'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+      return;
+    }
+
     final amount = double.tryParse(amountText);
 
     if (amount == null || amount <= 0) {
       print('❌ [_processPayment] Montant invalide');
       Get.snackbar(
-        'Erreur',
-        'Veuillez entrer un montant valide',
+        'error'.tr,
+        'customers_invalid_amount'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -499,38 +492,50 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     print('✅ [_processPayment] Montant valide: $amount');
     Navigator.of(context).pop(); // Fermer le dialogue
 
-    // Si une vente spécifique est sélectionnée, utiliser la nouvelle méthode
-    bool success;
-    if (selectedSale != null) {
-      print('🎯 [_processPayment] Appel payCustomerDebtForSale');
-      print('  - customerId: ${_customer!.id}');
-      print('  - amount: $amount');
-      print('  - venteId: ${selectedSale.id}');
+    // Payer la vente spécifique sélectionnée
+    print('🎯 [_processPayment] Appel payCustomerDebtForSale');
+    print('  - customerId: ${_customer!.id}');
+    print('  - amount: $amount');
+    print('  - venteId: ${selectedSale.id}');
 
-      success = await _controller.payCustomerDebtForSale(
-        _customer!.id,
-        amount,
-        selectedSale.id,
-        description: description.isEmpty ? 'Paiement Dette (Vente #${selectedSale.reference})' : description,
-      );
+    final success = await _controller.payCustomerDebtForSale(
+      _customer!.id,
+      amount,
+      selectedSale.id,
+      description: description.isEmpty ? 'Paiement Dette (Vente #${selectedSale.reference})' : description,
+    );
 
-      print('📊 [_processPayment] Résultat payCustomerDebtForSale: $success');
-    } else {
-      print('🎯 [_processPayment] Appel payCustomerDebt (normal)');
-      // Appeler le contrôleur pour enregistrer le paiement normal
-      success = await _controller.payCustomerDebt(
-        _customer!.id,
-        amount,
-        description: description.isEmpty ? null : description,
-      );
-
-      print('📊 [_processPayment] Résultat payCustomerDebt: $success');
-    }
+    print('📊 [_processPayment] Résultat payCustomerDebtForSale: $success');
 
     if (success) {
       print('✅ [_processPayment] Paiement réussi, rechargement des transactions');
-      // Recharger les transactions
+
+      // Recharger les transactions du client
       await _loadTransactions();
+
+      // Rafraîchir le cache des mouvements financiers si le contrôleur existe
+      print('🔄 [_processPayment] Tentative de rafraîchissement des mouvements financiers');
+      try {
+        if (Get.isRegistered<FinancialMovementController>()) {
+          final financialController = Get.find<FinancialMovementController>();
+          await financialController.refreshMovements();
+          print('✅ [_processPayment] Cache des mouvements financiers rafraîchi');
+        } else {
+          print('⚠️ [_processPayment] FinancialMovementController non enregistré');
+        }
+      } catch (e) {
+        print('⚠️ [_processPayment] Erreur lors du rafraîchissement des mouvements: $e');
+      }
+
+      // Rafraîchir le solde de la caisse via le service singleton
+      print('🔄 [_processPayment] Rafraîchissement du solde de la caisse via service');
+      try {
+        final refreshService = CashRegisterRefreshService();
+        await refreshService.refreshCashRegisters();
+        print('✅ [_processPayment] Solde de la caisse rafraîchi avec succès');
+      } catch (e) {
+        print('⚠️ [_processPayment] Erreur lors du rafraîchissement de la caisse: $e');
+      }
     } else {
       print('❌ [_processPayment] Paiement échoué');
     }
@@ -540,8 +545,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   Future<void> _printTransactions() async {
     if (_customer == null || _controller.customerTransactions.isEmpty) {
       Get.snackbar(
-        'Erreur',
-        'Aucune transaction à imprimer',
+        'error'.tr,
+        'customers_no_transactions_to_print'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade800,
@@ -567,14 +572,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Relevé de compte'),
+        title: Text('customers_statement'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Client: ${_customer!.nomComplet}',
+                '${'customers_name'.tr}: ${_customer!.nomComplet}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),
@@ -588,28 +593,28 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Nombre de transactions: ${_controller.customerTransactions.length}',
+                'customers_transaction_count'.trParams({'count': _controller.customerTransactions.length.toString()}),
                 style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 8),
               const Divider(),
               const SizedBox(height: 8),
-              const Text(
-                'Le relevé inclura:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                'customers_statement_includes'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text('• Informations du client'),
-              const Text('• Solde actuel du compte'),
-              const Text('• Historique complet des transactions'),
-              const Text('• Date et heure d\'impression'),
+              Text('customers_statement_client_info'.tr),
+              Text('customers_statement_balance'.tr),
+              Text('customers_statement_history'.tr),
+              Text('customers_statement_datetime'.tr),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -617,7 +622,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               _generateAndPrintStatement();
             },
             icon: const Icon(Icons.print),
-            label: const Text('Imprimer'),
+            label: Text('print'.tr),
           ),
         ],
       ),
@@ -629,16 +634,16 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     try {
       // Afficher un indicateur de chargement
       Get.dialog(
-        const Center(
+        Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Génération du relevé en cours...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('customers_generating_statement'.tr),
                 ],
               ),
             ),
@@ -651,7 +656,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       final statementData = await _controller.getCustomerStatement(_customer!.id);
 
       if (statementData == null) {
-        throw Exception('Impossible de récupérer les données du relevé');
+        throw Exception('customers_statement_error'.tr);
       }
 
       // Générer le PDF
@@ -666,8 +671,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
       // Afficher le succès avec le chemin
       Get.snackbar(
-        'Succès',
-        'Relevé de compte généré\nEmplacement: $filePath',
+        'success'.tr,
+        'customers_statement_success'.trParams({'path': filePath}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.shade100,
         colorText: Colors.green.shade800,
@@ -680,8 +685,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       }
 
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la génération du relevé: $e',
+        'error'.tr,
+        'customers_statement_generation_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,

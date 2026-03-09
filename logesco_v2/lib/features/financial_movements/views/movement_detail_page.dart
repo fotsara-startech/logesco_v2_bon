@@ -31,13 +31,13 @@ class MovementDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mouvement ${movement.reference}'),
+        title: Text('financial_movements_movement'.trParams({'reference': movement.reference})),
         elevation: 0,
         actions: [
           IconButton(
             onPressed: () => Get.toNamed('/financial-movements/${movement.id}/edit', arguments: movement),
             icon: const Icon(Icons.edit),
-            tooltip: 'Modifier',
+            tooltip: 'edit'.tr,
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -51,19 +51,19 @@ class MovementDetailPage extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'duplicate',
                 child: ListTile(
-                  leading: Icon(Icons.copy),
-                  title: Text('Dupliquer'),
+                  leading: const Icon(Icons.copy),
+                  title: Text('financial_movements_duplicate'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title: Text('Supprimer', style: TextStyle(color: Colors.red)),
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -82,14 +82,14 @@ class MovementDetailPage extends StatelessWidget {
 
             // Informations principales
             _buildInfoCard(
-              'Informations générales',
+              'financial_movements_general_info'.tr,
               Icons.info_outline,
               [
-                _buildInfoRow('Référence', movement.reference),
-                _buildInfoRow('Montant', movement.montantFormate),
-                _buildInfoRow('Description', movement.description),
-                _buildInfoRow('Date', _formatDate(movement.date)),
-                if (movement.categorie != null) _buildCategoryRow('Catégorie', movement.categorie!),
+                _buildInfoRow('financial_movements_reference'.tr, movement.reference),
+                _buildInfoRow('financial_movements_amount'.tr, movement.montantFormate),
+                _buildInfoRow('financial_movements_description'.tr, movement.description),
+                _buildInfoRow('financial_movements_date'.tr, _formatDate(movement.date)),
+                if (movement.categorie != null) _buildCategoryRow('financial_movements_category'.tr, movement.categorie!),
               ],
             ),
             const SizedBox(height: 16),
@@ -97,7 +97,7 @@ class MovementDetailPage extends StatelessWidget {
             // Notes si présentes
             if (movement.notes != null && movement.notes!.isNotEmpty) ...[
               _buildInfoCard(
-                'Notes',
+                'financial_movements_notes'.tr,
                 Icons.note,
                 [
                   _buildNotesSection(movement.notes!),
@@ -392,15 +392,16 @@ class MovementDetailPage extends StatelessWidget {
   void _showDeleteDialog(FinancialMovement movement, FinancialMovementController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('financial_movements_delete_confirm'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Êtes-vous sûr de vouloir supprimer ce mouvement financier ?\n',
+              'financial_movements_delete_confirm'.tr,
               style: TextStyle(color: Colors.grey.shade700),
             ),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -411,11 +412,11 @@ class MovementDetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Référence: ${movement.reference}',
+                    '${'financial_movements_reference'.tr}: ${movement.reference}',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  Text('Montant: ${movement.montantFormate}'),
-                  Text('Description: ${movement.description}'),
+                  Text('${'financial_movements_amount'.tr}: ${movement.montantFormate}'),
+                  Text('${'financial_movements_description'.tr}: ${movement.description}'),
                 ],
               ),
             ),
@@ -433,7 +434,7 @@ class MovementDetailPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           Obx(() => ElevatedButton(
                 onPressed: controller.isDeleting.value
@@ -444,7 +445,7 @@ class MovementDetailPage extends StatelessWidget {
                         if (success) {
                           Get.back(); // Retourne à la liste
                           Get.snackbar(
-                            'Succès',
+                            'success'.tr,
                             'Mouvement supprimé avec succès',
                             snackPosition: SnackPosition.BOTTOM,
                             backgroundColor: Colors.green.shade100,
@@ -465,7 +466,7 @@ class MovementDetailPage extends StatelessWidget {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Supprimer'),
+                    : Text('delete'.tr),
               )),
         ],
       ),
@@ -484,7 +485,7 @@ class MovementDetailPage extends StatelessWidget {
   Widget _buildErrorView() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Erreur'),
+        title: Text('error'.tr),
       ),
       body: Center(
         child: Column(
@@ -496,9 +497,9 @@ class MovementDetailPage extends StatelessWidget {
               color: Colors.red,
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Mouvement non trouvé',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              'financial_movements_no_results'.tr,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -509,7 +510,7 @@ class MovementDetailPage extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => Get.offAllNamed('/financial-movements'),
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Retour aux mouvements'),
+              label: Text('back'.tr),
             ),
           ],
         ),
@@ -521,14 +522,14 @@ class MovementDetailPage extends StatelessWidget {
   Widget _buildLoadingView(String movementId, FinancialMovementController controller) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chargement...'),
+        title: Text('loading'.tr),
       ),
       body: FutureBuilder<FinancialMovement?>(
         future: _loadMovementById(movementId, controller),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: LoadingWidget(message: 'Chargement du mouvement...'),
+            return Center(
+              child: LoadingWidget(message: 'financial_movements_loading'.tr),
             );
           }
 
@@ -543,13 +544,13 @@ class MovementDetailPage extends StatelessWidget {
                     color: Colors.red,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Erreur de chargement',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Text(
+                    'error'.tr,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Erreur: ${snapshot.error}',
+                    '${'error'.tr}: ${snapshot.error}',
                     style: const TextStyle(color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
@@ -557,7 +558,7 @@ class MovementDetailPage extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => Get.back(),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Retour'),
+                    label: Text('back'.tr),
                   ),
                 ],
               ),
@@ -569,8 +570,8 @@ class MovementDetailPage extends StatelessWidget {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Get.off(() => MovementDetailPage(), arguments: snapshot.data);
             });
-            return const Center(
-              child: LoadingWidget(message: 'Redirection...'),
+            return Center(
+              child: LoadingWidget(message: 'loading'.tr),
             );
           }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Types de pagination disponibles
 enum PaginationType {
@@ -63,23 +64,23 @@ class PaginationWidget extends StatelessWidget {
 
           // Indicateur de chargement ou bouton "Charger plus"
           if (isLoading)
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: 12),
-                Text('Chargement...'),
+                const SizedBox(width: 12),
+                Text('financial_movements_pagination_loading'.tr),
               ],
             )
           else if (hasNext)
             ElevatedButton.icon(
               onPressed: onNextPage,
               icon: const Icon(Icons.expand_more),
-              label: const Text('Charger plus'),
+              label: Text('financial_movements_pagination_load_more'.tr),
             )
           else
             Row(
@@ -88,7 +89,7 @@ class PaginationWidget extends StatelessWidget {
                 Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Tous les éléments chargés',
+                  'financial_movements_pagination_all_loaded'.tr,
                   style: TextStyle(
                     color: Colors.green.shade600,
                     fontWeight: FontWeight.w500,
@@ -104,7 +105,7 @@ class PaginationWidget extends StatelessWidget {
             TextButton.icon(
               onPressed: () => onChangeType!(PaginationType.pages),
               icon: const Icon(Icons.view_list, size: 16),
-              label: const Text('Passer en mode pages'),
+              label: Text('financial_movements_pagination_switch_to_pages'.tr),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey.shade600,
               ),
@@ -144,7 +145,7 @@ class PaginationWidget extends StatelessWidget {
               IconButton(
                 onPressed: currentPage > 1 ? () => onGoToPage?.call(1) : null,
                 icon: const Icon(Icons.first_page),
-                tooltip: 'Première page',
+                tooltip: 'financial_movements_pagination_first_page'.tr,
               ),
 
               // Bouton page précédente

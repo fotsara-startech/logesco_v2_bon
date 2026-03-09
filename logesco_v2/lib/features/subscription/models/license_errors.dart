@@ -12,6 +12,9 @@ enum LicenseError {
   /// Tentative de manipulation détectée
   tamperingDetected,
 
+  /// Manipulation de l'horloge système détectée
+  timeManipulation,
+
   /// Échec de la validation cryptographique
   cryptographicFailure,
 
@@ -63,6 +66,8 @@ class LicenseException implements Exception {
         return 'Cette licence est liée à un autre appareil. Contactez le support pour un transfert.';
       case LicenseError.tamperingDetected:
         return 'Tentative de manipulation détectée. L\'application va se fermer.';
+      case LicenseError.timeManipulation:
+        return 'Manipulation de l\'horloge système détectée. Veuillez restaurer la date et l\'heure correctes.';
       case LicenseError.cryptographicFailure:
         return 'Erreur de validation de sécurité. Veuillez réinstaller l\'application.';
       case LicenseError.storageError:
@@ -88,6 +93,7 @@ class LicenseException implements Exception {
       case LicenseError.networkError:
         return true;
       case LicenseError.tamperingDetected:
+      case LicenseError.timeManipulation:
       case LicenseError.cryptographicFailure:
       case LicenseError.licenseRevoked:
         return false;
@@ -101,6 +107,7 @@ class LicenseException implements Exception {
   bool get shouldBlockApp {
     switch (error) {
       case LicenseError.tamperingDetected:
+      case LicenseError.timeManipulation:
       case LicenseError.cryptographicFailure:
       case LicenseError.licenseRevoked:
         return true;

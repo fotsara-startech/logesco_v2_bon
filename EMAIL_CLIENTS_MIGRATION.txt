@@ -1,0 +1,111 @@
+Objet: IMPORTANT - Mise a jour du processus de migration LOGESCO
+
+Cher client,
+
+Nous avons identifie et resolu un probleme important concernant la migration 
+vers la nouvelle version de LOGESCO.
+
+================================================================
+
+PROBLEME IDENTIFIE
+------------------
+Lors de la migration vers LOGESCO Client Optimise, certains clients ont 
+constate que leurs donnees (produits, ventes, clients) n'etaient pas 
+recuperees apres la migration.
+
+Nous avons identifie la cause et cree une solution automatique.
+
+
+SOLUTION DISPONIBLE
+-------------------
+Nous vous fournissons un nouveau script de migration qui garantit la 
+preservation de toutes vos donnees :
+
+    migration-guidee-FIXE.bat
+
+Ce script :
+- Sauvegarde automatiquement vos donnees
+- Preserve 100% de vos informations
+- Verifie que tout est correct avant de continuer
+- Affiche un rapport avant/apres
+
+
+COMMENT MIGRER CORRECTEMENT
+----------------------------
+1. Telechargez le package de mise a jour (lien ci-dessous)
+2. Extrayez les fichiers dans votre dossier LOGESCO
+3. Double-cliquez sur : migration-guidee-FIXE.bat
+4. Suivez les instructions a l'ecran
+5. Verifiez que vos donnees sont presentes
+
+Temps estime : 5-10 minutes
+
+
+SI VOUS AVEZ DEJA MIGRE ET PERDU VOS DONNEES
+---------------------------------------------
+Pas de panique ! Vos donnees sont probablement sauvegardees.
+
+1. Cherchez un dossier nomme : sauvegarde_migration_XXXXXXXX
+2. Executez le script : restaurer-donnees-urgence.bat
+3. Vos donnees seront automatiquement restaurees
+
+Si vous ne trouvez pas de sauvegarde, contactez-nous immediatement.
+
+
+FICHIERS FOURNIS
+----------------
+Dans le package de mise a jour, vous trouverez :
+
+- migration-guidee-FIXE.bat
+  Script de migration corrige (UTILISER CELUI-CI)
+
+- diagnostic-migration-donnees.bat
+  Pour identifier les problemes
+
+- restaurer-donnees-urgence.bat
+  Pour restaurer en cas d'urgence
+
+- LIRE_MOI_MIGRATION_DONNEES.txt
+  Instructions detaillees
+
+
+TELECHARGEMENT
+--------------
+Lien : [VOTRE_LIEN_ICI]
+
+Ou contactez-nous pour recevoir les fichiers par email.
+
+
+SUPPORT
+-------
+Si vous rencontrez des difficultes :
+
+1. Executez : diagnostic-migration-donnees.bat
+2. Envoyez-nous les resultats
+3. Nous vous aiderons a resoudre le probleme
+
+Email : support@logesco.com
+Telephone : [VOTRE_NUMERO]
+Disponibilite : Lundi-Vendredi 9h-18h
+
+
+IMPORTANT
+---------
+- N'utilisez PAS l'ancien script migration-guidee.bat
+- Utilisez UNIQUEMENT migration-guidee-FIXE.bat
+- Gardez vos sauvegardes pendant au moins 1 semaine
+- Verifiez vos donnees apres la migration
+
+
+Nous nous excusons pour ce desagrement et vous remercions de votre 
+comprehension.
+
+Notre equipe reste a votre disposition pour toute question.
+
+Cordialement,
+L'equipe LOGESCO
+
+================================================================
+
+P.S. : Ce probleme a ete completement resolu. Les futures versions 
+n'auront plus ce probleme.

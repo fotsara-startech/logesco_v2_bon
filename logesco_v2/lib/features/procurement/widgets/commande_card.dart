@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/procurement_models.dart';
 
 class CommandeCard extends StatelessWidget {
@@ -61,7 +62,7 @@ class CommandeCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      commande.fournisseur?.nom ?? 'Fournisseur inconnu',
+                      commande.fournisseur?.nom ?? 'procurement_product_unknown'.tr,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
@@ -86,7 +87,7 @@ class CommandeCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildProgressInfo(
-                        'Réception',
+                        'procurement_global_reception'.tr,
                         commande.statistiques!.pourcentageReception,
                         '${commande.statistiques!.totalQuantiteRecue}/${commande.statistiques!.totalQuantiteCommandee}',
                       ),
@@ -94,7 +95,7 @@ class CommandeCard extends StatelessWidget {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildProgressInfo(
-                        'Produits',
+                        'procurement_products'.tr,
                         commande.statistiques!.nombreProduits > 0 ? (commande.statistiques!.produitsCompletsRecus * 100 / commande.statistiques!.nombreProduits).round() : 0,
                         '${commande.statistiques!.produitsCompletsRecus}/${commande.statistiques!.nombreProduits}',
                       ),
@@ -123,7 +124,7 @@ class CommandeCard extends StatelessWidget {
                     IconButton(
                       onPressed: onExportPdf,
                       icon: const Icon(Icons.picture_as_pdf),
-                      tooltip: 'Exporter en PDF',
+                      tooltip: 'procurement_export_pdf_tooltip'.tr,
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.purple.withOpacity(0.1),
                         foregroundColor: Colors.purple,
@@ -136,7 +137,7 @@ class CommandeCard extends StatelessWidget {
                     IconButton(
                       onPressed: onReceive,
                       icon: const Icon(Icons.inventory),
-                      tooltip: 'Réceptionner',
+                      tooltip: 'procurement_receive_tooltip'.tr,
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.green.withOpacity(0.1),
                         foregroundColor: Colors.green,
@@ -149,7 +150,7 @@ class CommandeCard extends StatelessWidget {
                     IconButton(
                       onPressed: onCancel,
                       icon: const Icon(Icons.cancel),
-                      tooltip: 'Annuler',
+                      tooltip: 'procurement_cancel_tooltip'.tr,
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.red.withOpacity(0.1),
                         foregroundColor: Colors.red,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/activity_report.dart';
 
 /// Widget pour afficher l'analyse des ventes
@@ -28,34 +29,34 @@ class SalesAnalysisWidget extends StatelessWidget {
                   size: 28,
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Analyse des Ventes',
-                  style: TextStyle(
+                Text(
+                  'reports_sales_title'.tr,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Résumé des ventes
             _buildSalesSummary(),
-            
+
             const SizedBox(height: 20),
-            
+
             // Ventes par catégorie
             if (salesData.salesByCategory.isNotEmpty) ...[
-              _buildSectionTitle('Ventes par Catégorie'),
+              _buildSectionTitle('reports_sales_by_category'.tr),
               const SizedBox(height: 12),
               _buildCategoriesTable(),
               const SizedBox(height: 20),
             ],
-            
+
             // Produits les plus vendus
             if (salesData.topProducts.isNotEmpty) ...[
-              _buildSectionTitle('Produits les Plus Vendus'),
+              _buildSectionTitle('reports_sales_top_products'.tr),
               const SizedBox(height: 12),
               _buildTopProductsList(),
             ],
@@ -78,7 +79,7 @@ class SalesAnalysisWidget extends StatelessWidget {
         children: [
           Expanded(
             child: _buildSummaryItem(
-              'Nombre de Ventes',
+              'reports_sales_count'.tr,
               salesData.totalSales.toString(),
               Icons.receipt_long,
               Colors.blue.shade600,
@@ -91,7 +92,7 @@ class SalesAnalysisWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildSummaryItem(
-              'Chiffre d\'Affaires',
+              'reports_sales_revenue'.tr,
               salesData.totalRevenueFormatted,
               Icons.attach_money,
               Colors.green.shade600,
@@ -104,7 +105,7 @@ class SalesAnalysisWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildSummaryItem(
-              'Vente Moyenne',
+              'reports_sales_average'.tr,
               salesData.averageSaleAmountFormatted,
               Icons.trending_up,
               Colors.orange.shade600,
@@ -170,28 +171,28 @@ class SalesAnalysisWidget extends StatelessWidget {
               color: Colors.grey.shade100,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Expanded(
                   flex: 3,
                   child: Text(
-                    'Catégorie',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    'reports_sales_category_header'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 Expanded(
                   flex: 2,
                   child: Text(
-                    'Montant',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    'reports_sales_amount_header'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.right,
                   ),
                 ),
                 Expanded(
                   flex: 1,
                   child: Text(
-                    '%',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    'reports_sales_percent_header'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.right,
                   ),
                 ),
@@ -200,40 +201,40 @@ class SalesAnalysisWidget extends StatelessWidget {
           ),
           // Données
           ...salesData.salesByCategory.take(5).map((category) => Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade200),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(category.categoryName),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    category.amountFormatted,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade200),
                   ),
                 ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    category.percentageFormatted,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.blue.shade600,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(category.categoryName),
                     ),
-                  ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        category.amountFormatted,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        category.percentageFormatted,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.blue.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
@@ -242,75 +243,78 @@ class SalesAnalysisWidget extends StatelessWidget {
   /// Liste des produits les plus vendus
   Widget _buildTopProductsList() {
     return Column(
-      children: salesData.topProducts.take(5).map((product) => Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.blue.shade100,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.inventory_2,
-                color: Colors.blue.shade600,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Quantité vendue: ${product.quantitySold}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  product.revenueFormatted,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade600,
-                    fontSize: 14,
-                  ),
+      children: salesData.topProducts
+          .take(5)
+          .map((product) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
-                Text(
-                  'CA généré',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey.shade600,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        Icons.inventory_2,
+                        color: Colors.blue.shade600,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.productName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'reports_sales_quantity_sold'.trParams({'quantity': product.quantitySold.toString()}),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          product.revenueFormatted,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          'reports_sales_revenue_generated'.tr,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
-        ),
-      )).toList(),
+              ))
+          .toList(),
     );
   }
 }

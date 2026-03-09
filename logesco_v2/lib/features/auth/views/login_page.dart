@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Obx(() => LoadingOverlay(
               isLoading: _authController.isLoading.value,
-              loadingMessage: 'Connexion en cours...',
+              loadingMessage: 'auth_logging_in'.tr,
               child: _buildLoginForm(context),
             )),
       ),
@@ -72,14 +72,14 @@ class _LoginPageState extends State<LoginPage> {
                 // Champ nom d'utilisateur
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom d\'utilisateur',
-                    prefixIcon: Icon(Icons.person),
+                  decoration: InputDecoration(
+                    labelText: 'auth_username_label'.tr,
+                    prefixIcon: const Icon(Icons.person),
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Veuillez saisir votre nom d\'utilisateur';
+                      return 'auth_username_required'.tr;
                     }
                     return null;
                   },
@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Mot de passe',
+                    labelText: 'auth_password_label'.tr,
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                   onFieldSubmitted: (_) => _handleLogin(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez saisir votre mot de passe';
+                      return 'auth_password_required'.tr;
                     }
                     return null;
                   },
@@ -152,11 +152,11 @@ class _LoginPageState extends State<LoginPage> {
                 // Bouton de connexion
                 ElevatedButton(
                   onPressed: _handleLogin,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      'Se connecter',
-                      style: TextStyle(fontSize: 16),
+                      'auth_login_button'.tr,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
                 ),
@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Connexion à votre compte',
+          'auth_login_subtitle'.tr,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
@@ -228,7 +228,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildVersionInfo() {
     return Center(
       child: Text(
-        'Version 2.0.0',
+        'auth_version'.tr + ' 2.0.0',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).textTheme.bodySmall?.color,
             ),

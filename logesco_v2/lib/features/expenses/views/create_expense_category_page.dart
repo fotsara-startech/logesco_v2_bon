@@ -18,14 +18,14 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
   String? _selectedColor;
 
   final List<Map<String, dynamic>> _colors = [
-    {'name': 'Bleu', 'value': '#2196F3', 'color': Colors.blue},
-    {'name': 'Vert', 'value': '#4CAF50', 'color': Colors.green},
-    {'name': 'Orange', 'value': '#FF9800', 'color': Colors.orange},
-    {'name': 'Rouge', 'value': '#F44336', 'color': Colors.red},
-    {'name': 'Violet', 'value': '#9C27B0', 'color': Colors.purple},
-    {'name': 'Teal', 'value': '#009688', 'color': Colors.teal},
-    {'name': 'Indigo', 'value': '#3F51B5', 'color': Colors.indigo},
-    {'name': 'Rose', 'value': '#E91E63', 'color': Colors.pink},
+    {'name': 'expenses_color_blue'.tr, 'value': '#2196F3', 'color': Colors.blue},
+    {'name': 'expenses_color_green'.tr, 'value': '#4CAF50', 'color': Colors.green},
+    {'name': 'expenses_color_orange'.tr, 'value': '#FF9800', 'color': Colors.orange},
+    {'name': 'expenses_color_red'.tr, 'value': '#F44336', 'color': Colors.red},
+    {'name': 'expenses_color_purple'.tr, 'value': '#9C27B0', 'color': Colors.purple},
+    {'name': 'expenses_color_teal'.tr, 'value': '#009688', 'color': Colors.teal},
+    {'name': 'expenses_color_indigo'.tr, 'value': '#3F51B5', 'color': Colors.indigo},
+    {'name': 'expenses_color_pink'.tr, 'value': '#E91E63', 'color': Colors.pink},
   ];
 
   @override
@@ -41,7 +41,7 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nouvelle Catégorie de Dépense'),
+        title: Text('expenses_category_create_title'.tr),
         elevation: 0,
       ),
       body: Form(
@@ -52,16 +52,16 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Titre de la page
-              const Text(
-                'Créer une catégorie de dépense',
-                style: TextStyle(
+              Text(
+                'expenses_category_create_subtitle'.tr,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Organisez vos dépenses en créant des catégories personnalisées',
+                'expenses_category_create_description'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade600,
@@ -72,18 +72,18 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
               // Nom de la catégorie
               TextFormField(
                 controller: _nomController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom de la catégorie *',
-                  hintText: 'Ex: Fournitures de bureau, Transport, etc.',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category),
+                decoration: InputDecoration(
+                  labelText: '${'expenses_category_name'.tr} *',
+                  hintText: 'expenses_category_name_hint'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.category),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Le nom de la catégorie est obligatoire';
+                    return 'expenses_category_name_required'.tr;
                   }
                   if (value.trim().length < 2) {
-                    return 'Le nom doit contenir au moins 2 caractères';
+                    return 'expenses_category_name_min_length'.tr;
                   }
                   return null;
                 },
@@ -93,9 +93,9 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
               // Description (optionnelle)
 
               // Sélection de couleur
-              const Text(
-                'Couleur de la catégorie',
-                style: TextStyle(
+              Text(
+                'expenses_category_color'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -142,7 +142,7 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Get.back(),
-                      child: const Text('Annuler'),
+                      child: Text('cancel'.tr),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -158,7 +158,7 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
                                 )
                               : const Icon(Icons.save),
                           label: Text(
-                            controller.isCreating.value ? 'Création...' : 'Créer la catégorie',
+                            controller.isCreating.value ? 'expenses_category_creating'.tr : 'expenses_category_create_button'.tr,
                           ),
                         )),
                   ),
@@ -184,8 +184,6 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
     );
 
     final success = await controller.createCategory(request);
-
-   
 
     if (success) {
       Get.back(); // Retourner à la page précédente

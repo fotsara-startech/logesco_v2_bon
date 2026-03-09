@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/subscription_status.dart';
 import '../models/license_data.dart';
 import 'license_activation_page.dart';
@@ -43,7 +44,7 @@ class SubscriptionBlockedPage extends StatelessWidget {
 
               // Titre principal
               Text(
-                isInGracePeriod ? 'Période de grâce active' : 'Abonnement expiré',
+                isInGracePeriod ? 'subscription_grace_period_active'.tr : 'subscription_expired_title'.tr,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.red.shade700,
@@ -91,7 +92,7 @@ class SubscriptionBlockedPage extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Besoin d\'aide ? Contactez notre support technique pour toute question concernant votre abonnement.',
+                        'subscription_contact_support'.tr,
                         style: TextStyle(
                           color: Colors.blue.shade700,
                           fontSize: 14,
@@ -121,28 +122,28 @@ class SubscriptionBlockedPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Détails de l\'abonnement',
+            'subscription_details'.tr,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
-            'Type',
+            'subscription_type'.tr,
             _getSubscriptionTypeLabel(status!.type),
             Icons.card_membership,
           ),
           const SizedBox(height: 12),
           if (status!.expirationDate != null)
             _buildDetailRow(
-              'Date d\'expiration',
+              'subscription_expiration_date'.tr,
               _formatDate(status!.expirationDate!),
               Icons.calendar_today,
             ),
           const SizedBox(height: 12),
           _buildDetailRow(
-            'Statut',
-            isInGracePeriod ? 'Période de grâce' : 'Expiré',
+            'status'.tr,
+            isInGracePeriod ? 'subscription_grace_period'.tr : 'subscription_expired'.tr,
             Icons.info_outline,
             valueColor: Colors.red,
           ),
@@ -192,7 +193,7 @@ class SubscriptionBlockedPage extends StatelessWidget {
               );
             },
             icon: const Icon(Icons.vpn_key),
-            label: const Text('Activer une licence'),
+            label: Text('subscription_activate_license'.tr),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
@@ -217,7 +218,7 @@ class SubscriptionBlockedPage extends StatelessWidget {
                 Navigator.of(context).pop();
               },
               icon: const Icon(Icons.visibility),
-              label: const Text('Continuer en mode consultation'),
+              label: Text('subscription_continue_read_only'.tr),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red.shade600,
                 side: BorderSide(color: Colors.red.shade600),
@@ -231,22 +232,22 @@ class SubscriptionBlockedPage extends StatelessWidget {
 
   String _getMainMessage() {
     if (isInGracePeriod) {
-      return 'Votre abonnement a expiré mais vous bénéficiez d\'une période de grâce de 3 jours. Vous pouvez continuer à consulter vos données mais les modifications sont limitées.';
+      return 'subscription_grace_period_message'.tr;
     } else {
-      return 'Votre abonnement a expiré. Pour continuer à utiliser l\'application, veuillez activer une nouvelle licence.';
+      return 'subscription_expired_message'.tr + ' ' + 'subscription_activate_to_continue'.tr;
     }
   }
 
   String _getSubscriptionTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
-        return 'Période d\'essai';
+        return 'subscription_type_trial'.tr;
       case SubscriptionType.monthly:
-        return 'Mensuel';
+        return 'subscription_type_monthly'.tr;
       case SubscriptionType.annual:
-        return 'Annuel';
+        return 'subscription_type_annual'.tr;
       case SubscriptionType.lifetime:
-        return 'Vie entière';
+        return 'subscription_type_lifetime'.tr;
     }
   }
 

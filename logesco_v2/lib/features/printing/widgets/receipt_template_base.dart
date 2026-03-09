@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
+import '../utils/receipt_translations.dart';
 
 /// Widget de base pour tous les templates de reçu
 abstract class ReceiptTemplateBase extends StatelessWidget {
@@ -14,6 +15,11 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
     required this.template,
     this.showPreview = false,
   }) : super(key: key);
+
+  /// Obtient une traduction pour la langue du reçu
+  String t(String key) {
+    return ReceiptTranslations.get(key, language: receipt.language);
+  }
 
   /// Construit l'en-tête avec les informations de l'entreprise
   Widget buildCompanyHeader(BuildContext context) {
@@ -63,10 +69,10 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (company.phone?.isNotEmpty == true) ...[
-                  Text('Tél: ${company.phone}', style: subtitleStyle),
+                  Text('${t('phone')}: ${company.phone}', style: subtitleStyle),
                   if (company.email?.isNotEmpty == true) Text(' | ', style: subtitleStyle),
                 ],
-                if (company.email?.isNotEmpty == true) Text('Email: ${company.email}', style: subtitleStyle),
+                if (company.email?.isNotEmpty == true) Text('${t('email')}: ${company.email}', style: subtitleStyle),
               ],
             ),
           ),
@@ -76,7 +82,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'NUI RCCM: ${company.nuiRccm}',
+              '${t('nuiRccm')}: ${company.nuiRccm}',
               style: subtitleStyle,
               textAlign: TextAlign.center,
             ),
@@ -103,7 +109,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         // Titre du reçu
         Center(
           child: Text(
-            'TAX INVOICE',
+            t('invoice'),
             style: headerStyle,
           ),
         ),
@@ -114,7 +120,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                receipt.reprintIndicator,
+                t('reprint'),
                 style: TextStyle(
                   fontSize: template.fontSize,
                   fontWeight: FontWeight.bold,
@@ -130,7 +136,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('N° Vente:', style: textStyle),
+            Text('${t('saleNumber')}:', style: textStyle),
             Text(receipt.saleNumber, style: textStyle),
           ],
         ),
@@ -139,7 +145,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Date:', style: textStyle),
+            Text('${t('date')}:', style: textStyle),
             Text(
               '${receipt.saleDate.day.toString().padLeft(2, '0')}/'
               '${receipt.saleDate.month.toString().padLeft(2, '0')}/'
@@ -157,7 +163,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Client:', style: textStyle),
+              Text('${t('customer')}:', style: textStyle),
               Flexible(
                 child: Text(
                   receipt.customer!.nom,
@@ -173,7 +179,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Mode paiement:', style: textStyle),
+            Text('${t('paymentMethod')}:', style: textStyle),
             Text(receipt.paymentMethod, style: textStyle),
           ],
         ),
@@ -207,10 +213,10 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('Article', style: headerStyle)),
-              Expanded(flex: 1, child: Text('Qté', style: headerStyle, textAlign: TextAlign.center)),
-              Expanded(flex: 2, child: Text('P.U.', style: headerStyle, textAlign: TextAlign.right)),
-              Expanded(flex: 2, child: Text('Total', style: headerStyle, textAlign: TextAlign.right)),
+              Expanded(flex: 3, child: Text(t('article'), style: headerStyle)),
+              Expanded(flex: 1, child: Text(t('quantity'), style: headerStyle, textAlign: TextAlign.center)),
+              Expanded(flex: 2, child: Text(t('unitPrice'), style: headerStyle, textAlign: TextAlign.right)),
+              Expanded(flex: 2, child: Text(t('total'), style: headerStyle, textAlign: TextAlign.right)),
             ],
           ),
         ),
@@ -230,7 +236,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                             Text(item.productName, style: textStyle),
                             if (item.productReference.isNotEmpty)
                               Text(
-                                'Réf: ${item.productReference}',
+                                '${t('reference')}: ${item.productReference}',
                                 style: TextStyle(
                                   fontSize: template.fontSize - 1,
                                   color: Colors.grey[600],
@@ -301,7 +307,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Sous-total:', style: textStyle),
+            Text('${t('subtotal')}:', style: textStyle),
             Text('${receipt.subtotal.toStringAsFixed(0)} FCFA', style: textStyle),
           ],
         ),
@@ -312,7 +318,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Remise:', style: textStyle),
+              Text('${t('discount')}:', style: textStyle),
               Text('-${receipt.discountAmount.toStringAsFixed(0)} FCFA', style: textStyle),
             ],
           ),
@@ -332,7 +338,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('TOTAL:', style: boldStyle),
+              Text('${t('totalAmount')}:', style: boldStyle),
               Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
             ],
           ),
@@ -344,7 +350,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Paye:', style: textStyle),
+            Text('${t('paid')}:', style: textStyle),
             Text('${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: textStyle),
           ],
         ),
@@ -355,7 +361,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Monnaie:', style: textStyle),
+              Text('${t('change')}:', style: textStyle),
               Text(
                 '${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)} FCFA',
                 style: TextStyle(
@@ -374,7 +380,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Reste:', style: textStyle),
+              Text('${t('remaining')}:', style: textStyle),
               Text(
                 '${receipt.remainingAmount.toStringAsFixed(0)} FCFA',
                 style: TextStyle(
@@ -404,7 +410,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         // Message de remerciement
         Center(
           child: Text(
-            'Merci pour votre confiance !',
+            t('thankYou'),
             style: TextStyle(
               fontSize: template.fontSize,
               fontWeight: FontWeight.bold,
@@ -419,7 +425,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         if (receipt.isReprint && receipt.lastReprintDate != null) ...[
           Center(
             child: Text(
-              'Réimprimé le ${receipt.lastReprintDate!.day.toString().padLeft(2, '0')}/'
+              '${t('reprintedOn')} ${receipt.lastReprintDate!.day.toString().padLeft(2, '0')}/'
               '${receipt.lastReprintDate!.month.toString().padLeft(2, '0')}/'
               '${receipt.lastReprintDate!.year} à '
               '${receipt.lastReprintDate!.hour.toString().padLeft(2, '0')}:'
@@ -430,7 +436,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           if (receipt.reprintBy?.isNotEmpty == true)
             Center(
               child: Text(
-                'par ${receipt.reprintBy}',
+                '${t('by')} ${receipt.reprintBy}',
                 style: textStyle,
               ),
             ),

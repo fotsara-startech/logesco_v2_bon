@@ -23,7 +23,7 @@ class ModernDashboardPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LOGESCO v2'),
+        title: Text('app_name'.tr),
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -73,7 +73,7 @@ class ModernDashboardPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Gestion commerciale moderne',
+                        'dashboard_subtitle'.tr,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.8),
                           fontSize: 14,
@@ -88,49 +88,49 @@ class ModernDashboardPage extends StatelessWidget {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _buildMenuSection('VENTES & CLIENTS', [
-                    if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.point_of_sale, 'Ventes', Colors.green, () => Get.toNamed(AppRoutes.sales)),
-                    if (_hasPermission('customers', 'READ')) _buildMenuItem(Icons.people, 'Clients', Colors.blue, () => Get.toNamed(AppRoutes.customers)),
-                    if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.receipt_long, 'Factures', Colors.orange, () {}),
+                  _buildMenuSection('menu_sales_customers'.tr, [
+                    if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.point_of_sale, 'sales_title'.tr, Colors.green, () => Get.toNamed(AppRoutes.sales)),
+                    if (_hasPermission('customers', 'READ')) _buildMenuItem(Icons.people, 'customers_title'.tr, Colors.blue, () => Get.toNamed(AppRoutes.customers)),
+                    // if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.receipt_long, 'receipts_title'.tr, Colors.orange, () {}),
                   ]),
-                  _buildMenuSection('STOCK & PRODUITS', [
-                    if (_hasPermission('products', 'READ')) _buildMenuItem(Icons.inventory_2, 'Produits', Colors.purple, () => Get.toNamed(AppRoutes.products)),
-                    if (_hasPermission('products', 'READ')) _buildMenuItem(Icons.category, 'Catégories', Colors.indigo, () => Get.toNamed(AppRoutes.categories)),
-                    if (_hasPermission('inventory', 'READ')) _buildMenuItem(Icons.warehouse, 'Stock', Colors.teal, () => Get.toNamed(AppRoutes.inventory)),
-                    if (_hasPermission('stock_inventory', 'READ')) _buildMenuItem(Icons.assignment, 'Inventaire', Colors.cyan, () => Get.toNamed(AppRoutes.stockInventory)),
+                  _buildMenuSection('menu_stock_products'.tr, [
+                    if (_hasPermission('products', 'READ')) _buildMenuItem(Icons.inventory_2, 'products_title'.tr, Colors.purple, () => Get.toNamed(AppRoutes.products)),
+                    if (_hasPermission('products', 'READ')) _buildMenuItem(Icons.category, 'categories_title'.tr, Colors.indigo, () => Get.toNamed(AppRoutes.categories)),
+                    if (_hasPermission('inventory', 'READ')) _buildMenuItem(Icons.warehouse, 'inventory_stock'.tr, Colors.teal, () => Get.toNamed(AppRoutes.inventory)),
+                    if (_hasPermission('stock_inventory', 'READ')) _buildMenuItem(Icons.assignment, 'inventory_title'.tr, Colors.cyan, () => Get.toNamed(AppRoutes.stockInventory)),
                   ]),
-                  _buildMenuSection('APPROVISIONNEMENT', [
-                    if (_hasPermission('suppliers', 'READ')) _buildMenuItem(Icons.local_shipping, 'Fournisseurs', Colors.brown, () => Get.toNamed(AppRoutes.suppliers)),
-                    if (_hasPermission('procurement', 'READ')) _buildMenuItem(Icons.shopping_cart, 'Commandes', Colors.deepOrange, () => Get.toNamed(AppRoutes.procurement)),
-                    // if (_hasPermission('procurement', 'READ')) _buildMenuItem(Icons.input, 'Réceptions', Colors.green.shade700, () {}),
+                  _buildMenuSection('menu_procurement'.tr, [
+                    if (_hasPermission('suppliers', 'READ')) _buildMenuItem(Icons.local_shipping, 'suppliers_title'.tr, Colors.brown, () => Get.toNamed(AppRoutes.suppliers)),
+                    if (_hasPermission('procurement', 'READ')) _buildMenuItem(Icons.shopping_cart, 'menu_orders'.tr, Colors.deepOrange, () => Get.toNamed(AppRoutes.procurement)),
+                    // if (_hasPermission('procurement', 'READ')) _buildMenuItem(Icons.input, 'menu_receptions'.tr, Colors.green.shade700, () {}),
                   ]),
-                  _buildMenuSection('GESTION FINANCIÈRE', [
-                    if (_hasPermission('accounting', 'READ')) _buildMenuItem(Icons.analytics, 'Comptabilité', Colors.green, () => Get.toNamed(AppRoutes.accounting)),
-                    if (_hasPermission('cash_registers', 'READ')) _buildMenuItem(Icons.account_balance, 'Caisses', Colors.amber, () => Get.toNamed(AppRoutes.cashRegisters)),
-                    _buildMenuItem(Icons.history, 'Sessions de Caisse', Colors.blue, () => Get.toNamed(AppRoutes.cashSessionHistory)),
+                  _buildMenuSection('menu_financial'.tr, [
+                    if (_hasPermission('accounting', 'READ')) _buildMenuItem(Icons.analytics, 'menu_accounting'.tr, Colors.green, () => Get.toNamed(AppRoutes.accounting)),
+                    if (_hasPermission('cash_registers', 'READ')) _buildMenuItem(Icons.account_balance, 'menu_cash_registers'.tr, Colors.amber, () => Get.toNamed(AppRoutes.cashRegisters)),
+                    _buildMenuItem(Icons.history, 'menu_cash_sessions'.tr, Colors.blue, () => Get.toNamed(AppRoutes.cashSessionHistory)),
                   ]),
-                  _buildMenuSection('DÉPENSES', [
-                    if (_hasPermission('expenses', 'READ')) _buildMenuItem(Icons.category, 'Catégories', Colors.teal, () => Get.toNamed(AppRoutes.expenseCategories)),
-                    if (_hasPermission('financial_movements', 'READ')) _buildMenuItem(Icons.account_balance_wallet, 'Mouvements', Colors.pink, () => Get.toNamed(AppRoutes.financialMovements)),
+                  _buildMenuSection('menu_expenses'.tr, [
+                    if (_hasPermission('expenses', 'READ')) _buildMenuItem(Icons.category, 'categories_title'.tr, Colors.teal, () => Get.toNamed(AppRoutes.expenseCategories)),
+                    if (_hasPermission('financial_movements', 'READ')) _buildMenuItem(Icons.account_balance_wallet, 'menu_movements'.tr, Colors.pink, () => Get.toNamed(AppRoutes.financialMovements)),
                   ]),
-                  _buildMenuSection('RAPPORTS', [
-                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.assessment, 'Bilan Comptable', Colors.green, () => Get.toNamed(AppRoutes.activityReport)),
-                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.discount, 'Rapports de Remises', Colors.deepOrange, () => Get.toNamed(AppRoutes.discountReports)),
-                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.bar_chart, 'Analytics Produits', Colors.blue, () => Get.toNamed(AppRoutes.productAnalytics)),
+                  _buildMenuSection('menu_reports'.tr, [
+                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.assessment, 'menu_balance_sheet'.tr, Colors.green, () => Get.toNamed(AppRoutes.activityReport)),
+                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.discount, 'menu_discount_reports'.tr, Colors.deepOrange, () => Get.toNamed(AppRoutes.discountReports)),
+                    if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.bar_chart, 'menu_product_analytics'.tr, Colors.blue, () => Get.toNamed(AppRoutes.productAnalytics)),
                   ]),
-                  _buildMenuSection('ADMINISTRATION', [
-                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'Utilisateurs', Colors.grey, () => Get.toNamed(AppRoutes.users)),
-                    if (_hasPermission('users', 'ROLES')) _buildMenuItem(Icons.admin_panel_settings, 'Rôles', Colors.indigo, () => Get.toNamed(AppRoutes.roles)),
-                    if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'Entreprise', Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
-                    if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'Impressions', Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
-                    _buildMenuItem(Icons.card_membership, 'Abonnement', Colors.deepOrange, () {
+                  _buildMenuSection('menu_administration'.tr, [
+                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'users_title'.tr, Colors.grey, () => Get.toNamed(AppRoutes.users)),
+                    if (_hasPermission('users', 'ROLES')) _buildMenuItem(Icons.admin_panel_settings, 'roles_title'.tr, Colors.indigo, () => Get.toNamed(AppRoutes.roles)),
+                    if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'menu_company'.tr, Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
+                    // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
+                    _buildMenuItem(Icons.card_membership, 'menu_subscription'.tr, Colors.deepOrange, () {
                       Get.to(() => const SubscriptionStatusPage());
                     }),
                   ]),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text('Déconnexion'),
+                    title: Text('auth_logout_button'.tr),
                     onTap: () => _showLogoutDialog(context),
                   ),
                 ],
@@ -223,7 +223,7 @@ class ModernDashboardPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.toNamed(AppRoutes.createSale),
         icon: const Icon(Icons.add),
-        label: const Text('Nouvelle vente'),
+        label: Text('dashboard_new_sale'.tr),
         backgroundColor: const Color(0xFF4CAF50),
         elevation: 8,
       ),
@@ -398,9 +398,9 @@ class ModernDashboardPage extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dashboard',
-                      style: TextStyle(
+                    Text(
+                      'dashboard_title'.tr,
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -408,7 +408,7 @@ class ModernDashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Planifiez, priorisez et accomplissez vos tâches avec facilité.',
+                      'dashboard_welcome_message'.tr,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withOpacity(0.8),
@@ -419,24 +419,24 @@ class ModernDashboardPage extends StatelessWidget {
                 Row(
                   children: [
                     _buildHeaderButton(
-                      '+ Nouvelle Vente',
+                      '+ ${'dashboard_new_sale'.tr}',
                       Colors.green,
                       () => Get.toNamed(AppRoutes.createSale),
                     ),
-                    const SizedBox(width: 12),
-                    _buildHeaderButton(
-                      'Importer Données',
-                      Colors.white.withOpacity(0.2),
-                      () {},
-                      textColor: Colors.white,
-                    ),
+                    // const SizedBox(width: 12),
+                    // _buildHeaderButton(
+                    //   'Importer Données',
+                    //   Colors.white.withOpacity(0.2),
+                    //   () {},
+                    //   textColor: Colors.white,
+                    // ),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 20),
             Text(
-              'Bonjour, ${user?.nomUtilisateur ?? 'Utilisateur'} !',
+              'dashboard_welcome'.tr + ', ${user?.nomUtilisateur ?? 'Utilisateur'} !',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white.withOpacity(0.9),
@@ -474,9 +474,9 @@ class ModernDashboardPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Actions rapides',
-          style: TextStyle(
+        Text(
+          'dashboard_quick_actions'.tr,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1565C0),
@@ -491,42 +491,42 @@ class ModernDashboardPage extends StatelessWidget {
               if (_hasPermission('sales', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.point_of_sale,
-                  'Nouvelle\nVente',
+                  'sales_new'.tr,
                   Colors.green,
                   () => Get.toNamed(AppRoutes.createSale),
                 ),
               if (_hasPermission('productS', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.add_box,
-                  'Nouveau\nProduit',
+                  'dashboard_new_product'.tr,
                   Colors.blue,
                   () => Get.toNamed(AppRoutes.createProduct),
                 ),
               if (_hasPermission('customerS', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.person_add,
-                  'Nouveau\nClient',
+                  'dashboard_new_customer'.tr,
                   Colors.orange,
                   () => Get.toNamed(AppRoutes.createCustomer),
                 ),
               if (_hasPermission('procurement', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.shopping_cart,
-                  'Nouvelle\nCommande',
+                  'dashboard_new_order'.tr,
                   Colors.purple,
                   () => Get.toNamed(AppRoutes.createProcurement),
                 ),
               if (_hasPermission('financial_movements', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.account_balance_wallet,
-                  'Mouvement\nFinancier',
+                  'dashboard_financial_movement'.tr,
                   Colors.pink,
                   () => Get.toNamed(AppRoutes.createFinancialMovement),
                 ),
               if (_hasPermission('accounting', 'READ'))
                 _buildQuickActionCard(
                   Icons.analytics,
-                  'Comptabilité\n& Rentabilité',
+                  'dashboard_accounting'.tr,
                   Colors.green,
                   () => Get.toNamed(AppRoutes.accounting),
                 ),
@@ -588,9 +588,9 @@ class ModernDashboardPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Vue d\'ensemble',
-          style: TextStyle(
+        Text(
+          'dashboard_overview'.tr,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1565C0),
@@ -610,9 +610,9 @@ class ModernDashboardPage extends StatelessWidget {
             mainAxisSpacing: 16,
             children: [
               ModernStatCard(
-                title: 'Total Produits',
+                title: 'dashboard_total_products'.tr,
                 value: '${stats['totalProducts'] ?? 0}',
-                subtitle: 'En stock',
+                subtitle: 'dashboard_in_stock'.tr,
                 icon: Icons.inventory_2,
                 color: const Color(0xFF4CAF50),
                 isLoading: isLoading,
@@ -623,18 +623,18 @@ class ModernDashboardPage extends StatelessWidget {
                 ),
               ),
               ModernStatCard(
-                title: 'Ventes Terminées',
+                title: 'dashboard_completed_sales'.tr,
                 value: '${stats['totalSales'] ?? 0}',
-                subtitle: 'Ce mois',
+                subtitle: 'dashboard_this_month'.tr,
                 icon: Icons.trending_up,
                 color: const Color(0xFF2196F3),
                 isLoading: isLoading,
                 onTap: () => Get.toNamed(AppRoutes.sales),
               ),
               ModernStatCard(
-                title: 'Ventes en Cours',
+                title: 'dashboard_pending_sales'.tr,
                 value: '${stats['pendingOrders'] ?? 0}',
-                subtitle: 'À traiter',
+                subtitle: 'dashboard_to_process'.tr,
                 icon: Icons.pending_actions,
                 color: const Color(0xFFFF9800),
                 isLoading: isLoading,
@@ -651,9 +651,9 @@ class ModernDashboardPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Statistiques de ventes',
-          style: TextStyle(
+        Text(
+          'dashboard_sales_stats'.tr,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1565C0),
@@ -668,7 +668,7 @@ class ModernDashboardPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ModernStatCard(
-                  title: 'Ventes Aujourd\'hui',
+                  title: 'dashboard_today_sales_count'.tr,
                   value: '${stats['todaySales'] ?? 0}',
                   subtitle: '€${(stats['todayRevenue'] ?? 0.0).toStringAsFixed(2)}',
                   icon: Icons.today,
@@ -679,7 +679,7 @@ class ModernDashboardPage extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: ModernStatCard(
-                  title: 'Ventes Cette Semaine',
+                  title: 'dashboard_week_sales'.tr,
                   value: '${stats['weekSales'] ?? 0}',
                   subtitle: '€${(stats['weekRevenue'] ?? 0.0).toStringAsFixed(2)}',
                   icon: Icons.date_range,
@@ -690,7 +690,7 @@ class ModernDashboardPage extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: ModernStatCard(
-                  title: 'Ventes Ce Mois',
+                  title: 'dashboard_month_sales'.tr,
                   value: '${stats['monthSales'] ?? 0}',
                   subtitle: '€${(stats['monthRevenue'] ?? 0.0).toStringAsFixed(2)}',
                   icon: Icons.calendar_month,
@@ -710,12 +710,12 @@ class ModernDashboardPage extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+        title: Text('auth_logout_button'.tr),
+        content: Text('auth_logout_confirm'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -726,7 +726,7 @@ class ModernDashboardPage extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Déconnexion'),
+            child: Text('auth_logout_button'.tr),
           ),
         ],
       ),

@@ -22,15 +22,15 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
   String? _error;
   String _selectedPeriod = 'all';
 
-  final Map<String, String> _periods = {
-    '7days': '7 derniers jours',
-    '30days': '30 derniers jours',
-    '90days': '90 derniers jours',
-    'thisMonth': 'Ce mois',
-    'lastMonth': 'Mois dernier',
-    'thisYear': 'Cette année',
-    'all': 'Toutes les données',
-  };
+  Map<String, String> get _periods => {
+        '7days': 'analytics_7_days'.tr,
+        '30days': 'analytics_30_days'.tr,
+        '90days': 'analytics_90_days'.tr,
+        'thisMonth': 'analytics_this_month'.tr,
+        'lastMonth': 'analytics_last_month'.tr,
+        'thisYear': 'analytics_this_year'.tr,
+        'all': 'analytics_all_data'.tr,
+      };
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analyse des Ventes par Produit'),
+        title: Text('analytics_title'.tr),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         actions: [
@@ -99,9 +99,9 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
       ),
       child: Row(
         children: [
-          const Text(
-            'Période: ',
-            style: TextStyle(
+          Text(
+            'analytics_period'.tr + ': ',
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 16,
             ),
@@ -137,7 +137,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
 
   Widget _buildContent() {
     if (_isLoading) {
-      return const LoadingWidget(message: 'Chargement des analytics...');
+      return LoadingWidget(message: 'analytics_loading'.tr);
     }
 
     if (_error != null) {
@@ -148,8 +148,8 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
     }
 
     if (_analytics == null) {
-      return const Center(
-        child: Text('Aucune donnée disponible'),
+      return Center(
+        child: Text('analytics_no_data'.tr),
       );
     }
 

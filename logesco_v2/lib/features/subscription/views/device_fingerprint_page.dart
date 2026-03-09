@@ -46,7 +46,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Erreur lors de la génération de l\'empreinte: $e';
+        _error = '${'error'.tr}: $e';
         _isLoading = false;
       });
     }
@@ -59,16 +59,16 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Empreinte copiée dans le presse-papiers'),
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('subscription_fingerprint_copied'.tr),
             ],
           ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -78,13 +78,13 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Empreinte de l\'appareil'),
+        title: Text('subscription_device_fingerprint_title'.tr),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadFingerprint,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -110,7 +110,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Erreur',
+              'error'.tr,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -123,7 +123,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
             ElevatedButton.icon(
               onPressed: _loadFingerprint,
               icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
+              label: Text('subscription_retry'.tr),
             ),
           ],
         ),
@@ -133,7 +133,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
 
   Widget _buildFingerprintView() {
     if (_fingerprint == null) {
-      return const Center(child: Text('Aucune empreinte disponible'));
+      return Center(child: Text('subscription_key_not_available'.tr));
     }
 
     return SingleChildScrollView(
@@ -186,7 +186,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Empreinte de l\'appareil',
+          'subscription_device_fingerprint'.tr,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -194,7 +194,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Identifiant unique de cet appareil',
+          'subscription_device_fingerprint_description'.tr,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
@@ -219,7 +219,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Comment utiliser cette empreinte ?',
+                  'subscription_device_fingerprint_how_to_use'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -227,11 +227,11 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
               ],
             ),
             const SizedBox(height: 12),
-            const Text(
-              '1. Copiez l\'empreinte ci-dessous en cliquant sur le bouton "Copier"\n'
-              '2. Envoyez cette empreinte à votre fournisseur de licence\n'
-              '3. Vous recevrez une clé d\'activation liée à cet appareil\n'
-              '4. Utilisez cette clé pour activer votre licence',
+            Text(
+              '1. ${'subscription_device_fingerprint_step_1'.tr}\n'
+              '2. ${'subscription_device_fingerprint_step_2'.tr}\n'
+              '3. ${'subscription_device_fingerprint_step_3'.tr}\n'
+              '4. ${'subscription_device_fingerprint_step_4'.tr}',
             ),
           ],
         ),
@@ -255,7 +255,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Votre empreinte unique',
+                  'subscription_your_unique_fingerprint'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -287,7 +287,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
               child: ElevatedButton.icon(
                 onPressed: _copyFingerprint,
                 icon: const Icon(Icons.copy),
-                label: const Text('Copier l\'empreinte'),
+                label: Text('subscription_copy_fingerprint'.tr),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -314,7 +314,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Informations de l\'appareil',
+                  'subscription_device_info'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -322,14 +322,14 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Plateforme', _fingerprint!.platform.toUpperCase()),
+            _buildInfoRow('subscription_platform'.tr, _fingerprint!.platform.toUpperCase()),
             const Divider(),
-            _buildInfoRow('Système', _fingerprint!.osVersion),
+            _buildInfoRow('subscription_os_version'.tr, _fingerprint!.osVersion),
             const Divider(),
-            _buildInfoRow('Version app', _fingerprint!.appVersion),
+            _buildInfoRow('subscription_app_version'.tr, _fingerprint!.appVersion),
             const Divider(),
             _buildInfoRow(
-              'Généré le',
+              'subscription_generated_on'.tr,
               _formatDate(_fingerprint!.generatedAt),
             ),
           ],
@@ -377,7 +377,7 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Important',
+                  'subscription_important'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.error,
@@ -387,10 +387,10 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              '• Cette empreinte est unique à cet appareil\n'
-              '• Une licence activée avec cette empreinte ne fonctionnera que sur cet appareil\n'
-              '• Ne partagez pas votre clé de licence avec d\'autres personnes\n'
-              '• Si vous changez d\'appareil, vous devrez obtenir une nouvelle licence',
+              '• ${'subscription_warning_unique'.tr}\n'
+              '• ${'subscription_warning_device_bound'.tr}\n'
+              '• ${'subscription_warning_no_sharing'.tr}\n'
+              '• ${'subscription_warning_device_change'.tr}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

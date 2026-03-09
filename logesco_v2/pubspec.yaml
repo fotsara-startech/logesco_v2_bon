@@ -59,6 +59,9 @@ dependencies:
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.0
   
+  # Network Time Protocol for secure time validation
+  ntp: ^2.0.0
+  
   # PDF generation and printing
   printing: ^5.12.0
   pdf: ^3.10.7

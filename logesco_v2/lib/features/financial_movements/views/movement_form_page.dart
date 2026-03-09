@@ -156,13 +156,13 @@ class _MovementFormPageState extends State<MovementFormPage> {
     setState(() {
       final value = _montantController.text.trim();
       if (value.isEmpty) {
-        _montantError = 'Le montant est obligatoire';
+        _montantError = 'financial_movements_form_amount_required'.tr;
       } else {
         final amount = double.tryParse(value);
         if (amount == null) {
-          _montantError = 'Veuillez entrer un montant valide';
+          _montantError = 'financial_movements_form_amount_invalid'.tr;
         } else if (amount <= 0) {
-          _montantError = 'Le montant doit être supérieur à 0';
+          _montantError = 'financial_movements_form_amount_positive'.tr;
         } else if (amount > 999999999) {
           _montantError = 'Le montant est trop élevé (max: 999,999,999)';
         } else {
@@ -179,9 +179,9 @@ class _MovementFormPageState extends State<MovementFormPage> {
     setState(() {
       final value = _descriptionController.text.trim();
       if (value.isEmpty) {
-        _descriptionError = 'La description est obligatoire';
+        _descriptionError = 'financial_movements_form_description_required'.tr;
       } else if (value.length < 3) {
-        _descriptionError = 'La description doit contenir au moins 3 caractères';
+        _descriptionError = 'financial_movements_form_description_min_length'.tr;
       } else if (value.length > 500) {
         _descriptionError = 'La description ne peut pas dépasser 500 caractères';
       } else {
@@ -196,7 +196,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
 
     setState(() {
       if (_selectedCategoryId == null) {
-        _categoryError = 'Veuillez sélectionner une catégorie';
+        _categoryError = 'financial_movements_form_category_required'.tr;
       } else {
         _categoryError = null;
       }
@@ -263,16 +263,16 @@ class _MovementFormPageState extends State<MovementFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing
-            ? 'Modifier le mouvement'
+            ? 'financial_movements_form_title_edit'.tr
             : _isDuplicating
-                ? 'Dupliquer le mouvement'
-                : 'Nouveau mouvement'),
+                ? 'financial_movements_form_title_duplicate'.tr
+                : 'financial_movements_form_title_create'.tr),
         actions: [
           if (_isEditing)
             IconButton(
               onPressed: _showDeleteConfirmation,
               icon: const Icon(Icons.delete),
-              tooltip: 'Supprimer',
+              tooltip: 'delete'.tr,
             ),
         ],
       ),
@@ -360,7 +360,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Solde disponible en caisse',
+                  'financial_movements_form_cash_balance'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     color: isNegative ? Colors.red.shade700 : Colors.blue.shade700,
@@ -772,7 +772,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           Expanded(
             child: OutlinedButton(
               onPressed: _isLoading ? null : () => Get.back(),
-              child: const Text('Annuler'),
+              child: Text('cancel'.tr),
             ),
           ),
           const SizedBox(width: 16),
@@ -793,10 +793,10 @@ class _MovementFormPageState extends State<MovementFormPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (_hasUserInteracted && !_isFormValid) ...[
-                          Icon(Icons.error_outline, size: 16),
+                          const Icon(Icons.error_outline, size: 16),
                           const SizedBox(width: 4),
                         ],
-                        Text(_isEditing ? 'Modifier' : 'Créer'),
+                        Text(_isEditing ? 'edit'.tr : 'save'.tr),
                       ],
                     ),
             ),
@@ -884,8 +884,8 @@ class _MovementFormPageState extends State<MovementFormPage> {
         // Fermer le formulaire seulement si l'opération a réussi
         Get.back();
         Get.snackbar(
-          'Succès',
-          _isEditing ? 'Mouvement modifié avec succès' : 'Mouvement créé avec succès',
+          'success'.tr,
+          _isEditing ? 'financial_movements_form_success_update'.tr : 'financial_movements_form_success_create'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green.shade100,
           colorText: Colors.green.shade800,
@@ -893,8 +893,8 @@ class _MovementFormPageState extends State<MovementFormPage> {
       } else {
         // Afficher un message d'erreur mais garder le formulaire ouvert
         Get.snackbar(
-          'Erreur',
-          'Échec de l\'enregistrement. Veuillez réessayer.',
+          'error'.tr,
+          'financial_movements_form_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -902,8 +902,8 @@ class _MovementFormPageState extends State<MovementFormPage> {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Une erreur est survenue lors de l\'enregistrement',
+        'error'.tr,
+        'financial_movements_form_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -1038,12 +1038,12 @@ class _MovementFormPageState extends State<MovementFormPage> {
   void _showDeleteConfirmation() {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer le mouvement'),
+        title: Text('financial_movements_delete'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Êtes-vous sûr de vouloir supprimer ce mouvement ?'),
+            Text('financial_movements_delete_confirm'.tr),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -1055,11 +1055,11 @@ class _MovementFormPageState extends State<MovementFormPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Référence: ${widget.movement!.reference}',
+                    '${'financial_movements_reference'.tr}: ${widget.movement!.reference}',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  Text('Montant: ${widget.movement!.montantFormate}'),
-                  Text('Description: ${widget.movement!.description}'),
+                  Text('${'financial_movements_amount'.tr}: ${widget.movement!.montantFormate}'),
+                  Text('${'financial_movements_description'.tr}: ${widget.movement!.description}'),
                 ],
               ),
             ),
@@ -1076,7 +1076,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1085,7 +1085,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
               if (success) {
                 Get.back(); // Retourne à la liste
                 Get.snackbar(
-                  'Succès',
+                  'success'.tr,
                   'Mouvement supprimé avec succès',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.green.shade100,
@@ -1097,7 +1097,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('delete'.tr),
           ),
         ],
       ),

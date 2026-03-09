@@ -21,8 +21,8 @@ class EnvironmentConfig {
     // Configuration JWT
     this.jwtConfig = {
       secret: process.env.JWT_SECRET || 'dev-secret-key',
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+      expiresIn: process.env.JWT_EXPIRES_IN || '365d', // 1 an au lieu de 24h
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '365d' // 1 an au lieu de 7 jours
     };
     
     // Configuration CORS

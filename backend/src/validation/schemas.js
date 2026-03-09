@@ -141,7 +141,10 @@ const compteSchemas = {
   updateSolde: Joi.object({
     montant: baseSchemas.montant.required(),
     typeTransaction: Joi.string().valid('debit', 'credit', 'paiement', 'achat').required(),
-    description: Joi.string().max(500).allow('', null)
+    description: Joi.string().max(500).allow('', null),
+    referenceType: Joi.string().max(50).allow(null).optional(),
+    referenceId: Joi.number().integer().positive().allow(null).optional(),
+    createFinancialMovement: Joi.boolean().optional()
   }),
 
   updateLimite: Joi.object({
@@ -329,7 +332,10 @@ const parametresEntrepriseSchemas = {
     localisation: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
-    nuiRccm: Joi.string().max(50).allow('', null)
+    nuiRccm: Joi.string().max(50).allow('', null),
+    logo: Joi.string().max(500).allow('', null), // Chemin vers le fichier logo
+    slogan: Joi.string().max(200).allow('', null), // Slogan de l'entreprise
+    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr') // Langue des factures: fr, en, es
   }),
 
   update: Joi.object({
@@ -338,7 +344,10 @@ const parametresEntrepriseSchemas = {
     localisation: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
-    nuiRccm: Joi.string().max(50).allow('', null)
+    nuiRccm: Joi.string().max(50).allow('', null),
+    logo: Joi.string().max(500).allow('', null), // Chemin vers le fichier logo
+    slogan: Joi.string().max(200).allow('', null), // Slogan de l'entreprise
+    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr') // Langue des factures: fr, en, es
   }).min(1)
 };
 

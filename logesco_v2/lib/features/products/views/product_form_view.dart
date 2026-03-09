@@ -15,12 +15,12 @@ class ProductFormView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() => Text(controller.isEditing.value ? 'Modifier le produit' : 'Nouveau produit')),
+        title: Obx(() => Text(controller.isEditing.value ? 'product_form_edit_title'.tr : 'product_form_new_title'.tr)),
         elevation: 0,
         actions: [
           TextButton(
             onPressed: controller.cancel,
-            child: const Text('Annuler'),
+            child: Text('product_form_cancel'.tr),
           ),
         ],
       ),
@@ -32,7 +32,7 @@ class ProductFormView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Informations de base
-              _buildSectionTitle('Informations de base'),
+              _buildSectionTitle('product_form_basic_info'.tr),
               const SizedBox(height: 16),
 
               _buildReferenceField(controller),
@@ -45,7 +45,7 @@ class ProductFormView extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Informations commerciales
-              _buildSectionTitle('Informations commerciales'),
+              _buildSectionTitle('product_form_commercial_info'.tr),
               const SizedBox(height: 16),
 
               _buildPrixField(controller),
@@ -64,7 +64,7 @@ class ProductFormView extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Gestion du stock
-              _buildSectionTitle('Gestion du stock'),
+              _buildSectionTitle('product_form_stock_management'.tr),
               const SizedBox(height: 16),
 
               _buildSeuilStockField(controller),
@@ -108,9 +108,9 @@ class ProductFormView extends StatelessWidget {
             // Switch pour activer/désactiver la génération automatique (seulement en création)
             if (!controller.isEditing.value) ...[
               SwitchListTile(
-                title: const Text('Référence automatique'),
+                title: Text('product_form_reference_auto'.tr),
                 subtitle: Text(
-                  controller.isAutoReference.value ? 'Génération automatique activée' : 'Saisie manuelle activée',
+                  controller.isAutoReference.value ? 'product_form_reference_auto_enabled'.tr : 'product_form_reference_manual_enabled'.tr,
                 ),
                 value: controller.isAutoReference.value,
                 onChanged: (_) => controller.toggleAutoReference(),
@@ -137,7 +137,7 @@ class ProductFormView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'La référence ne peut pas être modifiée lors de l\'édition',
+                        'product_form_reference_not_editable'.tr,
                         style: TextStyle(
                           color: Colors.amber.shade700,
                           fontSize: 13,
@@ -158,12 +158,12 @@ class ProductFormView extends StatelessWidget {
                     controller: controller.referenceController,
                     enabled: !controller.isEditing.value && !controller.isAutoReference.value,
                     decoration: InputDecoration(
-                      labelText: 'Référence *',
+                      labelText: 'product_form_reference_label'.tr,
                       hintText: controller.isEditing.value
-                          ? 'Non modifiable en édition'
+                          ? 'product_form_reference_hint_not_editable'.tr
                           : controller.isAutoReference.value
-                              ? 'Générée automatiquement'
-                              : 'Ex: REF001',
+                              ? 'product_form_reference_hint_auto'.tr
+                              : 'product_form_reference_hint_manual'.tr,
                       prefixIcon: const Icon(Icons.tag),
                       border: const OutlineInputBorder(),
                       errorText: controller.referenceError.value.isEmpty ? null : controller.referenceError.value,
@@ -188,7 +188,7 @@ class ProductFormView extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.refresh),
-                    tooltip: 'Générer une nouvelle référence',
+                    tooltip: 'product_form_reference_regenerate'.tr,
                   ),
                 ],
               ],
@@ -202,8 +202,8 @@ class ProductFormView extends StatelessWidget {
     return Obx(() => TextFormField(
           controller: controller.nomController,
           decoration: InputDecoration(
-            labelText: 'Nom du produit *',
-            hintText: 'Ex: Ordinateur portable',
+            labelText: 'product_form_name_label'.tr,
+            hintText: 'product_form_name_hint'.tr,
             prefixIcon: const Icon(Icons.inventory_2),
             border: const OutlineInputBorder(),
             errorText: controller.nomError.value.isEmpty ? null : controller.nomError.value,
@@ -219,11 +219,11 @@ class ProductFormView extends StatelessWidget {
   Widget _buildDescriptionField(ProductFormController controller) {
     return TextFormField(
       controller: controller.descriptionController,
-      decoration: const InputDecoration(
-        labelText: 'Description',
-        hintText: 'Description détaillée du produit (optionnel)',
-        prefixIcon: Icon(Icons.description),
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        labelText: 'product_form_description_label'.tr,
+        hintText: 'product_form_description_hint'.tr,
+        prefixIcon: const Icon(Icons.description),
+        border: const OutlineInputBorder(),
       ),
       maxLines: 3,
       inputFormatters: [
@@ -237,7 +237,7 @@ class ProductFormView extends StatelessWidget {
     return Obx(() => TextFormField(
           controller: controller.prixUnitaireController,
           decoration: InputDecoration(
-            labelText: 'Prix de vente *',
+            labelText: 'product_form_sale_price_label'.tr,
             hintText: '0',
             prefixIcon: const Icon(Icons.attach_money),
             suffixText: CurrencyConstants.defaultCurrency,
@@ -256,13 +256,13 @@ class ProductFormView extends StatelessWidget {
     return Obx(() => TextFormField(
           controller: controller.prixAchatController,
           decoration: InputDecoration(
-            labelText: 'Prix d\'achat',
+            labelText: 'product_form_purchase_price_label'.tr,
             hintText: '0',
             prefixIcon: const Icon(Icons.shopping_cart),
             suffixText: CurrencyConstants.defaultCurrency,
             border: const OutlineInputBorder(),
             errorText: controller.prixAchatError.value.isEmpty ? null : controller.prixAchatError.value,
-            helperText: 'Optionnel - pour calculer la marge',
+            helperText: 'product_form_purchase_price_helper'.tr,
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
@@ -276,13 +276,13 @@ class ProductFormView extends StatelessWidget {
     return Obx(() => TextFormField(
           controller: controller.remiseMaxController,
           decoration: InputDecoration(
-            labelText: 'Remise maximale autorisée',
+            labelText: 'product_form_max_discount_label'.tr,
             hintText: '0',
             prefixIcon: const Icon(Icons.discount),
             suffixText: CurrencyConstants.defaultCurrency,
             border: const OutlineInputBorder(),
             errorText: controller.remiseMaxError.value.isEmpty ? null : controller.remiseMaxError.value,
-            helperText: 'Montant maximum de remise que les vendeurs peuvent accorder',
+            helperText: 'product_form_max_discount_helper'.tr,
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
@@ -295,12 +295,12 @@ class ProductFormView extends StatelessWidget {
   Widget _buildCodeBarreField(ProductFormController controller) {
     return TextFormField(
       controller: controller.codeBarreController,
-      decoration: const InputDecoration(
-        labelText: 'Code-barre',
-        hintText: 'Scanner ou saisir le code-barre',
-        prefixIcon: Icon(Icons.qr_code_scanner),
-        border: OutlineInputBorder(),
-        helperText: 'Optionnel - pour la recherche rapide',
+      decoration: InputDecoration(
+        labelText: 'product_form_barcode_label'.tr,
+        hintText: 'product_form_barcode_hint'.tr,
+        prefixIcon: const Icon(Icons.qr_code_scanner),
+        border: const OutlineInputBorder(),
+        helperText: 'product_form_barcode_helper'.tr,
       ),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
@@ -331,16 +331,16 @@ class ProductFormView extends StatelessWidget {
           DropdownButtonFormField<String>(
             value: currentValue,
             decoration: InputDecoration(
-              labelText: 'Catégorie',
+              labelText: 'product_form_category_label'.tr,
               prefixIcon: const Icon(Icons.category),
               border: const OutlineInputBorder(),
-              helperText: controller.categories.isEmpty ? 'Aucune catégorie disponible' : '${controller.categories.length} catégorie(s) disponible(s)',
+              helperText: controller.categories.isEmpty ? 'product_form_category_empty'.tr : 'product_form_category_count'.tr.replaceAll('@count', controller.categories.length.toString()),
             ),
-            hint: const Text('Sélectionner une catégorie'),
+            hint: Text('product_form_category_hint'.tr),
             items: [
-              const DropdownMenuItem<String>(
+              DropdownMenuItem<String>(
                 value: '',
-                child: Text('Aucune catégorie'),
+                child: Text('product_form_category_none'.tr),
               ),
               ...controller.categories.map((category) => DropdownMenuItem<String>(
                     value: category.nom,
@@ -370,7 +370,7 @@ class ProductFormView extends StatelessWidget {
                     Icon(Icons.add, size: 14, color: Colors.blue[600]),
                     const SizedBox(width: 4),
                     Text(
-                      'Créer des catégories',
+                      'product_form_category_create'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.blue[600],
@@ -392,13 +392,13 @@ class ProductFormView extends StatelessWidget {
     return Obx(() => TextFormField(
           controller: controller.seuilStockController,
           decoration: InputDecoration(
-            labelText: 'Seuil de stock minimum *',
+            labelText: 'product_form_stock_threshold_label'.tr,
             hintText: '0',
             prefixIcon: const Icon(Icons.warning_amber),
-            suffixText: 'unités',
+            suffixText: 'product_detail_units'.tr,
             border: const OutlineInputBorder(),
             errorText: controller.seuilError.value.isEmpty ? null : controller.seuilError.value,
-            helperText: 'Alerte quand le stock descend sous ce seuil',
+            helperText: 'product_form_stock_threshold_helper'.tr,
           ),
           keyboardType: TextInputType.number,
           inputFormatters: [
@@ -410,9 +410,9 @@ class ProductFormView extends StatelessWidget {
   /// Switch pour le type de service
   Widget _buildServiceSwitch(ProductFormController controller) {
     return Obx(() => SwitchListTile(
-          title: const Text('Prestation de service'),
+          title: Text('product_form_service_title'.tr),
           subtitle: Text(
-            controller.estService.value ? 'Produit sans stock physique (service)' : 'Produit avec gestion de stock',
+            controller.estService.value ? 'product_form_service_enabled'.tr : 'product_form_service_disabled'.tr,
           ),
           value: controller.estService.value,
           onChanged: (_) => controller.toggleEstService(),
@@ -426,9 +426,9 @@ class ProductFormView extends StatelessWidget {
   /// Switch pour la gestion de péremption
   Widget _buildPeremptionSwitch(ProductFormController controller) {
     return Obx(() => SwitchListTile(
-          title: const Text('Gestion des dates de péremption'),
+          title: Text('product_form_expiration_title'.tr),
           subtitle: Text(
-            controller.gestionPeremption.value ? 'Suivi des dates de péremption activé' : 'Pas de suivi de péremption',
+            controller.gestionPeremption.value ? 'product_form_expiration_enabled'.tr : 'product_form_expiration_disabled'.tr,
           ),
           value: controller.gestionPeremption.value,
           onChanged: controller.estService.value ? null : (_) => controller.toggleGestionPeremption(),
@@ -442,9 +442,9 @@ class ProductFormView extends StatelessWidget {
   /// Switch pour l'état actif
   Widget _buildStatusSwitch(ProductFormController controller) {
     return Obx(() => SwitchListTile(
-          title: const Text('Produit actif'),
+          title: Text('product_form_active_title'.tr),
           subtitle: Text(
-            controller.estActif.value ? 'Le produit est disponible pour les ventes' : 'Le produit est désactivé',
+            controller.estActif.value ? 'product_form_active_enabled'.tr : 'product_form_active_disabled'.tr,
           ),
           value: controller.estActif.value,
           onChanged: (_) => controller.toggleEstActif(),
@@ -462,7 +462,7 @@ class ProductFormView extends StatelessWidget {
             Expanded(
               child: OutlinedButton(
                 onPressed: controller.isLoading.value ? null : controller.cancel,
-                child: const Text('Annuler'),
+                child: Text('product_form_cancel'.tr),
               ),
             ),
             const SizedBox(width: 16),
@@ -479,7 +479,7 @@ class ProductFormView extends StatelessWidget {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : Text(controller.isEditing.value ? 'Modifier' : 'Créer'),
+                    : Text(controller.isEditing.value ? 'product_form_update_button'.tr : 'product_form_create_button'.tr),
               ),
             ),
           ],

@@ -177,7 +177,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // Gestion spécifique des erreurs de cast de type
       final errorMessage = 'Erreur de format des données reçues du serveur';
       print('❌ [loadMovements] Erreur de cast de type: $e');
-      
+
       error.value = errorMessage;
       setError(
         message: errorMessage,
@@ -198,11 +198,10 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       FinancialErrorHandler.showErrorToUser(financialError, context: 'Chargement des mouvements');
     } catch (e) {
       // Vérification spéciale pour les erreurs de cast
-      if (e.toString().contains('type \'Null\' is not a subtype of type \'num\'') ||
-          e.toString().contains('is not a subtype of type')) {
+      if (e.toString().contains('type \'Null\' is not a subtype of type \'num\'') || e.toString().contains('is not a subtype of type')) {
         final errorMessage = 'Erreur de format des données reçues du serveur';
         print('❌ [loadMovements] Erreur de cast détectée: $e');
-        
+
         error.value = errorMessage;
         setError(
           message: errorMessage,
@@ -281,6 +280,12 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     } finally {
       isRefreshing.value = false;
     }
+  }
+
+  /// Rafraîchit uniquement les mouvements (utilisé après création externe)
+  Future<void> refreshMovements() async {
+    print('🔄 [refreshMovements] Rafraîchissement des mouvements financiers');
+    await loadMovements(forceRefresh: true);
   }
 
   /// Recherche des mouvements avec debouncing
@@ -573,7 +578,6 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         message: 'Création du mouvement en cours...',
         operation: 'createMovement',
       ),
-      
       successMessage: 'Mouvement créé avec succès',
       errorMessage: 'Erreur lors de la création du mouvement',
     ).catchError((e) {

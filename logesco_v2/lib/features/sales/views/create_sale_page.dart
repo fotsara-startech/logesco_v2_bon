@@ -49,17 +49,17 @@ class _CreateSalePageState extends State<CreateSalePage> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'FACTURATION',
-          style: TextStyle(
-            color: Colors.black87,
+        backgroundColor: Colors.blue,
+        title: Text(
+          'sales_billing'.tr,
+          style: const TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Get.back(),
         ),
         actions: [
@@ -73,15 +73,15 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 Text(
                   DateFormat('HH:mm').format(DateTime.now()),
                   style: const TextStyle(
-                    color: Colors.black87,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
                 Text(
                   DateFormat('dd/MM/yy').format(DateTime.now()),
-                  style: TextStyle(
-                    color: Colors.grey[600],
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 11,
                   ),
                 ),
@@ -89,8 +89,8 @@ class _CreateSalePageState extends State<CreateSalePage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
-            tooltip: 'Paramètres',
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            tooltip: 'sales_settings'.tr,
             onPressed: () => Get.toNamed('/sales/preferences'),
           ),
           const SizedBox(width: 8),
@@ -123,7 +123,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
             ),
           ),
 
-          // SECTION DROITE - Panier & Paiement (50%)
+          // SECTION DROITE - Panier & Paiement (50%) - Entièrement scrollable
           Expanded(
             flex: 5,
             child: Container(
@@ -133,20 +133,21 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   left: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
               ),
-              child: Column(
-                children: [
-                  // Client sélectionné - Compact
-                  _buildSelectedCustomerBanner(),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Client sélectionné - Compact
+                    _buildSelectedCustomerBanner(),
 
-                  // Section antidatage (si autorisé)
-                  _buildBackdateSection(),
+                    // Section antidatage (si autorisé)
+                    _buildBackdateSection(),
 
-                  // Panier
-                  Expanded(
-                    child: Container(
+                    // Panier
+                    Container(
                       color: Colors.white,
                       margin: const EdgeInsets.all(12),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           // Header panier
                           Container(
@@ -160,9 +161,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
                               children: [
                                 Icon(Icons.shopping_cart_outlined, color: Colors.grey[700], size: 20),
                                 const SizedBox(width: 8),
-                                const Text(
-                                  'Panier',
-                                  style: TextStyle(
+                                Text(
+                                  'sales_cart'.tr,
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -187,28 +188,37 @@ class _CreateSalePageState extends State<CreateSalePage> {
                             ),
                           ),
 
-                          // Liste panier
-                          Expanded(
-                            child: CartWidget(
-                              onQuantityChanged: (productId, quantity) {
-                                _salesController.updateCartItemQuantity(productId, quantity);
-                              },
-                              onPriceChanged: (productId, price) {
-                                _salesController.updateCartItemPrice(productId, price);
-                              },
-                              onRemoveItem: (productId) {
-                                _salesController.removeFromCart(productId);
-                              },
-                            ),
-                          ),
+                          // Liste panier - Hauteur dynamique
+                          Obx(() {
+                            final itemCount = _salesController.cartItems.length;
+                            // Calculer la hauteur nécessaire pour afficher tous les items
+                            // Chaque item fait environ 120px de hauteur
+                            final estimatedHeight = itemCount * 250.0;
+                            final mediaquery = MediaQuery.of(context).size.height * 0.5;
+
+                            return SizedBox(
+                              height: itemCount == 0 ? mediaquery : estimatedHeight,
+                              child: CartWidget(
+                                onQuantityChanged: (productId, quantity) {
+                                  _salesController.updateCartItemQuantity(productId, quantity);
+                                },
+                                onPriceChanged: (productId, price) {
+                                  _salesController.updateCartItemPrice(productId, price);
+                                },
+                                onRemoveItem: (productId) {
+                                  _salesController.removeFromCart(productId);
+                                },
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),
-                  ),
 
-                  // Section paiement - Fixe en bas
-                  _buildPaymentSection(),
-                ],
+                    // Section paiement - Plus fixe, fait partie du scroll
+                    _buildPaymentSection(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -247,7 +257,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
-                    hintText: 'Rechercher un client...',
+                    hintText: 'sales_search_customer'.tr,
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -316,7 +326,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                               ),
                             ),
                             title: Text(
-                              option.nom ?? 'Client',
+                              option.nom,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -339,7 +349,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      '${aDette ? "Dette: " : "Crédit: "}${montantAffiche.toStringAsFixed(0)} F',
+                                      '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${'sales_customer_balance'.trParams({'amount': montantAffiche.toStringAsFixed(0)})}',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -487,7 +497,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 Icon(Icons.calendar_today, size: 16, color: Colors.orange[700]),
                 const SizedBox(width: 8),
                 Text(
-                  'Date de vente',
+                  'sales_sale_date'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -501,7 +511,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                     onPressed: () => _salesController.setCustomSaleDate(null),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'Utiliser la date actuelle',
+                    tooltip: 'sales_use_current_date'.tr,
                   ),
               ],
             ),
@@ -513,9 +523,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   initialDate: _salesController.customSaleDate ?? DateTime.now(),
                   firstDate: DateTime(2020),
                   lastDate: DateTime.now(),
-                  helpText: 'Sélectionner la date de vente',
-                  cancelText: 'Annuler',
-                  confirmText: 'Confirmer',
+                  helpText: 'sales_select_sale_date'.tr,
+                  cancelText: 'cancel'.tr,
+                  confirmText: 'confirm'.tr,
                 );
 
                 if (selectedDate != null) {
@@ -538,7 +548,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                       child: Text(
                         _salesController.customSaleDate != null
                             ? '${_salesController.customSaleDate!.day.toString().padLeft(2, '0')}/${_salesController.customSaleDate!.month.toString().padLeft(2, '0')}/${_salesController.customSaleDate!.year}'
-                            : 'Date actuelle (${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year})',
+                            : 'sales_current_date'.trParams({'date': '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'}),
                         style: TextStyle(
                           color: _salesController.customSaleDate != null ? Colors.orange[700] : Colors.grey[600],
                           fontWeight: _salesController.customSaleDate != null ? FontWeight.w600 : FontWeight.normal,
@@ -593,7 +603,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total',
+                        'total'.tr,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -618,7 +628,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '$itemCount article${itemCount > 1 ? 's' : ''}',
+                      'sales_cart_items_count'.trParams({'count': itemCount.toString()}),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -663,7 +673,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                               const Icon(Icons.payment, size: 22),
                               const SizedBox(width: 8),
                               Text(
-                                _salesController.cartItems.isEmpty ? 'Panier vide' : 'Procéder au paiement',
+                                _salesController.cartItems.isEmpty ? 'sales_cart_empty_action'.tr : 'sales_proceed_payment'.tr,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -679,7 +689,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'F9: Paiement | Esc: Annuler',
+              'sales_keyboard_shortcuts'.tr,
               style: TextStyle(
                 fontSize: 10,
                 color: Colors.grey[500],
@@ -707,8 +717,8 @@ class _CreateSalePageState extends State<CreateSalePage> {
       // Vérifier que le panier n'est pas vide
       if (_salesController.cartItems.isEmpty) {
         Get.snackbar(
-          'Panier vide',
-          'Ajoutez des articles avant de finaliser la vente',
+          'sales_cart_empty_action'.tr,
+          'sales_add_products_to_continue'.tr,
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.orange[100],
           colorText: Colors.orange[900],

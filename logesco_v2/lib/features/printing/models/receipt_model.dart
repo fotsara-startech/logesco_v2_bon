@@ -23,6 +23,7 @@ class Receipt {
   final DateTime saleDate;
   final Customer? customer;
   final PrintFormat format;
+  final String language; // Langue du reçu: 'fr', 'en' ou 'es'
   final bool isReprint;
   final int reprintCount;
   final DateTime? lastReprintDate;
@@ -43,6 +44,7 @@ class Receipt {
     required this.saleDate,
     this.customer,
     required this.format,
+    this.language = 'fr', // Par défaut en français
     this.isReprint = false,
     this.reprintCount = 0,
     this.lastReprintDate,
@@ -57,6 +59,7 @@ class Receipt {
     required Sale sale,
     required CompanyProfile companyInfo,
     PrintFormat format = PrintFormat.a4,
+    String? language, // Langue optionnelle, sinon utilise celle du profil
     bool isReprint = false,
     int reprintCount = 0,
     DateTime? lastReprintDate,
@@ -106,6 +109,12 @@ class Receipt {
 
     print('  FINAL - subtotal: $correctSubtotal, discount: $finalDiscountAmount');
 
+    final receiptLanguage = language ?? companyInfo.receiptLanguage ?? 'fr';
+    print('🌐 LANGUE DU REÇU:');
+    print('  language param: $language');
+    print('  companyInfo.receiptLanguage: ${companyInfo.receiptLanguage}');
+    print('  receiptLanguage FINAL: $receiptLanguage');
+
     return Receipt(
       id: 'receipt_${sale.id}_${DateTime.now().millisecondsSinceEpoch}',
       saleId: sale.id.toString(),
@@ -121,6 +130,7 @@ class Receipt {
       saleDate: sale.dateCreation,
       customer: sale.client,
       format: format,
+      language: receiptLanguage,
       isReprint: isReprint,
       reprintCount: reprintCount,
       lastReprintDate: lastReprintDate,
@@ -148,6 +158,7 @@ class Receipt {
       saleDate: saleDate,
       customer: customer,
       format: newFormat ?? format,
+      language: language,
       isReprint: true,
       reprintCount: reprintCount + 1,
       lastReprintDate: DateTime.now(),
@@ -190,6 +201,7 @@ class Receipt {
     DateTime? saleDate,
     Customer? customer,
     PrintFormat? format,
+    String? language,
     bool? isReprint,
     int? reprintCount,
     DateTime? lastReprintDate,
@@ -210,6 +222,7 @@ class Receipt {
       saleDate: saleDate ?? this.saleDate,
       customer: customer ?? this.customer,
       format: format ?? this.format,
+      language: language ?? this.language,
       isReprint: isReprint ?? this.isReprint,
       reprintCount: reprintCount ?? this.reprintCount,
       lastReprintDate: lastReprintDate ?? this.lastReprintDate,

@@ -38,7 +38,7 @@ class ProductFilterBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Filtres actifs:',
+                  'product_filter_active'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -52,9 +52,9 @@ class ProductFilterBar extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: const Size(0, 32),
                   ),
-                  child: const Text(
-                    'Effacer tout',
-                    style: TextStyle(fontSize: 12),
+                  child: Text(
+                    'product_filter_clear_all'.tr,
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],
@@ -67,14 +67,14 @@ class ProductFilterBar extends StatelessWidget {
                 // Filtre de recherche
                 if (controller.searchQuery.value.isNotEmpty)
                   _buildFilterChip(
-                    label: 'Recherche: "${controller.searchQuery.value}"',
+                    label: 'product_filter_search'.tr.replaceAll('@query', controller.searchQuery.value),
                     onRemove: () => controller.updateSearchQuery(''),
                   ),
 
                 // Filtre de catégorie
                 if (controller.selectedCategory.value.isNotEmpty)
                   _buildFilterChip(
-                    label: 'Catégorie: ${controller.selectedCategory.value}',
+                    label: 'product_filter_category'.tr.replaceAll('@category', controller.selectedCategory.value),
                     onRemove: () => controller.updateSelectedCategory(''),
                   ),
               ],

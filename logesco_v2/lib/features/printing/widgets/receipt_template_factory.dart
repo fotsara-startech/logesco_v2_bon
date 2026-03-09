@@ -63,6 +63,7 @@ class ReceiptTemplateFactory {
             saleDate: receipt.saleDate,
             customer: receipt.customer,
             format: format,
+            language: receipt.language, // IMPORTANT: Copier la langue!
             isReprint: receipt.isReprint,
             reprintCount: receipt.reprintCount,
             lastReprintDate: receipt.lastReprintDate,

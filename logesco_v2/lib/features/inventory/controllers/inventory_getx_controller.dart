@@ -206,42 +206,55 @@ class InventoryGetxController extends GetxController {
     // Si pas de refresh, tous les stocks sont déjà chargés
   }
 
-  /// Charge les alertes de stock
+  /// Charge les alertes de stock (toutes les pages)
   Future<void> loadStockAlerts({bool refresh = false}) async {
     try {
-      if (refresh) {
-        alertsPage.value = 1;
-        hasMoreAlerts.value = true;
-        stockAlerts.clear();
-      }
-
-      if (!hasMoreAlerts.value) return;
-
-      isLoadingAlerts.value = alertsPage.value == 1;
+      print('📚 Début du chargement complet de toutes les alertes...');
+      alertsPage.value = 1;
+      hasMoreAlerts.value = true;
+      stockAlerts.clear();
+      isLoadingAlerts.value = true;
       alertsError.value = '';
 
-      final result = await _inventoryService.getStockAlerts(
-        page: alertsPage.value,
-        search: searchQuery.value.isEmpty ? null : searchQuery.value,
-        category: selectedCategory.value.isEmpty ? null : selectedCategory.value,
-      );
+      // Charger toutes les pages d'alertes
+      while (hasMoreAlerts.value) {
+        final searchParam = searchQuery.value.isNotEmpty ? searchQuery.value : null;
+        final categoryParam = selectedCategory.value.isNotEmpty ? selectedCategory.value : null;
 
-      // Extraire les données de la réponse paginée
-      final alertsList = result.data;
-      final pagination = result.pagination;
+        final result = await _inventoryService.getStockAlerts(
+          page: alertsPage.value,
+          search: searchParam,
+          category: categoryParam,
+        );
 
-      // Vérifier s'il y a plus de données
-      hasMoreAlerts.value = pagination.hasNext;
+        final alertsList = result.data;
+        final pagination = result.pagination;
 
-      if (alertsPage.value == 1) {
-        stockAlerts.assignAll(alertsList);
-      } else {
+        print('📄 Page ${pagination.page}: ${alertsList.length} alertes chargées');
+
         stockAlerts.addAll(alertsList);
+
+        // Vérifier s'il y a plus de pages
+        hasMoreAlerts.value = pagination.hasNext;
+
+        if (hasMoreAlerts.value) {
+          alertsPage.value++;
+        }
       }
 
-      alertsPage.value++;
+      print('✅ TOUTES LES ALERTES CHARGÉES: ${stockAlerts.length} alertes au total');
+      alertsPage.value = 1; // Réinitialiser
+      hasMoreAlerts.value = false;
     } catch (e) {
+      print('❌ Erreur lors du chargement complet des alertes: $e');
       alertsError.value = e.toString();
+      Get.snackbar(
+        'Erreur',
+        'Impossible de charger les alertes: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
     } finally {
       isLoadingAlerts.value = false;
     }

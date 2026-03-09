@@ -50,7 +50,10 @@ class CompanySettingsModel {
             localisation: data.localisation || null,
             telephone: data.telephone || null,
             email: data.email || null,
-            nuiRccm: data.nuiRccm || null
+            nuiRccm: data.nuiRccm || null,
+            logo: data.logo || null,
+            slogan: data.slogan || null,
+            langueFacture: data.langueFacture || 'fr'
           }
         });
       } else {
@@ -62,7 +65,10 @@ class CompanySettingsModel {
             localisation: data.localisation || null,
             telephone: data.telephone || null,
             email: data.email || null,
-            nuiRccm: data.nuiRccm || null
+            nuiRccm: data.nuiRccm || null,
+            logo: data.logo || null,
+            slogan: data.slogan || null,
+            langueFacture: data.langueFacture || 'fr'
           }
         });
       }

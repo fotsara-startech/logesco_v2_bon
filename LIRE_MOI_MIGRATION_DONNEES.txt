@@ -1,0 +1,136 @@
+========================================
+  PROBLEME DE MIGRATION DES DONNEES
+  SOLUTION COMPLETE
+========================================
+
+PROBLEME:
+---------
+Lors de la migration client-ultimate vers client-optimise,
+les donnees utilisateur ne sont PAS recuperees.
+
+La base de donnees apparait a 0 informations meme si
+la migration semble reussir.
+
+
+CAUSE:
+------
+Le package LOGESCO-Client-Optimise contient une base de
+donnees VIERGE qui ECRASE vos donnees pendant la migration.
+
+Meme si vous copiez manuellement logesco.db, le schema
+Prisma n'est pas synchronise, donc le backend ne lit pas
+les donnees correctement.
+
+
+SOLUTION IMMEDIATE:
+-------------------
+Utilisez le script corrige:
+
+    migration-guidee-FIXE.bat
+
+Ce script:
+✅ Sauvegarde vos donnees AVANT tout
+✅ Supprime la base vierge du package
+✅ Restaure VOS donnees
+✅ Synchronise Prisma automatiquement
+✅ Verifie que tout est OK
+
+
+UTILISATION:
+------------
+1. Aller dans le dossier d'installation LOGESCO
+2. Double-cliquer sur: migration-guidee-FIXE.bat
+3. Suivre les instructions a l'ecran
+4. Verifier que les donnees sont presentes
+
+
+FICHIERS DISPONIBLES:
+---------------------
+1. migration-guidee-FIXE.bat
+   → Script de migration corrige (UTILISER CELUI-CI)
+
+2. diagnostic-migration-donnees.bat
+   → Identifier pourquoi les donnees ne sont pas la
+
+3. SOLUTION_PROBLEME_MIGRATION_DONNEES.md
+   → Guide detaille avec toutes les solutions
+
+4. GUIDE_MIGRATION_CLIENT_RAPIDE.md
+   → Guide rapide pour les clients
+
+5. PREVENTION_PROBLEME_MIGRATION.md
+   → Comment eviter ce probleme a l'avenir
+
+
+EN CAS DE PROBLEME:
+-------------------
+Si les donnees ne sont toujours pas la:
+
+1. Executer le diagnostic:
+   diagnostic-migration-donnees.bat
+
+2. Chercher une sauvegarde:
+   dir sauvegarde_migration_*
+
+3. Restaurer manuellement:
+   copy sauvegarde_migration_XXX\logesco_original.db backend\database\logesco.db
+   cd backend
+   npx prisma db push --accept-data-loss
+   cd ..
+
+4. Consulter le guide detaille:
+   SOLUTION_PROBLEME_MIGRATION_DONNEES.md
+
+
+VERIFICATION:
+-------------
+Pour verifier que vos donnees sont presentes:
+
+1. Verifier la taille de la base:
+   dir backend\database\logesco.db
+   (Doit etre > 100 Ko si vous avez des donnees)
+
+2. Compter les donnees (si sqlite3 installe):
+   cd backend\database
+   sqlite3 logesco.db "SELECT COUNT(*) FROM utilisateurs;"
+   sqlite3 logesco.db "SELECT COUNT(*) FROM produits;"
+
+3. Tester dans l'application:
+   - Demarrer LOGESCO
+   - Se connecter
+   - Verifier que vos produits/ventes sont la
+
+
+IMPORTANT:
+----------
+❌ NE PAS utiliser migration-guidee.bat (ancien script)
+✅ UTILISER migration-guidee-FIXE.bat (script corrige)
+
+❌ NE PAS copier manuellement logesco.db sans synchroniser Prisma
+✅ UTILISER le script qui fait tout automatiquement
+
+❌ NE PAS supprimer les sauvegardes immediatement
+✅ GARDER les sauvegardes pendant 1 semaine
+
+
+RESUME:
+-------
+Probleme: Base vierge ecrase vos donnees
+Solution: Script corrige qui preserve vos donnees
+Temps: 5-10 minutes
+Securite: Sauvegardes automatiques
+
+
+SUPPORT:
+--------
+Pour plus d'aide:
+1. Lire: SOLUTION_PROBLEME_MIGRATION_DONNEES.md
+2. Executer: diagnostic-migration-donnees.bat
+3. Verifier les sauvegardes: sauvegarde_migration_*
+
+
+========================================
+Version: 1.0
+Date: 2026-03-06
+Teste sur: Windows 10/11
+========================================

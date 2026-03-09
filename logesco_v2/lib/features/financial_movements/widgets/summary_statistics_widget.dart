@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../services/movement_report_service.dart';
 
 /// Widget pour afficher les statistiques de résumé
@@ -24,9 +25,9 @@ class SummaryStatisticsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.analytics, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Résumé de la période',
-                  style: TextStyle(
+                Text(
+                  'financial_movements_reports_summary'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -54,7 +55,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
       children: [
         Expanded(
           child: _buildStatCard(
-            'Total des dépenses',
+            'total'.tr,
             summary.totalAmountFormatted,
             Icons.money_off,
             Colors.red,
@@ -64,7 +65,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _buildStatCard(
-            'Nombre de mouvements',
+            'financial_movements_pagination_items'.trParams({'count': summary.totalCount.toString()}),
             '${summary.totalCount}',
             Icons.receipt_long,
             Colors.blue,

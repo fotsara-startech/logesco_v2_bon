@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
@@ -67,6 +68,8 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
 
   /// Construit l'en-tête avec logo et bordure décorative
   Widget _buildHeader(BuildContext context) {
+    final company = receipt.companyInfo;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: template.showBorder
@@ -75,28 +78,68 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
               borderRadius: BorderRadius.circular(8),
             )
           : null,
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo placeholder (si activé)
-          if (template.showLogo) ...[
+          // Logo à gauche (si disponible)
+          if (template.showLogo && company.logo != null && company.logo!.isNotEmpty)
             Container(
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
+              margin: const EdgeInsets.only(right: 20),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.business,
-                size: 40,
-                color: Colors.grey,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(company.logo!),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Si l'image ne peut pas être chargée, afficher un placeholder
+                    return const Center(
+                      child: Icon(
+                        Icons.business,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          else if (template.showLogo)
+            // Placeholder si pas de logo configuré
+            Container(
+              width: 100,
+              height: 100,
+              margin: const EdgeInsets.only(right: 20),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Text(
+                  'LOGO',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-          ],
 
-          // Informations de l'entreprise
-          buildCompanyHeader(context),
+          // Informations de l'entreprise à droite
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                buildCompanyHeader(context),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -104,6 +147,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
 
   /// Construit les informations légales en bas de page
   Widget _buildLegalInfo(BuildContext context) {
+    final company = receipt.companyInfo;
     final textStyle = TextStyle(
       fontSize: template.fontSize - 2,
       color: Colors.grey[600],
@@ -119,14 +163,31 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
       ),
       child: Column(
         children: [
+          // Slogan de l'entreprise (si disponible)
+          if (company.slogan != null && company.slogan!.isNotEmpty) ...[
+            Text(
+              company.slogan!,
+              style: TextStyle(
+                fontSize: template.fontSize,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Informations de contact supplémentaires
-          if (receipt.companyInfo.email?.isNotEmpty == true || receipt.companyInfo.phone?.isNotEmpty == true)
+          if (company.email?.isNotEmpty == true || company.phone?.isNotEmpty == true)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (receipt.companyInfo.phone?.isNotEmpty == true) Text('Tél: ${receipt.companyInfo.phone}', style: textStyle),
-                if (receipt.companyInfo.email?.isNotEmpty == true && receipt.companyInfo.phone?.isNotEmpty == true) Text(' • ', style: textStyle),
-                if (receipt.companyInfo.email?.isNotEmpty == true) Text('Email: ${receipt.companyInfo.email}', style: textStyle),
+                if (company.phone?.isNotEmpty == true) Text('Tél: ${company.phone}', style: textStyle),
+                if (company.email?.isNotEmpty == true && company.phone?.isNotEmpty == true) Text(' • ', style: textStyle),
+                if (company.email?.isNotEmpty == true) Text('Email: ${company.email}', style: textStyle),
               ],
             ),
 

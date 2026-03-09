@@ -21,7 +21,7 @@ class SupplierListView extends StatelessWidget {
       privilege: 'READ',
       fallback: Scaffold(
         appBar: AppBar(
-          title: const Text('Accès refusé'),
+          title: Text('suppliers_access_denied'.tr),
         ),
         body: Center(
           child: Column(
@@ -34,7 +34,7 @@ class SupplierListView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Accès refusé',
+                'suppliers_access_denied'.tr,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -43,7 +43,7 @@ class SupplierListView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Vous n\'avez pas les privilèges nécessaires\npour accéder à la gestion des fournisseurs',
+                'suppliers_access_denied_message'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -54,7 +54,7 @@ class SupplierListView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => Get.back(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('Retour'),
+                label: Text('suppliers_back'.tr),
               ),
             ],
           ),
@@ -63,9 +63,49 @@ class SupplierListView extends StatelessWidget {
       showFallback: true,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Gestion des Fournisseurs'),
+          title: Text('suppliers_title'.tr),
           elevation: 0,
           actions: [
+            // Bouton Import/Export
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.import_export),
+              tooltip: 'suppliers_import_export'.tr,
+              onSelected: (value) {
+                if (value == 'export') {
+                  controller.exportToExcel();
+                } else if (value == 'import') {
+                  controller.importFromExcel();
+                } else if (value == 'template') {
+                  controller.downloadTemplate();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'export',
+                  child: ListTile(
+                    leading: const Icon(Icons.download),
+                    title: Text('suppliers_export_excel'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'import',
+                  child: ListTile(
+                    leading: const Icon(Icons.upload),
+                    title: Text('suppliers_import_excel'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'template',
+                  child: ListTile(
+                    leading: const Icon(Icons.file_download),
+                    title: Text('suppliers_download_template'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
             // Bouton d'ajout visible seulement si l'utilisateur peut créer
             PermissionWidget(
               module: 'suppliers',
@@ -73,88 +113,88 @@ class SupplierListView extends StatelessWidget {
               child: IconButton(
                 onPressed: controller.goToCreateSupplier,
                 icon: const Icon(Icons.add),
-                tooltip: 'Ajouter un fournisseur',
+                tooltip: 'suppliers_add'.tr,
               ),
             ),
             IconButton(
               onPressed: controller.refreshSuppliers,
               icon: const Icon(Icons.refresh),
-              tooltip: 'Actualiser',
+              tooltip: 'suppliers_refresh'.tr,
             ),
           ],
         ),
-      body: Column(
-        children: [
-          // Barre de recherche
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: TextField(
-              onChanged: controller.updateSearchQuery,
-              decoration: InputDecoration(
-                hintText: 'Rechercher par nom, contact, téléphone ou email...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
-                    ? IconButton(
-                        onPressed: controller.clearSearch,
-                        icon: const Icon(Icons.clear),
-                      )
-                    : const SizedBox.shrink()),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+        body: Column(
+          children: [
+            // Barre de recherche
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: controller.updateSearchQuery,
+                decoration: InputDecoration(
+                  hintText: 'suppliers_search_hint'.tr,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+                      ? IconButton(
+                          onPressed: controller.clearSearch,
+                          icon: const Icon(Icons.clear),
+                        )
+                      : const SizedBox.shrink()),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
-          ),
-          // Liste des fournisseurs
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value && controller.suppliers.isEmpty) {
-                return const LoadingWidget(message: 'Chargement des fournisseurs...');
-              }
+            // Liste des fournisseurs
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value && controller.suppliers.isEmpty) {
+                  return LoadingWidget(message: 'suppliers_loading'.tr);
+                }
 
-              if (controller.hasError.value && controller.suppliers.isEmpty) {
-                return ErrorDisplayWidget(
-                  message: controller.errorMessage.value,
-                  onRetry: controller.refreshSuppliers,
+                if (controller.hasError.value && controller.suppliers.isEmpty) {
+                  return ErrorDisplayWidget(
+                    message: controller.errorMessage.value,
+                    onRetry: controller.refreshSuppliers,
+                  );
+                }
+
+                if (controller.suppliers.isEmpty) {
+                  return _buildEmptyState(controller);
+                }
+
+                return RefreshIndicator(
+                  onRefresh: controller.refreshSuppliers,
+                  child: _buildSupplierList(controller),
                 );
-              }
-
-              if (controller.suppliers.isEmpty) {
-                return _buildEmptyState(controller);
-              }
-
-              return RefreshIndicator(
-                onRefresh: controller.refreshSuppliers,
-                child: _buildSupplierList(controller),
-              );
-            }),
-          ),
-        ],
-      ),
+              }),
+            ),
+          ],
+        ),
         floatingActionButton: PermissionWidget(
           module: 'suppliers',
           privilege: 'CREATE',
           child: FloatingActionButton(
             onPressed: controller.goToCreateSupplier,
-            tooltip: 'Ajouter un fournisseur',
+            tooltip: 'suppliers_add'.tr,
             child: const Icon(Icons.add),
           ),
         ),
@@ -175,7 +215,7 @@ class SupplierListView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            controller.searchQuery.value.isNotEmpty ? 'Aucun fournisseur trouvé' : 'Aucun fournisseur enregistré',
+            controller.searchQuery.value.isNotEmpty ? 'suppliers_no_results'.tr : 'suppliers_no_suppliers'.tr,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -184,7 +224,7 @@ class SupplierListView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.searchQuery.value.isNotEmpty ? 'Essayez de modifier vos critères de recherche' : 'Commencez par ajouter votre premier fournisseur',
+            controller.searchQuery.value.isNotEmpty ? 'suppliers_no_results_hint'.tr : 'suppliers_no_suppliers_hint'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -196,7 +236,7 @@ class SupplierListView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: controller.clearSearch,
               icon: const Icon(Icons.clear),
-              label: const Text('Effacer la recherche'),
+              label: Text('suppliers_clear_search'.tr),
             )
           else
             PermissionWidget(
@@ -205,7 +245,7 @@ class SupplierListView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: controller.goToCreateSupplier,
                 icon: const Icon(Icons.add),
-                label: const Text('Ajouter un fournisseur'),
+                label: Text('suppliers_add'.tr),
               ),
             ),
         ],
@@ -260,8 +300,8 @@ class SupplierListView extends StatelessWidget {
       await launchUrl(uri);
     } else {
       Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir l\'application téléphone',
+        'suppliers_error'.tr,
+        'suppliers_call_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -274,8 +314,8 @@ class SupplierListView extends StatelessWidget {
       await launchUrl(uri);
     } else {
       Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir l\'application email',
+        'suppliers_error'.tr,
+        'suppliers_email_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }

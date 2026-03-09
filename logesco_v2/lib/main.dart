@@ -10,6 +10,7 @@ import 'core/services/app_initialization_service.dart';
 import 'core/services/backend_service.dart';
 import 'core/utils/app_logger.dart';
 import 'core/utils/error_handler.dart';
+import 'core/translations/app_translations.dart';
 
 import 'shared/themes/app_theme.dart';
 
@@ -55,9 +56,27 @@ class LogescoApp extends StatelessWidget {
   const LogescoApp({super.key});
 
   @override
-  
   Widget build(BuildContext context) {
     print('🏗️ LogescoApp build appelé');
+
+    // Récupérer la langue sauvegardée
+    final storage = GetStorage();
+    final savedLanguage = storage.read('app_language') ?? 'fr';
+
+    Locale locale;
+    switch (savedLanguage) {
+      case 'en':
+        locale = const Locale('en', 'US');
+        break;
+      case 'es':
+        locale = const Locale('es', 'ES');
+        break;
+      case 'fr':
+      default:
+        locale = const Locale('fr', 'FR');
+        break;
+    }
+
     return GetMaterialApp(
       // Configuration de base
       title: 'LOGESCO v2',
@@ -66,18 +85,18 @@ class LogescoApp extends StatelessWidget {
       // Thème de l'application
       theme: AppTheme.lightTheme,
 
-      // Configuration des localisations
+      // Configuration des traductions GetX
+      translations: AppTranslations(),
+      locale: locale,
+      fallbackLocale: AppTranslations.fallbackLocale,
+
+      // Configuration des localisations Flutter
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('fr', 'FR'), // Français
-        Locale('en', 'US'), // Anglais 
-       // omboasu2024@
-      ],
-      locale: const Locale('fr', 'FR'), // Locale par défaut
+      supportedLocales: AppTranslations.supportedLocales,
 
       // Configuration des routes
       initialRoute: AppConfig.initialRoute,
@@ -93,9 +112,9 @@ class LogescoApp extends StatelessWidget {
       // Gestion des erreurs de route
       unknownRoute: GetPage(
         name: '/not-found',
-        page: () => const Scaffold(
+        page: () => Scaffold(
           body: Center(
-            child: Text('Page non trouvée'),
+            child: Text('page_not_found'.tr),
           ),
         ),
       ),

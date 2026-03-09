@@ -11,9 +11,9 @@ class RoleQuickAccess extends StatelessWidget {
     return FloatingActionButton.extended(
       onPressed: () => Get.toNamed(AppRoutes.roles),
       icon: const Icon(Icons.admin_panel_settings),
-      label: const Text('Rôles'),
+      label: Text('roles_quick_access'.tr),
       backgroundColor: Colors.indigo,
-      tooltip: 'Gérer les rôles utilisateur',
+      tooltip: 'roles_manage_tooltip'.tr,
     );
   }
 }
@@ -27,7 +27,7 @@ class RoleQuickButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () => Get.toNamed(AppRoutes.roles),
       icon: const Icon(Icons.admin_panel_settings, size: 18),
-      label: const Text('Rôles'),
+      label: Text('roles_quick_access'.tr),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
@@ -45,7 +45,7 @@ class RoleAccessChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: const Icon(Icons.admin_panel_settings, size: 16),
-      label: const Text('Gérer les rôles'),
+      label: Text('roles_manage_privileges'.tr),
       onPressed: () => Get.toNamed(AppRoutes.roles),
       backgroundColor: Colors.indigo.withOpacity(0.1),
       side: BorderSide(color: Colors.indigo.withOpacity(0.3)),
@@ -61,8 +61,8 @@ class RoleMenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.admin_panel_settings, color: Colors.indigo),
-      title: const Text('Gestion des rôles'),
-      subtitle: const Text('Créer et gérer les rôles utilisateur'),
+      title: Text('roles_manage_user_roles'.tr),
+      subtitle: Text('roles_create_manage'.tr),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: () => Get.toNamed(AppRoutes.roles),
     );
@@ -98,16 +98,16 @@ class RoleDashboardCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Rôles',
-                style: TextStyle(
+              Text(
+                'roles_quick_access'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Gérer les privilèges',
+                'roles_manage_privileges'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],

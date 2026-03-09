@@ -63,7 +63,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Réceptionner la commande',
+                      'procurement_receive'.tr + ' ' + 'procurement_orders'.tr.toLowerCase(),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),

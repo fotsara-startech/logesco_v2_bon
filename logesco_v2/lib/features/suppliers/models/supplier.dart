@@ -149,21 +149,23 @@ class SupplierForm {
 /// Modèle pour l'historique des transactions d'un fournisseur
 class SupplierTransaction {
   final int id;
-  final int supplierId;
-  final String type; // 'achat', 'paiement', 'ajustement'
+  final String typeTransaction; // 'credit', 'debit', 'paiement', etc.
   final double montant;
   final String? description;
-  final String? reference;
+  final int? referenceId;
+  final String? referenceType;
   final DateTime dateTransaction;
+  final double soldeApres;
 
   SupplierTransaction({
     required this.id,
-    required this.supplierId,
-    required this.type,
+    required this.typeTransaction,
     required this.montant,
     this.description,
-    this.reference,
+    this.referenceId,
+    this.referenceType,
     required this.dateTransaction,
+    required this.soldeApres,
   });
 
   factory SupplierTransaction.fromJson(Map<String, dynamic> json) {
@@ -212,24 +214,107 @@ class SupplierTransaction {
 
     return SupplierTransaction(
       id: parseInt(json['id']),
-      supplierId: parseInt(json['supplier_id']),
-      type: json['type']?.toString() ?? '',
+      typeTransaction: json['typeTransaction']?.toString() ?? '',
       montant: parseDouble(json['montant']),
       description: json['description']?.toString(),
-      reference: json['reference']?.toString(),
-      dateTransaction: parseDate(json['date_transaction']),
+      referenceId: json['referenceId'] != null ? parseInt(json['referenceId']) : null,
+      referenceType: json['referenceType']?.toString(),
+      dateTransaction: parseDate(json['dateTransaction']),
+      soldeApres: parseDouble(json['soldeApres']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'supplier_id': supplierId,
-      'type': type,
+      'typeTransaction': typeTransaction,
       'montant': montant,
       'description': description,
-      'reference': reference,
-      'date_transaction': dateTransaction.toIso8601String(),
+      'referenceId': referenceId,
+      'referenceType': referenceType,
+      'dateTransaction': dateTransaction.toIso8601String(),
+      'soldeApres': soldeApres,
     };
   }
+
+  /// Retourne true si c'est un crédit (paiement au fournisseur - réduit la dette)
+  bool get isCredit => typeTransaction.toLowerCase() == 'credit' || typeTransaction.toLowerCase() == 'paiement';
+
+  /// Retourne true si c'est un débit (achat au fournisseur - augmente la dette)
+  bool get isDebit => typeTransaction.toLowerCase() == 'debit' || typeTransaction.toLowerCase() == 'achat';
+
+  /// Retourne le libellé du type de transaction
+  String get typeTransactionDisplay {
+    switch (typeTransaction.toLowerCase()) {
+      case 'credit':
+        return 'Crédit';
+      case 'debit':
+        return 'Débit';
+      case 'paiement':
+        return 'Paiement';
+      case 'achat':
+        return 'Achat';
+      case 'ajustement':
+        return 'Ajustement';
+      default:
+        return typeTransaction;
+    }
+  }
+}
+
+/// Modèle pour une commande impayée (approvisionnement)
+class UnpaidProcurement {
+  final int id;
+  final String reference;
+  final DateTime dateCommande;
+  final double montantTotal;
+  final double montantPaye;
+  final double montantRestant;
+  final int nombreArticles;
+
+  UnpaidProcurement({
+    required this.id,
+    required this.reference,
+    required this.dateCommande,
+    required this.montantTotal,
+    required this.montantPaye,
+    required this.montantRestant,
+    required this.nombreArticles,
+  });
+
+  factory UnpaidProcurement.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    return UnpaidProcurement(
+      id: parseInt(json['id']),
+      reference: json['reference']?.toString() ?? '',
+      dateCommande: json['dateCommande'] != null ? DateTime.parse(json['dateCommande'] as String) : DateTime.now(),
+      montantTotal: parseDouble(json['montantTotal']),
+      montantPaye: parseDouble(json['montantPaye']),
+      montantRestant: parseDouble(json['montantRestant']),
+      nombreArticles: parseInt(json['nombreArticles']),
+    );
+  }
+
+  String get dateCommandeFormatted {
+    return '${dateCommande.day.toString().padLeft(2, '0')}/${dateCommande.month.toString().padLeft(2, '0')}/${dateCommande.year}';
+  }
+
+  String get montantTotalFormatted => '${montantTotal.toStringAsFixed(0)} FCFA';
+  String get montantPayeFormatted => '${montantPaye.toStringAsFixed(0)} FCFA';
+  String get montantRestantFormatted => '${montantRestant.toStringAsFixed(0)} FCFA';
 }

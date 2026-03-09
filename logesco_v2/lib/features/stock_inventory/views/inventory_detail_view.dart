@@ -14,8 +14,8 @@ class InventoryDetailView extends StatelessWidget {
 
     if (inventoryIdStr == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Erreur')),
-        body: const Center(child: Text('ID d\'inventaire manquant')),
+        appBar: AppBar(title: Text('common_error'.tr)),
+        body: Center(child: Text('inventory_error_id'.tr)),
       );
     }
 
@@ -23,7 +23,7 @@ class InventoryDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détail Inventaire'),
+        title: Text('inventory_detail_title'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -37,8 +37,8 @@ class InventoryDetailView extends StatelessWidget {
         );
 
         if (inventory == null) {
-          return const Center(
-            child: Text('Inventaire non trouvé'),
+          return Center(
+            child: Text('inventory_not_found'.tr),
           );
         }
 
@@ -111,11 +111,11 @@ class InventoryDetailView extends StatelessWidget {
             ],
             const SizedBox(height: 16),
             _buildInfoRow('Type', inventory.type.displayName),
-            if (inventory.nomCategorie != null) _buildInfoRow('Catégorie', inventory.nomCategorie!),
-            _buildInfoRow('Créé par', inventory.nomUtilisateur),
-            _buildInfoRow('Date de création', _formatDate(inventory.dateCreation)),
-            if (inventory.dateDebut != null) _buildInfoRow('Date de début', _formatDate(inventory.dateDebut!)),
-            if (inventory.dateFin != null) _buildInfoRow('Date de fin', _formatDate(inventory.dateFin!)),
+            if (inventory.nomCategorie != null) _buildInfoRow('inventory_form_category'.tr, inventory.nomCategorie!),
+            _buildInfoRow('inventory_created_by'.tr, inventory.nomUtilisateur),
+            _buildInfoRow('inventory_creation_date'.tr, _formatDate(inventory.dateCreation)),
+            if (inventory.dateDebut != null) _buildInfoRow('inventory_detail_start_date'.tr, _formatDate(inventory.dateDebut!)),
+            if (inventory.dateFin != null) _buildInfoRow('inventory_detail_end_date'.tr, _formatDate(inventory.dateFin!)),
           ],
         ),
       ),
@@ -138,9 +138,9 @@ class InventoryDetailView extends StatelessWidget {
               children: [
                 Icon(Icons.analytics, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Statistiques',
-                  style: TextStyle(
+                Text(
+                  'inventory_detail_stats'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -152,14 +152,14 @@ class InventoryDetailView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildStatItem(
-                    'Articles',
+                    'inventory_detail_items'.tr,
                     '${stats.countedItems}/${stats.totalItems}',
                     Colors.blue,
                   ),
                 ),
                 Expanded(
                   child: _buildStatItem(
-                    'Écarts',
+                    'inventory_detail_variances'.tr,
                     '${stats.itemsWithVariance}',
                     Colors.orange,
                   ),
@@ -176,7 +176,7 @@ class InventoryDetailView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Progression: ${stats.progressPercentage.toStringAsFixed(1)}%',
+              'inventory_detail_progress'.trParams({'percent': stats.progressPercentage.toStringAsFixed(1)}),
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ],
@@ -196,9 +196,9 @@ class InventoryDetailView extends StatelessWidget {
               children: [
                 Icon(Icons.settings, color: Colors.purple.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Actions',
-                  style: TextStyle(
+                Text(
+                  'inventory_detail_actions'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -214,7 +214,7 @@ class InventoryDetailView extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => controller.startInventory(inventory.id!),
                     icon: const Icon(Icons.play_arrow),
-                    label: const Text('Démarrer'),
+                    label: Text('inventory_detail_start'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -224,19 +224,19 @@ class InventoryDetailView extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => _navigateToCount(inventory),
                     icon: const Icon(Icons.edit),
-                    label: const Text('Continuer le comptage'),
+                    label: Text('inventory_detail_continue_count'.tr),
                   ),
                   OutlinedButton.icon(
                     onPressed: () => controller.finishInventory(inventory.id!),
                     icon: const Icon(Icons.check),
-                    label: const Text('Terminer'),
+                    label: Text('inventory_detail_finish'.tr),
                   ),
                 ],
                 if (inventory.status == InventoryStatus.TERMINE) ...[
                   ElevatedButton.icon(
                     onPressed: () => controller.printCountingSheet(inventory.id!),
                     icon: const Icon(Icons.print),
-                    label: const Text('Feuille comptage'),
+                    label: Text('inventory_detail_counting_sheet'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -246,7 +246,7 @@ class InventoryDetailView extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => controller.printInventoryReport(inventory.id!),
                     icon: const Icon(Icons.assessment),
-                    label: const Text('Rapport complet'),
+                    label: Text('inventory_detail_full_report'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -255,20 +255,20 @@ class InventoryDetailView extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: () => controller.closeInventory(inventory.id!),
                     icon: const Icon(Icons.lock),
-                    label: const Text('Clôturer'),
+                    label: Text('inventory_detail_close'.tr),
                   ),
                 ],
                 if (inventory.canBeModified)
                   OutlinedButton.icon(
                     onPressed: () => _editInventory(inventory),
                     icon: const Icon(Icons.edit),
-                    label: const Text('Modifier'),
+                    label: Text('inventory_detail_modify'.tr),
                   ),
                 if (inventory.status == InventoryStatus.BROUILLON)
                   OutlinedButton.icon(
                     onPressed: () => controller.confirmDeleteInventory(inventory),
                     icon: const Icon(Icons.delete),
-                    label: const Text('Supprimer'),
+                    label: Text('inventory_detail_delete'.tr),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                     ),
@@ -356,8 +356,8 @@ class InventoryDetailView extends StatelessWidget {
   void _editInventory(StockInventory inventory) {
     // TODO: Implémenter l'édition d'inventaire
     Get.snackbar(
-      'Info',
-      'Édition d\'inventaire - En cours de développement',
+      'common_info'.tr,
+      'inventory_detail_edit_dev'.tr,
       snackPosition: SnackPosition.BOTTOM,
     );
   }

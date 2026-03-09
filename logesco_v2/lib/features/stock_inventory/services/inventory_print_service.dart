@@ -30,6 +30,14 @@ class InventoryPrintService {
             pw.SizedBox(height: 20),
             _buildInventoryInfo(inventory),
             pw.SizedBox(height: 20),
+            pw.Text(
+              'ARTICLES À COMPTER',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 8),
             _buildItemsTable(items),
             pw.SizedBox(height: 20),
             _buildFooter(companyProfile),
@@ -67,6 +75,14 @@ class InventoryPrintService {
             pw.SizedBox(height: 20),
             _buildStatistics(inventory, items),
             pw.SizedBox(height: 20),
+            pw.Text(
+              'DÉTAIL DES ARTICLES',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 8),
             _buildDetailedItemsTable(items),
             pw.SizedBox(height: 20),
             _buildFooter(companyProfile),
@@ -348,110 +364,69 @@ class InventoryPrintService {
 
   /// Table des articles pour feuille de comptage
   static pw.Widget _buildItemsTable(List<InventoryItem> items) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'ARTICLES À COMPTER',
-          style: pw.TextStyle(
-            fontSize: 14,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 8),
-        pw.Table(
-          border: pw.TableBorder.all(color: PdfColors.grey300),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(3), // Produit
-            1: const pw.FlexColumnWidth(2), // Code
-            2: const pw.FlexColumnWidth(1), // Qté Système
-            3: const pw.FlexColumnWidth(1), // Qté Comptée
-            4: const pw.FlexColumnWidth(2), // Observations
-          },
-          children: [
-            // En-tête
-            pw.TableRow(
-              decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-              children: [
-                _buildTableCell('Produit', isHeader: true),
-                _buildTableCell('Code', isHeader: true),
-                _buildTableCell('Qté Sys.', isHeader: true),
-                _buildTableCell('Qté Comptée', isHeader: true),
-                _buildTableCell('Observations', isHeader: true),
-              ],
-            ),
-            // Lignes des articles
-            ...items.map((item) => pw.TableRow(
-                  children: [
-                    _buildTableCell(item.nomProduit),
-                    _buildTableCell(item.codeProduit ?? ''),
-                    _buildTableCell(item.quantiteSysteme.toStringAsFixed(0)),
-                    _buildTableCell(''), // Champ vide pour saisie manuelle
-                    _buildTableCell(''), // Champ vide pour observations
-                  ],
-                )),
-          ],
-        ),
-      ],
+    return pw.Table.fromTextArray(
+      headerStyle: pw.TextStyle(
+        fontSize: 8,
+        fontWeight: pw.FontWeight.bold,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      cellHeight: 20,
+      cellAlignments: {
+        0: pw.Alignment.centerLeft,
+        1: pw.Alignment.centerLeft,
+        2: pw.Alignment.center,
+        3: pw.Alignment.center,
+        4: pw.Alignment.centerLeft,
+      },
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Observations'],
+      data: items
+          .map((item) => [
+                item.nomProduit,
+                item.codeProduit ?? '',
+                item.quantiteSysteme.toStringAsFixed(0),
+                '', // Champ vide pour saisie manuelle
+                '', // Champ vide pour observations
+              ])
+          .toList(),
     );
   }
 
   /// Table détaillée des articles pour rapport
   static pw.Widget _buildDetailedItemsTable(List<InventoryItem> items) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'DÉTAIL DES ARTICLES',
-          style: pw.TextStyle(
-            fontSize: 14,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 8),
-        pw.Table(
-          border: pw.TableBorder.all(color: PdfColors.grey300),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(2), // Produit
-            1: const pw.FlexColumnWidth(1), // Code
-            2: const pw.FlexColumnWidth(1), // Qté Système
-            3: const pw.FlexColumnWidth(1), // Qté Comptée
-            4: const pw.FlexColumnWidth(1), // Écart
-            5: const pw.FlexColumnWidth(1), // Valeur Sys.
-            6: const pw.FlexColumnWidth(1), // Écart Val.
-            7: const pw.FlexColumnWidth(1), // Statut
-          },
-          children: [
-            // En-tête
-            pw.TableRow(
-              decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-              children: [
-                _buildTableCell('Produit', isHeader: true),
-                _buildTableCell('Code', isHeader: true),
-                _buildTableCell('Qté Sys.', isHeader: true),
-                _buildTableCell('Qté Comptée', isHeader: true),
-                _buildTableCell('Écart', isHeader: true),
-                _buildTableCell('Valeur Sys.', isHeader: true),
-                _buildTableCell('Écart Val.', isHeader: true),
-                _buildTableCell('Statut', isHeader: true),
-              ],
-            ),
-            // Lignes des articles
-            ...items.map((item) => pw.TableRow(
-                  children: [
-                    _buildTableCell(item.nomProduit),
-                    _buildTableCell(item.codeProduit ?? ''),
-                    _buildTableCell(item.quantiteSysteme.toStringAsFixed(0)),
-                    _buildTableCell(item.isCounted ? item.quantiteComptee!.toStringAsFixed(0) : '-'),
-                    _buildTableCell(item.isCounted ? item.calculatedEcart.toStringAsFixed(0) : '-'),
-                    _buildTableCell(item.valeurSysteme.toStringAsFixed(0)),
-                    _buildTableCell(item.isCounted ? item.ecartValeur.toStringAsFixed(0) : '-'),
-                    _buildTableCell(item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'À COMPTER'),
-                  ],
-                )),
-          ],
-        ),
-      ],
+    return pw.Table.fromTextArray(
+      headerStyle: pw.TextStyle(
+        fontSize: 7,
+        fontWeight: pw.FontWeight.bold,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 7),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      cellHeight: 18,
+      cellAlignments: {
+        0: pw.Alignment.centerLeft,
+        1: pw.Alignment.centerLeft,
+        2: pw.Alignment.center,
+        3: pw.Alignment.center,
+        4: pw.Alignment.center,
+        5: pw.Alignment.centerRight,
+        6: pw.Alignment.centerRight,
+        7: pw.Alignment.center,
+      },
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Écart', 'Valeur Sys.', 'Écart Val.', 'Statut'],
+      data: items
+          .map((item) => [
+                item.nomProduit,
+                item.codeProduit ?? '',
+                item.quantiteSysteme.toStringAsFixed(0),
+                item.isCounted ? item.quantiteComptee!.toStringAsFixed(0) : '-',
+                item.isCounted ? item.calculatedEcart.toStringAsFixed(0) : '-',
+                item.valeurSysteme.toStringAsFixed(0),
+                item.isCounted ? item.ecartValeur.toStringAsFixed(0) : '-',
+                item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'À COMPTER',
+              ])
+          .toList(),
     );
   }
 

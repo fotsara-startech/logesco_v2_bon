@@ -1,0 +1,152 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║              GUIDE SIMPLE - PAS À PAS                        ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+Vous êtes perdu? Voici la solution la plus SIMPLE possible.
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  OPTION 1: CRÉER UN NOUVEAU PACKAGE (RECOMMANDÉ)            │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+📍 Depuis le dossier de développement:
+
+   ┌─────────────────────────────────────────┐
+   │                                         │
+   │  preparer-pour-client-CORRIGE.bat       │
+   │                                         │
+   └─────────────────────────────────────────┘
+
+   Attendez 2-3 minutes.
+
+   ✅ Package créé dans: release\LOGESCO-Client-CORRIGE\
+
+
+📍 Testez le package:
+
+   1. cd release\LOGESCO-Client-CORRIGE
+
+   2. Copiez votre base:
+      copy "E:\Stage 2025\LOGESCO-Client-Optimise\backend\database\logesco.db" "backend\database\"
+
+   3. DEMARRER-LOGESCO.bat
+
+   4. Attendez 15-20 secondes (première fois)
+
+   5. Vérifiez vos données!
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  OPTION 2: RÉPARER UN CLIENT EXISTANT                       │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+📍 Allez dans le dossier du client:
+
+   cd "E:\Stage 2025\LOGESCO-Client-Optimise"
+
+
+📍 Copiez le script de réparation:
+
+   copy "chemin\vers\REPARER-CLIENT.bat" .
+
+
+📍 Exécutez:
+
+   ┌─────────────────────────────────────────┐
+   │                                         │
+   │  REPARER-CLIENT.bat                     │
+   │                                         │
+   └─────────────────────────────────────────┘
+
+   Attendez 30 secondes.
+
+
+📍 Lancez LOGESCO:
+
+   DEMARRER-LOGESCO.bat
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  EXPLICATION SIMPLE                                          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+Le problème:
+------------
+Le package "optimisé" contient un Prisma pré-généré pour
+une base VIDE.
+
+Même si vous copiez votre base avec 165 produits, Prisma
+utilise l'ancien client qui ne voit rien.
+
+
+La solution:
+------------
+Supprimer le Prisma pré-généré et le régénérer avec
+VOTRE base de données.
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  QUE FAIRE MAINTENANT?                                       │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+Choisissez UNE option:
+
+[ ] OPTION 1: Créer nouveau package
+    → preparer-pour-client-CORRIGE.bat
+    → Tester avec votre base
+    → Distribuer ce nouveau package
+
+[ ] OPTION 2: Réparer client existant
+    → Copier REPARER-CLIENT.bat vers le client
+    → Exécuter
+    → Tester
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  BESOIN D'AIDE?                                              │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+Lisez:
+- SOLUTION_SIMPLE_FINALE.txt (Instructions détaillées)
+
+Ou contactez-moi avec:
+- Quelle option vous avez choisie
+- Les messages d'erreur (s'il y en a)
+- Capture d'écran
+
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  RÉSUMÉ EN 3 LIGNES                                          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+1. preparer-pour-client-CORRIGE.bat
+2. Copier votre base dans le package
+3. DEMARRER-LOGESCO.bat
+
+C'EST TOUT!
+
+
+═══════════════════════════════════════════════════════════════
+
+Ne vous perdez pas dans les détails.
+
+Suivez juste ces 3 étapes et ça fonctionnera.
+
+Je suis là si vous avez besoin d'aide.
+
+═══════════════════════════════════════════════════════════════

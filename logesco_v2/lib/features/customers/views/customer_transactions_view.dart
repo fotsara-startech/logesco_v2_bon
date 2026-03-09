@@ -40,14 +40,14 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
   Widget build(BuildContext context) {
     if (customerId == 0) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Erreur')),
-        body: const Center(child: Text('ID client manquant')),
+        appBar: AppBar(title: Text('error'.tr)),
+        body: Center(child: Text('customers_missing_id'.tr)),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique des transactions'),
+        title: Text('customers_transaction_history'.tr),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
       ),
@@ -57,8 +57,8 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
         );
 
         if (customer == null) {
-          return const Center(
-            child: Text('Client non trouvé'),
+          return Center(
+            child: Text('customers_not_found'.tr),
           );
         }
 
@@ -105,7 +105,7 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
                       ),
                     ),
                     Text(
-                      'Client #${customer.id}',
+                      'customers_client_id'.trParams({'id': customer.id.toString()}),
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 14,
@@ -150,7 +150,7 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucune transaction',
+            'customers_no_transactions'.tr,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -159,7 +159,7 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'L\'historique des transactions apparaîtra ici.',
+            'customers_transactions_empty'.tr,
             style: TextStyle(
               color: Colors.grey.shade500,
             ),
@@ -221,7 +221,10 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
             if (transaction.referenceType != null && transaction.referenceId != null) ...[
               const SizedBox(height: 2),
               Text(
-                'Réf: ${transaction.referenceType} #${transaction.referenceId}',
+                'customers_ref'.trParams({
+                  'type': transaction.referenceType!,
+                  'id': transaction.referenceId.toString(),
+                }),
                 style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 11,
@@ -250,7 +253,7 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                isCredit ? 'CRÉDIT' : 'DÉBIT',
+                isCredit ? 'customers_credit'.tr.toUpperCase() : 'customers_debit'.tr.toUpperCase(),
                 style: TextStyle(
                   color: color,
                   fontSize: 10,
@@ -268,23 +271,23 @@ class _CustomerTransactionsViewState extends State<CustomerTransactionsView> {
   void _showTransactionDetails(CustomerTransaction transaction) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Détails de la transaction'),
+        title: Text('customers_transaction_details'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Type', transaction.typeTransactionDisplay),
-            _buildDetailRow('Montant', '${transaction.montant.toStringAsFixed(0)} FCFA'),
-            _buildDetailRow('Description', transaction.description ?? 'N/A'),
-            _buildDetailRow('Date', _formatDate(transaction.dateTransaction)),
-            if (transaction.referenceType != null && transaction.referenceId != null) _buildDetailRow('Référence', '${transaction.referenceType} #${transaction.referenceId}'),
-            _buildDetailRow('Solde après', '${transaction.soldeApres.toStringAsFixed(0)} FCFA'),
+            _buildDetailRow('customers_transaction_type'.tr, transaction.typeTransactionDisplay),
+            _buildDetailRow('customers_transaction_amount'.tr, '${transaction.montant.toStringAsFixed(0)} FCFA'),
+            _buildDetailRow('description'.tr, transaction.description ?? 'N/A'),
+            _buildDetailRow('customers_transaction_date'.tr, _formatDate(transaction.dateTransaction)),
+            if (transaction.referenceType != null && transaction.referenceId != null) _buildDetailRow('customers_transaction_reference'.tr, '${transaction.referenceType} #${transaction.referenceId}'),
+            _buildDetailRow('customers_balance_after'.tr, '${transaction.soldeApres.toStringAsFixed(0)} FCFA'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
         ],
       ),

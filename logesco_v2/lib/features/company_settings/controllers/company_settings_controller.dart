@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../printing/services/printing_service.dart';
 import '../models/company_profile.dart';
 import '../services/company_settings_service.dart';
 
@@ -22,6 +25,23 @@ class CompanySettingsController extends GetxController {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController nuiRccmController = TextEditingController();
+  final TextEditingController sloganController = TextEditingController();
+
+  // État du logo
+  final Rx<String?> _logoPath = Rx<String?>(null);
+  String? get logoPath => _logoPath.value;
+
+  // Langue des factures
+  final Rx<String> _selectedLanguage = 'fr'.obs;
+  String get selectedLanguage => _selectedLanguage.value;
+
+  /// Définit la langue des factures
+  void setLanguage(String language) {
+    if (language != _selectedLanguage.value) {
+      _selectedLanguage.value = language;
+      _hasUnsavedChanges.value = true;
+    }
+  }
 
   // Clé du formulaire pour la validation
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -59,6 +79,7 @@ class CompanySettingsController extends GetxController {
     phoneController.dispose();
     emailController.dispose();
     nuiRccmController.dispose();
+    sloganController.dispose();
     super.onClose();
   }
 
@@ -79,6 +100,7 @@ class CompanySettingsController extends GetxController {
     phoneController.addListener(_onFormChanged);
     emailController.addListener(_onFormChanged);
     nuiRccmController.addListener(_onFormChanged);
+    sloganController.addListener(_onFormChanged);
   }
 
   /// Appelé quand le formulaire change
@@ -101,7 +123,10 @@ class CompanySettingsController extends GetxController {
         locationController.text.trim() != (profile.location ?? '') ||
         phoneController.text.trim() != (profile.phone ?? '') ||
         emailController.text.trim() != (profile.email ?? '') ||
-        nuiRccmController.text.trim() != (profile.nuiRccm ?? '');
+        nuiRccmController.text.trim() != (profile.nuiRccm ?? '') ||
+        sloganController.text.trim() != (profile.slogan ?? '') ||
+        _logoPath.value != profile.logo ||
+        _selectedLanguage.value != (profile.receiptLanguage ?? 'fr');
   }
 
   /// Charge le profil d'entreprise
@@ -118,6 +143,9 @@ class CompanySettingsController extends GetxController {
         _companyProfile.value = response.data;
         _populateForm(response.data!);
         _hasUnsavedChanges.value = false;
+
+        // Mettre à jour le profil partagé dans le service d'impression
+        PrintingService.setCompanyProfile(response.data);
 
         if (forceRefresh) {
           SnackbarUtils.showSuccess('Profil rechargé avec succès');
@@ -146,6 +174,9 @@ class CompanySettingsController extends GetxController {
     phoneController.text = profile.phone ?? '';
     emailController.text = profile.email ?? '';
     nuiRccmController.text = profile.nuiRccm ?? '';
+    sloganController.text = profile.slogan ?? '';
+    _logoPath.value = profile.logo;
+    _selectedLanguage.value = profile.receiptLanguage ?? 'fr';
   }
 
   /// Vide le formulaire
@@ -156,6 +187,8 @@ class CompanySettingsController extends GetxController {
     phoneController.clear();
     emailController.clear();
     nuiRccmController.clear();
+    sloganController.clear();
+    _logoPath.value = null;
     _hasUnsavedChanges.value = false;
   }
 
@@ -185,6 +218,9 @@ class CompanySettingsController extends GetxController {
         phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
         email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
         nuiRccm: nuiRccmController.text.trim().isEmpty ? null : nuiRccmController.text.trim(),
+        logo: _logoPath.value,
+        slogan: sloganController.text.trim().isEmpty ? null : sloganController.text.trim(),
+        receiptLanguage: _selectedLanguage.value,
       );
 
       final response = _companyProfile.value == null ? await _companySettingsService.createCompanyProfile(request) : await _companySettingsService.updateCompanyProfile(request);
@@ -192,6 +228,11 @@ class CompanySettingsController extends GetxController {
       if (response.success && response.data != null) {
         _companyProfile.value = response.data;
         _hasUnsavedChanges.value = false;
+
+        // Mettre à jour le profil partagé dans le service d'impression
+        PrintingService.setCompanyProfile(response.data);
+        print('✅ Profil d\'entreprise mis à jour dans le service d\'impression');
+
         SnackbarUtils.showSuccess(response.message ?? 'Profil sauvegardé avec succès');
       } else {
         if (response.errors != null && response.errors!.isNotEmpty) {
@@ -281,6 +322,8 @@ class CompanySettingsController extends GetxController {
       phone: field == 'phone' ? value : phoneController.text,
       email: field == 'email' ? value : emailController.text,
       nuiRccm: field == 'nuiRccm' ? value : nuiRccmController.text,
+      slogan: field == 'slogan' ? value : sloganController.text,
+      logo: _logoPath.value,
     );
 
     final errors = tempProfile.validate();
@@ -328,5 +371,49 @@ class CompanySettingsController extends GetxController {
   /// Efface l'erreur de validation pour un champ
   void clearFieldError(String field) {
     _validationErrors.remove(field);
+  }
+
+  /// Sélectionne un fichier logo
+  Future<void> selectLogo() async {
+    try {
+      // Ouvrir le sélecteur de fichiers pour les images
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+
+        // Vérifier que le fichier existe
+        final file = File(filePath);
+        if (!await file.exists()) {
+          SnackbarUtils.showError('Le fichier sélectionné n\'existe pas');
+          return;
+        }
+
+        // Vérifier la taille du fichier (max 5MB)
+        final fileSize = await file.length();
+        if (fileSize > 5 * 1024 * 1024) {
+          SnackbarUtils.showError('Le fichier est trop volumineux (max 5MB)');
+          return;
+        }
+
+        // Mettre à jour le chemin du logo
+        _logoPath.value = filePath;
+        _hasUnsavedChanges.value = true;
+
+        SnackbarUtils.showSuccess('Logo sélectionné: ${result.files.single.name}');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la sélection du logo: $e');
+      SnackbarUtils.showError('Erreur lors de la sélection du fichier: $e');
+    }
+  }
+
+  /// Supprime le logo
+  void removeLogo() {
+    _logoPath.value = null;
+    _hasUnsavedChanges.value = true;
   }
 }
