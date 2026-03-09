@@ -464,20 +464,62 @@ function createCashSessionsRouter({ prisma, authService }) {
         take: parseInt(limit)
       });
       
-      const formattedSessions = sessions.map(session => ({
-        id: session.id,
-        caisseId: session.caisseId,
-        nomCaisse: session.caisse.nom,
-        utilisateurId: session.utilisateurId,
-        nomUtilisateur: session.utilisateur.nomUtilisateur,
-        soldeOuverture: parseFloat(session.soldeOuverture),
-        soldeFermeture: session.soldeFermeture ? parseFloat(session.soldeFermeture) : null,
-        soldeAttendu: session.soldeAttendu ? parseFloat(session.soldeAttendu) : null,
-        ecart: session.ecart ? parseFloat(session.ecart) : null,
-        dateOuverture: session.dateOuverture,
-        dateFermeture: session.dateFermeture,
-        isActive: Boolean(session.isActive),
-        metadata: session.metadata ? JSON.parse(session.metadata) : null
+      // Calculer les totaux d'entrées et de dépenses pour chaque session
+      const formattedSessions = await Promise.all(sessions.map(async (session) => {
+        // Calculer les entrées (ventes + paiements clients) en utilisant sessionId
+        const entrees = await prisma.cashMovement.aggregate({
+          where: {
+            sessionId: session.id,
+            type: { in: ['entree', 'vente'] }
+          },
+          _sum: {
+            montant: true
+          }
+        });
+
+        // Calculer les sorties (dépenses de caisse) en utilisant sessionId
+        const sortiesCaisse = await prisma.cashMovement.aggregate({
+          where: {
+            sessionId: session.id,
+            type: 'sortie'
+          },
+          _sum: {
+            montant: true
+          }
+        });
+
+        // Calculer les mouvements financiers (dépenses) en utilisant sessionId
+        const mouvementsFinanciers = await prisma.financialMovement.aggregate({
+          where: {
+            sessionId: session.id
+          },
+          _sum: {
+            montant: true
+          }
+        });
+
+        const totalEntrees = entrees._sum.montant ? parseFloat(entrees._sum.montant) : 0;
+        const totalSortiesCaisse = sortiesCaisse._sum.montant ? parseFloat(sortiesCaisse._sum.montant) : 0;
+        const totalMouvementsFinanciers = mouvementsFinanciers._sum.montant ? parseFloat(mouvementsFinanciers._sum.montant) : 0;
+        const totalSorties = totalSortiesCaisse + totalMouvementsFinanciers;
+
+        return {
+          id: session.id,
+          caisseId: session.caisseId,
+          nomCaisse: session.caisse.nom,
+          utilisateurId: session.utilisateurId,
+          nomUtilisateur: session.utilisateur.nomUtilisateur,
+          soldeOuverture: parseFloat(session.soldeOuverture),
+          soldeFermeture: session.soldeFermeture ? parseFloat(session.soldeFermeture) : null,
+          soldeAttendu: session.soldeAttendu ? parseFloat(session.soldeAttendu) : null,
+          ecart: session.ecart ? parseFloat(session.ecart) : null,
+          dateOuverture: session.dateOuverture,
+          dateFermeture: session.dateFermeture,
+          isActive: Boolean(session.isActive),
+          totalEntrees: totalEntrees,
+          totalSorties: totalSorties,
+          metadata: session.metadata ? JSON.parse(session.metadata) : null
+        };
       }));
       
       res.json({

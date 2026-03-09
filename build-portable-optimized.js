@@ -108,29 +108,79 @@ console.log('[5/7] Génération Prisma Client (une seule fois)...');
 try {
   execSync('npx prisma generate', {
     cwd: DIST_DIR,
-    stdio: 'pipe'
+    stdio: 'inherit',
+    timeout: 120000 // 2 minutes timeout
   });
   console.log('✅ Prisma Client généré\n');
 } catch (error) {
   console.error('❌ Erreur génération Prisma:', error.message);
-  process.exit(1);
+  console.log('\n⚠️  Tentative de réessai...\n');
+  
+  // Réessayer une fois
+  try {
+    execSync('npx prisma generate', {
+      cwd: DIST_DIR,
+      stdio: 'inherit',
+      timeout: 120000
+    });
+    console.log('✅ Prisma Client généré (après réessai)\n');
+  } catch (retryError) {
+    console.error('❌ Erreur après réessai:', retryError.message);
+    console.log('\n💡 Solutions possibles:');
+    console.log('   1. Vérifiez votre connexion internet');
+    console.log('   2. Réessayez dans quelques minutes');
+    console.log('   3. Utilisez un VPN si le téléchargement est bloqué');
+    console.log('   4. Ou exécutez manuellement:');
+    console.log('      cd dist-portable');
+    console.log('      npx prisma generate\n');
+    process.exit(1);
+  }
 }
 
-// OPTIMISATION: Créer la base de données template
-console.log('[6/7] Création base de données template...');
+// OPTIMISATION: Créer la base de données template PROPRE pour PRODUCTION
+console.log('[6/7] Création base de données VIERGE pour production...');
 const dbDir = path.join(DIST_DIR, 'database');
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+
+// Supprimer complètement le dossier database s'il existe
+if (fs.existsSync(dbDir)) {
+  removeRecursive(dbDir);
+  console.log('  🗑️  Ancienne base de données supprimée');
 }
+
+// Supprimer aussi toute base de données dans le dossier source (ne pas copier)
+const sourceDbDir = path.join(BACKEND_DIR, 'database');
+if (fs.existsSync(sourceDbDir)) {
+  console.log('  🗑️  Suppression base de données de développement...');
+  removeRecursive(sourceDbDir);
+  console.log('  ✅  Base de développement supprimée (ne sera pas copiée)');
+}
+
+// Recréer le dossier database
+fs.mkdirSync(dbDir, { recursive: true });
 
 try {
-  execSync('npx prisma db push --accept-data-loss --skip-generate', {
+  // Créer la structure de la base de données VIERGE avec --force-reset
+  console.log('  📋 Création structure base de données...');
+  execSync('npx prisma db push --force-reset --accept-data-loss --skip-generate', {
     cwd: DIST_DIR,
     stdio: 'pipe',
     env: { ...process.env, DATABASE_URL: 'file:./database/logesco.db' }
   });
-  console.log('✅ Base de données template créée\n');
+  console.log('  ✅ Structure de base de données créée');
+
+  // Initialiser UNIQUEMENT avec les données essentielles (admin, caisse, paramètres)
+  console.log('  🌱 Initialisation données essentielles uniquement...');
+  console.log('     (Admin, Caisse principale, Paramètres entreprise)');
+  execSync('node prisma/seed.js', {
+    cwd: DIST_DIR,
+    stdio: 'inherit',
+    env: { ...process.env, DATABASE_URL: 'file:./database/logesco.db' }
+  });
+  console.log('✅ Base de données VIERGE créée pour production\n');
+  console.log('   ⚠️  AUCUNE donnée de développement incluse');
+  console.log('   ✅ Prête pour déploiement client\n');
 } catch (error) {
+  console.error('❌ Erreur création base de données:', error.message);
   console.log('⚠️  Base de données sera créée au premier démarrage\n');
 }
 

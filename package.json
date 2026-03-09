@@ -15,6 +15,7 @@
     "db:reset": "prisma migrate reset --force && npm run db:indexes",
     "db:cleanup": "node scripts/cleanup-test-users.js",
     "db:seed": "node scripts/seed-full-database.js",
+    "db:seed-clean": "node prisma/seed.js",
     "db:reset-seed": "node scripts/reset-and-seed.js",
     "db:check": "node scripts/check-database.js",
     "db:help": "node scripts/show-seed-help.js",

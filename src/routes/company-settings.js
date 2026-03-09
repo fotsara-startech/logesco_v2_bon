@@ -34,7 +34,10 @@ router.get('/public', async (req, res) => {
       localisation: settings.localisation,
       telephone: settings.telephone,
       email: settings.email,
-      nuiRccm: settings.nuiRccm
+      nuiRccm: settings.nuiRccm,
+      logo: settings.logo,
+      slogan: settings.slogan,
+      langueFacture: settings.langueFacture || 'fr'
     };
 
     return res.json(
