@@ -30,7 +30,7 @@ class FiltresCommandesWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Filtrer les commandes',
+                    'procurement_filter_orders'.tr,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
@@ -45,7 +45,7 @@ class FiltresCommandesWidget extends StatelessWidget {
 
             // Filtre par statut
             Text(
-              'Statut',
+              'procurement_filter_status'.tr,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -56,12 +56,12 @@ class FiltresCommandesWidget extends StatelessWidget {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    hintText: 'Tous les statuts',
+                    hintText: 'procurement_filter_all_status'.tr,
                   ),
                   items: [
-                    const DropdownMenuItem<CommandeStatut?>(
+                    DropdownMenuItem<CommandeStatut?>(
                       value: null,
-                      child: Text('Tous les statuts'),
+                      child: Text('procurement_filter_all_status'.tr),
                     ),
                     ...CommandeStatut.values.map((statut) {
                       return DropdownMenuItem<CommandeStatut?>(
@@ -77,7 +77,7 @@ class FiltresCommandesWidget extends StatelessWidget {
 
             // Filtre par période
             Text(
-              'Période',
+              'procurement_filter_period'.tr,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -97,7 +97,7 @@ class FiltresCommandesWidget extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  controller.dateDebutFiltre.value != null ? _formatDate(controller.dateDebutFiltre.value!) : 'Date début',
+                                  controller.dateDebutFiltre.value != null ? _formatDate(controller.dateDebutFiltre.value!) : 'procurement_filter_start_date'.tr,
                                   style: TextStyle(
                                     color: controller.dateDebutFiltre.value != null ? Colors.black : Colors.grey[600],
                                   ),
@@ -123,7 +123,7 @@ class FiltresCommandesWidget extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  controller.dateFinFiltre.value != null ? _formatDate(controller.dateFinFiltre.value!) : 'Date fin',
+                                  controller.dateFinFiltre.value != null ? _formatDate(controller.dateFinFiltre.value!) : 'procurement_filter_end_date'.tr,
                                   style: TextStyle(
                                     color: controller.dateFinFiltre.value != null ? Colors.black : Colors.grey[600],
                                   ),
@@ -148,12 +148,12 @@ class FiltresCommandesWidget extends StatelessWidget {
                     controller.resetFiltres();
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Réinitialiser'),
+                  child: Text('procurement_filter_reset'.tr),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Annuler'),
+                  child: Text('common_cancel'.tr),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
@@ -161,7 +161,7 @@ class FiltresCommandesWidget extends StatelessWidget {
                     controller.appliquerFiltres();
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Appliquer'),
+                  child: Text('procurement_filter_apply'.tr),
                 ),
               ],
             ),

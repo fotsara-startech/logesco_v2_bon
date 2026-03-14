@@ -15,8 +15,8 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
         return Card(
           child: ListTile(
             leading: const Icon(Icons.visibility, color: Colors.blue),
-            title: const Text('Afficher le résumé des stocks'),
-            subtitle: const Text('Cliquez pour voir les statistiques'),
+            title: Text('stock_summary_show'.tr),
+            subtitle: Text('stock_summary_show_hint'.tr),
             trailing: const Icon(Icons.expand_more),
             onTap: () => controller.isSummaryVisible.value = true,
           ),
@@ -66,9 +66,9 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Aucune donnée de résumé disponible'),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('stock_summary_no_data'.tr),
               ),
             ],
           ),
@@ -89,42 +89,42 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
                   children: [
                     _buildCompactStatCard(
                       '1',
-                      'Produits',
+                      'stock_summary_products'.tr,
                       summary.totalProduits.toString(),
                       Icons.inventory_2,
                       Colors.blue,
                     ),
                     _buildCompactStatCard(
                       '2',
-                      'Achat',
+                      'stock_summary_purchases'.tr,
                       _formatValueCompact(summary.valeurStockAchat),
                       Icons.shopping_cart,
                       Colors.green,
                     ),
                     _buildCompactStatCard(
                       '3',
-                      'Vente',
+                      'stock_summary_sales'.tr,
                       _formatValueCompact(summary.valeurStockVente ?? summary.valeurTotaleStock),
                       Icons.sell,
                       Colors.teal,
                     ),
                     _buildCompactStatCard(
                       '4',
-                      'Alertes',
+                      'stock_summary_alerts'.tr,
                       summary.produitsEnAlerte.toString(),
                       Icons.warning,
                       summary.produitsEnAlerte > 0 ? Colors.orange : Colors.grey,
                     ),
                     _buildCompactStatCard(
                       '5',
-                      'Ruptures',
+                      'stock_summary_ruptures'.tr,
                       summary.produitsEnRupture.toString(),
                       Icons.error,
                       summary.produitsEnRupture > 0 ? Colors.red : Colors.grey,
                     ),
                     _buildCompactStatCard(
                       '6',
-                      'En stock',
+                      'stock_summary_in_stock'.tr,
                       '${summary.pourcentageEnStock}%',
                       Icons.check_circle,
                       Colors.indigo,
@@ -173,10 +173,10 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
             size: 20,
           ),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Résumé des stocks',
-              style: TextStyle(
+              'stock_summary_title'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -185,7 +185,7 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
           IconButton(
             icon: const Icon(Icons.visibility_off, size: 20),
             onPressed: () => controller.isSummaryVisible.value = false,
-            tooltip: 'Masquer le résumé',
+            tooltip: 'stock_summary_hide'.tr,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(
               minWidth: 32,

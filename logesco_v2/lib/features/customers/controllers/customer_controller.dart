@@ -504,8 +504,8 @@ class CustomerController extends GetxController {
   Future<void> exportToExcel() async {
     try {
       Get.snackbar(
-        'Export en cours',
-        'Récupération des clients...',
+        'customers_export_in_progress'.tr,
+        'customers_export_fetching'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
@@ -548,8 +548,8 @@ class CustomerController extends GetxController {
         }
 
         Get.snackbar(
-          'Aucune donnée',
-          'Aucun client à exporter',
+          'common_info'.tr,
+          'customers_export_no_data'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.orange.shade100,
           colorText: Colors.orange.shade800,
@@ -568,8 +568,8 @@ class CustomerController extends GetxController {
 
       // Afficher la progression de génération
       Get.snackbar(
-        'Export en cours',
-        'Génération du fichier Excel...',
+        'customers_export_in_progress'.tr,
+        'customers_export_generating'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
@@ -593,23 +593,23 @@ class CustomerController extends GetxController {
       if (filePath != null) {
         Get.dialog(
           AlertDialog(
-            title: const Text('Export réussi'),
+            title: Text('customers_export_success'.tr),
             content: Text(
-              'Export de ${allCustomers.length} client(s) réussi.\n'
-              'Fichier: ${filePath.split('/').last}',
+              '${'customers_export_count'.tr.replaceAll('@count', allCustomers.length.toString())}\n'
+              '${'customers_export_file'.tr.replaceAll('@filename', filePath.split('/').last)}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('common_close'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des clients',
+          'error'.tr,
+          'customers_export_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -626,8 +626,8 @@ class CustomerController extends GetxController {
       }
 
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
+        'error'.tr,
+        'customers_export_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -641,8 +641,8 @@ class CustomerController extends GetxController {
       print('🔄 Début de l\'import Excel...');
 
       Get.snackbar(
-        'Import en cours',
-        'Sélection du fichier...',
+        'customers_import_success'.tr,
+        'customers_import_confirm'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(seconds: 2),
@@ -655,8 +655,8 @@ class CustomerController extends GetxController {
       if (importData == null || importData.isEmpty) {
         print('⚠️  Aucune donnée à importer');
         Get.snackbar(
-          'Annulé',
-          'Aucun fichier sélectionné ou fichier vide',
+          'common_cancel'.tr,
+          'customers_import_no_file'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -667,7 +667,7 @@ class CustomerController extends GetxController {
       // Afficher un aperçu et demander confirmation
       final confirmed = await Get.dialog<bool>(
         AlertDialog(
-          title: Text('Importer ${importData.length} client(s) ?'),
+          title: Text('customers_import_confirm'.tr.replaceAll('@count', importData.length.toString())),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -685,11 +685,11 @@ class CustomerController extends GetxController {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: const Text('Annuler'),
+              child: Text('common_cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),
-              child: const Text('Importer'),
+              child: Text('customers_import_button'.tr),
             ),
           ],
         ),
@@ -724,22 +724,23 @@ class CustomerController extends GetxController {
 
       Get.dialog(
         AlertDialog(
-          title: const Text('Import terminé'),
+          title: Text('customers_import_success'.tr),
           content: Text(
-            'Importés: $successCount\nErreurs: $errorCount',
+            '${'customers_import_imported'.tr.replaceAll('@count', successCount.toString())}\n'
+            '${'customers_import_errors'.tr.replaceAll('@count', errorCount.toString())}',
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text('Fermer'),
+              child: Text('common_close'.tr),
             ),
           ],
         ),
       );
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'import: $e',
+        'error'.tr,
+        'customers_import_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -755,23 +756,22 @@ class CustomerController extends GetxController {
       if (filePath != null) {
         Get.dialog(
           AlertDialog(
-            title: const Text('Template généré'),
+            title: Text('customers_template_success'.tr),
             content: Text(
-              'Template d\'import généré avec succès.\n'
-              'Fichier: ${filePath.split('/').last}',
+              'customers_template_generated'.tr.replaceAll('@filename', filePath.split('/').last),
             ),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('common_close'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de la génération du template',
+          'error'.tr,
+          'customers_template_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -779,8 +779,8 @@ class CustomerController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur: $e',
+        'error'.tr,
+        'customers_template_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,

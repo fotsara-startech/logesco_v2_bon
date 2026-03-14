@@ -79,7 +79,7 @@ class ProfitabilityStatCard extends StatelessWidget {
 
                     // Titre
                     Text(
-                      'Rentabilité',
+                      'dashboard_profitability'.tr,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -101,7 +101,7 @@ class ProfitabilityStatCard extends StatelessWidget {
 
                     // Marge
                     Text(
-                      'Marge: ${profitMargin.toStringAsFixed(1)}%',
+                      '${'dashboard_margin'.tr}: ${profitMargin.toStringAsFixed(1)}%',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade500,
@@ -117,7 +117,7 @@ class ProfitabilityStatCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        isProfitable ? 'Rentable' : 'À surveiller',
+                        isProfitable ? 'dashboard_profitable'.tr : 'dashboard_to_monitor'.tr,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,

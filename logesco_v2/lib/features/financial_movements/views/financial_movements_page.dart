@@ -229,7 +229,7 @@ class FinancialMovementsPage extends StatelessWidget {
           children: [
             Expanded(
               child: _buildStatItem(
-                'Total',
+                'total',
                 '${stats['total'].toStringAsFixed(0)} FCFA',
                 Icons.account_balance_wallet,
                 Colors.blue,
@@ -242,7 +242,7 @@ class FinancialMovementsPage extends StatelessWidget {
             ),
             Expanded(
               child: _buildStatItem(
-                'Nombre',
+                'financial_movements_movement_count',
                 '${stats['count']}',
                 Icons.receipt_long,
                 Colors.green,
@@ -255,7 +255,7 @@ class FinancialMovementsPage extends StatelessWidget {
             ),
             Expanded(
               child: _buildStatItem(
-                'Moyenne',
+                'financial_movements_average_amount',
                 '${stats['average'].toStringAsFixed(0)} FCFA',
                 Icons.trending_up,
                 Colors.orange,
@@ -430,7 +430,7 @@ class FinancialMovementsPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Commencez par créer votre premier mouvement',
+            controller.hasActiveFilters ? 'financial_movements_try_modify_filters'.tr : 'financial_movements_create_first_movement'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade600,
@@ -497,8 +497,8 @@ class FinancialMovementsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Cette action est irréversible.',
+            Text(
+              'action_irreversible'.tr,
               style: TextStyle(
                 color: Colors.red,
                 fontSize: 12,
@@ -520,7 +520,7 @@ class FinancialMovementsPage extends StatelessWidget {
                     if (success) {
                       Get.snackbar(
                         'success'.tr,
-                        'Mouvement supprimé avec succès',
+                        'financial_movements_deleted_success'.tr,
                         snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: Colors.green.shade100,
                         colorText: Colors.green.shade800,
@@ -547,13 +547,13 @@ class FinancialMovementsPage extends StatelessWidget {
   String _formatFilterValue(String key, dynamic value) {
     switch (key) {
       case 'search':
-        return 'Recherche: $value';
+        return 'financial_movements_filter_search'.tr.replaceAll('@value', '$value');
       case 'category':
-        return 'Catégorie: $value';
+        return 'financial_movements_filter_category'.tr.replaceAll('@value', '$value');
       case 'startDate':
-        return 'Depuis: ${_formatDate(value)}';
+        return 'financial_movements_filter_from'.tr.replaceAll('@date', _formatDate(value));
       case 'endDate':
-        return 'Jusqu\'au: ${_formatDate(value)}';
+        return 'financial_movements_filter_until'.tr.replaceAll('@date', _formatDate(value));
       case 'minAmount':
         return 'Min: ${value.toStringAsFixed(0)} FCFA';
       case 'maxAmount':
@@ -631,8 +631,8 @@ class FinancialMovementsPage extends StatelessWidget {
               onChanged: (value) => controller.searchMovements(value),
               onSubmitted: (value) => onFieldSubmitted(),
               decoration: InputDecoration(
-                hintText: 'Rechercher par description, référence, notes...',
-                helperText: 'Utilisez "desc:", "ref:", "notes:", "user:" pour une recherche ciblée',
+                hintText: 'financial_movements_search_hint'.tr,
+                helperText: 'financial_movements_search_helper'.tr,
                 helperMaxLines: 2,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: Row(
@@ -645,13 +645,13 @@ class FinancialMovementsPage extends StatelessWidget {
                               controller.searchMovements('');
                             },
                             icon: const Icon(Icons.clear),
-                            tooltip: 'Effacer la recherche',
+                            tooltip: 'financial_movements_clear_search'.tr,
                           )
                         : const SizedBox.shrink()),
                     IconButton(
                       onPressed: () => _showAdvancedSearchDialog(context, controller),
                       icon: const Icon(Icons.tune),
-                      tooltip: 'Recherche avancée',
+                      tooltip: 'financial_movements_advanced_search'.tr,
                     ),
                   ],
                 ),
@@ -859,7 +859,7 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Recherche avancée'),
+      title: Text('financial_movements_advanced_search'.tr),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -867,41 +867,41 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
           children: [
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-                hintText: 'Rechercher dans les descriptions...',
+              decoration: InputDecoration(
+                labelText: 'financial_movements_description'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.description),
+                hintText: 'financial_movements_search_description_hint'.tr,
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _referenceController,
-              decoration: const InputDecoration(
-                labelText: 'Référence',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.tag),
-                hintText: 'Numéro de référence...',
+              decoration: InputDecoration(
+                labelText: 'financial_movements_reference'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.tag),
+                hintText: 'financial_movements_search_reference_hint'.tr,
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Notes',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note),
-                hintText: 'Rechercher dans les notes...',
+              decoration: InputDecoration(
+                labelText: 'financial_movements_notes'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.note),
+                hintText: 'financial_movements_search_notes_hint'.tr,
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _userController,
-              decoration: const InputDecoration(
-                labelText: 'Utilisateur',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-                hintText: 'Nom de l\'utilisateur...',
+              decoration: InputDecoration(
+                labelText: 'financial_movements_user'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person),
+                hintText: 'financial_movements_search_user_hint'.tr,
               ),
             ),
             const SizedBox(height: 16),
@@ -918,7 +918,7 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Laissez vide les champs non utilisés. La recherche s\'effectue sur tous les champs remplis.',
+                      'financial_movements_search_info'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue.shade700,
@@ -934,15 +934,15 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('cancel'.tr),
         ),
         TextButton(
           onPressed: _clearAll,
-          child: const Text('Effacer tout'),
+          child: Text('financial_movements_clear_all'.tr),
         ),
         ElevatedButton(
           onPressed: _search,
-          child: const Text('Rechercher'),
+          child: Text('financial_movements_search_button'.tr),
         ),
       ],
     );
@@ -1106,8 +1106,8 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
 
     if (!hasAnySearch) {
       Get.snackbar(
-        'Recherche vide',
-        'Veuillez remplir au moins un champ de recherche',
+        'financial_movements_search_empty_title'.tr,
+        'financial_movements_search_empty_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade800,

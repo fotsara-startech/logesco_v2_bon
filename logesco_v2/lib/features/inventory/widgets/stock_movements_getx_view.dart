@@ -22,15 +22,15 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
           ),
           child: Row(
             children: [
-              const Text(
-                'Mouvements de stock',
-                style: TextStyle(fontWeight: FontWeight.w500),
+              Text(
+                'stock_movements_title'.tr,
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.filter_list),
                 onPressed: () => Get.dialog(const MovementFilterDialog()),
-                tooltip: 'Filtrer les mouvements',
+                tooltip: 'stock_filter_movements'.tr,
               ),
             ],
           ),
@@ -64,7 +64,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => controller.loadMovements(refresh: true),
-                      child: const Text('Réessayer'),
+                      child: Text('stock_retry'.tr),
                     ),
                   ],
                 ),

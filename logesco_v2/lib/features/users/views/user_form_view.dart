@@ -308,7 +308,7 @@ class _UserFormViewState extends State<UserFormView> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: const Text('Chargement des rôles...'),
+                  child: Text('users_loading_roles'.tr),
                 );
               }
 
@@ -324,7 +324,7 @@ class _UserFormViewState extends State<UserFormView> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.orange.shade300),
                   ),
-                  child: const Text('Aucun rôle sélectionné'),
+                  child: Text('users_no_role_selected'.tr),
                 );
               }
 
@@ -366,8 +366,8 @@ class _UserFormViewState extends State<UserFormView> {
 
     role.privileges.forEach((module, privileges) {
       if (privileges.isNotEmpty) {
-        final moduleDisplayName = role_model.ModulePrivileges.moduleDisplayNames[module] ?? module;
-        final privilegeNames = privileges.map((p) => role_model.ModulePrivileges.privilegeDisplayNames[p] ?? p).join(', ');
+        final moduleDisplayName = (role_model.ModulePrivileges.moduleDisplayNames[module] ?? module).tr;
+        final privilegeNames = privileges.map((p) => (role_model.ModulePrivileges.privilegeDisplayNames[p] ?? p).tr).join(', ');
 
         moduleWidgets.add(
           Container(

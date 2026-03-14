@@ -230,9 +230,40 @@ class _CustomerListItem extends StatelessWidget {
             color: Theme.of(context).primaryColor,
           ),
         ),
-        title: Text(
-          customer.nomComplet,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                customer.nomComplet,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            // Indicateur de dette pour les clients
+            if (customer.solde < 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  border: Border.all(color: Colors.red.shade400, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning_rounded, size: 14, color: Colors.red.shade700),
+                    const SizedBox(width: 4),
+                    Text(
+                      'DETTE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

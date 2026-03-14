@@ -493,16 +493,21 @@ function createCustomerRouter(models) {
           });
         }
 
-        // Récupérer le compte client
-        const compte = await models.prisma.compteClient.findUnique({
+        // Récupérer le compte client (ou le créer s'il n'existe pas)
+        let compte = await models.prisma.compteClient.findUnique({
           where: { clientId: parseInt(id) }
         });
 
         if (!compte) {
-          return res.status(404).json({
-            success: false,
-            message: 'Compte client non trouvé'
+          console.log(`📝 Création automatique du compte pour le client ${id}`);
+          compte = await models.prisma.compteClient.create({
+            data: {
+              clientId: parseInt(id),
+              soldeActuel: 0,
+              limiteCredit: 0
+            }
           });
+          console.log(`✅ Compte créé avec succès (ID: ${compte.id})`);
         }
 
         // Récupérer les informations de l'entreprise
@@ -528,6 +533,9 @@ function createCustomerRouter(models) {
         console.log(`📊 Relevé de compte client ${id}:`);
         console.log(`   Compte ID: ${compte.id}`);
         console.log(`   Transactions trouvées: ${transactions.length}`);
+        if (transactions.length > 0) {
+          console.log(`   Première transaction: ${JSON.stringify(transactions[0], null, 2)}`);
+        }
 
         // Préparer les données pour le PDF
         const statementData = {
@@ -537,7 +545,8 @@ function createCustomerRouter(models) {
             localisation: entreprise.localisation,
             telephone: entreprise.telephone,
             email: entreprise.email,
-            nuiRccm: entreprise.nuiRccm
+            nuiRccm: entreprise.nuiRccm,
+            logoPath: entreprise.logo || null  // CORRECTION: utiliser 'logo' au lieu de 'logoPath'
           } : null,
           client: {
             id: client.id,
@@ -569,6 +578,11 @@ function createCustomerRouter(models) {
           dateGeneration: new Date(),
           format: format
         };
+
+        console.log(`📊 Données du relevé:`);
+        console.log(`   Transactions: ${statementData.transactions.length}`);
+        console.log(`   Logo: ${statementData.entreprise?.logoPath || 'Non défini'}`);
+        console.log(`   Structure complète: ${JSON.stringify(statementData, null, 2).substring(0, 500)}...`);
 
         res.json({
           success: true,

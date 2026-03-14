@@ -136,53 +136,53 @@ class StockMovementService {
     }
   }
 
-  /// Récupère les types de mouvements disponibles
+  /// Récupère les types de mouvements disponibles (avec clés de traduction)
   List<TypeMouvement> getTypesMouvements() {
     return [
       TypeMouvement(
         code: 'entree',
-        libelle: 'Entrée de stock',
-        description: 'Ajout de produits au stock',
+        libelle: 'stock_movement_type_entree',
+        description: 'stock_movement_desc_entree',
         motifs: [
-          'Réception fournisseur',
-          'Retour client',
-          'Production interne',
-          'Inventaire positif',
-          'Autre entrée',
+          'stock_reason_reception_supplier',
+          'stock_reason_customer_return',
+          'stock_reason_internal_production',
+          'stock_reason_positive_inventory',
+          'stock_reason_other_entry',
         ],
       ),
       TypeMouvement(
         code: 'sortie',
-        libelle: 'Sortie de stock',
-        description: 'Retrait de produits du stock',
+        libelle: 'stock_movement_type_sortie',
+        description: 'stock_movement_desc_sortie',
         motifs: [
-          'Vente',
-          'Casse/Perte',
-          'Péremption',
-          'Retour fournisseur',
-          'Échantillon',
-          'Usage interne',
-          'Autre sortie',
+          'stock_reason_sale',
+          'stock_reason_damage_loss',
+          'stock_reason_expiration',
+          'stock_reason_supplier_return',
+          'stock_reason_sample',
+          'stock_reason_internal_use',
+          'stock_reason_other_exit',
         ],
       ),
       TypeMouvement(
         code: 'correction',
-        libelle: 'Correction de stock',
-        description: 'Ajustement suite à un écart d\'inventaire',
+        libelle: 'stock_movement_type_correction',
+        description: 'stock_movement_desc_correction',
         motifs: [
-          'Erreur de saisie',
-          'Écart d\'inventaire',
-          'Régularisation',
+          'stock_reason_entry_error',
+          'stock_reason_inventory_gap',
+          'stock_reason_regularization',
         ],
       ),
       TypeMouvement(
         code: 'transfert',
-        libelle: 'Transfert de stock',
-        description: 'Déplacement vers un autre emplacement',
+        libelle: 'stock_movement_type_transfert',
+        description: 'stock_movement_desc_transfert',
         motifs: [
-          'Transfert magasin',
-          'Transfert entrepôt',
-          'Réorganisation',
+          'stock_reason_store_transfer',
+          'stock_reason_warehouse_transfer',
+          'stock_reason_reorganization',
         ],
       ),
     ];

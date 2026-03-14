@@ -86,7 +86,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
           children: [
             Expanded(
               child: _buildStatCard(
-                'Moyenne par mouvement',
+                'financial_movements_average_per_movement'.tr,
                 summary.averageAmountFormatted,
                 Icons.trending_up,
                 Colors.orange,
@@ -95,7 +95,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                'Moyenne quotidienne',
+                'financial_movements_daily_average'.tr,
                 '${dailyAverage.toStringAsFixed(2)} FCFA',
                 Icons.calendar_today,
                 Colors.green,
@@ -108,7 +108,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
           children: [
             Expanded(
               child: _buildStatCard(
-                'Montant maximum',
+                'financial_movements_max_amount'.tr,
                 '${summary.maxAmount.toStringAsFixed(2)} FCFA',
                 Icons.keyboard_arrow_up,
                 Colors.purple,
@@ -117,7 +117,7 @@ class SummaryStatisticsWidget extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                'Montant minimum',
+                'financial_movements_min_amount'.tr,
                 '${summary.minAmount.toStringAsFixed(2)} FCFA',
                 Icons.keyboard_arrow_down,
                 Colors.teal,

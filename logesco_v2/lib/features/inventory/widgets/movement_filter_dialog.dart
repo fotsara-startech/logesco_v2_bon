@@ -11,16 +11,16 @@ class MovementFilterDialog extends StatelessWidget {
     final controller = Get.find<InventoryGetxController>();
 
     return AlertDialog(
-      title: const Text('Filtrer les mouvements'),
+      title: Text('stock_movements_filter'.tr),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Filtre par type de mouvement
-            const Text(
-              'Type de mouvement',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            Text(
+              'stock_movement_type_label'.tr,
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Obx(() => DropdownButtonFormField<String>(
@@ -29,14 +29,14 @@ class MovementFilterDialog extends StatelessWidget {
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   value: controller.movementTypeFilter.value,
-                  hint: const Text('Tous les types'),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Tous les types')),
-                    DropdownMenuItem(value: 'achat', child: Text('Achat')),
-                    DropdownMenuItem(value: 'vente', child: Text('Vente')),
-                    DropdownMenuItem(value: 'ajustement', child: Text('Ajustement')),
-                    DropdownMenuItem(value: 'retour', child: Text('Retour')),
-                    DropdownMenuItem(value: 'approvisionnement', child: Text('Approvisionnement')),
+                  hint: Text('stock_all_types'.tr),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text('stock_all_types'.tr)),
+                    DropdownMenuItem(value: 'achat', child: Text('stock_summary_purchases'.tr)),
+                    DropdownMenuItem(value: 'vente', child: Text('stock_summary_sales'.tr)),
+                    DropdownMenuItem(value: 'ajustement', child: Text('stock_adjust'.tr)),
+                    DropdownMenuItem(value: 'retour', child: const Text('Retour')),
+                    DropdownMenuItem(value: 'approvisionnement', child: const Text('Approvisionnement')),
                   ],
                   onChanged: (value) {
                     controller.movementTypeFilter.value = value;
@@ -46,25 +46,23 @@ class MovementFilterDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Filtre par période
-            const Text(
-              'Période',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            Text(
+              'stock_period'.tr,
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
 
             // Date de début
             Obx(() => TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Date de début',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: InputDecoration(
+                    labelText: 'stock_start_date'.tr,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   readOnly: true,
                   controller: TextEditingController(
-                    text: controller.dateDebutFilter.value != null
-                        ? _formatDate(controller.dateDebutFilter.value!)
-                        : '',
+                    text: controller.dateDebutFilter.value != null ? _formatDate(controller.dateDebutFilter.value!) : '',
                   ),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -83,17 +81,15 @@ class MovementFilterDialog extends StatelessWidget {
 
             // Date de fin
             Obx(() => TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Date de fin',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: InputDecoration(
+                    labelText: 'stock_end_date'.tr,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   readOnly: true,
                   controller: TextEditingController(
-                    text: controller.dateFinFilter.value != null
-                        ? _formatDate(controller.dateFinFilter.value!)
-                        : '',
+                    text: controller.dateFinFilter.value != null ? _formatDate(controller.dateFinFilter.value!) : '',
                   ),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -111,28 +107,28 @@ class MovementFilterDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Boutons de période rapide
-            const Text(
-              'Périodes rapides',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            Text(
+              'stock_quick_periods'.tr,
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
                 _buildQuickPeriodChip(
-                  'Aujourd\'hui',
+                  'stock_today'.tr,
                   () => _setQuickPeriod(controller, 0),
                 ),
                 _buildQuickPeriodChip(
-                  '7 derniers jours',
+                  'stock_last_7_days'.tr,
                   () => _setQuickPeriod(controller, 7),
                 ),
                 _buildQuickPeriodChip(
-                  '30 derniers jours',
+                  'stock_last_30_days'.tr,
                   () => _setQuickPeriod(controller, 30),
                 ),
                 _buildQuickPeriodChip(
-                  'Ce mois',
+                  'stock_this_month'.tr,
                   () => _setCurrentMonth(controller),
                 ),
               ],
@@ -150,7 +146,7 @@ class MovementFilterDialog extends StatelessWidget {
             controller.loadMovements(refresh: true);
             Get.back();
           },
-          child: const Text('Effacer'),
+          child: Text('stock_clear'.tr),
         ),
         ElevatedButton(
           onPressed: () {
@@ -158,7 +154,7 @@ class MovementFilterDialog extends StatelessWidget {
             controller.loadMovements(refresh: true);
             Get.back();
           },
-          child: const Text('Appliquer'),
+          child: Text('stock_apply'.tr),
         ),
       ],
     );

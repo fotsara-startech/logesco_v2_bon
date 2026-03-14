@@ -34,7 +34,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                 Icon(Icons.compare_arrows, color: Colors.blue),
                 const SizedBox(width: 8),
                 Text(
-                  'Comparaison entre périodes',
+                  'financial_movements_period_comparison'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -46,7 +46,7 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Période principale
             _buildPeriodSelector(
-              title: 'Période principale',
+              title: 'financial_movements_period_main'.tr,
               startDate: controller.startDate.value,
               endDate: controller.endDate.value,
               onDateChanged: (start, end) => controller.setPeriod(start, end),
@@ -57,7 +57,7 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Période de comparaison
             _buildPeriodSelector(
-              title: 'Période de comparaison',
+              title: 'financial_movements_period_comparison_period'.tr,
               startDate: controller.comparisonStartDate.value,
               endDate: controller.comparisonEndDate.value,
               onDateChanged: (start, end) => controller.setComparisonPeriod(start, end),
@@ -68,17 +68,17 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Boutons de périodes prédéfinies pour la comparaison
             Text(
-              'Périodes de comparaison suggérées:',
+              'financial_movements_period_suggested'.tr,
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
-                _buildPredefinedPeriodChip('Période précédente', 'previous'),
-                _buildPredefinedPeriodChip('Mois précédent', 'previousMonth'),
-                _buildPredefinedPeriodChip('Année précédente', 'previousYear'),
-                _buildPredefinedPeriodChip('Trimestre précédent', 'previousQuarter'),
+                _buildPredefinedPeriodChip('financial_movements_period_previous'.tr, 'previous'),
+                _buildPredefinedPeriodChip('financial_movements_period_previous_month'.tr, 'previousMonth'),
+                _buildPredefinedPeriodChip('financial_movements_period_previous_year'.tr, 'previousYear'),
+                _buildPredefinedPeriodChip('financial_movements_period_previous_quarter'.tr, 'previousQuarter'),
               ],
             ),
 
@@ -97,7 +97,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(Icons.analytics),
-                    label: Text(controller.isLoadingComparison.value ? 'Comparaison...' : 'Comparer les périodes'),
+                    label: Text(controller.isLoadingComparison.value ? 'financial_movements_comparing'.tr : 'financial_movements_compare_periods'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -108,7 +108,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                 IconButton(
                   onPressed: controller.canCompare ? () => controller.swapPeriods() : null,
                   icon: Icon(Icons.swap_horiz),
-                  tooltip: 'Échanger les périodes',
+                  tooltip: 'financial_movements_swap_periods'.tr,
                 ),
               ],
             ),
@@ -135,7 +135,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Comparaison des périodes',
+                        'financial_movements_comparison_results'.tr,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -145,7 +145,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                     IconButton(
                       onPressed: () => controller.currentComparison.value = null,
                       icon: Icon(Icons.close),
-                      tooltip: 'Fermer la comparaison',
+                      tooltip: 'financial_movements_close_comparison'.tr,
                     ),
                   ],
                 ),
@@ -157,7 +157,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Période 1',
+                            'financial_movements_period_1'.tr,
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               color: Colors.blue,
@@ -173,7 +173,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Période 2',
+                            'financial_movements_period_2'.tr,
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               color: Colors.orange,
@@ -274,7 +274,9 @@ class PeriodComparisonWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  startDate != null && endDate != null ? '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}' : 'Sélectionner une période',
+                  startDate != null && endDate != null
+                      ? '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}'
+                      : 'financial_movements_select_period'.tr,
                   style: TextStyle(
                     color: startDate != null ? Colors.black87 : Colors.grey,
                   ),
@@ -309,7 +311,7 @@ class PeriodComparisonWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Statistiques générales',
+              'financial_movements_general_stats'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -319,7 +321,7 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Montant total
             _buildStatRow(
-              'Montant total',
+              'financial_movements_total_amount'.tr,
               comparison.period1Summary.totalAmountFormatted,
               comparison.period2Summary.totalAmountFormatted,
               comparison.totalAmountDifference,
@@ -331,7 +333,7 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Nombre de mouvements
             _buildStatRow(
-              'Nombre de mouvements',
+              'financial_movements_movement_count'.tr,
               comparison.period1Summary.totalCount.toString(),
               comparison.period2Summary.totalCount.toString(),
               comparison.countDifference.toDouble(),
@@ -343,7 +345,7 @@ class PeriodComparisonWidget extends StatelessWidget {
 
             // Montant moyen
             _buildStatRow(
-              'Montant moyen',
+              'financial_movements_average_amount'.tr,
               comparison.period1Summary.averageAmountFormatted,
               comparison.period2Summary.averageAmountFormatted,
               comparison.averageAmountDifference,
@@ -378,7 +380,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Période 1',
+                      'financial_movements_period_1'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue,
@@ -393,7 +395,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Période 2',
+                      'financial_movements_period_2'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.orange,
@@ -463,7 +465,7 @@ class PeriodComparisonWidget extends StatelessWidget {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text('Aucune donnée de catégorie disponible'),
+          child: Text('financial_movements_no_category_data'.tr),
         ),
       );
     }
@@ -475,7 +477,7 @@ class PeriodComparisonWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Comparaison par catégorie',
+              'financial_movements_category_comparison'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -554,7 +556,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Période 1',
+                      'financial_movements_period_1'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue,
@@ -565,7 +567,9 @@ class PeriodComparisonWidget extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
-                      '${catComparison.period1Count} mouvement${catComparison.period1Count > 1 ? 's' : ''}',
+                      catComparison.period1Count > 1
+                          ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${catComparison.period1Count}')
+                          : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${catComparison.period1Count}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -579,7 +583,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Période 2',
+                      'financial_movements_period_2'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.orange,
@@ -590,7 +594,9 @@ class PeriodComparisonWidget extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
-                      '${catComparison.period2Count} mouvement${catComparison.period2Count > 1 ? 's' : ''}',
+                      catComparison.period2Count > 1
+                          ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${catComparison.period2Count}')
+                          : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${catComparison.period2Count}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -604,7 +610,7 @@ class PeriodComparisonWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Différence',
+                      'financial_movements_difference'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -622,7 +628,9 @@ class PeriodComparisonWidget extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${catComparison.countDifference >= 0 ? '+' : ''}${catComparison.countDifference} mouvement${catComparison.countDifference.abs() > 1 ? 's' : ''}',
+                      catComparison.countDifference > 1
+                          ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${catComparison.countDifference >= 0 ? '+' : ''}${catComparison.countDifference}')
+                          : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${catComparison.countDifference >= 0 ? '+' : ''}${catComparison.countDifference}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

@@ -37,6 +37,16 @@ class CompanySettingsModel {
    */
   async upsertSettings(data) {
     try {
+      // Nettoyer le chemin du logo: extraire juste le nom du fichier
+      let logoPath = data.logo || null;
+      if (logoPath && logoPath.trim().length > 0) {
+        // Extraire juste le nom du fichier du chemin complet
+        // Gère les chemins Windows (C:\...\file.png) et Unix (/path/to/file.png)
+        const fileName = logoPath.split(/[\\\/]/).pop();
+        logoPath = fileName || logoPath;
+        console.log(`📁 Logo path nettoyé: "${data.logo}" → "${logoPath}"`);
+      }
+
       // Vérifier s'il existe déjà des paramètres
       const existingSettings = await this.prisma.parametresEntreprise.findFirst();
 
@@ -51,7 +61,7 @@ class CompanySettingsModel {
             telephone: data.telephone || null,
             email: data.email || null,
             nuiRccm: data.nuiRccm || null,
-            logo: data.logo || null,
+            logo: logoPath,
             slogan: data.slogan || null,
             langueFacture: data.langueFacture || 'fr'
           }
@@ -66,7 +76,7 @@ class CompanySettingsModel {
             telephone: data.telephone || null,
             email: data.email || null,
             nuiRccm: data.nuiRccm || null,
-            logo: data.logo || null,
+            logo: logoPath,
             slogan: data.slogan || null,
             langueFacture: data.langueFacture || 'fr'
           }

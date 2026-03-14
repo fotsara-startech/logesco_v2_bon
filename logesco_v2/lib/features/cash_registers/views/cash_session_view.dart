@@ -16,7 +16,7 @@ class CashSessionView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Session de Caisse'),
+        title: Text('cash_session_title'.tr),
         actions: [
           // Bouton pour voir l'historique (Admin uniquement)
           Obx(() {
@@ -26,7 +26,7 @@ class CashSessionView extends StatelessWidget {
             if (isAdmin) {
               return IconButton(
                 icon: const Icon(Icons.history),
-                tooltip: 'Historique des sessions',
+                tooltip: 'cash_session_history_title'.tr,
                 onPressed: () => Get.toNamed('/cash-session/history'),
               );
             }
@@ -92,7 +92,7 @@ class CashSessionView extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Statut de la session',
+                  'cash_session_status'.tr,
                   style: Theme.of(Get.context!).textTheme.titleLarge,
                 ),
               ],
@@ -120,7 +120,7 @@ class CashSessionView extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'SESSION ACTIVE',
+            'cash_session_active'.tr,
             style: TextStyle(
               color: Colors.green.shade800,
               fontWeight: FontWeight.bold,
@@ -133,14 +133,14 @@ class CashSessionView extends StatelessWidget {
           children: [
             Expanded(
               child: _buildInfoItem(
-                'Caisse',
+                'cash_session_register'.tr,
                 session.nomCaisse,
                 Icons.point_of_sale,
               ),
             ),
             Expanded(
               child: _buildInfoItem(
-                'Utilisateur',
+                'cash_session_user'.tr,
                 session.nomUtilisateur,
                 Icons.person,
               ),
@@ -152,14 +152,14 @@ class CashSessionView extends StatelessWidget {
           children: [
             Expanded(
               child: _buildInfoItem(
-                'Solde d\'ouverture',
+                'cash_session_opening_balance'.tr,
                 CurrencyUtils.formatAmount(session.soldeOuverture),
                 Icons.attach_money,
               ),
             ),
             Expanded(
               child: _buildInfoItem(
-                'Durée',
+                'cash_session_duration'.tr,
                 session.formattedDuration,
                 Icons.access_time,
               ),
@@ -168,7 +168,7 @@ class CashSessionView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _buildInfoItem(
-          'Ouvert le',
+          'cash_session_opened_on'.tr,
           _formatDateTime(session.dateOuverture),
           Icons.schedule,
         ),
@@ -187,7 +187,7 @@ class CashSessionView extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'AUCUNE SESSION ACTIVE',
+            'cash_session_no_active'.tr,
             style: TextStyle(
               color: Colors.grey.shade700,
               fontWeight: FontWeight.bold,
@@ -197,7 +197,7 @@ class CashSessionView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Vous devez vous connecter à une caisse pour pouvoir effectuer des ventes.',
+          'cash_session_no_active_message'.tr,
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 14,
@@ -241,7 +241,7 @@ class CashSessionView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Actions',
+          'cash_session_actions'.tr,
           style: Theme.of(Get.context!).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
@@ -253,7 +253,7 @@ class CashSessionView extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: controller.showConnectToCashRegisterDialog,
               icon: const Icon(Icons.login),
-              label: const Text('Se connecter à une caisse'),
+              label: Text('cash_session_connect'.tr),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.all(16),
               ),
@@ -267,7 +267,7 @@ class CashSessionView extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: controller.confirmDisconnectFromCashRegister,
                   icon: const Icon(Icons.logout),
-                  label: const Text('Clôturer la session'),
+                  label: Text('cash_session_disconnect'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -283,7 +283,7 @@ class CashSessionView extends StatelessWidget {
                     Get.toNamed('/sales');
                   },
                   icon: const Icon(Icons.shopping_cart),
-                  label: const Text('Faire une vente'),
+                  label: Text('cash_session_make_sale'.tr),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.all(16),
                   ),
@@ -304,7 +304,7 @@ class CashSessionView extends StatelessWidget {
               _showAvailableCashRegisters(controller);
             },
             icon: const Icon(Icons.visibility),
-            label: const Text('Voir les caisses disponibles'),
+            label: Text('cash_session_view_registers'.tr),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.all(16),
             ),
@@ -322,12 +322,12 @@ class CashSessionView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Historique des sessions',
+              'cash_session_history'.tr,
               style: Theme.of(Get.context!).textTheme.titleLarge,
             ),
             TextButton(
               onPressed: () => controller.loadSessionHistory(),
-              child: const Text('Actualiser'),
+              child: Text('common_refresh'.tr),
             ),
           ],
         ),
@@ -361,7 +361,7 @@ class CashSessionView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('${_formatDateTime(session.dateOuverture)} - ${session.formattedDuration}'),
-            if (session.soldeFermeture != null) Text('Différence: ${CurrencyUtils.formatDifference(session.soldeFermeture ?? 0, session.soldeOuverture)}'),
+            if (session.soldeFermeture != null) Text('cash_session_difference'.tr.replaceAll('@amount', CurrencyUtils.formatDifference(session.soldeFermeture ?? 0, session.soldeOuverture))),
           ],
         ),
         trailing: Container(
@@ -385,12 +385,12 @@ class CashSessionView extends StatelessWidget {
   void _showAvailableCashRegisters(CashSessionController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Caisses disponibles'),
+        title: Text('cash_session_available_registers'.tr),
         content: SizedBox(
           width: double.maxFinite,
           child: Obx(() {
             if (controller.availableCashRegisters.isEmpty) {
-              return const Text('Aucune caisse disponible pour le moment.');
+              return Text('cash_session_no_available'.tr);
             }
 
             return ListView.builder(
@@ -401,7 +401,7 @@ class CashSessionView extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.point_of_sale),
                   title: Text(cashRegister['nom'] ?? 'Caisse'),
-                  subtitle: Text('Solde: ${CurrencyUtils.formatAmount(cashRegister['soldeActuel']?.toDouble() ?? 0.0)}'),
+                  subtitle: Text('${'common_balance'.tr}: ${CurrencyUtils.formatAmount(cashRegister['soldeActuel']?.toDouble() ?? 0.0)}'),
                   trailing: const Icon(Icons.check_circle, color: Colors.green),
                 );
               },
@@ -411,7 +411,7 @@ class CashSessionView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('common_close'.tr),
           ),
         ],
       ),

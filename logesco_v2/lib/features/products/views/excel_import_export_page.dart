@@ -13,7 +13,7 @@ class ExcelImportExportPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import/Export Excel'),
+        title: Text('excel_import_export_title'.tr),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -45,7 +45,7 @@ class ExcelImportExportPage extends StatelessWidget {
                       Icon(Icons.file_download, color: Colors.green),
                       const SizedBox(width: 8),
                       Text(
-                        'Export des produits',
+                        'excel_export_section'.tr,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -55,7 +55,7 @@ class ExcelImportExportPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Exportez tous vos produits vers un fichier Excel pour sauvegarde ou partage.',
+                    'excel_export_description'.tr,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
@@ -70,7 +70,7 @@ class ExcelImportExportPage extends StatelessWidget {
                       : ElevatedButton.icon(
                           onPressed: controller.exportAllProducts,
                           icon: Icon(Icons.download),
-                          label: Text('Exporter tous les produits'),
+                          label: Text('excel_export_button'.tr),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -95,7 +95,7 @@ class ExcelImportExportPage extends StatelessWidget {
                       Icon(Icons.file_upload, color: Colors.blue),
                       const SizedBox(width: 8),
                       Text(
-                        'Import des produits',
+                        'excel_import_section'.tr,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -105,7 +105,7 @@ class ExcelImportExportPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Importez des produits depuis un fichier Excel avec leurs quantités initiales. Utilisez le template pour le bon format.',
+                    'excel_import_description'.tr,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
@@ -125,7 +125,7 @@ class ExcelImportExportPage extends StatelessWidget {
                                   child: ElevatedButton.icon(
                                     onPressed: controller.importProductsFromExcel,
                                     icon: Icon(Icons.upload_file),
-                                    label: Text('Importer depuis Excel'),
+                                    label: Text('excel_import_button'.tr),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
                                       foregroundColor: Colors.white,
@@ -136,7 +136,7 @@ class ExcelImportExportPage extends StatelessWidget {
                                 ElevatedButton.icon(
                                   onPressed: controller.downloadImportTemplate,
                                   icon: Icon(Icons.download),
-                                  label: Text('Template'),
+                                  label: Text('excel_template_button'.tr),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.orange,
                                     foregroundColor: Colors.white,
@@ -176,7 +176,7 @@ class ExcelImportExportPage extends StatelessWidget {
                       Icon(Icons.info, color: Colors.blue),
                       const SizedBox(width: 8),
                       Text(
-                        'Instructions',
+                        'excel_instructions_title'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -187,12 +187,12 @@ class ExcelImportExportPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '• Pour l\'import, utilisez le template fourni\n'
-                    '• Les colonnes Référence, Nom et Prix Unitaire sont obligatoires\n'
-                    '• Ajoutez une "Quantité Initiale" pour créer automatiquement le stock\n'
-                    '• Les valeurs "Oui/Non" pour Est Actif et Est Service\n'
-                    '• Les prix doivent être des nombres (utilisez . pour les décimales)\n'
-                    '• Les lignes incomplètes seront ignorées',
+                    '• ${'excel_instructions_line1'.tr}\n'
+                    '• ${'excel_instructions_line2'.tr}\n'
+                    '• ${'excel_instructions_line3'.tr}\n'
+                    '• ${'excel_instructions_line4'.tr}\n'
+                    '• ${'excel_instructions_line5'.tr}\n'
+                    '• ${'excel_instructions_line6'.tr}',
                     style: TextStyle(color: Colors.blue[700]),
                   ),
                 ],
@@ -219,7 +219,7 @@ class ExcelImportExportPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Aperçu de l\'import',
+                      'excel_preview_title'.tr,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -229,12 +229,12 @@ class ExcelImportExportPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${controller.importPreview.length} produits prêts à importer',
+                              'excel_preview_products'.tr.replaceAll('@count', controller.importPreview.length.toString()),
                               style: TextStyle(color: Colors.grey[600]),
                             ),
                             if (controller.initialStocksPreview.isNotEmpty)
                               Text(
-                                '${controller.initialStocksPreview.length} avec stock initial',
+                                'excel_preview_stocks'.tr.replaceAll('@count', controller.initialStocksPreview.length.toString()),
                                 style: TextStyle(color: Colors.green[600], fontSize: 12),
                               ),
                           ],
@@ -244,12 +244,12 @@ class ExcelImportExportPage extends StatelessWidget {
               ),
               TextButton(
                 onPressed: controller.cancelImport,
-                child: Text('Annuler'),
+                child: Text('excel_preview_cancel'.tr),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: controller.confirmImport,
-                child: Text('Confirmer l\'import'),
+                child: Text('excel_preview_confirm'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -283,12 +283,12 @@ class ExcelImportExportPage extends StatelessWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Réf: ${product.reference}'),
-                            Text('Prix: ${CurrencyFormatter.formatCurrency(product.prixUnitaire)}'),
-                            if (product.categorie != null) Text('Catégorie: ${product.categorie}'),
+                            Text('${'excel_reference_label'.tr}: ${product.reference}'),
+                            Text('${'excel_price_label'.tr}: ${CurrencyFormatter.formatCurrency(product.prixUnitaire)}'),
+                            if (product.categorie != null) Text('${'excel_category_label'.tr}: ${product.categorie}'),
                             if (initialStock != null)
                               Text(
-                                'Stock initial: ${initialStock.quantite}',
+                                '${'excel_initial_stock_label'.tr}: ${initialStock.quantite}',
                                 style: TextStyle(
                                   color: Colors.green[700],
                                   fontWeight: FontWeight.w500,
@@ -302,12 +302,12 @@ class ExcelImportExportPage extends StatelessWidget {
                         children: [
                           if (product.estService)
                             Chip(
-                              label: Text('Service'),
+                              label: Text('excel_service_chip'.tr),
                               backgroundColor: Colors.orange[100],
                             ),
                           if (!product.estActif)
                             Chip(
-                              label: Text('Inactif'),
+                              label: Text('excel_inactive_chip'.tr),
                               backgroundColor: Colors.red[100],
                             ),
                           IconButton(

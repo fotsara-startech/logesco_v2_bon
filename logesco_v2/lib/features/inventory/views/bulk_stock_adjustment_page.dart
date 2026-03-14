@@ -9,7 +9,7 @@ class BulkStockAdjustmentPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('inventory_bulk_adjust'.tr),
+        title: Text('stock_bulk_adjustment'.tr),
         elevation: 0,
       ),
       body: Center(
@@ -23,7 +23,7 @@ class BulkStockAdjustmentPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'inventory_bulk_adjust'.tr,
+              'stock_bulk_adjustment'.tr,
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

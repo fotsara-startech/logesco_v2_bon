@@ -670,7 +670,7 @@ class ModernDashboardPage extends StatelessWidget {
                 child: ModernStatCard(
                   title: 'dashboard_today_sales_count'.tr,
                   value: '${stats['todaySales'] ?? 0}',
-                  subtitle: '€${(stats['todayRevenue'] ?? 0.0).toStringAsFixed(2)}',
+                  subtitle: '${(stats['todayRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
                   icon: Icons.today,
                   color: const Color(0xFF4CAF50),
                   isLoading: isLoading,
@@ -681,7 +681,7 @@ class ModernDashboardPage extends StatelessWidget {
                 child: ModernStatCard(
                   title: 'dashboard_week_sales'.tr,
                   value: '${stats['weekSales'] ?? 0}',
-                  subtitle: '€${(stats['weekRevenue'] ?? 0.0).toStringAsFixed(2)}',
+                  subtitle: '${(stats['weekRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
                   icon: Icons.date_range,
                   color: const Color(0xFF2196F3),
                   isLoading: isLoading,
@@ -692,7 +692,7 @@ class ModernDashboardPage extends StatelessWidget {
                 child: ModernStatCard(
                   title: 'dashboard_month_sales'.tr,
                   value: '${stats['monthSales'] ?? 0}',
-                  subtitle: '€${(stats['monthRevenue'] ?? 0.0).toStringAsFixed(2)}',
+                  subtitle: '${(stats['monthRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
                   icon: Icons.calendar_month,
                   color: const Color(0xFFFF9800),
                   isLoading: isLoading,

@@ -171,8 +171,8 @@ class FilterPreset {
     return [
       FilterPreset(
         id: 'today',
-        name: 'Aujourd\'hui',
-        description: 'Mouvements d\'aujourd\'hui',
+        name: 'financial_movements_filter_today',
+        description: 'financial_movements_filter_today_desc',
         startDate: DateTime(now.year, now.month, now.day),
         endDate: now,
         createdAt: now,
@@ -180,8 +180,8 @@ class FilterPreset {
       ),
       FilterPreset(
         id: 'this_week',
-        name: 'Cette semaine',
-        description: 'Mouvements de cette semaine',
+        name: 'financial_movements_filter_this_week',
+        description: 'financial_movements_filter_this_week_desc',
         startDate: now.subtract(Duration(days: now.weekday - 1)),
         endDate: now,
         createdAt: now,
@@ -189,8 +189,8 @@ class FilterPreset {
       ),
       FilterPreset(
         id: 'this_month',
-        name: 'Ce mois',
-        description: 'Mouvements de ce mois',
+        name: 'financial_movements_filter_this_month',
+        description: 'financial_movements_filter_this_month_desc',
         startDate: DateTime(now.year, now.month, 1),
         endDate: now,
         createdAt: now,
@@ -198,8 +198,8 @@ class FilterPreset {
       ),
       FilterPreset(
         id: 'large_amounts',
-        name: 'Montants élevés',
-        description: 'Mouvements supérieurs à 50 000 FCFA',
+        name: 'financial_movements_filter_large_amounts',
+        description: 'financial_movements_filter_large_amounts_desc',
         minAmount: 50000,
         createdAt: now,
         isDefault: true,

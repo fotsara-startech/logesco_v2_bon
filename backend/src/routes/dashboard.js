@@ -113,30 +113,30 @@ function createDashboardRouter(dependencies) {
       };
 
       try {
-        // Ventes d'aujourd'hui - CORRECTION: Exclure les ventes annulées
+        // Ventes d'aujourd'hui
         const todayStats = await prisma.vente.aggregate({
           where: {
-            dateCreation: { gte: today },
+            dateVente: { gte: today },
             statut: { not: 'annulee' }
           },
           _count: { id: true },
           _sum: { montantTotal: true }
         });
 
-        // Ventes de la semaine - CORRECTION: Exclure les ventes annulées
+        // Ventes de la semaine
         const weekStats = await prisma.vente.aggregate({
           where: {
-            dateCreation: { gte: weekStart },
+            dateVente: { gte: weekStart },
             statut: { not: 'annulee' }
           },
           _count: { id: true },
           _sum: { montantTotal: true }
         });
 
-        // Ventes du mois - CORRECTION: Exclure les ventes annulées
+        // Ventes du mois
         const monthStats = await prisma.vente.aggregate({
           where: {
-            dateCreation: { gte: monthStart },
+            dateVente: { gte: monthStart },
             statut: { not: 'annulee' }
           },
           _count: { id: true },
@@ -193,8 +193,8 @@ function createDashboardRouter(dependencies) {
           activities.push({
             id: `user_${user.id}`,
             type: 'user',
-            title: 'Nouvel utilisateur créé',
-            description: `${user.nomUtilisateur} (${user.role?.displayName || 'Sans rôle'})`,
+            title: 'activity_new_user',
+            description: `${user.nomUtilisateur} (${user.role?.displayName || ''})`,
             timestamp: user.dateCreation.toISOString(),
             icon: 'user',
             color: 'blue'
@@ -215,8 +215,8 @@ function createDashboardRouter(dependencies) {
           activities.push({
             id: `product_${product.id}`,
             type: 'product',
-            title: 'Nouveau produit ajouté',
-            description: `${product.nom} - ${product.prix}€`,
+            title: 'activity_new_product',
+            description: `${product.nom} - ${product.prixUnitaire ?? 0} FCFA`,
             timestamp: product.dateCreation.toISOString(),
             icon: 'product',
             color: 'green'
@@ -272,7 +272,7 @@ function createDashboardRouter(dependencies) {
         try {
           const dayStats = await prisma.vente.aggregate({
             where: {
-              dateCreation: {
+              dateVente: {
                 gte: dayStart,
                 lt: dayEnd
               },

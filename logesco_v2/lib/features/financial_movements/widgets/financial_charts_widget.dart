@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/movement_report_service.dart';
 
@@ -40,8 +41,8 @@ class FinancialChartsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.pie_chart, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Répartition par catégorie',
+                Text(
+                  'financial_movements_category_distribution'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -183,8 +184,8 @@ class FinancialChartsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.trending_up, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Évolution quotidienne',
+                Text(
+                  'financial_movements_daily_evolution'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -317,9 +318,9 @@ class FinancialChartsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildTrendStat('Moyenne', '${averageAmount.toStringAsFixed(0)} FCFA', Icons.trending_flat),
-          _buildTrendStat('Maximum', '${maxAmount.toStringAsFixed(0)} FCFA', Icons.trending_up),
-          _buildTrendStat('Minimum', '${minAmount.toStringAsFixed(0)} FCFA', Icons.trending_down),
+          _buildTrendStat('financial_movements_trend_average'.tr, '${averageAmount.toStringAsFixed(0)} FCFA', Icons.trending_flat),
+          _buildTrendStat('financial_movements_trend_maximum'.tr, '${maxAmount.toStringAsFixed(0)} FCFA', Icons.trending_up),
+          _buildTrendStat('financial_movements_trend_minimum'.tr, '${minAmount.toStringAsFixed(0)} FCFA', Icons.trending_down),
         ],
       ),
     );

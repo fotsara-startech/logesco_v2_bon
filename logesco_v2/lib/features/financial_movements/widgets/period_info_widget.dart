@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 /// Widget d'information sur la période sélectionnée
@@ -31,8 +32,8 @@ class PeriodInfoWidget extends StatelessWidget {
               children: [
                 Icon(Icons.date_range, color: Colors.purple.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations sur la période',
+                Text(
+                  'financial_movements_period_info'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -45,7 +46,7 @@ class PeriodInfoWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildInfoItem(
-                    'Période',
+                    'financial_movements_period_label'.tr,
                     '${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}',
                     Icons.calendar_today,
                     Colors.blue,
@@ -54,8 +55,8 @@ class PeriodInfoWidget extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildInfoItem(
-                    'Durée',
-                    '$daysDifference jour${daysDifference > 1 ? 's' : ''}',
+                    'financial_movements_duration_label'.tr,
+                    daysDifference > 1 ? 'financial_movements_days_plural'.tr.replaceAll('@count', '$daysDifference') : 'financial_movements_days_singular'.tr.replaceAll('@count', '$daysDifference'),
                     Icons.schedule,
                     Colors.orange,
                   ),
@@ -67,7 +68,7 @@ class PeriodInfoWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildInfoItem(
-                    'Total mouvements',
+                    'financial_movements_total_movements'.tr,
                     '$totalMovements',
                     Icons.receipt_long,
                     Colors.green,
@@ -76,7 +77,7 @@ class PeriodInfoWidget extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildInfoItem(
-                    'Moyenne/jour',
+                    'financial_movements_daily_average_label'.tr,
                     '${NumberFormat('#,##0', 'fr_FR').format(dailyAverage)} FCFA',
                     Icons.trending_up,
                     Colors.purple,

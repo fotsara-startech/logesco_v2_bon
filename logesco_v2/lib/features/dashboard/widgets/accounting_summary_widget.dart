@@ -58,16 +58,16 @@ class AccountingSummaryWidget extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Comptabilité & Rentabilité',
-                                style: TextStyle(
+                              Text(
+                                'dashboard_accounting_title'.tr,
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black87,
                                 ),
                               ),
                               Text(
-                                'Analyse financière du mois',
+                                'dashboard_accounting_subtitle'.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey.shade600,
@@ -181,7 +181,7 @@ class AccountingSummaryWidget extends StatelessWidget {
           children: [
             Expanded(
               child: _buildMetricCard(
-                'Bénéfice Net',
+                'dashboard_net_profit'.tr,
                 '${netProfit.toStringAsFixed(0)} FCFA',
                 isProfitable ? Icons.trending_up : Icons.trending_down,
                 isProfitable ? Colors.green.shade600 : Colors.red.shade600,
@@ -190,7 +190,7 @@ class AccountingSummaryWidget extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                'Marge',
+                'dashboard_margin'.tr,
                 '${profitMargin.toStringAsFixed(1)}%',
                 Icons.percent,
                 statusColor,
@@ -205,7 +205,7 @@ class AccountingSummaryWidget extends StatelessWidget {
           children: [
             Expanded(
               child: _buildMetricCard(
-                'Revenus',
+                'dashboard_revenues'.tr,
                 '${totalRevenue.toStringAsFixed(0)} FCFA',
                 Icons.attach_money,
                 Colors.blue.shade600,
@@ -214,7 +214,7 @@ class AccountingSummaryWidget extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                'Dépenses',
+                'dashboard_expenses_label'.tr,
                 '${totalExpenses.toStringAsFixed(0)} FCFA',
                 Icons.money_off,
                 Colors.orange.shade600,
@@ -251,7 +251,7 @@ class AccountingSummaryWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                'Voir détails',
+                'dashboard_see_details'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.shade600,

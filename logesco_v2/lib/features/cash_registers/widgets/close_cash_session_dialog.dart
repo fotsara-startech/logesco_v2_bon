@@ -32,12 +32,12 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
 
     if (session == null) {
       return AlertDialog(
-        title: const Text('Erreur'),
-        content: const Text('Aucune session active trouvée'),
+        title: Text('error'.tr),
+        content: Text('cash_session_no_active_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('close'.tr),
           ),
         ],
       );
@@ -60,9 +60,9 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                   children: [
                     Icon(Icons.lock_clock, size: 28, color: Colors.orange[700]),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Clôture de caisse',
-                      style: TextStyle(
+                    Text(
+                      'cash_session_close_title'.tr,
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -116,7 +116,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Annuler'),
+                        child: Text('cancel'.tr),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -131,7 +131,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
                                 : const Icon(Icons.check_circle),
-                            label: Text(sessionController.isDisconnecting.value ? 'Clôture...' : 'Clôturer la caisse'),
+                            label: Text(sessionController.isDisconnecting.value ? 'cash_session_closing'.tr : 'cash_session_close_button'.tr),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               backgroundColor: Colors.orange[700],
@@ -173,9 +173,9 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
               ],
             ),
             const SizedBox(height: 12),
-            _buildInfoRow('Ouverture', '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
-            _buildInfoRow('Durée', session.formattedDuration),
-            _buildInfoRow('Utilisateur', session.nomUtilisateur),
+            _buildInfoRow('cash_session_opening_balance'.tr, '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
+            _buildInfoRow('cash_session_duration'.tr, session.formattedDuration),
+            _buildInfoRow('users_username'.tr, session.nomUtilisateur),
           ],
         ),
       ),
@@ -205,16 +205,16 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Montant en caisse',
-          style: TextStyle(
+        Text(
+          'cash_session_amount_in_register'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Comptez l\'argent dans votre caisse et saisissez le montant total',
+          'cash_session_count_money_hint'.tr,
           style: TextStyle(
             fontSize: 13,
             color: Colors.grey[600],
@@ -224,8 +224,8 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
         TextFormField(
           controller: _amountController,
           decoration: InputDecoration(
-            labelText: 'Montant total',
-            hintText: 'Entrez le montant compté',
+            labelText: 'cash_session_total_amount'.tr,
+            hintText: 'cash_session_enter_amount_hint'.tr,
             suffixText: 'FCFA',
             suffixStyle: TextStyle(
               fontSize: 16,
@@ -255,11 +255,11 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
           },
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Veuillez saisir le montant';
+              return 'cash_session_amount_required'.tr;
             }
             final amount = double.tryParse(value);
             if (amount == null || amount < 0) {
-              return 'Montant invalide';
+              return 'cash_session_invalid_amount'.tr;
             }
             return null;
           },
@@ -287,7 +287,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
               Icon(Icons.admin_panel_settings, color: Colors.amber[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Informations administrateur',
+                'cash_session_admin_info'.tr,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.amber[700],
@@ -296,7 +296,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildInfoRow('Solde attendu', '${soldeAttendu.toStringAsFixed(0)} FCFA'),
+          _buildInfoRow('cash_session_expected_balance'.tr, '${soldeAttendu.toStringAsFixed(0)} FCFA'),
           if (_soldeFermeture > 0) ...[
             const SizedBox(height: 8),
             Container(
@@ -309,7 +309,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Écart prévisionnel:',
+                    'cash_session_variance'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: ecartPrevisionnel >= 0 ? Colors.green.shade700 : Colors.red.shade700,
@@ -347,7 +347,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
               Icon(Icons.info_outline, size: 16, color: Colors.grey[700]),
               const SizedBox(width: 8),
               Text(
-                'Instructions',
+                'info'.tr,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[700],
@@ -357,9 +357,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            '• Comptez soigneusement tout l\'argent dans la caisse\n'
-            '• Incluez les billets et les pièces\n'
-            '• L\'écart sera calculé automatiquement',
+            'cash_session_instructions'.tr,
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[700],
@@ -380,12 +378,12 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
     // Confirmation
     final confirmed = await Get.dialog<bool>(
           AlertDialog(
-            title: const Text('Confirmer la clôture'),
+            title: Text('cash_session_confirm_close'.tr),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Êtes-vous sûr de vouloir clôturer cette session ?'),
+                Text('cash_session_confirm_close_message'.tr),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -396,9 +394,9 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Montant déclaré:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        'cash_session_declared_amount'.tr,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         '${_soldeFermeture.toStringAsFixed(0)} FCFA',
@@ -412,7 +410,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Cette action est irréversible.',
+                  'cash_session_irreversible'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -424,14 +422,14 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
             actions: [
               TextButton(
                 onPressed: () => Get.back(result: false),
-                child: const Text('Annuler'),
+                child: Text('cancel'.tr),
               ),
               ElevatedButton(
                 onPressed: () => Get.back(result: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange[700],
                 ),
-                child: const Text('Confirmer'),
+                child: Text('confirm'.tr),
               ),
             ],
           ),
@@ -443,7 +441,7 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
     final success = await sessionController.disconnectFromCashRegister(_soldeFermeture);
 
     if (success) {
-      Navigator.of(context).pop(); // Fermer le dialog
+      Navigator.of(context).pop(); // Close the dialog
     }
   }
 }

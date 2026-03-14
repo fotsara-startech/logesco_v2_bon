@@ -47,7 +47,7 @@ class CashBalanceDisplay extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Aucune session de caisse active',
+              'cash_session_no_active'.tr,
               style: TextStyle(
                 color: Colors.red.shade700,
                 fontWeight: FontWeight.bold,
@@ -60,7 +60,7 @@ class CashBalanceDisplay extends StatelessWidget {
                 backgroundColor: Colors.red.shade600,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Se connecter à une caisse'),
+              child: Text('cash_session_connect'.tr),
             ),
           ],
         ),
@@ -198,9 +198,9 @@ class CashBalanceDisplay extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'SOLDE ACTUEL',
-                    style: TextStyle(
+                  Text(
+                    'cash_session_current_balance'.tr,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -228,7 +228,7 @@ class CashBalanceDisplay extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildInfoCard(
-                      'Solde d\'ouverture',
+                      'cash_session_opening_balance'.tr,
                       CurrencyUtils.formatAmount(session.soldeOuverture),
                       Icons.login,
                       Colors.grey.shade600,
@@ -237,7 +237,7 @@ class CashBalanceDisplay extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInfoCard(
-                      'Différence',
+                      'cash_session_difference'.tr,
                       '${difference >= 0 ? '+' : ''}${CurrencyUtils.formatAmount(difference.abs())}',
                       difference >= 0 ? Icons.trending_up : Icons.trending_down,
                       differenceColor,
@@ -252,7 +252,7 @@ class CashBalanceDisplay extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildInfoCard(
-                      'Durée',
+                      'cash_session_duration'.tr,
                       session.formattedDuration,
                       Icons.access_time,
                       Colors.orange.shade600,
@@ -261,7 +261,7 @@ class CashBalanceDisplay extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInfoCard(
-                      'Utilisateur',
+                      'cash_session_user'.tr,
                       session.nomUtilisateur,
                       Icons.person,
                       Colors.purple.shade600,
@@ -326,13 +326,13 @@ class CashTransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Transactions récentes',
-              style: TextStyle(
+            Text(
+              'cash_session_stats_title'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -345,10 +345,10 @@ class CashTransactionsList extends StatelessWidget {
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'Fonctionnalité à venir',
-                  style: TextStyle(
+                  'common_coming_soon'.tr,
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontStyle: FontStyle.italic,
                   ),
@@ -375,13 +375,13 @@ class CashQuickActions extends StatelessWidget {
 
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Actions rapides',
-                style: TextStyle(
+              Text(
+                'cash_session_actions'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -393,7 +393,7 @@ class CashQuickActions extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: controller.showConnectToCashRegisterDialog,
                     icon: const Icon(Icons.login),
-                    label: const Text('Se connecter à une caisse'),
+                    label: Text('cash_session_connect'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -407,7 +407,7 @@ class CashQuickActions extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () => Get.toNamed('/sales'),
                         icon: const Icon(Icons.shopping_cart),
-                        label: const Text('Nouvelle vente'),
+                        label: Text('cash_session_make_sale'.tr),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
@@ -419,7 +419,7 @@ class CashQuickActions extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: controller.confirmDisconnectFromCashRegister,
                         icon: const Icon(Icons.logout),
-                        label: const Text('Clôturer'),
+                        label: Text('cash_session_disconnect'.tr),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,

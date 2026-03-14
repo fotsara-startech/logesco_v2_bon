@@ -12,9 +12,19 @@ class DashboardStatsService extends GetxService {
       final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/stats');
 
       if (response.isSuccess && response.data != null) {
-        final stats = response.data!['data'] ?? {};
+        final raw = response.data!['data'] ?? {};
+        final stats = Map<String, dynamic>.from(raw as Map);
         print('✅ [DashboardStatsService] Statistiques reçues: $stats');
-        return stats;
+        return {
+          'totalProducts': (stats['totalProducts'] as num? ?? 0).toInt(),
+          'totalUsers': (stats['totalUsers'] as num? ?? 0).toInt(),
+          'activeUsers': (stats['activeUsers'] as num? ?? 0).toInt(),
+          'totalSales': (stats['totalSales'] as num? ?? 0).toInt(),
+          'totalRevenue': (stats['totalRevenue'] as num? ?? 0).toDouble(),
+          'pendingOrders': (stats['pendingOrders'] as num? ?? 0).toInt(),
+          'lowStockProducts': (stats['lowStockProducts'] as num? ?? 0).toInt(),
+          'monthlyGrowth': (stats['monthlyGrowth'] as num? ?? 0).toDouble(),
+        };
       }
 
       print('⚠️ [DashboardStatsService] API non disponible, utilisation des données par défaut');
@@ -32,9 +42,18 @@ class DashboardStatsService extends GetxService {
       final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-stats');
 
       if (response.isSuccess && response.data != null) {
-        final stats = response.data!['data'] ?? {};
-        print('✅ [DashboardStatsService] Stats ventes reçues: $stats');
-        return stats;
+        final raw = response.data!['data'] ?? {};
+        // Normaliser les valeurs numériques pour éviter les erreurs de cast int/double
+        final stats = Map<String, dynamic>.from(raw as Map);
+        return {
+          'todaySales': stats['todaySales'] ?? 0,
+          'todayRevenue': (stats['todayRevenue'] as num? ?? 0).toDouble(),
+          'weekSales': stats['weekSales'] ?? 0,
+          'weekRevenue': (stats['weekRevenue'] as num? ?? 0).toDouble(),
+          'monthSales': stats['monthSales'] ?? 0,
+          'monthRevenue': (stats['monthRevenue'] as num? ?? 0).toDouble(),
+          'topProducts': stats['topProducts'] ?? <Map<String, dynamic>>[],
+        };
       }
 
       print('⚠️ [DashboardStatsService] API ventes non disponible, utilisation des données par défaut');
@@ -51,8 +70,8 @@ class DashboardStatsService extends GetxService {
       final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/recent-activities');
 
       if (response.isSuccess && response.data != null) {
-        final List<dynamic> activities = response.data!['data'] ?? [];
-        return activities.cast<Map<String, dynamic>>();
+        final List<dynamic> rawList = response.data!['data'] ?? [];
+        return rawList.map((item) => Map<String, dynamic>.from(item as Map)).toList();
       }
 
       return _getDefaultActivities();
@@ -68,8 +87,16 @@ class DashboardStatsService extends GetxService {
       final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-chart');
 
       if (response.isSuccess && response.data != null) {
-        final List<dynamic> chartData = response.data!['data'] ?? [];
-        return chartData.cast<Map<String, dynamic>>();
+        final List<dynamic> rawList = response.data!['data'] ?? [];
+        // Normaliser chaque entrée pour éviter les erreurs de cast
+        return rawList.map((item) {
+          final m = Map<String, dynamic>.from(item as Map);
+          return {
+            'date': m['date']?.toString() ?? '',
+            'sales': (m['sales'] as num? ?? 0).toInt(),
+            'revenue': (m['revenue'] as num? ?? 0).toDouble(),
+          };
+        }).toList();
       }
 
       return _getDefaultChartData();

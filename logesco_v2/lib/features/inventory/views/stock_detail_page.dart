@@ -65,7 +65,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
       if (mounted) {
         Get.snackbar(
           'error'.tr,
-          'inventory_refresh_error'.trParams({'error': e.toString()}),
+          'stock_refresh_error'.trParams({'error': e.toString()}),
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red[100],
           colorText: Colors.red[800],
@@ -87,7 +87,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product?.nom ?? 'inventory_detail_title'.tr),
+        title: Text(product?.nom ?? 'stock_detail_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -98,19 +98,19 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'adjust',
-                child: ListTile(
-                  leading: const Icon(Icons.tune),
-                  title: Text('inventory_detail_adjust'.tr),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
+              // PopupMenuItem(
+              //   value: 'adjust',
+              //   child: ListTile(
+              //     leading: const Icon(Icons.tune),
+              //     title: Text('stock_detail_adjust'.tr),
+              //     contentPadding: EdgeInsets.zero,
+              //   ),
+              // ),
               PopupMenuItem(
                 value: 'history',
                 child: ListTile(
                   leading: const Icon(Icons.history),
-                  title: Text('inventory_detail_history'.tr),
+                  title: Text('stock_detail_history'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -122,11 +122,11 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
           tabs: [
             Tab(
               icon: const Icon(Icons.info),
-              text: 'inventory_detail_info'.tr,
+              text: 'stock_detail_product_info'.tr,
             ),
             Tab(
               icon: const Icon(Icons.history),
-              text: 'inventory_detail_movements'.tr,
+              text: 'stock_movements_title'.tr,
             ),
           ],
         ),
@@ -138,11 +138,11 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
           _buildMovementsTab(stock),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAdjustment(stock),
-        tooltip: 'inventory_detail_adjust'.tr,
-        child: const Icon(Icons.tune),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => _navigateToAdjustment(stock),
+      //   tooltip: 'stock_detail_adjust'.tr,
+      //   child: const Icon(Icons.tune),
+      // ),
     );
   }
 
@@ -178,7 +178,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                   ),
                   if (isLowStock && !isOutOfStock)
                     Text(
-                      'Stock inférieur au seuil minimum',
+                      'stock_detail_low_stock_threshold'.tr,
                       style: TextStyle(
                         color: _getStatusColor(isOutOfStock, isLowStock),
                       ),
@@ -198,19 +198,19 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Informations du produit',
+                    'stock_detail_product_info'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 16),
                   if (product != null) ...[
-                    _buildInfoRow('Nom', product.nom),
-                    _buildInfoRow('Référence', product.reference),
-                    _buildInfoRow('Seuil minimum', '${product.seuilStockMinimum} unités'),
-                    _buildInfoRow('Statut', product.estActif == true ? 'Actif' : 'Inactif'),
+                    _buildInfoRow('stock_product_name'.tr, product.nom),
+                    _buildInfoRow('stock_product_reference'.tr, product.reference),
+                    _buildInfoRow('stock_product_min_threshold'.tr, '${product.seuilStockMinimum} ${'stock_units'.tr}'),
+                    _buildInfoRow('stock_product_status'.tr, product.estActif == true ? 'stock_status_active'.tr : 'stock_status_inactive'.tr),
                   ] else ...[
-                    const Text('Informations du produit non disponibles'),
+                    Text('stock_product_info_unavailable'.tr),
                   ],
                 ],
               ),
@@ -227,7 +227,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quantités en stock',
+                    'stock_detail_quantities'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -237,7 +237,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                     children: [
                       Expanded(
                         child: _buildQuantityCard(
-                          'Disponible',
+                          'stock_quantities_available'.tr,
                           stock.quantiteDisponible.toString(),
                           Icons.inventory,
                           Colors.blue,
@@ -246,7 +246,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildQuantityCard(
-                          'Réservé',
+                          'stock_quantities_reserved'.tr,
                           stock.quantiteReservee.toString(),
                           Icons.lock,
                           Colors.orange,
@@ -256,7 +256,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                   ),
                   const SizedBox(height: 16),
                   _buildQuantityCard(
-                    'Total',
+                    'stock_quantities_total'.tr,
                     stock.quantiteTotale.toString(),
                     Icons.inventory_2,
                     Colors.green,
@@ -277,7 +277,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Dernière mise à jour',
+                    'stock_detail_last_update'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -396,9 +396,9 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
   }
 
   String _getStatusText(bool isOutOfStock, bool isLowStock) {
-    if (isOutOfStock) return 'RUPTURE DE STOCK';
-    if (isLowStock) return 'STOCK FAIBLE';
-    return 'STOCK OK';
+    if (isOutOfStock) return 'stock_status_stockout'.tr;
+    if (isLowStock) return 'stock_status_low_stock'.tr;
+    return 'stock_status_ok'.tr;
   }
 
   String _formatDateTime(DateTime dateTime) {

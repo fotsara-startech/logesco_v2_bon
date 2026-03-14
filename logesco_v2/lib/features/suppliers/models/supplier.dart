@@ -6,6 +6,7 @@ class Supplier {
   final String? telephone;
   final String? email;
   final String? adresse;
+  final double solde;
   final DateTime dateCreation;
   final DateTime dateModification;
 
@@ -16,6 +17,7 @@ class Supplier {
     this.telephone,
     this.email,
     this.adresse,
+    this.solde = 0.0,
     required this.dateCreation,
     required this.dateModification,
   });
@@ -33,10 +35,14 @@ class Supplier {
       telephone: json['telephone'] as String?,
       email: json['email'] as String?,
       adresse: json['adresse'] as String?,
+      solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
       dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr) : DateTime.now(),
       dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr) : DateTime.now(),
     );
   }
+
+  /// Vérifie si le fournisseur a une dette (solde > 0 pour les fournisseurs)
+  bool get aDette => solde > 0;
 
   /// Convertit le fournisseur en JSON
   Map<String, dynamic> toJson() {
@@ -47,6 +53,7 @@ class Supplier {
       'telephone': telephone,
       'email': email,
       'adresse': adresse,
+      'solde': solde,
       'dateCreation': dateCreation.toIso8601String(),
       'dateModification': dateModification.toIso8601String(),
     };
@@ -60,6 +67,7 @@ class Supplier {
     String? telephone,
     String? email,
     String? adresse,
+    double? solde,
     DateTime? dateCreation,
     DateTime? dateModification,
   }) {
@@ -70,6 +78,7 @@ class Supplier {
       telephone: telephone ?? this.telephone,
       email: email ?? this.email,
       adresse: adresse ?? this.adresse,
+      solde: solde ?? this.solde,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

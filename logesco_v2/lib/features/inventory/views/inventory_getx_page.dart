@@ -59,7 +59,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('inventory_title'.tr),
+        title: Text('stock_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -75,7 +75,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 value: 'export_stock',
                 child: ListTile(
                   leading: const Icon(Icons.download),
-                  title: Text('inventory_export_stock'.tr),
+                  title: Text('stock_export_stock'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -83,7 +83,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 value: 'export_movements',
                 child: ListTile(
                   leading: const Icon(Icons.history),
-                  title: Text('inventory_export_movements'.tr),
+                  title: Text('stock_export_movements'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -91,7 +91,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 value: 'bulk_adjust',
                 child: ListTile(
                   leading: const Icon(Icons.edit_note),
-                  title: Text('inventory_bulk_adjust'.tr),
+                  title: Text('stock_bulk_adjustment'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -118,25 +118,25 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 const SizedBox(height: 8),
                 _buildVerticalTab(
                   icon: Icons.inventory,
-                  label: 'inventory_stocks'.tr,
+                  label: 'stock_tab_stocks'.tr,
                   index: 0,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.warning,
-                  label: 'inventory_alerts'.tr,
+                  label: 'stock_tab_alerts'.tr,
                   index: 1,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.history,
-                  label: 'inventory_movements'.tr,
+                  label: 'stock_tab_movements'.tr,
                   index: 2,
                   controller: _tabController,
                 ),
                 _buildVerticalTab(
                   icon: Icons.event_busy,
-                  label: 'inventory_expirations'.tr,
+                  label: 'stock_tab_expiration'.tr,
                   index: 3,
                   controller: _tabController,
                 ),
@@ -283,8 +283,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
     try {
       // Afficher un indicateur de chargement
       Get.snackbar(
-        'Export en cours',
-        'Génération de l\'export des stocks...',
+        'stock_export_in_progress'.tr,
+        'stock_export_fetching'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(seconds: 2),
@@ -295,34 +295,34 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         // Afficher le dialog de confirmation
         Get.dialog(
           AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text('Export des stocks sauvegardé avec succès.\n'
+            title: Text('stock_export_success'.tr),
+            content: Text('${'stock_export_success_message'.tr}\n'
                 'Fichier: ${filePath.split('/').last}\n'
-                'Voulez-vous partager le fichier ?'),
+                '${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('close'.tr),
               ),
               ElevatedButton(
                 onPressed: () {
                   Get.back();
                   // TODO: Implémenter le partage de fichier
                   Get.snackbar(
-                    'Partage',
-                    'Fonctionnalité de partage à implémenter',
+                    'stock_export_share'.tr,
+                    'feature_coming_soon'.tr,
                     snackPosition: SnackPosition.BOTTOM,
                   );
                 },
-                child: const Text('Partager'),
+                child: Text('stock_export_share'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des stocks',
+          'error'.tr,
+          'stock_export_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -330,8 +330,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
+        'error'.tr,
+        'stock_export_error_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -345,8 +345,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
     try {
       // Afficher un indicateur de chargement
       Get.snackbar(
-        'Export en cours',
-        'Génération de l\'export des mouvements...',
+        'stock_export_in_progress'.tr,
+        'stock_export_movements_in_progress'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(seconds: 2),
@@ -357,34 +357,34 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         // Afficher le dialog de confirmation
         Get.dialog(
           AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text('Export des mouvements sauvegardé avec succès.\n'
+            title: Text('stock_export_success'.tr),
+            content: Text('${'stock_export_success_message'.tr}\n'
                 'Fichier: ${filePath.split('/').last}\n'
-                'Voulez-vous partager le fichier ?'),
+                '${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('close'.tr),
               ),
               ElevatedButton(
                 onPressed: () {
                   Get.back();
                   // TODO: Implémenter le partage de fichier
                   Get.snackbar(
-                    'Partage',
-                    'Fonctionnalité de partage à implémenter',
+                    'stock_export_share'.tr,
+                    'feature_coming_soon'.tr,
                     snackPosition: SnackPosition.BOTTOM,
                   );
                 },
-                child: const Text('Partager'),
+                child: Text('stock_export_share'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des mouvements',
+          'error'.tr,
+          'stock_export_movements_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -392,8 +392,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
+        'error'.tr,
+        'stock_export_error_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
@@ -422,7 +422,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Erreur de chargement',
+              'stock_error_loading'.tr,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -432,7 +432,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: controller.loadSummary,
-              child: const Text('Réessayer'),
+              child: Text('stock_error_retry'.tr),
             ),
           ],
         );
@@ -440,8 +440,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
       final summary = controller.summary.value;
       if (summary == null) {
-        return const Center(
-          child: Text('Aucune donnée disponible'),
+        return Center(
+          child: Text('stock_no_data'.tr),
         );
       }
 
@@ -457,10 +457,10 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Résumé des stocks',
-                  style: TextStyle(
+                  'stock_summary_title'.tr,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -472,7 +472,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
           // Cartes statistiques en colonne
           _buildVerticalStatCard(
-            'Produits',
+            'stock_summary_products'.tr,
             summary.totalProduits.toString(),
             Icons.inventory_2,
             Colors.blue,
@@ -480,7 +480,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           const SizedBox(height: 12),
 
           _buildVerticalStatCard(
-            'Achat',
+            'stock_summary_purchases'.tr,
             _formatValue(summary.valeurStockAchat),
             Icons.shopping_cart,
             Colors.green,
@@ -488,7 +488,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           const SizedBox(height: 12),
 
           _buildVerticalStatCard(
-            'Vente',
+            'stock_summary_sales'.tr,
             _formatValue(summary.valeurStockVente ?? summary.valeurTotaleStock),
             Icons.sell,
             Colors.teal,
@@ -496,7 +496,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           const SizedBox(height: 12),
 
           _buildVerticalStatCard(
-            'Alertes',
+            'stock_summary_alerts'.tr,
             summary.produitsEnAlerte.toString(),
             Icons.warning,
             summary.produitsEnAlerte > 0 ? Colors.orange : Colors.grey,
@@ -504,7 +504,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           const SizedBox(height: 12),
 
           _buildVerticalStatCard(
-            'Ruptures',
+            'stock_summary_ruptures'.tr,
             summary.produitsEnRupture.toString(),
             Icons.error,
             summary.produitsEnRupture > 0 ? Colors.red : Colors.grey,
@@ -512,7 +512,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           const SizedBox(height: 12),
 
           _buildVerticalStatCard(
-            'En stock',
+            'stock_summary_in_stock'.tr,
             '${summary.pourcentageEnStock}%',
             Icons.check_circle,
             Colors.indigo,

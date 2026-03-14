@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 /// Widget pour afficher les activités récentes
@@ -37,9 +38,9 @@ class RecentActivitiesWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Activités récentes',
-                style: TextStyle(
+              Text(
+                'dashboard_recent_activities'.tr,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1565C0),
@@ -47,10 +48,8 @@ class RecentActivitiesWidget extends StatelessWidget {
               ),
               if (!isLoading)
                 TextButton(
-                  onPressed: () {
-                    // Navigation vers la page complète des activités
-                  },
-                  child: const Text('Voir tout'),
+                  onPressed: () {},
+                  child: Text('dashboard_see_all'.tr),
                 ),
             ],
           ),
@@ -123,7 +122,7 @@ class RecentActivitiesWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucune activité récente',
+              'dashboard_no_activities'.tr,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -132,7 +131,7 @@ class RecentActivitiesWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Les activités apparaîtront ici une fois que vous commencerez à utiliser l\'application',
+              'dashboard_no_activities_hint'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -181,7 +180,7 @@ class RecentActivitiesWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity['title'] ?? 'Activité',
+                  _translateActivityTitle(activity['title'] ?? ''),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -210,6 +209,18 @@ class RecentActivitiesWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _translateActivityTitle(String title) {
+    const keyMap = {
+      'activity_new_user': 'dashboard_activity_new_user',
+      'activity_new_product': 'dashboard_activity_new_product',
+      'activity_system': 'dashboard_activity_system',
+    };
+    final key = keyMap[title];
+    if (key != null) return key.tr;
+    // Fallback: retourner le titre tel quel (déjà traduit ou inconnu)
+    return title.isNotEmpty ? title : 'dashboard_activity_system'.tr;
   }
 
   Color _getActivityColor(String colorName) {
@@ -255,13 +266,13 @@ class RecentActivitiesWidget extends StatelessWidget {
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'À l\'instant';
+      return 'dashboard_just_now'.tr;
     } else if (difference.inMinutes < 60) {
-      return 'Il y a ${difference.inMinutes} min';
+      return 'dashboard_minutes_ago'.trParams({'n': '${difference.inMinutes}'});
     } else if (difference.inHours < 24) {
-      return 'Il y a ${difference.inHours}h';
+      return 'dashboard_hours_ago'.trParams({'n': '${difference.inHours}'});
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays}j';
+      return 'dashboard_days_ago'.trParams({'n': '${difference.inDays}'});
     } else {
       return DateFormat('dd/MM/yyyy').format(timestamp);
     }

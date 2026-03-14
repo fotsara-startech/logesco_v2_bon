@@ -28,13 +28,13 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
   String get _getPlaceholder {
     switch (widget.currentTabIndex) {
       case 0:
-        return 'Rechercher un produit (nom, référence, code-barre)...';
+        return 'stock_search_placeholder'.tr;
       case 1:
-        return 'Rechercher dans les alertes...';
+        return 'stock_search_alerts_placeholder'.tr;
       case 2:
-        return 'Rechercher dans les mouvements...';
+        return 'stock_search_movements_placeholder'.tr;
       default:
-        return 'Rechercher...';
+        return 'stock_search_placeholder'.tr;
     }
   }
 
@@ -100,7 +100,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
           IconButton(
             onPressed: () => _showSearchOptions(widget.currentTabIndex),
             icon: const Icon(Icons.tune),
-            tooltip: 'Options de recherche',
+            tooltip: 'stock_search_options'.tr,
           ),
         ],
       ),
@@ -122,9 +122,9 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Options de recherche',
-              style: TextStyle(
+            Text(
+              'stock_search_options'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -134,8 +134,8 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
             // Recherche par référence exacte
             ListTile(
               leading: const Icon(Icons.tag),
-              title: const Text('Recherche par référence exacte'),
-              subtitle: const Text('Rechercher une référence précise'),
+              title: Text('stock_search_exact_reference'.tr),
+              subtitle: Text('stock_search_exact_reference_hint'.tr),
               onTap: () {
                 Get.back();
                 _showReferenceSearch();
@@ -145,8 +145,8 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
             // Recherche par code-barre
             ListTile(
               leading: const Icon(Icons.qr_code_scanner),
-              title: const Text('Recherche par code-barre'),
-              subtitle: const Text('Scanner ou saisir un code-barre'),
+              title: Text('stock_search_barcode'.tr),
+              subtitle: Text('stock_search_barcode_hint'.tr),
               onTap: () {
                 Get.back();
                 _showBarcodeSearch();
@@ -156,8 +156,8 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
             // Filtre par catégorie
             ListTile(
               leading: const Icon(Icons.category),
-              title: const Text('Filtrer par catégorie'),
-              subtitle: const Text('Afficher seulement une catégorie'),
+              title: Text('stock_filter_category'.tr),
+              subtitle: Text('stock_filter_category_hint'.tr),
               onTap: () {
                 Get.back();
                 _showCategoryFilter();
@@ -167,8 +167,8 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
             // Filtre par statut de stock
             ListTile(
               leading: const Icon(Icons.warning),
-              title: const Text('Filtrer par statut de stock'),
-              subtitle: const Text('Stocks en alerte, rupture, etc.'),
+              title: Text('stock_filter_status'.tr),
+              subtitle: Text('stock_filter_status_hint'.tr),
               onTap: () {
                 Get.back();
                 _showStockStatusFilter();
@@ -187,7 +187,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                         Get.back();
                       },
                       icon: const Icon(Icons.clear_all),
-                      label: const Text('Effacer tous les filtres'),
+                      label: Text('stock_filter_clear_all'.tr),
                     ),
                   )
                 : const SizedBox.shrink()),
@@ -204,13 +204,13 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Recherche par référence'),
+        title: Text('stock_search_exact_reference'.tr),
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Référence exacte',
+          decoration: InputDecoration(
+            labelText: 'stock_filter_category_label'.tr,
             hintText: 'Ex: REF001',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.characters,
           autofocus: true,
@@ -218,14 +218,14 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               controller.updateSearchQuery(textController.text.trim());
               Get.back();
             },
-            child: const Text('Rechercher'),
+            child: Text('stock_search_placeholder'.tr),
           ),
         ],
       ),
@@ -239,14 +239,14 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Recherche par code-barre'),
+        title: Text('stock_search_barcode'.tr),
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Code-barre',
-            hintText: 'Scanner ou saisir le code-barre',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.qr_code_scanner),
+          decoration: InputDecoration(
+            labelText: 'stock_search_barcode'.tr,
+            hintText: 'stock_search_barcode_hint'.tr,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.qr_code_scanner),
           ),
           keyboardType: TextInputType.number,
           autofocus: true,
@@ -254,7 +254,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -264,7 +264,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                 Get.back();
               }
             },
-            child: const Text('Rechercher'),
+            child: Text('stock_search_placeholder'.tr),
           ),
         ],
       ),
@@ -277,13 +277,13 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Filtrer par statut de stock'),
+        title: Text('stock_filter_status'.tr),
         content: Obx(() => SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    title: const Text('Tous les stocks'),
+                    title: Text('stock_filter_all'.tr),
                     leading: Radio<String>(
                       value: '',
                       groupValue: controller.stockStatusFilter.value,
@@ -291,7 +291,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Stocks en alerte'),
+                    title: Text('stock_filter_alert'.tr),
                     leading: Radio<String>(
                       value: 'alerte',
                       groupValue: controller.stockStatusFilter.value,
@@ -299,7 +299,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Stocks en rupture'),
+                    title: Text('stock_filter_rupture'.tr),
                     leading: Radio<String>(
                       value: 'rupture',
                       groupValue: controller.stockStatusFilter.value,
@@ -307,7 +307,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Stocks disponibles'),
+                    title: Text('stock_filter_available'.tr),
                     leading: Radio<String>(
                       value: 'disponible',
                       groupValue: controller.stockStatusFilter.value,
@@ -320,7 +320,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('common_close'.tr),
           ),
         ],
       ),
@@ -338,13 +338,13 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Filtrer par type de mouvement'),
+        title: Text('stock_filter_movement_type'.tr),
         content: Obx(() => SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    title: const Text('Tous les mouvements'),
+                    title: Text('stock_filter_all'.tr),
                     leading: Radio<String>(
                       value: '',
                       groupValue: controller.movementTypeFilter.value ?? '',
@@ -352,7 +352,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Achats'),
+                    title: Text('stock_filter_purchase'.tr),
                     leading: Radio<String>(
                       value: 'achat',
                       groupValue: controller.movementTypeFilter.value ?? '',
@@ -360,7 +360,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Ventes'),
+                    title: Text('stock_filter_sale'.tr),
                     leading: Radio<String>(
                       value: 'vente',
                       groupValue: controller.movementTypeFilter.value ?? '',
@@ -368,7 +368,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Ajustements'),
+                    title: Text('stock_filter_adjustment'.tr),
                     leading: Radio<String>(
                       value: 'ajustement',
                       groupValue: controller.movementTypeFilter.value ?? '',
@@ -376,7 +376,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
                     ),
                   ),
                   ListTile(
-                    title: const Text('Retours'),
+                    title: Text('stock_filter_return'.tr),
                     leading: Radio<String>(
                       value: 'retour',
                       groupValue: controller.movementTypeFilter.value ?? '',
@@ -389,7 +389,7 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('common_close'.tr),
           ),
         ],
       ),

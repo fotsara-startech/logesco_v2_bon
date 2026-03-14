@@ -50,7 +50,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mouvement de Stock'),
+        title: Text('stock_movement_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Form(
@@ -69,14 +69,14 @@ class _StockMovementPageState extends State<StockMovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Sélectionner un produit',
+                          'stock_movement_select_product'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: _selectProduct,
                           icon: const Icon(Icons.search),
-                          label: const Text('Rechercher un produit'),
+                          label: Text('stock_movement_search_product'.tr),
                         ),
                       ],
                     ),
@@ -104,7 +104,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                                   ),
                                   if (_selectedStock!.produit != null)
                                     Text(
-                                      'Réf: ${_selectedStock!.produit!.reference}',
+                                      '${'stock_product_reference'.tr}: ${_selectedStock!.produit!.reference}',
                                       style: TextStyle(color: Colors.grey[600]),
                                     ),
                                 ],
@@ -116,7 +116,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                                   _selectedStock = null;
                                 });
                               },
-                              child: const Text('Changer'),
+                              child: Text('stock_movement_change'.tr),
                             ),
                           ],
                         ),
@@ -125,7 +125,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                           children: [
                             Expanded(
                               child: _buildStockInfo(
-                                'Stock actuel',
+                                'stock_movement_current_stock'.tr,
                                 _selectedStock!.quantiteDisponible.toString(),
                                 Icons.inventory,
                                 Colors.blue,
@@ -134,7 +134,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildStockInfo(
-                                'Seuil minimum',
+                                'stock_movement_threshold'.tr,
                                 _selectedStock!.produit?.seuilStockMinimum.toString() ?? '0',
                                 Icons.warning,
                                 Colors.orange,
@@ -157,21 +157,21 @@ class _StockMovementPageState extends State<StockMovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Type de mouvement',
+                          'stock_movement_type'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: _selectedType,
-                          decoration: const InputDecoration(
-                            labelText: 'Type de mouvement',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.swap_horiz),
+                          decoration: InputDecoration(
+                            labelText: 'stock_movement_type'.tr,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.swap_horiz),
                           ),
                           items: _typesMouvements.map((type) {
                             return DropdownMenuItem(
                               value: type.code,
-                              child: Text(type.libelle),
+                              child: Text(type.libelle.tr),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -198,21 +198,21 @@ class _StockMovementPageState extends State<StockMovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Motif',
+                          'stock_movement_reason'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: _selectedMotif,
-                          decoration: const InputDecoration(
-                            labelText: 'Motif du mouvement',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.description),
+                          decoration: InputDecoration(
+                            labelText: 'stock_movement_reason'.tr,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.description),
                           ),
                           items: _getMotifsByType(_selectedType).map((motif) {
                             return DropdownMenuItem(
                               value: motif,
-                              child: Text(motif),
+                              child: Text(motif.tr),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -236,20 +236,20 @@ class _StockMovementPageState extends State<StockMovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quantité',
+                          'stock_movement_quantity'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _quantityController,
                           decoration: InputDecoration(
-                            labelText: 'Quantité',
+                            labelText: 'stock_movement_quantity'.tr,
                             border: const OutlineInputBorder(),
                             prefixIcon: Icon(
                               _getIconForType(_selectedType),
                               color: _getColorForType(_selectedType),
                             ),
-                            suffixText: 'unités',
+                            suffixText: 'stock_units'.tr,
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -257,14 +257,14 @@ class _StockMovementPageState extends State<StockMovementPage> {
                           ],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez saisir une quantité';
+                              return 'stock_movement_quantity_required'.tr;
                             }
                             final quantity = int.tryParse(value);
                             if (quantity == null || quantity <= 0) {
-                              return 'Veuillez saisir une quantité valide';
+                              return 'stock_movement_quantity_invalid'.tr;
                             }
                             if (_selectedType == 'sortie' && quantity > _selectedStock!.quantiteDisponible) {
-                              return 'Quantité supérieure au stock disponible';
+                              return 'stock_movement_quantity_exceeds'.tr;
                             }
                             return null;
                           },
@@ -290,7 +290,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Nouveau stock: ${_calculateNewStock()}',
+                                  'stock_movement_new_stock'.trParams({'stock': _calculateNewStock().toString()}),
                                   style: TextStyle(
                                     color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.w500,
@@ -315,17 +315,17 @@ class _StockMovementPageState extends State<StockMovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes (optionnel)',
+                          'stock_movement_notes_optional'.tr,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _notesController,
-                          decoration: const InputDecoration(
-                            labelText: 'Détails supplémentaires',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.note),
-                            hintText: 'Ex: Numéro de bon, référence...',
+                          decoration: InputDecoration(
+                            labelText: 'stock_movement_notes_details'.tr,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.note),
+                            hintText: 'stock_movement_notes_hint'.tr,
                           ),
                           maxLines: 3,
                           maxLength: 500,
@@ -347,7 +347,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                   child: _isLoading
                       ? const CircularProgressIndicator()
                       : Text(
-                          'Enregistrer le mouvement',
+                          'stock_movement_submit'.tr,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -480,7 +480,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors de la sélection: $e'),
+          content: Text('stock_movement_selection_error'.trParams({'error': e.toString()})),
           backgroundColor: Colors.red,
         ),
       );
@@ -511,8 +511,8 @@ class _StockMovementPageState extends State<StockMovementPage> {
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mouvement enregistré avec succès'),
+            SnackBar(
+              content: Text('stock_movement_success'.tr),
               backgroundColor: Colors.green,
             ),
           );
@@ -523,7 +523,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('error'.tr),
             backgroundColor: Colors.red,
           ),
         );
@@ -596,10 +596,10 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Sélectionner un produit',
-                      style: TextStyle(
+                      'stock_movement_select_product'.tr,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -619,7 +619,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Rechercher par nom ou référence...',
+                  hintText: 'stock_movement_search_hint'.tr,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -655,7 +655,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Aucun produit trouvé',
+                              'stock_movement_no_products'.tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.grey[600],
@@ -691,9 +691,9 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Réf: ${produit.reference}'),
+                                  Text('${'stock_product_reference'.tr}: ${produit.reference}'),
                                   Text(
-                                    'Stock: ${stock.quantiteDisponible} unités',
+                                    '${'stock_quantities_available'.tr}: ${stock.quantiteDisponible} ${'stock_units'.tr}',
                                     style: TextStyle(
                                       color: stock.quantiteDisponible > 0 ? Colors.green : Colors.red,
                                       fontWeight: FontWeight.w500,

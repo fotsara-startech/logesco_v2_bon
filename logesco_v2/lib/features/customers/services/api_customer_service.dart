@@ -267,9 +267,32 @@ class ApiCustomerService extends GetxService implements CustomerService {
 
       print('📡 Réponse relevé de compte:');
       print('  - Success: ${response.isSuccess}');
+      print('  - Response data type: ${response.data.runtimeType}');
+      print('  - Response data keys: ${(response.data as Map?)?.keys.toList()}');
 
       if (response.isSuccess && response.data != null) {
-        return response.data!['data'] as Map<String, dynamic>;
+        final responseData = response.data as Map<String, dynamic>;
+
+        // La réponse du backend est: { success: true, message: '...', data: {...} }
+        // On extrait le 'data' qui contient les informations du relevé
+        if (responseData.containsKey('data')) {
+          final statementData = responseData['data'] as Map<String, dynamic>;
+
+          print('✅ Données du relevé extraites:');
+          print('  - Entreprise: ${statementData['entreprise'] != null ? 'Présente' : 'Absente'}');
+          print('  - Client: ${statementData['client'] != null ? 'Présent' : 'Absent'}');
+          print('  - Compte: ${statementData['compte'] != null ? 'Présent' : 'Absent'}');
+          print('  - Transactions: ${(statementData['transactions'] as List?)?.length ?? 0}');
+
+          final entrepriseMap = statementData['entreprise'] as Map<String, dynamic>?;
+          print('  - Logo path: ${entrepriseMap?['logoPath']}');
+
+          return statementData;
+        } else {
+          print('⚠️ Pas de clé "data" dans la réponse');
+          print('  - Clés disponibles: ${responseData.keys.toList()}');
+          return responseData;
+        }
       }
 
       return null;

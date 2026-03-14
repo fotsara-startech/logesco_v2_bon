@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:convert';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/config/api_config.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../printing/services/printing_service.dart';
 import '../models/company_profile.dart';
@@ -211,6 +214,132 @@ class CompanySettingsController extends GetxController {
     _validationErrors.clear();
 
     try {
+      // Vérifier si un nouveau logo a été sélectionné (chemin local)
+      final logoPath = _logoPath.value;
+      final hasNewLogo = logoPath != null && logoPath.isNotEmpty && (logoPath.startsWith('/') || logoPath.contains('\\') || logoPath.contains(':'));
+
+      if (hasNewLogo) {
+        // Upload le fichier en multipart
+        print('📤 Upload du logo en multipart: $logoPath');
+        await _uploadLogoAndSaveProfile(logoPath!);
+      } else {
+        // Sauvegarde normale sans fichier
+        print('💾 Sauvegarde du profil sans nouveau logo');
+        await _saveProfileWithoutLogo();
+      }
+    } catch (e) {
+      SnackbarUtils.showError('Erreur de connexion: $e');
+    } finally {
+      _isSaving.value = false;
+    }
+  }
+
+  /// Upload le logo et sauvegarde le profil
+  Future<void> _uploadLogoAndSaveProfile(String logoPath) async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) {
+        throw Exception('Token d\'authentification manquant');
+      }
+
+      // Créer une requête multipart manuellement
+      final uri = Uri.parse('${ApiConfig.baseUrl}/company-settings');
+      final request = http.MultipartRequest('POST', uri);
+
+      // Ajouter le token
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Ajouter le fichier avec le MIME type explicite
+      final file = File(logoPath);
+      final mimeType = _getMimeType(logoPath);
+
+      print('📁 Fichier: $logoPath');
+      print('   MIME type: $mimeType');
+
+      request.files.add(
+        http.MultipartFile(
+          'logo',
+          file.readAsBytes().asStream(),
+          file.lengthSync(),
+          filename: file.path.split('/').last,
+        ),
+      );
+
+      // Ajouter les champs supplémentaires
+      request.fields['nomEntreprise'] = nameController.text.trim();
+      request.fields['adresse'] = addressController.text.trim();
+      request.fields['localisation'] = locationController.text.trim().isEmpty ? '' : locationController.text.trim();
+      request.fields['telephone'] = phoneController.text.trim().isEmpty ? '' : phoneController.text.trim();
+      request.fields['email'] = emailController.text.trim().isEmpty ? '' : emailController.text.trim();
+      request.fields['nuiRccm'] = nuiRccmController.text.trim().isEmpty ? '' : nuiRccmController.text.trim();
+      request.fields['slogan'] = sloganController.text.trim().isEmpty ? '' : sloganController.text.trim();
+      request.fields['langueFacture'] = _selectedLanguage.value;
+
+      print('📤 Envoi de la requête multipart...');
+      final response = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout lors de l\'upload');
+        },
+      );
+
+      print('📡 Réponse reçue: ${response.statusCode}');
+      final responseBody = await response.stream.bytesToString();
+      print('📄 Corps de la réponse: $responseBody');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(responseBody);
+        final companyData = jsonData['data'] ?? jsonData;
+
+        final profile = CompanyProfile(
+          id: companyData['id'] is String ? int.tryParse(companyData['id']) : companyData['id'],
+          name: companyData['nomEntreprise'] ?? 'Entreprise',
+          address: companyData['adresse'] ?? '',
+          location: companyData['localisation'],
+          phone: companyData['telephone'],
+          email: companyData['email'],
+          nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
+          slogan: companyData['slogan'],
+          receiptLanguage: companyData['langueFacture'] ?? 'fr',
+        );
+
+        _companyProfile.value = profile;
+        _logoPath.value = profile.logo;
+        _hasUnsavedChanges.value = false;
+
+        PrintingService.setCompanyProfile(profile);
+        SnackbarUtils.showSuccess('Profil et logo sauvegardés avec succès');
+      } else {
+        SnackbarUtils.showError('Erreur lors de la sauvegarde: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Erreur upload logo: $e');
+      SnackbarUtils.showError('Erreur lors de l\'upload du logo: $e');
+    }
+  }
+
+  /// Obtient le MIME type basé sur l'extension du fichier
+  String _getMimeType(String filePath) {
+    final ext = filePath.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  /// Sauvegarde le profil sans nouveau logo
+  Future<void> _saveProfileWithoutLogo() async {
+    try {
       final request = CompanyProfileRequest(
         name: nameController.text.trim(),
         address: addressController.text.trim(),
@@ -229,14 +358,12 @@ class CompanySettingsController extends GetxController {
         _companyProfile.value = response.data;
         _hasUnsavedChanges.value = false;
 
-        // Mettre à jour le profil partagé dans le service d'impression
         PrintingService.setCompanyProfile(response.data);
         print('✅ Profil d\'entreprise mis à jour dans le service d\'impression');
 
         SnackbarUtils.showSuccess(response.message ?? 'Profil sauvegardé avec succès');
       } else {
         if (response.errors != null && response.errors!.isNotEmpty) {
-          // Afficher les erreurs de validation
           for (final error in response.errors!) {
             _validationErrors[error.field] = error.message;
           }
@@ -245,8 +372,6 @@ class CompanySettingsController extends GetxController {
       }
     } catch (e) {
       SnackbarUtils.showError('Erreur de connexion: $e');
-    } finally {
-      _isSaving.value = false;
     }
   }
 

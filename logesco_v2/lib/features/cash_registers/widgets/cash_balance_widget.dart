@@ -62,7 +62,7 @@ class CashBalanceWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Solde caisse',
+                          'cash_session_balance'.tr,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 14,
@@ -96,7 +96,7 @@ class CashBalanceWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Admin',
+                          'users_admin_access'.tr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -135,7 +135,7 @@ class CashBalanceWidget extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildInfoItem(
-                        'Ouverture',
+                        'cash_session_opening_balance'.tr,
                         '${session.soldeOuverture.toStringAsFixed(0)} F',
                         Icons.login,
                       ),
@@ -147,7 +147,7 @@ class CashBalanceWidget extends StatelessWidget {
                     ),
                     Expanded(
                       child: _buildInfoItem(
-                        'Durée',
+                        'cash_session_duration'.tr,
                         session.formattedDuration,
                         Icons.access_time,
                       ),
@@ -178,7 +178,7 @@ class CashBalanceWidget extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Solde visible uniquement par les administrateurs',
+                        'cash_session_admin_only_visible'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,

@@ -1,172 +1,223 @@
-; Script InnoSetup pour LOGESCO v2
-; Crée un installeur Windows simple et professionnel
+; ============================================================
+; LOGESCO v2 - Script InnoSetup
+; Crée un installeur Windows professionnel tout-en-un.
+;
+; Ce que fait cet installeur:
+;   1. Copie logesco_v2.exe + DLLs Flutter dans Program Files
+;   2. Copie logesco-backend.exe + prisma-engines dans AppData\Local\LOGESCO\backend
+;   3. Crée les dossiers database/, uploads/, logs/ (données persistantes)
+;   4. Crée un raccourci bureau + menu Démarrer
+;   5. Enregistre l'application pour Ajout/Suppression de programmes
+;
+; Mise à jour (client existant):
+;   - Les binaires sont écrasés (app + backend)
+;   - database/, uploads/ ne sont JAMAIS touchés (flag onlyifdoesntexist)
+;   - Les migrations Prisma sont exécutées automatiquement au 1er démarrage
+; ============================================================
 
-#define MyAppName "LOGESCO v2"
-#define MyAppVersion "1.0.0"
+#define MyAppName      "LOGESCO v2"
+#define MyAppVersion   "2.0.0"
 #define MyAppPublisher "LOGESCO"
-#define MyAppExeName "logesco_v2.exe"
-#define MyAppAssocName "LOGESCO Document"
-#define MyAppAssocExt ".logesco"
+#define MyAppExeName   "logesco_v2.exe"
+#define MyAppURL       "https://logesco.app"
+
+; Chemins des sources (relatifs au script .iss)
+#define FlutterRelease "logesco_v2\build\windows\x64\runner\Release"
+#define BackendExeDir  "dist-exe"
 
 [Setup]
-; Informations de base
-AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
+AppId={{B7C4D5E6-F7A8-4901-BCDE-F01234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-; Installer dans LocalAppData pour éviter les problèmes de permissions
-DefaultDirName={localappdata}\LOGESCO
-DefaultGroupName=LOGESCO v2
-AllowNoIcons=yes
-OutputDir=release
-OutputBaseFilename=LOGESCO-v2-Setup6
-Compression=lzma
-SolidCompression=yes
-WizardStyle=modern
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
 
-; Icônes et images
-SetupIconFile=app_icon.ico
+; Dossier d'installation de l'application Flutter
+DefaultDirName={autopf}\LOGESCO
+DefaultGroupName={#MyAppName}
 
-; Privilèges
+; Pas besoin d'admin grâce à autopf + localappdata pour les données
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 
-; Architecture
+; Sortie
+OutputDir=release
+OutputBaseFilename=LOGESCO-v2-Setup
+Compression=lzma2/ultra64
+SolidCompression=yes
+
+; Interface
+WizardStyle=modern
+DisableProgramGroupPage=yes
+DisableWelcomePage=no
+ShowLanguageDialog=no
+
+; Icône
+SetupIconFile=app_icon.ico
+
+; Architecture 64-bit uniquement
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 
-; Interface
-DisableProgramGroupPage=yes
-DisableWelcomePage=no
+; Désinstallation
+UninstallDisplayIcon={app}\{#MyAppExeName}
+UninstallDisplayName={#MyAppName}
 
-; Langue
-ShowLanguageDialog=no
+; Redémarrage non requis
+RestartIfNeededByRun=no
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "Créer un raccourci sur le Bureau"; GroupDescription: "Raccourcis:"; Flags: checked
+
+[Dirs]
+; Dossiers de données persistantes — créés une seule fois, jamais supprimés à la MAJ
+Name: "{localappdata}\LOGESCO\backend\database"; Flags: uninsneveruninstall
+Name: "{localappdata}\LOGESCO\backend\uploads";  Flags: uninsneveruninstall
+Name: "{localappdata}\LOGESCO\backend\logs";     Flags: uninsneveruninstall
 
 [Files]
-; Application Flutter principale
-Source: "release\LOGESCO\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ── Application Flutter ──────────────────────────────────────────────────
+; Tous les fichiers du build Flutter (exe + DLLs + data/)
+Source: "{#FlutterRelease}\*"; \
+  DestDir: "{app}"; \
+  Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Backend dans AppData (avec node_modules pour Prisma)
-Source: "release\installer-files\backend\*"; DestDir: "{localappdata}\LOGESCO\backend"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ── Backend exécutable ───────────────────────────────────────────────────
+; L'exe compilé par pkg (Node.js embarqué)
+Source: "{#BackendExeDir}\logesco-backend.exe"; \
+  DestDir: "{localappdata}\LOGESCO\backend"; \
+  Flags: ignoreversion
+
+; Binaires Prisma query-engine (requis à côté de l'exe)
+Source: "{#BackendExeDir}\prisma-engines\*"; \
+  DestDir: "{localappdata}\LOGESCO\backend\prisma-engines"; \
+  Flags: ignoreversion recursesubdirs createallsubdirs
+
+; Schéma Prisma (pour les migrations au runtime)
+Source: "{#BackendExeDir}\schema.prisma"; \
+  DestDir: "{localappdata}\LOGESCO\backend"; \
+  Flags: ignoreversion
+
+; .env.example → copié comme .env SEULEMENT si absent (1ère installation)
+; À la MAJ, le .env existant est conservé (mot de passe JWT, etc.)
+Source: "{#BackendExeDir}\.env.example"; \
+  DestDir: "{localappdata}\LOGESCO\backend"; \
+  DestName: ".env"; \
+  Flags: onlyifdoesntexist
 
 [Icons]
-; Raccourci dans le menu Démarrer
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+; Menu Démarrer
+Name: "{group}\{#MyAppName}";                    Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\Désinstaller {#MyAppName}";       Filename: "{uninstallexe}"
 
-; Raccourci sur le bureau (optionnel)
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+; Bureau (optionnel)
+Name: "{autodesktop}\{#MyAppName}";              Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 ; Lancer l'application après installation
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; \
+  Description: "Lancer {#MyAppName}"; \
+  Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+; Supprimer les logs à la désinstallation (pas les données)
+Type: filesandordirs; Name: "{localappdata}\LOGESCO\backend\logs"
+
+; NE PAS supprimer database/ et uploads/ — données client précieuses
 
 [Code]
-// Code Pascal pour personnalisation avancée
+// ── Vérifications avant installation ──────────────────────────────────────
 
-// Vérifier si l'application est en cours d'exécution
 function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
 begin
   Result := True;
-  
-  // Vérifier si LOGESCO est déjà en cours d'exécution
+
+  // Si LOGESCO tourne, proposer de le fermer
   if CheckForMutexes('LOGESCO_V2_RUNNING') then
   begin
-    if MsgBox('LOGESCO v2 est actuellement en cours d''exécution. Voulez-vous le fermer et continuer l''installation?', 
-              mbConfirmation, MB_YESNO) = IDYES then
+    if MsgBox(
+      'LOGESCO v2 est en cours d''exécution.' + #13#10 +
+      'Voulez-vous le fermer pour continuer l''installation?',
+      mbConfirmation, MB_YESNO) = IDYES then
     begin
-      // Tenter de fermer l'application
-      Exec('taskkill', '/F /IM logesco_v2.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      Exec('taskkill', '/F /IM logesco_v2.exe /IM logesco-backend.exe',
+           '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
       Sleep(2000);
-      Result := True;
     end
     else
-      Result := False;
-  end;
-end;
-
-// Message de bienvenue personnalisé
-procedure InitializeWizard();
-var
-  WelcomeLabel: TNewStaticText;
-begin
-  // Personnaliser la page de bienvenue
-  WelcomeLabel := TNewStaticText.Create(WizardForm);
-  WelcomeLabel.Parent := WizardForm.WelcomePage;
-  WelcomeLabel.Caption := 
-    'Bienvenue dans l''installation de LOGESCO v2!' + #13#10 + #13#10 +
-    'Ce programme va installer LOGESCO v2 sur votre ordinateur.' + #13#10 + #13#10 +
-    'LOGESCO v2 est un système de gestion commerciale complet qui inclut:' + #13#10 +
-    '  • Gestion des stocks' + #13#10 +
-    '  • Gestion des ventes' + #13#10 +
-    '  • Gestion des clients et fournisseurs' + #13#10 +
-    '  • Rapports et statistiques' + #13#10 + #13#10 +
-    'Aucune configuration technique requise!' + #13#10 +
-    'L''application est prête à l''emploi après installation.';
-  WelcomeLabel.AutoSize := True;
-  WelcomeLabel.WordWrap := True;
-  WelcomeLabel.Top := 100;
-  WelcomeLabel.Left := 0;
-  WelcomeLabel.Width := WizardForm.WelcomePage.Width;
-end;
-
-// Créer les dossiers nécessaires après installation
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  BackendPath: String;
-  DatabasePath: String;
-  LogsPath: String;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    // Créer les dossiers nécessaires
-    BackendPath := ExpandConstant('{app}\data\flutter_assets\backend');
-    DatabasePath := BackendPath + '\database';
-    LogsPath := BackendPath + '\logs';
-    
-    // Créer le dossier database s'il n'existe pas
-    if not DirExists(DatabasePath) then
-      CreateDir(DatabasePath);
-      
-    // Créer le dossier logs s'il n'existe pas
-    if not DirExists(LogsPath) then
-      CreateDir(LogsPath);
-      
-    // Copier .env.example vers .env s'il n'existe pas
-    if not FileExists(BackendPath + '\.env') then
     begin
-      if FileExists(BackendPath + '\.env.example') then
-        FileCopy(BackendPath + '\.env.example', BackendPath + '\.env', False);
+      Result := False;
+      Exit;
     end;
   end;
 end;
 
-// Message de fin personnalisé
+// ── Détection d'une installation existante (mise à jour) ──────────────────
+
+function IsUpgrade(): Boolean;
+begin
+  Result := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{B7C4D5E6-F7A8-4901-BCDE-F01234567890}_is1');
+end;
+
+// ── Page de bienvenue personnalisée ───────────────────────────────────────
+
+procedure InitializeWizard();
+begin
+  if IsUpgrade() then
+    WizardForm.WelcomeLabel2.Caption :=
+      'Cette installation va mettre à jour LOGESCO v2 sur votre ordinateur.' + #13#10 + #13#10 +
+      'Vos données (produits, ventes, clients) seront conservées.' + #13#10 + #13#10 +
+      'Cliquez sur Suivant pour continuer.'
+  else
+    WizardForm.WelcomeLabel2.Caption :=
+      'Ce programme va installer LOGESCO v2 sur votre ordinateur.' + #13#10 + #13#10 +
+      'LOGESCO v2 inclut:' + #13#10 +
+      '  • Gestion des stocks et produits' + #13#10 +
+      '  • Gestion des ventes et caisse' + #13#10 +
+      '  • Gestion des clients et fournisseurs' + #13#10 +
+      '  • Rapports et statistiques' + #13#10 + #13#10 +
+      'Aucune configuration technique requise.' + #13#10 +
+      'Le serveur démarre automatiquement avec l''application.';
+end;
+
+// ── Message de fin ─────────────────────────────────────────────────────────
+
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = wpFinished then
   begin
-    WizardForm.FinishedLabel.Caption := 
-      'LOGESCO v2 a été installé avec succès!' + #13#10 + #13#10 +
-      'Vous pouvez maintenant lancer l''application.' + #13#10 + #13#10 +
-      'Au premier démarrage:' + #13#10 +
-      '  1. L''application va initialiser la base de données' + #13#10 +
-      '  2. Un compte administrateur sera créé automatiquement' + #13#10 +
-      '  3. Vous pourrez commencer à utiliser LOGESCO immédiatement' + #13#10 + #13#10 +
-      'Aucune configuration supplémentaire n''est nécessaire!';
+    if IsUpgrade() then
+      WizardForm.FinishedLabel.Caption :=
+        'LOGESCO v2 a été mis à jour avec succès!' + #13#10 + #13#10 +
+        'Vos données ont été conservées.' + #13#10 + #13#10 +
+        'Cliquez sur Terminer pour lancer l''application.'
+    else
+      WizardForm.FinishedLabel.Caption :=
+        'LOGESCO v2 a été installé avec succès!' + #13#10 + #13#10 +
+        'Au premier démarrage:' + #13#10 +
+        '  • La base de données sera initialisée automatiquement' + #13#10 +
+        '  • Identifiants par défaut: admin / admin123' + #13#10 + #13#10 +
+        'Cliquez sur Terminer pour lancer l''application.';
   end;
 end;
 
-[UninstallDelete]
-; Nettoyer les fichiers créés par l'application
-Type: filesandordirs; Name: "{app}\data\flutter_assets\backend\database"
-Type: filesandordirs; Name: "{app}\data\flutter_assets\backend\logs"
-Type: files; Name: "{app}\data\flutter_assets\backend\.env"
+// ── Arrêter le backend à la désinstallation ────────────────────────────────
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  ResultCode: Integer;
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    Exec('taskkill', '/F /IM logesco_v2.exe /IM logesco-backend.exe',
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1000);
+  end;
+end;

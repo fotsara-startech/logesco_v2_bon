@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/movement_report_service.dart';
 
 /// Widget d'analyse avancée des catégories avec graphiques multiples
+
 class CategoryAnalysisWidget extends StatefulWidget {
   final List<CategorySummary> categorySummaries;
   final double totalAmount;
@@ -82,9 +83,9 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
   Widget _buildChartTypeSelector() {
     return Row(
       children: [
-        const Text(
-          'Type de graphique:',
-          style: TextStyle(fontWeight: FontWeight.w500),
+        Text(
+          'financial_movements_chart_type'.tr,
+          style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -92,11 +93,11 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildChartTypeButton(0, Icons.pie_chart, 'Camembert'),
+                _buildChartTypeButton(0, Icons.pie_chart, 'financial_movements_chart_pie'.tr),
                 const SizedBox(width: 8),
-                _buildChartTypeButton(1, Icons.bar_chart, 'Barres'),
+                _buildChartTypeButton(1, Icons.bar_chart, 'financial_movements_chart_bars'.tr),
                 const SizedBox(width: 8),
-                _buildChartTypeButton(2, Icons.align_horizontal_left, 'Barres H.'),
+                _buildChartTypeButton(2, Icons.align_horizontal_left, 'financial_movements_chart_horizontal_bars'.tr),
               ],
             ),
           ),
@@ -363,7 +364,7 @@ class _CategoryAnalysisWidgetState extends State<CategoryAnalysisWidget> {
             Icon(Icons.leaderboard, color: Colors.orange.shade600),
             const SizedBox(width: 8),
             Text(
-              'Classement des dépenses',
+              'financial_movements_expense_ranking'.tr,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

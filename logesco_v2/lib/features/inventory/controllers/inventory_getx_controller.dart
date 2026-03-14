@@ -482,6 +482,14 @@ class InventoryGetxController extends GetxController {
         notes: notes ?? motif,
       );
 
+      // IMPORTANT: Réinitialiser le filtre de produit pour éviter qu'il reste actif
+      productFilter.value = null;
+
+      // Réinitialiser aussi les autres filtres de mouvement
+      movementTypeFilter.value = null;
+      dateDebutFilter.value = null;
+      dateFinFilter.value = null;
+
       // Recharger les données pour avoir les informations à jour
       await Future.wait([
         loadSummary(),

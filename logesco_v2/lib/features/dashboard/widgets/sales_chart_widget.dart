@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Widget pour afficher le graphique des ventes
 class SalesChartWidget extends StatelessWidget {
@@ -33,9 +34,9 @@ class SalesChartWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Évolution des ventes',
-            style: TextStyle(
+          Text(
+            'dashboard_sales_evolution'.tr,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1565C0),
@@ -92,7 +93,7 @@ class SalesChartWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucune donnée de vente',
+              'dashboard_no_sales_data'.tr,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -101,7 +102,7 @@ class SalesChartWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Les données apparaîtront une fois que vous aurez des ventes',
+              'dashboard_no_sales_data_hint'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -125,9 +126,9 @@ class SalesChartWidget extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem('Ventes', const Color(0xFF4CAF50)),
+            _buildLegendItem('dashboard_sales_legend'.tr, const Color(0xFF4CAF50)),
             const SizedBox(width: 24),
-            _buildLegendItem('Revenus', const Color(0xFF2196F3)),
+            _buildLegendItem('dashboard_revenue_legend'.tr, const Color(0xFF2196F3)),
           ],
         ),
         const SizedBox(height: 20),
@@ -238,9 +239,17 @@ class SalesChartWidget extends StatelessWidget {
   Widget _buildDayLabel(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
-      final dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+      final dayKeys = [
+        'dashboard_day_sun',
+        'dashboard_day_mon',
+        'dashboard_day_tue',
+        'dashboard_day_wed',
+        'dashboard_day_thu',
+        'dashboard_day_fri',
+        'dashboard_day_sat',
+      ];
       return Text(
-        dayNames[date.weekday % 7],
+        dayKeys[date.weekday % 7].tr,
         style: TextStyle(
           fontSize: 11,
           color: Colors.grey[600],

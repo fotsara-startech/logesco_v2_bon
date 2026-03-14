@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/stock_model.dart';
 
 class StockAlertsCard extends StatelessWidget {
@@ -290,8 +291,8 @@ class StockActionSheet extends StatelessWidget {
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.add_circle, color: Colors.green),
-            title: const Text('Ajuster le stock'),
-            subtitle: const Text('Modifier la quantité disponible'),
+            title: Text('stock_adjust'.tr),
+            subtitle: Text('stock_adjust_quantity'.tr),
             onTap: () {
               Navigator.of(context).pop();
               _showAdjustmentDialog(context);
@@ -299,8 +300,8 @@ class StockActionSheet extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.shopping_cart, color: Colors.blue),
-            title: const Text('Commander'),
-            subtitle: const Text('Créer une commande d\'approvisionnement'),
+            title: Text('stock_order'.tr),
+            subtitle: Text('stock_create_order'.tr),
             onTap: () {
               Navigator.of(context).pop();
               _showOrderDialog(context);
@@ -308,8 +309,8 @@ class StockActionSheet extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.history, color: Colors.orange),
-            title: const Text('Voir l\'historique'),
-            subtitle: const Text('Consulter les mouvements de stock'),
+            title: Text('stock_view_history'.tr),
+            subtitle: Text('stock_view_movements'.tr),
             onTap: () {
               Navigator.of(context).pop();
               _showStockHistory(context);

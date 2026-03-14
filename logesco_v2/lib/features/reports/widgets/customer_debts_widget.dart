@@ -14,11 +14,11 @@ class CustomerDebtsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Debug: afficher les données reçues
-    print('🔍 [CustomerDebtsWidget] Données reçues:');
-    print('  - totalOutstandingDebt: ${debtsData.totalOutstandingDebt}');
-    print('  - customersWithDebt: ${debtsData.customersWithDebt}');
-    print('  - averageDebtPerCustomer: ${debtsData.averageDebtPerCustomer}');
-    print('  - topDebtors count: ${debtsData.topDebtors.length}');
+    // print('🔍 [CustomerDebtsWidget] Données reçues:');
+    // print('  - totalOutstandingDebt: ${debtsData.totalOutstandingDebt}');
+    // print('  - customersWithDebt: ${debtsData.customersWithDebt}');
+    // print('  - averageDebtPerCustomer: ${debtsData.averageDebtPerCustomer}');
+    // print('  - topDebtors count: ${debtsData.topDebtors.length}');
 
     return Card(
       elevation: 4,

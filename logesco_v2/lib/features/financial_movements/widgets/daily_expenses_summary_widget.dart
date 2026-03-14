@@ -108,7 +108,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Dépenses du jour',
+                'financial_movements_daily_expenses_title'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -117,7 +117,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Chargement...',
+                'common_loading'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -153,7 +153,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Dépenses du jour',
+                'financial_movements_daily_expenses_title'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -162,7 +162,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Erreur de chargement',
+                'common_error'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.red[600],
@@ -174,7 +174,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
         IconButton(
           onPressed: () => _retryLoad(),
           icon: const Icon(Icons.refresh, color: Colors.red),
-          tooltip: 'Réessayer',
+          tooltip: 'common_retry'.tr,
         ),
       ],
     );
@@ -203,7 +203,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Dépenses du jour',
+                'financial_movements_daily_expenses_title'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -212,7 +212,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Aucune dépense aujourd\'hui',
+                'financial_movements_no_results'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -286,7 +286,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Dépenses du jour',
+                    'financial_movements_daily_expenses_title'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -320,7 +320,9 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          '${summary.totalCount} mouvement${summary.totalCount > 1 ? 's' : ''}',
+                          summary.totalCount > 1
+                              ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${summary.totalCount}')
+                              : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${summary.totalCount}'),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -338,7 +340,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            'Moy: ${summary.averageAmountFormatted}',
+                            '${'financial_movements_average_short'.tr} ${summary.averageAmountFormatted}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -358,7 +360,9 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               ] else ...[
                 // Version compacte
                 Text(
-                  '${summary.totalCount} mouvement${summary.totalCount > 1 ? 's' : ''}',
+                  summary.totalCount > 1
+                      ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${summary.totalCount}')
+                      : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${summary.totalCount}'),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -399,7 +403,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
             const Spacer(),
             if (summary.lastMovementDate != null)
               Text(
-                'Dernier: ${_formatTime(summary.lastMovementDate!)}',
+                '${'financial_movements_last_movement_label'.tr} ${_formatTime(summary.lastMovementDate!)}',
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.grey[500],
@@ -449,13 +453,13 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
   String _getExpenseLevelText(int level) {
     switch (level) {
       case 0:
-        return 'Aucune dépense';
+        return 'financial_movements_no_results'.tr;
       case 1:
-        return 'Dépenses faibles';
+        return 'financial_movements_low_expenses'.tr;
       case 2:
-        return 'Dépenses modérées';
+        return 'financial_movements_moderate_expenses'.tr;
       case 3:
-        return 'Dépenses élevées';
+        return 'financial_movements_high_expenses'.tr;
       default:
         return '';
     }
@@ -473,8 +477,8 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
     } catch (e) {
       print('❌ Erreur navigation vers mouvements financiers: $e');
       Get.snackbar(
-        'Navigation',
-        'Impossible d\'ouvrir les mouvements financiers',
+        'common_navigation'.tr,
+        'financial_movements_navigation_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade800,
@@ -492,7 +496,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
       print('❌ Erreur lors du rechargement: $e');
       FinancialErrorHandler.logError(
         FinancialMovementException(
-          message: 'Erreur lors du rechargement du résumé quotidien',
+          message: 'financial_movements_daily_summary_retry_error'.tr,
           code: 'DAILY_SUMMARY_RETRY_ERROR',
           statusCode: 500,
           errorType: FinancialErrorType.unknownError,

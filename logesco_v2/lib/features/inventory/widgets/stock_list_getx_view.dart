@@ -53,13 +53,13 @@ class _StockListViewState extends State<StockListGetxView> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Erreur: ${controller.stocksError.value}',
+                '${'error'.tr}: ${controller.stocksError.value}',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => controller.loadStocks(refresh: true),
-                child: const Text('Réessayer'),
+                child: Text('stock_error_retry'.tr),
               ),
             ],
           ),
@@ -67,7 +67,7 @@ class _StockListViewState extends State<StockListGetxView> {
       }
 
       if (controller.stocks.isEmpty) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -78,13 +78,13 @@ class _StockListViewState extends State<StockListGetxView> {
               ),
               SizedBox(height: 16),
               Text(
-                'Aucun stock disponible',
-                style: TextStyle(fontSize: 18),
+                'stock_no_stocks'.tr,
+                style: const TextStyle(fontSize: 18),
               ),
               SizedBox(height: 8),
               Text(
-                'Les stocks apparaîtront ici une fois ajoutés',
-                style: TextStyle(color: Colors.grey),
+                'stock_stock_will_appear'.tr,
+                style: const TextStyle(color: Colors.grey),
               ),
             ],
           ),
@@ -135,12 +135,12 @@ class _StockListViewState extends State<StockListGetxView> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (product?.reference != null) Text('Réf: ${product!.reference}'),
-            Text('Disponible: ${stock.quantiteDisponible}'),
-            if (stock.quantiteReservee > 0) Text('Réservé: ${stock.quantiteReservee}'),
+            if (product?.reference != null) Text('${'stock_stock_ref'.tr} ${product!.reference}'),
+            Text('${'stock_stock_available'.tr} ${stock.quantiteDisponible}'),
+            if (stock.quantiteReservee > 0) Text('${'stock_stock_reserved'.tr} ${stock.quantiteReservee}'),
             if (isLowStock)
               Text(
-                'Stock faible',
+                'stock_stock_low'.tr,
                 style: TextStyle(
                   color: Colors.orange[700],
                   fontWeight: FontWeight.w500,
@@ -148,7 +148,7 @@ class _StockListViewState extends State<StockListGetxView> {
               ),
             if (isOutOfStock)
               Text(
-                'Rupture de stock',
+                'stock_stock_rupture_status'.tr,
                 style: TextStyle(
                   color: Colors.red[700],
                   fontWeight: FontWeight.w500,
@@ -168,19 +168,19 @@ class _StockListViewState extends State<StockListGetxView> {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'detail',
               child: ListTile(
-                leading: Icon(Icons.info),
-                title: Text('Détails'),
+                leading: const Icon(Icons.info),
+                title: Text('stock_stock_details'.tr),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'movement',
               child: ListTile(
-                leading: Icon(Icons.swap_horiz),
-                title: Text('Mouvement de stock'),
+                leading: const Icon(Icons.swap_horiz),
+                title: Text('stock_movement_title'.tr),
                 contentPadding: EdgeInsets.zero,
               ),
             ),

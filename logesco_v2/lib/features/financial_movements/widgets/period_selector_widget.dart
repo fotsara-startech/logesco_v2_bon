@@ -58,14 +58,14 @@ class PeriodSelectorWidget extends StatelessWidget {
   /// Construit les boutons de période prédéfinie
   Widget _buildPredefinedPeriods() {
     final periods = [
-      {'label': 'Aujourd\'hui', 'value': 'today'},
-      {'label': 'Hier', 'value': 'yesterday'},
-      {'label': 'Cette semaine', 'value': 'thisWeek'},
-      {'label': 'Semaine dernière', 'value': 'lastWeek'},
-      {'label': 'Ce mois', 'value': 'thisMonth'},
-      {'label': 'Mois dernier', 'value': 'lastMonth'},
-      {'label': 'Cette année', 'value': 'thisYear'},
-      {'label': 'Année dernière', 'value': 'lastYear'},
+      {'label': 'financial_movements_period_today'.tr, 'value': 'today'},
+      {'label': 'financial_movements_period_yesterday'.tr, 'value': 'yesterday'},
+      {'label': 'financial_movements_period_this_week'.tr, 'value': 'thisWeek'},
+      {'label': 'financial_movements_period_last_week'.tr, 'value': 'lastWeek'},
+      {'label': 'financial_movements_period_this_month'.tr, 'value': 'thisMonth'},
+      {'label': 'financial_movements_period_last_month'.tr, 'value': 'lastMonth'},
+      {'label': 'financial_movements_period_this_year'.tr, 'value': 'thisYear'},
+      {'label': 'financial_movements_period_last_year'.tr, 'value': 'lastYear'},
     ];
 
     return Wrap(
@@ -95,7 +95,7 @@ class PeriodSelectorWidget extends StatelessWidget {
       children: [
         Expanded(
           child: _buildDateSelector(
-            'Date de début',
+            'financial_movements_filter_start_date'.tr,
             startDate,
             onStartDateChanged,
           ),
@@ -103,7 +103,7 @@ class PeriodSelectorWidget extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(
           child: _buildDateSelector(
-            'Date de fin',
+            'financial_movements_filter_end_date'.tr,
             endDate,
             onEndDateChanged,
           ),
@@ -153,7 +153,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    selectedDate != null ? _formatDate(selectedDate) : 'Sélectionner',
+                    selectedDate != null ? _formatDate(selectedDate) : 'financial_movements_filter_select'.tr,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -188,7 +188,7 @@ class PeriodSelectorWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Période sélectionnée',
+                  'financial_movements_selected_period'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.blue.shade600,
@@ -204,7 +204,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '$dayCount jour${dayCount > 1 ? 's' : ''}',
+                  dayCount > 1 ? 'financial_movements_days_plural'.tr.replaceAll('@count', '$dayCount') : 'financial_movements_days_singular'.tr.replaceAll('@count', '$dayCount'),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.blue.shade600,

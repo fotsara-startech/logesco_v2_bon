@@ -99,7 +99,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Résumé hebdomadaire',
+                'financial_movements_weekly_summary'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Chargement...',
+                'common_loading'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -144,7 +144,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Résumé hebdomadaire',
+                'financial_movements_weekly_summary'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -153,7 +153,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Erreur de chargement',
+                'common_error'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.red[600],
@@ -165,7 +165,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
         IconButton(
           onPressed: () => _retryLoad(),
           icon: const Icon(Icons.refresh, color: Colors.red),
-          tooltip: 'Réessayer',
+          tooltip: 'common_retry'.tr,
         ),
       ],
     );
@@ -194,7 +194,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Résumé hebdomadaire',
+                'financial_movements_weekly_summary'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -203,7 +203,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Aucune dépense cette semaine',
+                'financial_movements_no_results'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -211,7 +211,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '0 FCFA • 0 mouvement',
+                'financial_movements_empty_summary'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[500],
@@ -276,7 +276,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Résumé hebdomadaire',
+                        'financial_movements_weekly_summary'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -307,7 +307,9 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${summary.totalCount} mouvement${summary.totalCount > 1 ? 's' : ''}',
+                        summary.totalCount > 1
+                            ? 'financial_movements_movement_plural'.tr.replaceAll('@count', '${summary.totalCount}')
+                            : 'financial_movements_movement_singular'.tr.replaceAll('@count', '${summary.totalCount}'),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -322,7 +324,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Moy/jour: ${(summary.totalAmount / 7).toStringAsFixed(0)} FCFA',
+                          '${'financial_movements_average_per_day_short'.tr} ${(summary.totalAmount / 7).toStringAsFixed(0)} FCFA',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -369,7 +371,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'Cette semaine',
+              'financial_movements_this_week_label'.tr,
               style: TextStyle(
                 fontSize: 10,
                 color: Colors.grey[500],
@@ -419,13 +421,13 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
   String _getExpenseLevelText(int level) {
     switch (level) {
       case 0:
-        return 'Aucune dépense';
+        return 'financial_movements_no_results'.tr;
       case 1:
-        return 'Dépenses faibles';
+        return 'financial_movements_low_expenses'.tr;
       case 2:
-        return 'Dépenses modérées';
+        return 'financial_movements_moderate_expenses'.tr;
       case 3:
-        return 'Dépenses élevées';
+        return 'financial_movements_high_expenses'.tr;
       default:
         return '';
     }
@@ -438,8 +440,8 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
     } catch (e) {
       print('❌ Erreur navigation vers rapports financiers: $e');
       Get.snackbar(
-        'Navigation',
-        'Impossible d\'ouvrir les rapports financiers',
+        'common_navigation'.tr,
+        'financial_movements_reports_navigation_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade800,
@@ -457,7 +459,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
       print('❌ Erreur lors du rechargement: $e');
       FinancialErrorHandler.logError(
         FinancialMovementException(
-          message: 'Erreur lors du rechargement du résumé hebdomadaire',
+          message: 'financial_movements_weekly_summary_retry_error'.tr,
           code: 'WEEKLY_SUMMARY_RETRY_ERROR',
           statusCode: 500,
           errorType: FinancialErrorType.unknownError,

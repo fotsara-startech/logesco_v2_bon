@@ -13,7 +13,7 @@ class CashSessionDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Session de Caisse'),
+        title: Text('cash_session_title'.tr),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         actions: [
@@ -23,7 +23,7 @@ class CashSessionDetailView extends StatelessWidget {
               return IconButton(
                 onPressed: controller.confirmDisconnectFromCashRegister,
                 icon: const Icon(Icons.logout),
-                tooltip: 'Clôturer la session',
+                tooltip: 'cash_session_close'.tr,
               );
             }
             return const SizedBox.shrink();
@@ -76,14 +76,14 @@ class CashSessionDetailView extends StatelessWidget {
           return FloatingActionButton.extended(
             onPressed: () => Get.toNamed('/sales'),
             icon: const Icon(Icons.add_shopping_cart),
-            label: const Text('Nouvelle Vente'),
+            label: Text('cash_session_new_sale'.tr),
             backgroundColor: Colors.green,
           );
         }
         return FloatingActionButton.extended(
           onPressed: controller.showConnectToCashRegisterDialog,
           icon: const Icon(Icons.login),
-          label: const Text('Se Connecter'),
+          label: Text('cash_session_connect'.tr),
           backgroundColor: Colors.blue,
         );
       }),
@@ -97,9 +97,9 @@ class CashSessionDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Statistiques de la session',
-              style: TextStyle(
+            Text(
+              'cash_session_stats_title'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -109,7 +109,7 @@ class CashSessionDetailView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Ventes réalisées',
+                    'cash_session_sales_made'.tr,
                     '0', // TODO: Implémenter le comptage des ventes
                     Icons.shopping_cart,
                     Colors.blue,
@@ -118,7 +118,7 @@ class CashSessionDetailView extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildStatCard(
-                    'Solde actuel',
+                    'cash_session_current_balance'.tr,
                     (session.soldeAttendu ?? session.soldeOuverture).toStringAsFixed(0) + ' FCFA',
                     Icons.attach_money,
                     Colors.green,
@@ -131,7 +131,7 @@ class CashSessionDetailView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Heure d\'ouverture',
+                    'cash_session_opening_time'.tr,
                     _formatTime(session.dateOuverture),
                     Icons.schedule,
                     Colors.orange,
@@ -140,7 +140,7 @@ class CashSessionDetailView extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildStatCard(
-                    'Durée active',
+                    'cash_session_active_duration'.tr,
                     session.formattedDuration,
                     Icons.timer,
                     Colors.purple,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import '../controllers/printing_controller.dart';
 import '../models/models.dart';
 import '../widgets/receipt_template_factory.dart';
 import '../utils/receipt_translations.dart';
+import '../../../core/config/api_config.dart';
 
 // Imports pour l'impression réelle
 import 'package:printing/printing.dart';
@@ -263,6 +265,12 @@ class ReceiptPreviewPage extends StatelessWidget {
   Future<Uint8List> _generatePdf(PrintFormat format, Receipt receipt) async {
     final pdfDoc = pw.Document();
 
+    // Télécharger le logo si disponible
+    Uint8List? logoBytes;
+    if (receipt.companyInfo.logo != null && receipt.companyInfo.logo!.isNotEmpty) {
+      logoBytes = await _downloadLogo(receipt.companyInfo.logo!);
+    }
+
     // Définir le format de page exact
     PdfPageFormat pageFormat;
     switch (format) {
@@ -283,7 +291,7 @@ class ReceiptPreviewPage extends StatelessWidget {
         pageFormat: pageFormat,
         margin: pw.EdgeInsets.all(format == PrintFormat.thermal ? 8.0 : 40.0),
         build: (pw.Context context) {
-          return _buildPdfContent(receipt, format); // Passer le format sélectionné
+          return _buildPdfContent(receipt, format, logoBytes); // Passer le logo
         },
       ),
     );
@@ -291,28 +299,83 @@ class ReceiptPreviewPage extends StatelessWidget {
     return pdfDoc.save();
   }
 
+  /// Télécharge le logo depuis le backend
+  Future<Uint8List?> _downloadLogo(String logoPath) async {
+    try {
+      // Vérifier si c'est un chemin complet ou juste un nom de fichier
+      if (logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':')) {
+        // C'est un chemin complet, essayer de le charger localement
+        final file = File(logoPath);
+        if (file.existsSync()) {
+          return file.readAsBytesSync();
+        }
+      } else {
+        // C'est juste un nom de fichier, le télécharger depuis le backend
+        print('🖼️ Téléchargement du logo depuis le backend: $logoPath');
+
+        final baseUrl = ApiConfig.currentBaseUrl;
+        final serverUrl = baseUrl.replaceAll('/api/v1', '');
+        final logoUrl = '$serverUrl/uploads/$logoPath';
+
+        print('   URL du logo: $logoUrl');
+
+        final response = await http.get(Uri.parse(logoUrl)).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            print('⚠️ Timeout lors du chargement du logo');
+            throw Exception('Timeout');
+          },
+        );
+
+        if (response.statusCode == 200) {
+          print('✅ Logo téléchargé (${response.bodyBytes.length} bytes)');
+          return response.bodyBytes;
+        } else {
+          print('⚠️ Erreur HTTP ${response.statusCode} lors du chargement du logo');
+        }
+      }
+    } catch (e) {
+      print('⚠️ Erreur téléchargement logo: $e');
+    }
+    return null;
+  }
+
   // Méthodes pour l'impression réelle
-  pw.Widget _buildPdfContent(Receipt receipt, PrintFormat selectedFormat) {
+  pw.Widget _buildPdfContent(Receipt receipt, PrintFormat selectedFormat, Uint8List? logoBytes) {
     // Utiliser le format sélectionné par l'utilisateur, pas celui du reçu
     final isTherm = selectedFormat == PrintFormat.thermal;
 
     // Si c'est thermique, utiliser l'ancien format
     if (isTherm) {
-      return _buildThermalContent(receipt);
+      return _buildThermalContent(receipt, logoBytes);
     }
 
     // Pour A4/A5, utiliser le nouveau format qui correspond à l'aperçu
-    return _buildA4A5Content(receipt, selectedFormat);
+    return _buildA4A5Content(receipt, selectedFormat, logoBytes);
   }
 
   // Format thermique (ancien format)
-  pw.Widget _buildThermalContent(Receipt receipt) {
+  pw.Widget _buildThermalContent(Receipt receipt, Uint8List? logoBytes) {
     final fontSize = 8.5;
     final titleSize = 11.5;
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
+        // Logo si disponible
+        if (logoBytes != null)
+          pw.Center(
+            child: pw.Container(
+              width: 60,
+              height: 60,
+              margin: const pw.EdgeInsets.only(bottom: 8),
+              child: pw.Image(
+                pw.MemoryImage(logoBytes),
+                fit: pw.BoxFit.contain,
+              ),
+            ),
+          ),
+
         // En-tête entreprise
         pw.Center(
           child: pw.Column(
@@ -417,7 +480,7 @@ class ReceiptPreviewPage extends StatelessWidget {
   }
 
   // Format A4/A5 (nouveau format qui correspond à l'aperçu)
-  pw.Widget _buildA4A5Content(Receipt receipt, PrintFormat format) {
+  pw.Widget _buildA4A5Content(Receipt receipt, PrintFormat format, Uint8List? logoBytes) {
     final company = receipt.companyInfo;
     final fontSize = 10.0;
     final titleSize = 16.0;
@@ -437,7 +500,7 @@ class ReceiptPreviewPage extends StatelessWidget {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Logo à gauche (si disponible)
-              if (company.logo != null && company.logo!.isNotEmpty)
+              if (logoBytes != null)
                 pw.Container(
                   width: 100,
                   height: 100,
@@ -449,7 +512,10 @@ class ReceiptPreviewPage extends StatelessWidget {
                   child: pw.ClipRRect(
                     horizontalRadius: 8,
                     verticalRadius: 8,
-                    child: _buildPdfLogo(company.logo!),
+                    child: pw.Image(
+                      pw.MemoryImage(logoBytes),
+                      fit: pw.BoxFit.contain,
+                    ),
                   ),
                 )
               else
@@ -751,40 +817,6 @@ class ReceiptPreviewPage extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  pw.Widget _buildPdfLogo(String logoPath) {
-    try {
-      final file = File(logoPath);
-      if (file.existsSync()) {
-        final bytes = file.readAsBytesSync();
-        return pw.Image(
-          pw.MemoryImage(bytes),
-          fit: pw.BoxFit.contain,
-        );
-      }
-    } catch (e) {
-      // Si erreur, retourner un placeholder
-      print('Erreur chargement logo pour PDF: $e');
-    }
-
-    // Placeholder si erreur ou fichier introuvable
-    return pw.Container(
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.blue, width: 2),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-      ),
-      child: pw.Center(
-        child: pw.Text(
-          'LOGO',
-          style: pw.TextStyle(
-            fontSize: 20,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.blue,
-          ),
-        ),
-      ),
     );
   }
 

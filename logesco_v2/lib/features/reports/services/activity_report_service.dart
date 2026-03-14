@@ -134,10 +134,12 @@ class ActivityReportService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
         print('✅ [DEBUG] CompanyProfile créé: ${companyProfile.name}');
+        print('✅ [DEBUG] Logo path: ${companyProfile.logo}');
         return companyProfile;
       } else {
         print('⚠️  [WARNING] Erreur API company-settings: ${response.statusCode}');
@@ -213,6 +215,7 @@ class ActivityReportService {
           phone: companyData['telephone'],
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
+          logo: companyData['logo'],
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -691,23 +694,23 @@ class ActivityReportService {
     final recommendations = <String>[];
 
     if (profitData.netProfit <= 0) {
-      recommendations.add('Réduire les coûts opérationnels et optimiser les prix de vente');
+      recommendations.add('reports_rec_reduce_costs');
     }
 
     if (customerDebts.totalOutstandingDebt > salesData.totalRevenue * 0.15) {
-      recommendations.add('Améliorer le recouvrement des créances clients');
+      recommendations.add('reports_rec_improve_collections');
     }
 
     if (profitData.profitMargin < 10) {
-      recommendations.add('Revoir la stratégie de prix et négocier avec les fournisseurs');
+      recommendations.add('reports_rec_review_pricing');
     }
 
     if (salesData.totalSales < 50) {
-      recommendations.add('Intensifier les efforts commerciaux et marketing');
+      recommendations.add('reports_rec_intensify_sales');
     }
 
     if (recommendations.isEmpty) {
-      recommendations.add('Maintenir la performance actuelle et chercher des opportunités de croissance');
+      recommendations.add('reports_rec_maintain_performance');
     }
 
     return ActivitySummary(
@@ -745,8 +748,14 @@ class ActivityReportService {
       final salesList = (data['data'] ?? []) as List;
       final sales = salesList.map((item) => Sale.fromJson(item as Map<String, dynamic>)).toList();
 
-      // Filtrage côté client
+      // Filtrage côté client: exclure les ventes annulées
       return sales.where((sale) {
+        // CORRECTION: Exclure les ventes annulées de la comptabilité
+        if (sale.statut == 'annulee') {
+          print('🗑️ Vente annulée exclue du bilan: ${sale.numeroVente}');
+          return false;
+        }
+
         final saleDate = DateTime(sale.dateCreation.year, sale.dateCreation.month, sale.dateCreation.day);
         final start = DateTime(startDate.year, startDate.month, startDate.day);
         final end = DateTime(endDate.year, endDate.month, endDate.day);

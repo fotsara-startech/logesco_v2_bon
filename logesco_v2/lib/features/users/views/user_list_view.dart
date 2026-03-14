@@ -71,7 +71,7 @@ class UserListView extends StatelessWidget {
           privilege: 'CREATE',
           child: FloatingActionButton(
             onPressed: () => _navigateToUserForm(context, controller),
-            tooltip: 'Ajouter un utilisateur',
+            tooltip: 'users_add_user'.tr,
             child: const Icon(Icons.add),
           ),
         );

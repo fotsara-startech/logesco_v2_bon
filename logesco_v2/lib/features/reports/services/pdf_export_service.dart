@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../models/activity_report.dart';
+import '../../../core/config/api_config.dart';
 
 /// Service pour exporter les bilans comptables en PDF
 class PdfExportService {
@@ -26,13 +30,33 @@ class PdfExportService {
     // Configuration par défaut pour éviter les problèmes de police
     pw.Document.debug = false;
 
+    // Charger le logo depuis le backend
+    Uint8List? logoBytes;
+    if (report.companyInfo.logoPath.isNotEmpty) {
+      try {
+        var logoPath = report.companyInfo.logoPath;
+        // Extraire juste le nom du fichier si c'est un chemin complet
+        if (logoPath.contains('\\') || logoPath.contains('/')) {
+          logoPath = logoPath.replaceAll('\\', '/').split('/').last;
+        }
+        final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+        final logoUrl = '$serverUrl/uploads/$logoPath';
+        final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200) {
+          logoBytes = response.bodyBytes;
+        }
+      } catch (e) {
+        print('⚠️ Logo non chargé pour le PDF: $e');
+      }
+    }
+
     // Page 1: Résumé exécutif
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          _buildHeader(report),
+          _buildHeader(report, logoBytes),
           pw.SizedBox(height: 20),
           _buildExecutiveSummary(report),
           pw.SizedBox(height: 20),
@@ -47,7 +71,7 @@ class PdfExportService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          _buildSectionHeader('Analyse des Ventes'),
+          _buildSectionHeader('reports_pdf_sales_analysis'.tr),
           pw.SizedBox(height: 15),
           _buildSalesAnalysis(report.salesData),
         ],
@@ -60,11 +84,11 @@ class PdfExportService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          _buildSectionHeader('Mouvements Financiers'),
+          _buildSectionHeader('reports_pdf_financial_movements'.tr),
           pw.SizedBox(height: 15),
           _buildFinancialMovements(report.financialMovements),
           pw.SizedBox(height: 20),
-          _buildSectionHeader('Analyse des Bénéfices'),
+          _buildSectionHeader('reports_pdf_profit_analysis'.tr),
           pw.SizedBox(height: 15),
           _buildProfitAnalysis(report.profitData),
         ],
@@ -77,11 +101,11 @@ class PdfExportService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          _buildSectionHeader('Dettes Clients'),
+          _buildSectionHeader('reports_pdf_customer_debts'.tr),
           pw.SizedBox(height: 15),
           _buildCustomerDebts(report.customerDebts),
           pw.SizedBox(height: 20),
-          _buildSectionHeader('Recommandations'),
+          _buildSectionHeader('reports_recommendations_title'.tr),
           pw.SizedBox(height: 15),
           _buildRecommendations(report.summary.recommendations),
         ],
@@ -98,7 +122,7 @@ class PdfExportService {
   }
 
   /// En-tête du document
-  pw.Widget _buildHeader(ActivityReport report) {
+  pw.Widget _buildHeader(ActivityReport report, Uint8List? logoBytes) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(20),
       decoration: pw.BoxDecoration(
@@ -114,13 +138,31 @@ class PdfExportService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  'BILAN COMPTABLE D\'ACTIVITES',
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue800,
-                  ),
+                // Logo + titre sur la même ligne
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    if (logoBytes != null)
+                      pw.Container(
+                        width: 50,
+                        height: 50,
+                        margin: const pw.EdgeInsets.only(right: 12),
+                        child: pw.Image(
+                          pw.MemoryImage(logoBytes),
+                          fit: pw.BoxFit.contain,
+                        ),
+                      ),
+                    pw.Expanded(
+                      child: pw.Text(
+                        'reports_pdf_title'.tr,
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 pw.SizedBox(height: 15),
                 pw.Text(
@@ -132,12 +174,12 @@ class PdfExportService {
                 ),
                 pw.SizedBox(height: 8),
                 pw.Text(
-                  'Periode: ${report.reportPeriod}',
+                  '${'reports_pdf_period'.tr}: ${report.reportPeriod}',
                   style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 5),
                 pw.Text(
-                  'Genere le: ${DateFormat('dd/MM/yyyy a HH:mm').format(DateTime.now())}',
+                  '${'reports_pdf_generated_on'.tr}: ${DateFormat('dd/MM/yyyy à HH:mm').format(DateTime.now())}',
                   style: pw.TextStyle(
                     fontSize: 12,
                     color: PdfColors.grey600,
@@ -155,7 +197,7 @@ class PdfExportService {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'INFORMATIONS ENTREPRISE',
+                    'reports_pdf_company_info'.tr,
                     style: pw.TextStyle(
                       fontSize: 12,
                       fontWeight: pw.FontWeight.bold,
@@ -163,24 +205,23 @@ class PdfExportService {
                     ),
                   ),
                   pw.SizedBox(height: 8),
-                  // Informations complètes de l'entreprise depuis la base de données
                   if (report.companyInfo.address.isNotEmpty && report.companyInfo.address != 'Adresse non configurée') ...[
                     pw.Text(
-                      'Adresse: ${report.companyInfo.address}',
+                      '${'reports_pdf_address'.tr}: ${report.companyInfo.address}',
                       style: const pw.TextStyle(fontSize: 9),
                     ),
                     pw.SizedBox(height: 2),
                   ],
                   if (report.companyInfo.location.isNotEmpty && report.companyInfo.location != 'Cameroun, CMR') ...[
                     pw.Text(
-                      'Localisation: ${report.companyInfo.location}',
+                      '${'reports_pdf_location'.tr}: ${report.companyInfo.location}',
                       style: const pw.TextStyle(fontSize: 9),
                     ),
                     pw.SizedBox(height: 2),
                   ],
                   if (report.companyInfo.phone.isNotEmpty && report.companyInfo.phone != 'Téléphone non configuré') ...[
                     pw.Text(
-                      'Tel: ${report.companyInfo.phone}',
+                      '${'reports_pdf_phone'.tr}: ${report.companyInfo.phone}',
                       style: const pw.TextStyle(fontSize: 9),
                     ),
                     pw.SizedBox(height: 2),
@@ -199,15 +240,14 @@ class PdfExportService {
                     ),
                     pw.SizedBox(height: 4),
                   ],
-                  // Informations système
                   pw.Divider(color: PdfColors.grey300),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'Systeme: LOGESCO v2',
+                    '${'reports_pdf_system'.tr}: LOGESCO v2',
                     style: const pw.TextStyle(fontSize: 8),
                   ),
                   pw.Text(
-                    'Devise: FCFA',
+                    '${'reports_pdf_currency'.tr}: FCFA',
                     style: const pw.TextStyle(fontSize: 8),
                   ),
                 ],
@@ -231,7 +271,7 @@ class PdfExportService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'RESUME EXECUTIF',
+            'reports_pdf_executive_summary'.tr,
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,
@@ -251,7 +291,7 @@ class PdfExportService {
               ),
               pw.SizedBox(width: 8),
               pw.Text(
-                'Statut: ${report.summary.overallStatus}',
+                '${'reports_pdf_status'.tr}: ${report.summary.overallStatus}',
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
               ),
             ],
@@ -260,14 +300,14 @@ class PdfExportService {
           pw.Text(report.summary.statusMessage),
           pw.SizedBox(height: 15),
           pw.Text(
-            'Points cles:',
+            'reports_pdf_key_points'.tr,
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 5),
-          pw.Text('- Chiffre d\'affaires: ${report.salesData.totalRevenueFormatted}'),
-          pw.Text('- Benefice net: ${report.profitData.netProfitFormatted}'),
-          pw.Text('- Marge de profit: ${report.profitData.profitMarginFormatted}'),
-          pw.Text('- Dettes clients: ${report.customerDebts.totalOutstandingDebtFormatted}'),
+          pw.Text('- ${'reports_pdf_revenue'.tr}: ${report.salesData.totalRevenueFormatted}'),
+          pw.Text('- ${'reports_pdf_net_profit'.tr}: ${report.profitData.netProfitFormatted}'),
+          pw.Text('- ${'reports_pdf_profit_margin'.tr}: ${report.profitData.profitMarginFormatted}'),
+          pw.Text('- ${'reports_pdf_customer_debts_label'.tr}: ${report.customerDebts.totalOutstandingDebtFormatted}'),
         ],
       ),
     );
@@ -279,7 +319,7 @@ class PdfExportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          'INDICATEURS CLES',
+          'reports_pdf_key_indicators'.tr,
           style: pw.TextStyle(
             fontSize: 16,
             fontWeight: pw.FontWeight.bold,
@@ -290,21 +330,19 @@ class PdfExportService {
         pw.Table(
           border: pw.TableBorder.all(color: PdfColors.grey300),
           children: [
-            // En-tête
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: PdfColors.grey100),
               children: [
-                _buildTableCell('Indicateur', isHeader: true),
-                _buildTableCell('Valeur', isHeader: true),
-                _buildTableCell('Tendance', isHeader: true),
+                _buildTableCell('reports_pdf_indicator'.tr, isHeader: true),
+                _buildTableCell('reports_pdf_value'.tr, isHeader: true),
+                _buildTableCell('reports_pdf_trend'.tr, isHeader: true),
               ],
             ),
-            // Données
             ...report.summary.keyMetrics.map((metric) => pw.TableRow(
                   children: [
                     _buildTableCell(metric.name),
                     _buildTableCell('${metric.value} ${metric.unit}'),
-                    _buildTableCell(metric.trend == 'up' ? 'Hausse' : 'Baisse'),
+                    _buildTableCell(metric.trend == 'up' ? 'reports_pdf_trend_up'.tr : 'reports_pdf_trend_down'.tr),
                   ],
                 )),
           ],
@@ -328,9 +366,9 @@ class PdfExportService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBox('Nombre de ventes', salesData.totalSales.toString()),
-              _buildMetricBox('Chiffre d\'affaires', salesData.totalRevenueFormatted),
-              _buildMetricBox('Vente moyenne', salesData.averageSaleAmountFormatted),
+              _buildMetricBox('reports_pdf_sales_count'.tr, salesData.totalSales.toString()),
+              _buildMetricBox('reports_pdf_revenue'.tr, salesData.totalRevenueFormatted),
+              _buildMetricBox('reports_pdf_avg_sale'.tr, salesData.averageSaleAmountFormatted),
             ],
           ),
         ),
@@ -339,7 +377,7 @@ class PdfExportService {
         // Ventes par catégorie
         if (salesData.salesByCategory.isNotEmpty) ...[
           pw.Text(
-            'Ventes par categorie',
+            'reports_pdf_sales_by_category'.tr,
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -349,9 +387,9 @@ class PdfExportService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _buildTableCell('Catégorie', isHeader: true),
-                  _buildTableCell('Montant', isHeader: true),
-                  _buildTableCell('Pourcentage', isHeader: true),
+                  _buildTableCell('reports_pdf_category'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_amount'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_percentage'.tr, isHeader: true),
                 ],
               ),
               ...salesData.salesByCategory.take(5).map((category) => pw.TableRow(
@@ -369,7 +407,7 @@ class PdfExportService {
         // Top produits
         if (salesData.topProducts.isNotEmpty) ...[
           pw.Text(
-            'Produits les plus vendus',
+            'reports_pdf_top_products'.tr,
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -379,9 +417,9 @@ class PdfExportService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _buildTableCell('Produit', isHeader: true),
-                  _buildTableCell('Quantite', isHeader: true),
-                  _buildTableCell('Chiffre d\'affaires', isHeader: true),
+                  _buildTableCell('reports_pdf_product'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_quantity'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_revenue'.tr, isHeader: true),
                 ],
               ),
               ...salesData.topProducts.take(5).map((product) => pw.TableRow(
@@ -412,16 +450,16 @@ class PdfExportService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBox('Entrées', financialData.totalIncomeFormatted),
-              _buildMetricBox('Sorties', financialData.totalExpensesFormatted),
-              _buildMetricBox('Flux net', financialData.netCashFlowFormatted),
+              _buildMetricBox('reports_pdf_income'.tr, financialData.totalIncomeFormatted),
+              _buildMetricBox('reports_pdf_expenses'.tr, financialData.totalExpensesFormatted),
+              _buildMetricBox('reports_pdf_net_flow'.tr, financialData.netCashFlowFormatted),
             ],
           ),
         ),
         pw.SizedBox(height: 15),
         if (financialData.movementsByCategory.isNotEmpty) ...[
           pw.Text(
-            'Mouvements par categorie',
+            'reports_pdf_movements_by_category'.tr,
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -431,9 +469,9 @@ class PdfExportService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _buildTableCell('Catégorie', isHeader: true),
-                  _buildTableCell('Type', isHeader: true),
-                  _buildTableCell('Montant', isHeader: true),
+                  _buildTableCell('reports_pdf_category'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_type'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_amount'.tr, isHeader: true),
                 ],
               ),
               ...financialData.movementsByCategory.take(5).map((movement) => pw.TableRow(
@@ -466,16 +504,16 @@ class PdfExportService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _buildMetricBox('Marge brute', profitData.grossProfitFormatted),
-                  _buildMetricBox('Benefice net', profitData.netProfitFormatted),
+                  _buildMetricBox('reports_pdf_gross_profit'.tr, profitData.grossProfitFormatted),
+                  _buildMetricBox('reports_pdf_net_profit'.tr, profitData.netProfitFormatted),
                 ],
               ),
               pw.SizedBox(height: 10),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _buildMetricBox('Cout marchandises', profitData.costOfGoodsSoldFormatted),
-                  _buildMetricBox('Marge (%)', profitData.profitMarginFormatted),
+                  _buildMetricBox('reports_pdf_cogs'.tr, profitData.costOfGoodsSoldFormatted),
+                  _buildMetricBox('reports_pdf_profit_margin'.tr, profitData.profitMarginFormatted),
                 ],
               ),
             ],
@@ -485,13 +523,13 @@ class PdfExportService {
 
         // Tendance
         pw.Text(
-          'Evolution',
+          'reports_pdf_evolution'.tr,
           style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 5),
-        pw.Text('Periode precedente: ${profitData.profitTrend.previousPeriodProfitFormatted}'),
-        pw.Text('Croissance: ${profitData.profitTrend.growthRateFormatted}'),
-        pw.Text('Tendance: ${profitData.profitTrend.isIncreasing ? 'Positive' : 'Negative'}'),
+        pw.Text('${'reports_pdf_previous_period'.tr}: ${profitData.profitTrend.previousPeriodProfitFormatted}'),
+        pw.Text('${'reports_pdf_growth'.tr}: ${profitData.profitTrend.growthRateFormatted}'),
+        pw.Text('${'reports_pdf_trend'.tr}: ${profitData.profitTrend.isIncreasing ? 'reports_pdf_trend_positive'.tr : 'reports_pdf_trend_negative'.tr}'),
       ],
     );
   }
@@ -510,16 +548,16 @@ class PdfExportService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBox('Total dettes', debtsData.totalOutstandingDebtFormatted),
-              _buildMetricBox('Clients debiteurs', debtsData.customersWithDebt.toString()),
-              _buildMetricBox('Dette moyenne', debtsData.averageDebtPerCustomerFormatted),
+              _buildMetricBox('reports_pdf_total_debts'.tr, debtsData.totalOutstandingDebtFormatted),
+              _buildMetricBox('reports_pdf_debtors'.tr, debtsData.customersWithDebt.toString()),
+              _buildMetricBox('reports_pdf_avg_debt'.tr, debtsData.averageDebtPerCustomerFormatted),
             ],
           ),
         ),
         pw.SizedBox(height: 15),
         if (debtsData.topDebtors.isNotEmpty) ...[
           pw.Text(
-            'Principaux debiteurs',
+            'reports_pdf_top_debtors'.tr,
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -529,9 +567,9 @@ class PdfExportService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _buildTableCell('Client', isHeader: true),
-                  _buildTableCell('Montant du', isHeader: true),
-                  _buildTableCell('Jours de retard', isHeader: true),
+                  _buildTableCell('reports_pdf_customer'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_debt_amount'.tr, isHeader: true),
+                  _buildTableCell('reports_pdf_days_overdue'.tr, isHeader: true),
                 ],
               ),
               ...debtsData.topDebtors.take(5).map((debt) => pw.TableRow(
@@ -564,7 +602,7 @@ class PdfExportService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'Actions recommandees:',
+                'reports_recommendations_subtitle'.tr,
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
@@ -578,7 +616,7 @@ class PdfExportService {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('- ', style: pw.TextStyle(color: PdfColors.yellow800)),
-                        pw.Expanded(child: pw.Text(recommendation)),
+                        pw.Expanded(child: pw.Text(recommendation.tr)),
                       ],
                     ),
                   )),

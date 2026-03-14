@@ -50,26 +50,26 @@ class SubscriptionStatusWidget extends StatelessWidget {
       backgroundColor = Colors.red.shade100;
       textColor = Colors.red.shade800;
       icon = Icons.error;
-      title = 'Abonnement expiré';
-      subtitle = 'Activez une licence pour continuer';
+      title = 'subscription_expired_label'.tr;
+      subtitle = 'subscription_activate_to_continue_label'.tr;
     } else if (isInGracePeriod) {
       backgroundColor = Colors.orange.shade100;
       textColor = Colors.orange.shade800;
       icon = Icons.warning;
-      title = 'Période de grâce';
-      subtitle = 'Renouvelez maintenant';
+      title = 'subscription_grace_label'.tr;
+      subtitle = 'subscription_renew_now'.tr;
     } else if (remainingDays <= 1) {
       backgroundColor = Colors.red.shade100;
       textColor = Colors.red.shade800;
       icon = Icons.warning;
-      title = remainingDays == 0 ? 'Expire aujourd\'hui' : 'Expire demain';
-      subtitle = 'Renouvelez votre abonnement';
+      title = remainingDays == 0 ? 'subscription_expires_today_label'.tr : 'subscription_expires_tomorrow_label'.tr;
+      subtitle = 'subscription_renew_label'.tr;
     } else if (remainingDays <= 3) {
       backgroundColor = Colors.orange.shade100;
       textColor = Colors.orange.shade800;
       icon = Icons.info;
-      title = 'Expire dans $remainingDays jours';
-      subtitle = 'Pensez à renouveler';
+      title = 'subscription_expires_in_days_label'.trParams({'n': '$remainingDays'});
+      subtitle = 'subscription_renew_label'.tr;
     } else {
       // Abonnement actif, ne pas afficher en mode compact
       if (compact) return const SizedBox.shrink();
@@ -77,8 +77,8 @@ class SubscriptionStatusWidget extends StatelessWidget {
       backgroundColor = Colors.green.shade100;
       textColor = Colors.green.shade800;
       icon = Icons.check_circle;
-      title = 'Abonnement actif';
-      subtitle = showDetails ? 'Expire dans $remainingDays jours' : null;
+      title = 'subscription_active_label'.tr;
+      subtitle = showDetails ? 'subscription_expires_in_days_label'.trParams({'n': '$remainingDays'}) : null;
     }
 
     if (compact) {
@@ -170,7 +170,7 @@ class SubscriptionStatusWidget extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: textColor,
                     ),
-                    child: const Text('Détails'),
+                    child: Text('subscription_details_button'.tr),
                   ),
                   if (!Get.find<SubscriptionController>().isSubscriptionActive) ...[
                     const SizedBox(width: 8),
@@ -180,7 +180,7 @@ class SubscriptionStatusWidget extends StatelessWidget {
                         backgroundColor: textColor,
                         foregroundColor: backgroundColor,
                       ),
-                      child: const Text('Activer'),
+                      child: Text('subscription_activate_button'.tr),
                     ),
                   ],
                 ],
@@ -227,15 +227,15 @@ class SubscriptionNotificationBanner extends StatelessWidget {
       Color textColor;
 
       if (!status.isActive && !status.isInGracePeriod) {
-        message = 'Votre abonnement a expiré. Activez une licence pour continuer.';
+        message = 'subscription_expired_banner'.tr;
         backgroundColor = Colors.red.shade100;
         textColor = Colors.red.shade800;
       } else if (status.isInGracePeriod) {
-        message = 'Vous êtes en période de grâce. Renouvelez votre abonnement maintenant.';
+        message = 'subscription_grace_banner'.tr;
         backgroundColor = Colors.orange.shade100;
         textColor = Colors.orange.shade800;
       } else if (status.remainingDays != null && status.remainingDays! <= 1) {
-        message = status.remainingDays == 0 ? 'Votre abonnement expire aujourd\'hui!' : 'Votre abonnement expire demain!';
+        message = status.remainingDays == 0 ? 'subscription_expires_today_banner'.tr : 'subscription_expires_tomorrow_banner'.tr;
         backgroundColor = Colors.red.shade100;
         textColor = Colors.red.shade800;
       } else {
@@ -269,9 +269,9 @@ class SubscriptionNotificationBanner extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: textColor,
               ),
-              child: const Text(
-                'Activer',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              child: Text(
+                'subscription_activate_button'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],

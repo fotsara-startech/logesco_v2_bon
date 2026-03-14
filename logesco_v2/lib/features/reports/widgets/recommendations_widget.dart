@@ -62,7 +62,7 @@ class RecommendationsWidget extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(recommendation, style: const TextStyle(fontSize: 14))),
+                            Expanded(child: Text(recommendation.tr, style: const TextStyle(fontSize: 14))),
                           ],
                         ),
                       )),

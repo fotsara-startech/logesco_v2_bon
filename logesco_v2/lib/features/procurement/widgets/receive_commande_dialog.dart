@@ -90,12 +90,12 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Commande: ${widget.commande.numeroCommande}',
+                      '${'procurement_order'.tr}: ${widget.commande.numeroCommande}',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 4),
-                    Text('Fournisseur: ${widget.commande.fournisseur?.nom ?? 'N/A'}'),
-                    Text('Date: ${_formatDate(widget.commande.dateCommande)}'),
+                    Text('${'procurement_supplier'.tr}: ${widget.commande.fournisseur?.nom ?? 'N/A'}'),
+                    Text('${'procurement_date'.tr}: ${_formatDate(widget.commande.dateCommande)}'),
                   ],
                 ),
               ),
@@ -103,7 +103,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
               const SizedBox(height: 20),
 
               Text(
-                'Produits à réceptionner:',
+                'procurement_products_to_receive'.tr,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -185,10 +185,10 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                   width: 120,
                                   child: TextFormField(
                                     controller: _quantityControllers[detail.id],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Qté reçue',
-                                      border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(
+                                    decoration: InputDecoration(
+                                      labelText: 'procurement_qty_received'.tr,
+                                      border: const OutlineInputBorder(),
+                                      contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 8,
                                         vertical: 8,
                                       ),
@@ -227,7 +227,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Annuler'),
+                    child: Text('common_cancel'.tr),
                   ),
                   const SizedBox(width: 12),
                   Obx(() => ElevatedButton(
@@ -245,7 +245,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : const Text('Réceptionner'),
+                            : Text('procurement_receive_action'.tr),
                       )),
                 ],
               ),
@@ -289,12 +289,12 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
     // Confirmer la réception
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la réception'),
+        title: Text('procurement_confirm_reception'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Êtes-vous sûr de vouloir enregistrer cette réception ?'),
+            Text('procurement_confirm_reception_message'.tr),
             const SizedBox(height: 8),
             Text(
               '${details.length} produit(s) seront réceptionnés.',
@@ -313,7 +313,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -321,7 +321,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Confirmer'),
+            child: Text('common_confirm'.tr),
           ),
         ],
       ),

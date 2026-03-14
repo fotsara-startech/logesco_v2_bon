@@ -72,7 +72,7 @@ class ExpirationTabView extends StatelessWidget {
         children: [
           Expanded(
             child: _buildStatCard(
-              'Total alertes',
+              'stock_expiration_total_alerts'.tr,
               stats.totalAlertes.toString(),
               Icons.warning_amber,
               Colors.orange,
@@ -81,7 +81,7 @@ class ExpirationTabView extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Périmés',
+              'stock_expiration_expired'.tr,
               stats.perimes.toString(),
               Icons.cancel,
               Colors.red,
@@ -90,7 +90,7 @@ class ExpirationTabView extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Critiques',
+              'stock_expiration_critical'.tr,
               stats.critiques.toString(),
               Icons.error,
               Colors.deepOrange,
@@ -99,7 +99,7 @@ class ExpirationTabView extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Valeur totale',
+              'stock_expiration_total_value'.tr,
               '${stats.valeurTotale.toStringAsFixed(0)} FCFA',
               Icons.attach_money,
               Colors.blue,
@@ -149,11 +149,11 @@ class ExpirationTabView extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Rechercher un produit ou lot...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: InputDecoration(
+                hintText: 'stock_expiration_search_hint'.tr,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               onChanged: controller.updateSearch,
             ),
@@ -161,11 +161,11 @@ class ExpirationTabView extends StatelessWidget {
           const SizedBox(width: 12),
           Obx(() => DropdownButton<String>(
                 value: controller.selectedFilter.value,
-                items: const [
-                  DropdownMenuItem(value: 'all', child: Text('Tous')),
-                  DropdownMenuItem(value: 'expired', child: Text('Périmés')),
-                  DropdownMenuItem(value: 'critical', child: Text('Critiques')),
-                  DropdownMenuItem(value: 'warning', child: Text('Avertissements')),
+                items: [
+                  DropdownMenuItem(value: 'all', child: Text('stock_expiration_filter_all'.tr)),
+                  DropdownMenuItem(value: 'expired', child: Text('stock_expiration_filter_expired'.tr)),
+                  DropdownMenuItem(value: 'critical', child: Text('stock_expiration_filter_critical'.tr)),
+                  DropdownMenuItem(value: 'warning', child: Text('stock_expiration_filter_warning'.tr)),
                 ],
                 onChanged: (value) {
                   if (value != null) controller.setFilter(value);
@@ -349,13 +349,13 @@ class ExpirationTabView extends StatelessWidget {
         children: [
           Icon(Icons.check_circle_outline, size: 80, color: Colors.green.shade300),
           const SizedBox(height: 16),
-          const Text(
-            'Aucune alerte de péremption',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          Text(
+            'stock_expiration_no_alerts'.tr,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
-            'Tous vos produits sont en bon état',
+            'stock_expiration_all_good'.tr,
             style: TextStyle(color: Colors.grey.shade600),
           ),
         ],
@@ -366,19 +366,19 @@ class ExpirationTabView extends StatelessWidget {
   void _confirmMarkAsExhausted(ExpirationDate date, ExpirationDateController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Marquer comme épuisé'),
-        content: const Text('Voulez-vous marquer ce lot comme épuisé ?'),
+        title: Text('stock_expiration_mark_exhausted'.tr),
+        content: Text('stock_expiration_confirm_exhausted'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
               Get.back();
               controller.markAsExhausted(date.id);
             },
-            child: const Text('Confirmer'),
+            child: Text('common_confirm'.tr),
           ),
         ],
       ),
@@ -388,12 +388,12 @@ class ExpirationTabView extends StatelessWidget {
   void _confirmDelete(ExpirationDate date, ExpirationDateController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer'),
-        content: const Text('Voulez-vous vraiment supprimer cette date de péremption ?'),
+        title: Text('common_delete'.tr),
+        content: Text('stock_expiration_confirm_delete'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -401,7 +401,7 @@ class ExpirationTabView extends StatelessWidget {
               Get.back();
               controller.deleteExpirationDate(date.id);
             },
-            child: const Text('Supprimer'),
+            child: Text('common_delete'.tr),
           ),
         ],
       ),

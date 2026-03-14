@@ -17,9 +17,9 @@ class StockMovementsSortBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            const Text(
-              'Trier par:',
-              style: TextStyle(
+            Text(
+              'stock_sort_by'.tr,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -29,19 +29,19 @@ class StockMovementsSortBar extends StatelessWidget {
               context: context,
               controller: controller,
               sortField: 'dateCreation',
-              label: 'Date création',
+              label: 'stock_sort_date_creation'.tr,
             ),
             const SizedBox(width: 8),
             _buildSortButton(
               context: context,
               controller: controller,
               sortField: 'typeMouvement',
-              label: 'Type',
+              label: 'stock_sort_type'.tr,
             ),
             const SizedBox(width: 12),
             // Bouton pour basculer l'ordre
             Obx(() => Tooltip(
-                  message: controller.sortMovementsAscending.value ? 'Ordre croissant' : 'Ordre décroissant',
+                  message: controller.sortMovementsAscending.value ? 'stock_sort_ascending'.tr : 'stock_sort_descending'.tr,
                   child: GestureDetector(
                     onTap: controller.toggleMovementsSort,
                     child: Icon(

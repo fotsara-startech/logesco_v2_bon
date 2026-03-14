@@ -232,7 +232,7 @@ class _RoleFormViewState extends State<RoleFormView> {
   }
 
   Widget _buildModulePrivileges(String module, List<String> availablePrivileges) {
-    final moduleDisplayName = ModulePrivileges.moduleDisplayNames[module] ?? module;
+    final moduleDisplayName = (ModulePrivileges.moduleDisplayNames[module] ?? module).tr;
     final selectedForModule = _selectedPrivileges[module] ?? [];
 
     return ExpansionTile(
@@ -268,7 +268,7 @@ class _RoleFormViewState extends State<RoleFormView> {
                 runSpacing: 4,
                 children: availablePrivileges.map((privilege) {
                   final isSelected = selectedForModule.contains(privilege);
-                  final displayName = ModulePrivileges.privilegeDisplayNames[privilege] ?? privilege;
+                  final displayName = (ModulePrivileges.privilegeDisplayNames[privilege] ?? privilege).tr;
 
                   return FilterChip(
                     label: Text(displayName),

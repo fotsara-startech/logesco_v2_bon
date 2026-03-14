@@ -1,18 +1,17 @@
-/**
- * Service pour l'export PDF des commandes d'approvisionnement
- */
-
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
 import '../models/procurement_models.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/config/api_config.dart';
 
 class ProcurementPdfExportService {
   static final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -39,13 +38,42 @@ class ProcurementPdfExportService {
     // Récupérer les informations de l'entreprise
     CompanyProfile? companyProfile;
     try {
-      final companyService = CompanySettingsService(AuthService());
+      final authService = Get.isRegistered<AuthService>() ? Get.find<AuthService>() : AuthService();
+      final companyService = CompanySettingsService(authService);
       final response = await companyService.getCompanyProfile();
       if (response.isSuccess && response.data != null) {
         companyProfile = response.data;
+        print('✅ CompanyProfile récupéré: ${companyProfile!.name}, logo: ${companyProfile.logo}');
       }
     } catch (e) {
       print('Erreur lors de la récupération des paramètres entreprise: $e');
+    }
+
+    // Charger le logo depuis le backend
+    Uint8List? logoBytes;
+    if (companyProfile?.logo != null && companyProfile!.logo!.isNotEmpty) {
+      try {
+        var logoPath = companyProfile.logo!;
+        print('🖼️ Chargement logo procurement PDF: $logoPath');
+        if (logoPath.contains('\\') || logoPath.contains('/')) {
+          logoPath = logoPath.replaceAll('\\', '/').split('/').last;
+          print('   Chemin nettoyé: $logoPath');
+        }
+        final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+        final logoUrl = '$serverUrl/uploads/$logoPath';
+        print('   URL logo: $logoUrl');
+        final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200) {
+          logoBytes = response.bodyBytes;
+          print('✅ Logo chargé (${logoBytes.length} bytes)');
+        } else {
+          print('⚠️ Erreur HTTP ${response.statusCode} pour le logo');
+        }
+      } catch (e) {
+        print('⚠️ Logo non chargé pour le PDF procurement: $e');
+      }
+    } else {
+      print('⚠️ Pas de logo configuré (logo: ${companyProfile?.logo})');
     }
 
     pdf.addPage(
@@ -54,7 +82,7 @@ class ProcurementPdfExportService {
         margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) {
           return [
-            _buildHeader(commande, companyProfile),
+            _buildHeader(commande, companyProfile, logoBytes),
             pw.SizedBox(height: 20),
             _buildCommandeInfo(commande),
             pw.SizedBox(height: 20),
@@ -79,7 +107,7 @@ class ProcurementPdfExportService {
   }
 
   /// Construit l'en-tête du document
-  static pw.Widget _buildHeader(CommandeApprovisionnement commande, CompanyProfile? companyProfile) {
+  static pw.Widget _buildHeader(CommandeApprovisionnement commande, CompanyProfile? companyProfile, Uint8List? logoBytes) {
     return pw.Column(
       children: [
         // En-tête avec informations de l'entreprise
@@ -88,38 +116,56 @@ class ProcurementPdfExportService {
           children: [
             pw.Expanded(
               flex: 2,
-              child: pw.Column(
+              child: pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(
-                    companyProfile?.name ?? 'LOGESCO',
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _primaryColor,
+                  // Logo
+                  if (logoBytes != null)
+                    pw.Container(
+                      width: 50,
+                      height: 50,
+                      margin: const pw.EdgeInsets.only(right: 12),
+                      child: pw.Image(
+                        pw.MemoryImage(logoBytes),
+                        fit: pw.BoxFit.contain,
+                      ),
+                    ),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          companyProfile?.name ?? 'LOGESCO',
+                          style: pw.TextStyle(
+                            fontSize: 24,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _primaryColor,
+                          ),
+                        ),
+                        if (companyProfile?.address != null) ...[
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            companyProfile!.address,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        ],
+                        if (companyProfile?.phone != null) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            '${'pdf_tel'.tr}: ${companyProfile!.phone}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        ],
+                        if (companyProfile?.email != null) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'Email: ${companyProfile!.email}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (companyProfile?.address != null) ...[
-                    pw.SizedBox(height: 4),
-                    pw.Text(
-                      companyProfile!.address,
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                  if (companyProfile?.phone != null) ...[
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'Tél: ${companyProfile!.phone}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                  if (companyProfile?.email != null) ...[
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'Email: ${companyProfile!.email}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -129,7 +175,7 @@ class ProcurementPdfExportService {
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
                   pw.Text(
-                    'COMMANDE D\'APPROVISIONNEMENT',
+                    'pdf_procurement_order_title'.tr,
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
@@ -171,14 +217,14 @@ class ProcurementPdfExportService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'Date de commande: ${_dateFormat.format(commande.dateCommande)}',
+                  '${'pdf_order_date'.tr}: ${_dateFormat.format(commande.dateCommande)}',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 ),
                 if (commande.dateLivraisonPrevue != null)
                   pw.Text(
-                    'Livraison prévue: ${_dateFormat.format(commande.dateLivraisonPrevue!)}',
+                    '${'pdf_delivery_expected'.tr}: ${_dateFormat.format(commande.dateLivraisonPrevue!)}',
                   ),
-                pw.Text('Mode de paiement: ${commande.modePaiement.label}'),
+                pw.Text('${'pdf_payment_method'.tr}: ${commande.modePaiement.label}'),
               ],
             ),
           ),
@@ -187,7 +233,7 @@ class ProcurementPdfExportService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'Statut: ${commande.statut.label}',
+                  '${'pdf_status'.tr}: ${commande.statut.label}',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
                     color: _getStatutColor(commande.statut),
@@ -195,10 +241,10 @@ class ProcurementPdfExportService {
                 ),
                 if (commande.statistiques != null) ...[
                   pw.Text(
-                    'Progression: ${commande.statistiques!.pourcentageReception}%',
+                    '${'pdf_progress'.tr}: ${commande.statistiques!.pourcentageReception}%',
                   ),
                   pw.Text(
-                    'Produits reçus: ${commande.statistiques!.produitsCompletsRecus}/${commande.statistiques!.nombreProduits}',
+                    '${'pdf_products_received'.tr}: ${commande.statistiques!.produitsCompletsRecus}/${commande.statistiques!.nombreProduits}',
                   ),
                 ],
               ],
@@ -226,7 +272,7 @@ class ProcurementPdfExportService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'FOURNISSEUR',
+            'pdf_supplier'.tr,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -237,9 +283,9 @@ class ProcurementPdfExportService {
             fournisseur.nom,
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
-          if (fournisseur.telephone != null) pw.Text('Téléphone: ${fournisseur.telephone}'),
-          if (fournisseur.email != null) pw.Text('Email: ${fournisseur.email}'),
-          if (fournisseur.adresse != null) pw.Text('Adresse: ${fournisseur.adresse}'),
+          if (fournisseur.telephone != null) pw.Text('${'pdf_phone'.tr}: ${fournisseur.telephone}'),
+          if (fournisseur.email != null) pw.Text('${'pdf_email'.tr}: ${fournisseur.email}'),
+          if (fournisseur.adresse != null) pw.Text('${'pdf_address'.tr}: ${fournisseur.adresse}'),
         ],
       ),
     );
@@ -262,18 +308,18 @@ class ProcurementPdfExportService {
         pw.TableRow(
           decoration: pw.BoxDecoration(color: _greyBackground),
           children: [
-            _buildTableCell('Produit', isHeader: true),
-            _buildTableCell('Qté Cmd', isHeader: true),
-            _buildTableCell('Qté Reçue', isHeader: true),
-            _buildTableCell('Restant', isHeader: true),
-            _buildTableCell('Prix Unit.', isHeader: true),
-            _buildTableCell('Total', isHeader: true),
+            _buildTableCell('pdf_product'.tr, isHeader: true),
+            _buildTableCell('pdf_qty_ordered'.tr, isHeader: true),
+            _buildTableCell('pdf_qty_received'.tr, isHeader: true),
+            _buildTableCell('pdf_remaining'.tr, isHeader: true),
+            _buildTableCell('pdf_unit_price'.tr, isHeader: true),
+            _buildTableCell('pdf_total'.tr, isHeader: true),
           ],
         ),
         // Lignes de détails
         ...commande.details.map((detail) => pw.TableRow(
               children: [
-                _buildTableCell(detail.produit?.nom ?? 'Produit inconnu'),
+                _buildTableCell(detail.produit?.nom ?? 'pdf_unknown_product'.tr),
                 _buildTableCell(detail.quantiteCommandee.toString()),
                 _buildTableCell(detail.quantiteRecue.toString()),
                 _buildTableCell(detail.quantiteRestante.toString()),
@@ -320,7 +366,7 @@ class ProcurementPdfExportService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Nombre d\'articles:'),
+                  pw.Text('${'pdf_number_of_items'.tr}:'),
                   pw.Text('${commande.details.length}'),
                 ],
               ),
@@ -328,7 +374,7 @@ class ProcurementPdfExportService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Quantité totale:'),
+                  pw.Text('${'pdf_total_quantity'.tr}:'),
                   pw.Text('${commande.details.fold<int>(0, (sum, detail) => sum + detail.quantiteCommandee)}'),
                 ],
               ),
@@ -337,7 +383,7 @@ class ProcurementPdfExportService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'TOTAL:',
+                    '${'pdf_total_label'.tr}:',
                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                   ),
                   pw.Text(
@@ -360,7 +406,7 @@ class ProcurementPdfExportService {
       children: [
         if (commande.notes != null && commande.notes!.isNotEmpty) ...[
           pw.Text(
-            'Notes:',
+            '${'pdf_notes'.tr}:',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
           pw.Text(commande.notes!),
@@ -371,11 +417,11 @@ class ProcurementPdfExportService {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'Document généré le ${_dateFormat.format(DateTime.now())}',
+              '${'pdf_generated_on'.tr} ${_dateFormat.format(DateTime.now())}',
               style: pw.TextStyle(fontSize: 8, color: _greyText),
             ),
             pw.Text(
-              'LOGESCO - Système de Gestion Commerciale',
+              'pdf_system_name'.tr,
               style: pw.TextStyle(fontSize: 8, color: _greyText),
             ),
           ],

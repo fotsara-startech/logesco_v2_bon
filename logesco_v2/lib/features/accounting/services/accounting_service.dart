@@ -140,6 +140,12 @@ class AccountingService {
 
         // FILTRAGE CÔTÉ CLIENT car l'API ne filtre pas correctement
         var filteredSales = sales.where((sale) {
+          // CORRECTION: Exclure les ventes annulées de la comptabilité
+          if (sale.statut == 'annulee') {
+            print('🗑️ Vente annulée exclue du bilan comptable: ${sale.numeroVente}');
+            return false;
+          }
+
           final saleDate = DateTime(sale.dateCreation.year, sale.dateCreation.month, sale.dateCreation.day);
           final start = DateTime(startDate.year, startDate.month, startDate.day);
           final end = DateTime(endDate.year, endDate.month, endDate.day);

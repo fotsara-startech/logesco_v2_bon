@@ -160,9 +160,9 @@ class _MovementFiltersState extends State<MovementFilters> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Période rapide',
-          style: TextStyle(
+        Text(
+          'financial_movements_filter_period'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -172,13 +172,13 @@ class _MovementFiltersState extends State<MovementFilters> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildPeriodChip('Aujourd\'hui', 'today'),
-            _buildPeriodChip('Hier', 'yesterday'),
-            _buildPeriodChip('Cette semaine', 'this_week'),
-            _buildPeriodChip('Semaine dernière', 'last_week'),
-            _buildPeriodChip('Ce mois', 'this_month'),
-            _buildPeriodChip('Mois dernier', 'last_month'),
-            _buildPeriodChip('Cette année', 'this_year'),
+            _buildPeriodChip('financial_movements_filter_today'.tr, 'today'),
+            _buildPeriodChip('financial_movements_filter_yesterday'.tr, 'yesterday'),
+            _buildPeriodChip('financial_movements_filter_this_week'.tr, 'this_week'),
+            _buildPeriodChip('financial_movements_filter_last_week'.tr, 'last_week'),
+            _buildPeriodChip('financial_movements_filter_this_month'.tr, 'this_month'),
+            _buildPeriodChip('financial_movements_filter_last_month'.tr, 'last_month'),
+            _buildPeriodChip('financial_movements_filter_this_year'.tr, 'this_year'),
           ],
         ),
       ],
@@ -203,9 +203,9 @@ class _MovementFiltersState extends State<MovementFilters> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Catégorie',
-          style: TextStyle(
+        Text(
+          'financial_movements_category'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -216,7 +216,7 @@ class _MovementFiltersState extends State<MovementFilters> {
               runSpacing: 8,
               children: [
                 FilterChip(
-                  label: const Text('Toutes'),
+                  label: Text('common_all'.tr),
                   selected: _selectedCategoryId == null,
                   onSelected: (selected) {
                     setState(() {
@@ -251,9 +251,9 @@ class _MovementFiltersState extends State<MovementFilters> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Plage de dates personnalisée',
-          style: TextStyle(
+        Text(
+          'financial_movements_filter_date_range'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -263,17 +263,19 @@ class _MovementFiltersState extends State<MovementFilters> {
           children: [
             Expanded(
               child: _buildDateField(
-                label: 'Date de début',
+                label: 'financial_movements_filter_start_date'.tr,
                 date: _selectedStartDate,
                 onTap: () => _selectStartDate(),
+                onClear: () => _selectedStartDate = null,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildDateField(
-                label: 'Date de fin',
+                label: 'financial_movements_filter_end_date'.tr,
                 date: _selectedEndDate,
                 onTap: () => _selectEndDate(),
+                onClear: () => _selectedEndDate = null,
               ),
             ),
           ],
@@ -286,6 +288,7 @@ class _MovementFiltersState extends State<MovementFilters> {
     required String label,
     required DateTime? date,
     required VoidCallback onTap,
+    required VoidCallback onClear,
   }) {
     return InkWell(
       onTap: onTap,
@@ -297,11 +300,7 @@ class _MovementFiltersState extends State<MovementFilters> {
               ? IconButton(
                   onPressed: () {
                     setState(() {
-                      if (label.contains('début')) {
-                        _selectedStartDate = null;
-                      } else {
-                        _selectedEndDate = null;
-                      }
+                      onClear();
                     });
                   },
                   icon: const Icon(Icons.clear),
@@ -309,7 +308,7 @@ class _MovementFiltersState extends State<MovementFilters> {
               : const Icon(Icons.calendar_today),
         ),
         child: Text(
-          date != null ? _formatDate(date) : 'Sélectionner',
+          date != null ? _formatDate(date) : 'financial_movements_filter_select'.tr,
           style: TextStyle(
             color: date != null ? Colors.black : Colors.grey,
           ),
@@ -322,9 +321,9 @@ class _MovementFiltersState extends State<MovementFilters> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Plage de montants (FCFA)',
-          style: TextStyle(
+        Text(
+          'financial_movements_filter_amount_range'.tr,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -336,9 +335,9 @@ class _MovementFiltersState extends State<MovementFilters> {
               child: TextField(
                 controller: _minAmountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Montant minimum',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'financial_movements_filter_min_amount'.tr,
+                  border: const OutlineInputBorder(),
                   suffixText: 'FCFA',
                 ),
               ),
@@ -348,9 +347,9 @@ class _MovementFiltersState extends State<MovementFilters> {
               child: TextField(
                 controller: _maxAmountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Montant maximum',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'financial_movements_filter_max_amount'.tr,
+                  border: const OutlineInputBorder(),
                   suffixText: 'FCFA',
                 ),
               ),
@@ -566,9 +565,9 @@ class _MovementFiltersState extends State<MovementFilters> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Filtres rapides',
-            style: TextStyle(
+          Text(
+            'financial_movements_filter_quick'.tr,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -579,7 +578,7 @@ class _MovementFiltersState extends State<MovementFilters> {
             runSpacing: 8,
             children: presets
                 .map((preset) => ActionChip(
-                      label: Text(preset.name),
+                      label: Text(preset.name.tr),
                       onPressed: () => _applyPreset(preset),
                       backgroundColor: _isPresetActive(preset) ? Colors.blue.shade100 : null,
                     ))
@@ -592,9 +591,9 @@ class _MovementFiltersState extends State<MovementFilters> {
 
   Widget _buildAdvancedSearch() {
     return ExpansionTile(
-      title: const Text(
-        'Recherche avancée',
-        style: TextStyle(
+      title: Text(
+        'financial_movements_filter_advanced'.tr,
+        style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
@@ -605,37 +604,37 @@ class _MovementFiltersState extends State<MovementFilters> {
           child: Column(
             children: [
               TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                decoration: InputDecoration(
+                  labelText: 'financial_movements_description'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.description),
                 ),
                 onChanged: (value) => _advancedSearchDescription = value,
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Référence',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.tag),
+                decoration: InputDecoration(
+                  labelText: 'financial_movements_reference'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.tag),
                 ),
                 onChanged: (value) => _advancedSearchReference = value,
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.note),
+                decoration: InputDecoration(
+                  labelText: 'financial_movements_notes'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.note),
                 ),
                 onChanged: (value) => _advancedSearchNotes = value,
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Utilisateur',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+                decoration: InputDecoration(
+                  labelText: 'users_username'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.person),
                 ),
                 onChanged: (value) => _advancedSearchUser = value,
               ),
@@ -654,9 +653,9 @@ class _MovementFiltersState extends State<MovementFilters> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Suggestions intelligentes',
-            style: TextStyle(
+          Text(
+            'financial_movements_filter_suggestions'.tr,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -726,14 +725,14 @@ class _PresetManagerDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Presets sauvegardés'),
+      title: Text('financial_movements_filter_presets'.tr),
       content: SizedBox(
         width: double.maxFinite,
         child: Obx(() {
           final customPresets = controller.customPresets;
 
           if (customPresets.isEmpty) {
-            return const Text('Aucun preset personnalisé sauvegardé');
+            return Text('financial_movements_filter_no_presets'.tr);
           }
 
           return ListView.builder(
@@ -754,12 +753,12 @@ class _PresetManagerDialog extends StatelessWidget {
                         Navigator.of(context).pop(); // Ferme aussi le dialog des filtres
                       },
                       icon: const Icon(Icons.play_arrow),
-                      tooltip: 'Appliquer',
+                      tooltip: 'common_apply'.tr,
                     ),
                     IconButton(
                       onPressed: () => _confirmDelete(context, preset),
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'Supprimer',
+                      tooltip: 'common_delete'.tr,
                     ),
                   ],
                 ),
@@ -771,7 +770,7 @@ class _PresetManagerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Fermer'),
+          child: Text('common_close'.tr),
         ),
       ],
     );
@@ -781,12 +780,12 @@ class _PresetManagerDialog extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer le preset'),
-        content: Text('Êtes-vous sûr de vouloir supprimer le preset "${preset.name}" ?'),
+        title: Text('financial_movements_filter_delete'.tr),
+        content: Text('financial_movements_filter_delete_confirm'.tr.replaceAll('@name', preset.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -794,7 +793,7 @@ class _PresetManagerDialog extends StatelessWidget {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Supprimer'),
+            child: Text('common_delete'.tr),
           ),
         ],
       ),
@@ -827,7 +826,7 @@ class _SavePresetDialogState extends State<_SavePresetDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Sauvegarder les filtres'),
+      title: Text('financial_movements_filter_save'.tr),
       content: Form(
         key: _formKey,
         child: Column(
@@ -835,13 +834,13 @@ class _SavePresetDialogState extends State<_SavePresetDialog> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom du preset *',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'financial_movements_filter_preset_name'.tr,
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Le nom est obligatoire';
+                  return 'financial_movements_filter_name_required'.tr;
                 }
                 return null;
               },
@@ -849,9 +848,9 @@ class _SavePresetDialogState extends State<_SavePresetDialog> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optionnelle)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'financial_movements_filter_description'.tr,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 2,
             ),
@@ -861,7 +860,7 @@ class _SavePresetDialogState extends State<_SavePresetDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('common_cancel'.tr),
         ),
         ElevatedButton(
           onPressed: () {
@@ -872,7 +871,7 @@ class _SavePresetDialogState extends State<_SavePresetDialog> {
               );
             }
           },
-          child: const Text('Sauvegarder'),
+          child: Text('common_save'.tr),
         ),
       ],
     );

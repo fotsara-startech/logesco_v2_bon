@@ -177,9 +177,9 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Statistiques Globales',
-              style: TextStyle(
+            Text(
+              'analytics_global_stats'.tr,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -189,7 +189,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Produits Vendus',
+                    'analytics_products_sold'.tr,
                     '${stats.nombreProduitsVendus}',
                     Icons.inventory,
                     Colors.blue,
@@ -198,7 +198,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Chiffre d\'Affaires',
+                    'analytics_revenue'.tr,
                     '${stats.chiffreAffairesTotal.toStringAsFixed(0)} FCFA',
                     Icons.attach_money,
                     Colors.green,
@@ -211,7 +211,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Quantité Totale',
+                    'analytics_total_quantity'.tr,
                     '${stats.quantiteTotaleVendue}',
                     Icons.shopping_cart,
                     Colors.orange,
@@ -220,7 +220,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Transactions',
+                    'analytics_transactions'.tr,
                     '${stats.nombreTransactionsTotal}',
                     Icons.receipt,
                     Colors.purple,
@@ -288,7 +288,7 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Top Produits par Chiffre d\'Affaires (${_analytics!.produits.length} produits)',
+                    'analytics_top_products_title'.tr.replaceAll('@count', '${_analytics!.produits.length}'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -329,9 +329,9 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
               children: [
                 const Icon(Icons.trending_down, color: Colors.red),
                 const SizedBox(width: 8),
-                const Text(
-                  'Produits à Faible Performance',
-                  style: TextStyle(
+                Text(
+                  'analytics_low_performance_title'.tr,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -350,10 +350,10 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
                 children: [
                   const Icon(Icons.warning, color: Colors.orange, size: 20),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Ces produits nécessitent une attention particulière pour améliorer leurs performances.',
-                      style: TextStyle(
+                      'analytics_low_performance_warning'.tr,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.orange,
                       ),
@@ -404,22 +404,22 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Réf: ${product.produit.reference}'),
-          if (product.produit.categorie != null) Text('Catégorie: ${product.produit.categorie!.nom}'),
+          Text('${'analytics_ref'.tr}: ${product.produit.reference}'),
+          if (product.produit.categorie != null) Text('${'analytics_category'.tr}: ${product.produit.categorie!.nom}'),
           const SizedBox(height: 4),
           Row(
             children: [
-              _buildMetric('CA', '${product.statistiques.chiffreAffaires.toStringAsFixed(0)} FCFA'),
+              _buildMetric('analytics_ca'.tr, '${product.statistiques.chiffreAffaires.toStringAsFixed(0)} FCFA'),
               const SizedBox(width: 16),
-              _buildMetric('Qté', '${product.statistiques.quantiteVendue}'),
+              _buildMetric('analytics_qty'.tr, '${product.statistiques.quantiteVendue}'),
               const SizedBox(width: 16),
-              _buildMetric('Trans.', '${product.statistiques.nombreTransactions}'),
+              _buildMetric('analytics_trans'.tr, '${product.statistiques.nombreTransactions}'),
             ],
           ),
           if (product.statistiques.pourcentageMarge > 0) ...[
             const SizedBox(height: 4),
             Text(
-              'Marge: ${product.statistiques.pourcentageMarge.toStringAsFixed(1)}%',
+              '${'analytics_margin'.tr}: ${product.statistiques.pourcentageMarge.toStringAsFixed(1)}%',
               style: TextStyle(
                 color: product.statistiques.pourcentageMarge > 20 ? Colors.green : Colors.orange,
                 fontSize: 12,
@@ -472,31 +472,31 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Recommandations - ${product.produit.nom}'),
+        title: Text('${'analytics_recommendations_title'.tr} - ${product.produit.nom}'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(product.recommandation ?? 'Aucune recommandation disponible'),
+              Text(product.recommandation ?? 'analytics_no_recommendation'.tr),
               const SizedBox(height: 16),
-              const Text(
-                'Actions suggérées:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                'analytics_suggested_actions'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text('• Analyser la demande du marché'),
-              const Text('• Revoir la stratégie de prix'),
-              const Text('• Améliorer la visibilité du produit'),
-              const Text('• Considérer des promotions ciblées'),
-              const Text('• Évaluer la qualité du produit'),
+              Text('• ${'analytics_action_market'.tr}'),
+              Text('• ${'analytics_action_pricing'.tr}'),
+              Text('• ${'analytics_action_visibility'.tr}'),
+              Text('• ${'analytics_action_promotions'.tr}'),
+              Text('• ${'analytics_action_quality'.tr}'),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text('sales_close'.tr),
           ),
         ],
       ),

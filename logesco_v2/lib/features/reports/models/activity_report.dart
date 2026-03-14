@@ -598,6 +598,7 @@ class CompanyInfo {
   final String phone;
   final String email;
   final String nuiRccm;
+  final String logoPath;
 
   CompanyInfo({
     required this.name,
@@ -606,6 +607,7 @@ class CompanyInfo {
     required this.phone,
     required this.email,
     required this.nuiRccm,
+    this.logoPath = '',
   });
 
   factory CompanyInfo.fromJson(Map<String, dynamic> json) {
@@ -616,6 +618,7 @@ class CompanyInfo {
       phone: json['phone'] ?? '',
       email: json['email'] ?? '',
       nuiRccm: json['nuiRccm'] ?? '',
+      logoPath: json['logoPath'] ?? '',
     );
   }
 
@@ -627,6 +630,7 @@ class CompanyInfo {
       'phone': phone,
       'email': email,
       'nuiRccm': nuiRccm,
+      'logoPath': logoPath,
     };
   }
 
@@ -643,6 +647,7 @@ class CompanyInfo {
       phone: profile.phone ?? '',
       email: profile.email ?? '',
       nuiRccm: profile.nuiRccm ?? '',
+      logoPath: profile.logo ?? '',
     );
   }
 
@@ -655,6 +660,7 @@ class CompanyInfo {
       phone: 'Téléphone non configuré',
       email: 'email@logesco.com',
       nuiRccm: 'NUI RCCM non configuré',
+      logoPath: '',
     );
   }
 }

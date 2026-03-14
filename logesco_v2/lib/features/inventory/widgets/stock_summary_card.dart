@@ -40,7 +40,7 @@ class StockSummaryCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () => controller.loadSummary(),
-                    child: const Text('Réessayer'),
+                    child: Text('stock_retry'.tr),
                   ),
                 ],
               ),

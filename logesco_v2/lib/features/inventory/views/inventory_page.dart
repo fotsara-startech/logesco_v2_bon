@@ -46,44 +46,44 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion du Stockk'),
+        title: Text('stock_title'.tr),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshData,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: _showFilters,
-            tooltip: 'Filtres',
+            tooltip: 'stock_filters'.tr,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_stock',
                 child: ListTile(
-                  leading: Icon(Icons.download),
-                  title: Text('Exporter stocks (Excel)'),
+                  leading: const Icon(Icons.download),
+                  title: Text('stock_export_stock'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_movements',
                 child: ListTile(
-                  leading: Icon(Icons.history),
-                  title: Text('Exporter mouvements (Excel)'),
+                  leading: const Icon(Icons.history),
+                  title: Text('stock_export_movements'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'bulk_adjust',
                 child: ListTile(
-                  leading: Icon(Icons.edit_note),
-                  title: Text('Ajustement en lot'),
+                  leading: const Icon(Icons.edit_note),
+                  title: Text('stock_bulk_adjustment'.tr),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -92,18 +92,18 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(
-              icon: Icon(Icons.inventory),
-              text: 'Stockss',
+              icon: const Icon(Icons.inventory),
+              text: 'stock_tab_stocks'.tr,
             ),
             Tab(
-              icon: Icon(Icons.warning),
-              text: 'Alertess',
+              icon: const Icon(Icons.warning),
+              text: 'stock_tab_alerts'.tr,
             ),
             Tab(
-              icon: Icon(Icons.history),
-              text: 'Mouvements',
+              icon: const Icon(Icons.history),
+              text: 'stock_tab_movements'.tr,
             ),
           ],
         ),
@@ -147,8 +147,8 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
     controller.loadMovements(refresh: true);
 
     Get.snackbar(
-      'Succès',
-      'Données actualisées',
+      'success'.tr,
+      'stock_data_refreshed'.tr,
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 2),
     );
@@ -182,8 +182,8 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
     try {
       // Afficher un indicateur de chargement
       Get.snackbar(
-        'Export',
-        'Génération de l\'export en cours...',
+        'stock_export_in_progress'.tr,
+        'stock_export_fetching'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(seconds: 2),
@@ -195,27 +195,27 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         final filename = filePath.split('/').last;
         Get.dialog(
           AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text('Export des stocks sauvegardé avec succès.\nFichier: $filename\nVoulez-vous partager le fichier ?'),
+            title: Text('stock_export_success'.tr),
+            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\n${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('close'.tr),
               ),
               ElevatedButton(
                 onPressed: () async {
                   Get.back();
                   await ExportService.shareExcelFile(filePath);
                 },
-                child: const Text('Partager'),
+                child: Text('stock_export_share'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des stocks',
+          'error'.tr,
+          'stock_export_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -223,8 +223,8 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
+        'error'.tr,
+        'stock_export_error_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -238,8 +238,8 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
     try {
       // Afficher un indicateur de chargement
       Get.snackbar(
-        'Export',
-        'Génération de l\'export en cours...',
+        'stock_export_in_progress'.tr,
+        'stock_export_movements_in_progress'.tr,
         snackPosition: SnackPosition.BOTTOM,
         showProgressIndicator: true,
         duration: const Duration(seconds: 2),
@@ -251,27 +251,27 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         final filename = filePath.split('/').last;
         Get.dialog(
           AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text('Export des mouvements sauvegardé avec succès.\nFichier: $filename\nVoulez-vous partager le fichier ?'),
+            title: Text('stock_export_success'.tr),
+            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\n${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('close'.tr),
               ),
               ElevatedButton(
                 onPressed: () async {
                   Get.back();
                   await ExportService.shareExcelFile(filePath);
                 },
-                child: const Text('Partager'),
+                child: Text('stock_export_share'.tr),
               ),
             ],
           ),
         );
       } else {
         Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des mouvements',
+          'error'.tr,
+          'stock_export_movements_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -279,8 +279,8 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
       }
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
+        'error'.tr,
+        'stock_export_error_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -331,7 +331,7 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Filtres',
+            'stock_filters'.tr,
             style: Theme.of(context).textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -339,7 +339,7 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
 
           // Filtre alerte de stock
           CheckboxListTile(
-            title: const Text('Stocks en alerte uniquement'),
+            title: Text('stock_filter_alerts_only'.tr),
             value: _alerteStock ?? false,
             tristate: true,
             onChanged: (value) {
@@ -351,17 +351,17 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
 
           // Filtre type de mouvement
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(
-              labelText: 'Type de mouvement',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: 'stock_filter_movement_type'.tr,
+              border: const OutlineInputBorder(),
             ),
             value: _typeMouvement,
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Tous')),
-              DropdownMenuItem(value: 'achat', child: Text('Achat')),
-              DropdownMenuItem(value: 'vente', child: Text('Vente')),
-              DropdownMenuItem(value: 'ajustement', child: Text('Ajustement')),
-              DropdownMenuItem(value: 'retour', child: Text('Retour')),
+            items: [
+              DropdownMenuItem(value: null, child: Text('all'.tr)),
+              DropdownMenuItem(value: 'achat', child: Text('stock_filter_purchase'.tr)),
+              DropdownMenuItem(value: 'vente', child: Text('stock_filter_sale'.tr)),
+              DropdownMenuItem(value: 'ajustement', child: Text('stock_filter_adjustment'.tr)),
+              DropdownMenuItem(value: 'retour', child: Text('stock_filter_return'.tr)),
             ],
             onChanged: (value) {
               setState(() {
@@ -377,10 +377,10 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
             children: [
               Expanded(
                 child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Date début',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                  decoration: InputDecoration(
+                    labelText: 'stock_filter_date_start'.tr,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
                   ),
                   readOnly: true,
                   controller: TextEditingController(
@@ -404,10 +404,10 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
               const SizedBox(width: 16),
               Expanded(
                 child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Date fin',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                  decoration: InputDecoration(
+                    labelText: 'stock_filter_date_end'.tr,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
                   ),
                   readOnly: true,
                   controller: TextEditingController(
@@ -439,14 +439,14 @@ class _InventoryFiltersSheetState extends State<InventoryFiltersSheet> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _clearFilters,
-                  child: const Text('Effacer'),
+                  child: Text('stock_filter_clear'.tr),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _applyFilters,
-                  child: const Text('Appliquer'),
+                  child: Text('stock_filter_apply'.tr),
                 ),
               ),
             ],

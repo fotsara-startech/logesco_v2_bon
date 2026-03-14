@@ -150,7 +150,7 @@ class ReportSummaryWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'BILAN COMPTABLE D\'ACTIVITÉS',
+                      'reports_pdf_title'.tr,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -184,7 +184,7 @@ class ReportSummaryWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'INFORMATIONS ENTREPRISE',
+                  'reports_pdf_company_info'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -202,9 +202,9 @@ class ReportSummaryWidget extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (report.companyInfo.address.isNotEmpty) _buildInfoRow(Icons.location_on, 'Adresse', report.companyInfo.address),
-                          if (report.companyInfo.location.isNotEmpty) _buildInfoRow(Icons.place, 'Localisation', report.companyInfo.location),
-                          if (report.companyInfo.phone.isNotEmpty) _buildInfoRow(Icons.phone, 'Téléphone', report.companyInfo.phone),
+                          if (report.companyInfo.address.isNotEmpty) _buildInfoRow(Icons.location_on, 'reports_pdf_address'.tr, report.companyInfo.address),
+                          if (report.companyInfo.location.isNotEmpty) _buildInfoRow(Icons.place, 'reports_pdf_location'.tr, report.companyInfo.location),
+                          if (report.companyInfo.phone.isNotEmpty) _buildInfoRow(Icons.phone, 'reports_pdf_phone'.tr, report.companyInfo.phone),
                         ],
                       ),
                     ),
@@ -214,9 +214,9 @@ class ReportSummaryWidget extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (report.companyInfo.email.isNotEmpty) _buildInfoRow(Icons.email, 'Email', report.companyInfo.email),
+                          if (report.companyInfo.email.isNotEmpty) _buildInfoRow(Icons.email, 'reports_pdf_email'.tr, report.companyInfo.email),
                           if (report.companyInfo.nuiRccm.isNotEmpty) _buildInfoRow(Icons.assignment, 'NUI RCCM', report.companyInfo.nuiRccm),
-                          _buildInfoRow(Icons.calendar_today, 'Période', report.reportPeriod),
+                          _buildInfoRow(Icons.calendar_today, 'reports_pdf_period'.tr, report.reportPeriod),
                         ],
                       ),
                     ),
@@ -395,20 +395,13 @@ class ReportSummaryWidget extends StatelessWidget {
 
   /// Obtient l'icône du statut
   IconData _getStatusIcon() {
-    switch (report.summary.overallStatus.toLowerCase()) {
-      case 'excellent':
-        return Icons.star;
-      case 'bon':
-        return Icons.thumb_up;
-      case 'modéré':
-        return Icons.info;
-      case 'attention':
-        return Icons.warning;
-      case 'critique':
-        return Icons.error;
-      default:
-        return Icons.help;
-    }
+    final status = report.summary.overallStatus.toLowerCase();
+    if (status == 'excellent') return Icons.star;
+    if (status == 'bon' || status == 'good') return Icons.thumb_up;
+    if (status == 'modéré' || status == 'modere' || status == 'moderate') return Icons.info;
+    if (status == 'attention' || status == 'warning') return Icons.warning;
+    if (status == 'critique' || status == 'critical') return Icons.error;
+    return Icons.help;
   }
 
   /// Convertit une couleur hexadécimale en Color

@@ -139,7 +139,7 @@ class RolesPage extends GetView<RoleController> {
             children: [
               Expanded(
                 child: _buildStatItem(
-                  'Total',
+                  'roles_stats_total'.tr,
                   stats['total'].toString(),
                   Icons.admin_panel_settings,
                   Colors.blue,
@@ -147,7 +147,7 @@ class RolesPage extends GetView<RoleController> {
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Admin',
+                  'roles_stats_admin'.tr,
                   stats['admin'].toString(),
                   Icons.security,
                   Colors.red,
@@ -155,7 +155,7 @@ class RolesPage extends GetView<RoleController> {
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Standard',
+                  'roles_stats_standard'.tr,
                   stats['standard'].toString(),
                   Icons.person,
                   Colors.green,
@@ -370,7 +370,7 @@ class RolesPage extends GetView<RoleController> {
                 const SizedBox(height: 8),
                 ...role.privileges.entries.map((entry) {
                   if (entry.value.isEmpty) return const SizedBox.shrink();
-                  final moduleName = ModulePrivileges.moduleDisplayNames[entry.key] ?? entry.key;
+                  final moduleName = (ModulePrivileges.moduleDisplayNames[entry.key] ?? entry.key).tr;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Column(
@@ -383,7 +383,7 @@ class RolesPage extends GetView<RoleController> {
                         Wrap(
                           spacing: 4,
                           children: entry.value.map((privilege) {
-                            final displayName = ModulePrivileges.privilegeDisplayNames[privilege] ?? privilege;
+                            final displayName = (ModulePrivileges.privilegeDisplayNames[privilege] ?? privilege).tr;
                             return Chip(
                               label: Text(displayName),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

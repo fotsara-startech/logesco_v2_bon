@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/financial_movement.dart';
 import 'search_highlight_text.dart';
 
@@ -208,7 +209,7 @@ class MovementCard extends StatelessWidget {
                             minWidth: 32,
                             minHeight: 32,
                           ),
-                          tooltip: 'Modifier',
+                          tooltip: 'common_edit'.tr,
                         ),
                       if (onDelete != null)
                         IconButton(
@@ -221,7 +222,7 @@ class MovementCard extends StatelessWidget {
                             minHeight: 32,
                           ),
                           color: Colors.red,
-                          tooltip: 'Supprimer',
+                          tooltip: 'common_delete'.tr,
                         ),
                     ],
                   ),

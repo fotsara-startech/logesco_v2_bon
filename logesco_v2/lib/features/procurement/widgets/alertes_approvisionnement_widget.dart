@@ -35,7 +35,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Alertes d\'approvisionnement',
+                    'procurement_alerts_title'.tr,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
@@ -68,14 +68,14 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Aucune alerte d\'approvisionnement',
+                          'procurement_no_alerts'.tr,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.green[600],
                               ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Tous vos produits ont un stock suffisant',
+                          'procurement_all_stock_sufficient'.tr,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey[600],
                               ),
@@ -103,12 +103,12 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => controller.loadAlertes(),
-                  child: const Text('Actualiser'),
+                  child: Text('procurement_refresh'.tr),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Fermer'),
+                  child: Text('common_close'.tr),
                 ),
               ],
             ),
@@ -128,7 +128,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             context,
-            'Total',
+            'procurement_alerts_total'.tr,
             alertes.length.toString(),
             Colors.orange,
             Icons.warning,
@@ -138,7 +138,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             context,
-            'Ruptures',
+            'procurement_alerts_stockout'.tr,
             ruptures.toString(),
             Colors.red,
             Icons.error,
@@ -148,7 +148,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             context,
-            'Stocks faibles',
+            'procurement_alerts_low_stock'.tr,
             stocksFaibles.toString(),
             Colors.orange,
             Icons.warning_amber,
@@ -198,11 +198,11 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
     if (typeAlerte == 'rupture') {
       couleurAlerte = Colors.red;
       iconeAlerte = Icons.error;
-      messageAlerte = 'Rupture de stock';
+      messageAlerte = 'procurement_stockout'.tr;
     } else {
       couleurAlerte = Colors.orange;
       iconeAlerte = Icons.warning;
-      messageAlerte = 'Stock faible';
+      messageAlerte = 'procurement_low_stock'.tr;
     }
 
     return Card(
@@ -219,11 +219,11 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Référence: ${produit['reference'] ?? 'N/A'}'),
+            Text('${'procurement_reference'.tr}: ${produit['reference'] ?? 'N/A'}'),
             const SizedBox(height: 4),
             Row(
               children: [
-                Text('Stock: '),
+                Text('${'procurement_stock'.tr}: '),
                 Text(
                   stock != null ? '${stock['quantiteDisponible']}' : '0',
                   style: TextStyle(
@@ -231,7 +231,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(' / Seuil: ${produit['seuilStockMinimum'] ?? 0}'),
+                Text(' / ${'procurement_threshold'.tr}: ${produit['seuilStockMinimum'] ?? 0}'),
               ],
             ),
           ],
@@ -256,7 +256,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Priorité: $priorite',
+              '${'procurement_priority'.tr}: $priorite',
               style: TextStyle(
                 fontSize: 10,
                 color: Colors.grey[600],

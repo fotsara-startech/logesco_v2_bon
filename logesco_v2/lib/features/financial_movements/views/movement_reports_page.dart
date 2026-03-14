@@ -308,7 +308,7 @@ class MovementReportsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.hasPeriodSelected ? 'financial_movements_no_results'.tr : 'Sélectionnez une période pour voir les rapports',
+              controller.hasPeriodSelected ? 'financial_movements_no_results'.tr : 'financial_movements_select_period_for_reports'.tr,
               style: TextStyle(
                 color: Colors.grey.shade500,
               ),
