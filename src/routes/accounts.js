@@ -1101,16 +1101,20 @@ function createAccountRouter({ prisma, authService, ...models }) {
             nomEntreprise: true,
             localisation: true,
             telephone: true,
-            email: true
+            email: true,
+            nuiRccm: true,
+            logo: true
           }
         });
 
         const statementData = {
           entreprise: entreprise ? {
             nom: entreprise.nomEntreprise,
-            adresse: entreprise.localisation,
+            localisation: entreprise.localisation,
             telephone: entreprise.telephone,
-            email: entreprise.email
+            email: entreprise.email,
+            nuiRccm: entreprise.nuiRccm,
+            logoPath: entreprise.logo || null  // Utiliser 'logo' du schéma
           } : null,
           fournisseur: {
             id: fournisseur.id,

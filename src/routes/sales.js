@@ -1146,7 +1146,7 @@ function createSalesRouter({ prisma, authService }) {
 
   /**
    * DELETE /sales/:id
-   * Annuler une vente (restaurer le stock)
+   * Annuler une vente (restaurer le stock, déduire de la session de caisse, exclure de la comptabilité)
    */
   router.delete('/:id',
     validateId,
@@ -1158,7 +1158,8 @@ function createSalesRouter({ prisma, authService }) {
           where: { id: parseInt(id) },
           include: {
             details: true,
-            client: true
+            client: true,
+            session: true
           }
         });
 
@@ -1175,6 +1176,11 @@ function createSalesRouter({ prisma, authService }) {
             message: 'Cette vente est déjà annulée'
           });
         }
+
+        console.log(`🔄 Annulation de la vente ${vente.numeroVente}`);
+        console.log(`   - Montant: ${vente.montantTotal} FCFA`);
+        console.log(`   - Montant payé: ${vente.montantPaye} FCFA`);
+        console.log(`   - Session ID: ${vente.sessionId}`);
 
         await prisma.$transaction(async (tx) => {
           // Marquer la vente comme annulée
@@ -1219,43 +1225,138 @@ function createSalesRouter({ prisma, authService }) {
             });
           }
 
+          // CORRECTION 1: Déduire le montant payé de la session de caisse
+          if (vente.sessionId && vente.montantPaye > 0) {
+            console.log(`💰 Déduction de ${vente.montantPaye} FCFA de la session ${vente.sessionId}`);
+            
+            // Créer un mouvement de caisse d'annulation (négatif)
+            await tx.cashMovement.create({
+              data: {
+                caisseId: vente.session.caisseId,
+                sessionId: vente.sessionId,
+                type: 'annulation_vente',
+                montant: -vente.montantPaye, // Montant négatif pour déduire
+                description: `Annulation vente ${vente.numeroVente}`,
+                utilisateurId: req.user?.id || null,
+                metadata: JSON.stringify({
+                  categorie: 'annulation_vente',
+                  referenceType: 'vente_annulee',
+                  referenceId: parseInt(id),
+                  venteReference: vente.numeroVente,
+                  montantOriginal: vente.montantPaye
+                })
+              }
+            });
+
+            // Mettre à jour le solde attendu de la session
+            const session = await tx.cashSession.findUnique({
+              where: { id: vente.sessionId }
+            });
+
+            if (session) {
+              const nouveauSoldeAttendu = (session.soldeAttendu || 0) - vente.montantPaye;
+              await tx.cashSession.update({
+                where: { id: vente.sessionId },
+                data: {
+                  soldeAttendu: nouveauSoldeAttendu
+                }
+              });
+              console.log(`✅ Solde attendu mis à jour: ${nouveauSoldeAttendu} FCFA`);
+            }
+          }
+
+          // CORRECTION 2: Supprimer les mouvements financiers liés à cette vente
+          // pour l'exclure de la comptabilité
+          const mouvementsFinanciers = await tx.financialMovement.findMany({
+            where: {
+              OR: [
+                { reference: { contains: `VENTE-${vente.numeroVente}` } },
+                { description: { contains: vente.numeroVente } }
+              ]
+            }
+          });
+
+          if (mouvementsFinanciers.length > 0) {
+            console.log(`🗑️ Suppression de ${mouvementsFinanciers.length} mouvement(s) financier(s)`);
+            
+            for (const mouvement of mouvementsFinanciers) {
+              // Supprimer les pièces jointes d'abord
+              await tx.movementAttachment.deleteMany({
+                where: { mouvementId: mouvement.id }
+              });
+
+              // Supprimer le mouvement financier
+              await tx.financialMovement.delete({
+                where: { id: mouvement.id }
+              });
+            }
+          }
+
           // Si vente à crédit avec client, ajuster le compte
-          if (vente.clientId && vente.modePaiement === 'credit') {
-            const montantAjustement = vente.montantFinal - vente.montantPaye;
-            if (montantAjustement > 0) {
+          if (vente.clientId) {
+            console.log(`👤 Ajustement du compte client ${vente.clientId}`);
+            
+            // Récupérer le compte client
+            const compteClient = await tx.compteClient.findUnique({
+              where: { clientId: vente.clientId }
+            });
+
+            if (compteClient) {
+              // Annuler l'achat: ajouter le montant de la vente au solde
+              // (car le solde est négatif quand il y a une dette)
+              const nouveauSolde = compteClient.soldeActuel + vente.montantTotal;
+              
               await tx.compteClient.update({
                 where: { clientId: vente.clientId },
                 data: {
-                  soldeActuel: {
-                    increment: montantAjustement
-                  }
+                  soldeActuel: nouveauSolde
                 }
               });
 
-              // Créer la transaction d'ajustement
-              const compteApres = await tx.compteClient.findUnique({
-                where: { clientId: vente.clientId }
-              });
-              
+              console.log(`   Ancien solde: ${compteClient.soldeActuel} FCFA`);
+              console.log(`   Nouveau solde: ${nouveauSolde} FCFA`);
+
+              // Créer une transaction d'annulation
               await tx.transactionCompte.create({
                 data: {
                   typeCompte: 'client',
-                  compteId: compteApres.id, // CORRECTION: Utiliser l'ID du compte, pas l'ID du client
-                  typeTransaction: 'credit',
-                  montant: montantAjustement,
+                  compteId: compteClient.id,
+                  typeTransaction: 'annulation',
+                  typeTransactionDetail: 'annulation_vente',
+                  montant: vente.montantTotal,
                   description: `Annulation vente ${vente.numeroVente}`,
                   referenceType: 'vente_annulee',
                   referenceId: parseInt(id),
-                  soldeApres: (compteApres?.soldeActuel || 0) + montantAjustement
+                  venteId: parseInt(id),
+                  venteReference: vente.numeroVente,
+                  soldeApres: nouveauSolde
                 }
               });
+
+              // Supprimer les transactions de paiement liées à cette vente
+              const transactionsVente = await tx.transactionCompte.findMany({
+                where: {
+                  compteId: compteClient.id,
+                  referenceId: parseInt(id)
+                }
+              });
+
+              if (transactionsVente.length > 0) {
+                console.log(`🗑️ Suppression de ${transactionsVente.length} transaction(s) de compte`);
+                await tx.transactionCompte.deleteMany({
+                  where: {
+                    compteId: compteClient.id,
+                    referenceId: parseInt(id)
+                  }
+                });
+              }
             }
           }
         });
 
         res.json({
           success: true,
-          message: 'Vente annulée avec succès'
+          message: 'Vente annulée avec succès - montant déduit de la session de caisse et exclu de la comptabilité'
         });
       } catch (error) {
         console.error('Erreur lors de l\'annulation de la vente:', error);
