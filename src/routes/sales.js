@@ -392,13 +392,15 @@ function createSalesRouter({ prisma, authService }) {
     validate(venteSchemas.create, 'body'),
     async (req, res) => {
       try {
-        const { clientId, modePaiement, montantRemise, montantPaye, details, dateVente } = req.body;
+        const { clientId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente } = req.body;
 
         // DEBUG: Log des données reçues
         console.log('📥 Données reçues pour création vente:');
         console.log(`   - clientId: ${clientId}`);
         console.log(`   - modePaiement: ${modePaiement}`);
         console.log(`   - montantRemise: ${montantRemise}`);
+        console.log(`   - montantTva: ${montantTva}`);
+        console.log(`   - tauxTva: ${tauxTva}`);
         console.log(`   - montantPaye: ${montantPaye} (type: ${typeof montantPaye})`);
         console.log(`   - dateVente: ${dateVente}`);
         console.log(`   - nombre de détails: ${details?.length}`);
@@ -567,10 +569,12 @@ function createSalesRouter({ prisma, authService }) {
         }, 0);
 
         const montantVenteNet = montantVente - (montantRemise || 0);
+        const montantTvaVal = montantTva || 0;
+        const montantVenteTotal = montantVenteNet + montantTvaVal; // HT - remise + TVA = TTC
 
         // Si un client est sélectionné, vérifier son crédit existant
         let dettePrecedente = 0;
-        let montantTotalAPayer = montantVenteNet;
+        let montantTotalAPayer = montantVenteTotal;
 
         if (clientId) {
           const compteClient = await prisma.compteClient.findUnique({
@@ -580,7 +584,7 @@ function createSalesRouter({ prisma, authService }) {
 
           if (compteClient && compteClient.soldeActuel < 0) {
             dettePrecedente = Math.abs(compteClient.soldeActuel);
-            montantTotalAPayer = montantVenteNet + dettePrecedente;
+            montantTotalAPayer = montantVenteTotal + dettePrecedente;
             console.log(`Client ${compteClient.client.nom} a une dette de ${dettePrecedente} FCFA`);
             console.log(`Montant total à payer: ${montantTotalAPayer} FCFA`);
           }
@@ -599,10 +603,10 @@ function createSalesRouter({ prisma, authService }) {
           // Le client a payé le total (commande + dette)
           modeDeTermine = 'comptant';
           monnaieARendre = montantVerse - montantTotalAPayer;
-        } else if (montantVerse >= montantVenteNet && dettePrecedente === 0) {
+        } else if (montantVerse >= montantVenteTotal && dettePrecedente === 0) {
           // Pas de dette et paiement >= commande
           modeDeTermine = 'comptant';
-          monnaieARendre = montantVerse - montantVenteNet;
+          monnaieARendre = montantVerse - montantVenteTotal;
         } else {
           // Paiement partiel
           modeDeTermine = 'credit';
@@ -616,7 +620,7 @@ function createSalesRouter({ prisma, authService }) {
 
         // Calculer le montant payé pour CETTE vente uniquement (pour le reçu)
         // Si le client a une dette, l'excédent sert à la rembourser, pas à payer cette vente
-        const montantPayePourCetteVente = Math.min(montantVerse, montantVenteNet);
+        const montantPayePourCetteVente = Math.min(montantVerse, montantVenteTotal);
         console.log(`💰 Montant payé pour cette vente (reçu): ${montantPayePourCetteVente} FCFA`);
 
         // Générer le numéro de vente
@@ -647,17 +651,19 @@ function createSalesRouter({ prisma, authService }) {
           const nouvelleVente = await tx.vente.create({
             data: {
               numeroVente,
-              clientId: clientId || null,
-              sessionId: sessionId,
+              ...(clientId ? { client: { connect: { id: clientId } } } : {}),
+              ...(sessionId ? { session: { connect: { id: sessionId } } } : {}),
+              ...(req.user?.id ? { vendeur: { connect: { id: req.user.id } } } : {}),
               modePaiement: modeDeTermine, // Mode déterminé automatiquement
               sousTotal: montantVente,
               montantRemise: montantRemise || 0,
-              montantTotal: montantVenteNet, // Montant de cette vente uniquement
-              montantPaye: montantPayePourCetteVente, // CORRECTION: Montant payé pour CETTE vente uniquement (pas le total avec dette)
-              montantRestant: Math.max(0, montantVenteNet - montantPayePourCetteVente), // Reste pour CETTE vente uniquement
-              statut: 'terminee', // Toujours "terminee" - le compte client gère les dettes
-              vendeurId: req.user?.id || null,
-              dateVente: dateVente ? new Date(dateVente) : new Date(), // Date personnalisée ou actuelle
+              montantTva: montantTvaVal,
+              tauxTva: tauxTva || null,
+              montantTotal: montantVenteTotal, // Montant TTC (HT - remise + TVA)
+              montantPaye: montantPayePourCetteVente,
+              montantRestant: Math.max(0, montantVenteTotal - montantPayePourCetteVente),
+              statut: 'terminee',
+              dateVente: dateVente ? new Date(dateVente) : new Date(),
               details: {
                 create: details.map(detail => ({
                   produitId: detail.produitId,

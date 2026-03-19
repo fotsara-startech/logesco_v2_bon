@@ -63,8 +63,11 @@ class EnvironmentConfig {
       const isPkg = typeof process.pkg !== 'undefined';
       let dbPath;
       
-      if (isPkg) {
-        // En mode pkg, utiliser le dossier de l'exécutable
+      if (process.env.LOGESCO_DATA_DIR) {
+        // Chemin explicite fourni par BackendService (installeur)
+        dbPath = path.join(process.env.LOGESCO_DATA_DIR, 'database', 'logesco.db');
+      } else if (isPkg) {
+        // En mode pkg sans DATA_DIR, utiliser le dossier de l'exécutable
         const basePath = path.dirname(process.execPath);
         dbPath = path.join(basePath, 'database', 'logesco.db');
       } else {

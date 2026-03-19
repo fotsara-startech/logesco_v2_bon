@@ -207,6 +207,7 @@ router.post('/',
         nuiRccm: req.body.nuiRccm || null,
         slogan: req.body.slogan || null,
         langueFacture: req.body.langueFacture || 'fr',
+        tauxTva: req.body.tauxTva != null && req.body.tauxTva !== '' ? parseFloat(String(req.body.tauxTva).replace(',', '.')) : null,
         logo: req.file ? req.file.filename : req.body.logo || null
       };
 

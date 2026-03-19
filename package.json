@@ -35,7 +35,7 @@
     "test:all": "npm run test && npm run test:final",
     "setup:db": "node scripts/setup-database.js",
     "build:standalone": "node build-standalone-v2.js",
-    "build:exe": "npm run build:standalone",
+    "build:exe": "node build-exe.js",
     "build:old": "node build-standalone.js"
   },
   "dependencies": {
@@ -65,10 +65,16 @@
   },
   "pkg": {
     "scripts": [
-      "src/**/*.js",
-      "scripts/**/*.js"
+      "src/**/*.js"
     ],
-    "assets": [],
-    "outputPath": "../dist"
+    "assets": [
+      "prisma/**/*",
+      "src/**/*.json"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "../dist-exe",
+    "output": "logesco-backend"
   }
 }

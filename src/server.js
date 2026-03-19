@@ -1,5 +1,30 @@
 require('dotenv').config();
 
+// ── Logging vers fichier dès le démarrage ─────────────────────────────────
+const fs   = require('fs');
+const path = require('path');
+const _logDir  = process.env.LOGESCO_DATA_DIR
+  ? path.join(process.env.LOGESCO_DATA_DIR, 'logs')
+  : path.join(__dirname, '../logs');
+if (!fs.existsSync(_logDir)) { try { fs.mkdirSync(_logDir, { recursive: true }); } catch(_){} }
+const _logFile = path.join(_logDir, 'backend-startup.log');
+const _logStream = fs.createWriteStream(_logFile, { flags: 'a' });
+const _origLog   = console.log.bind(console);
+const _origWarn  = console.warn.bind(console);
+const _origError = console.error.bind(console);
+function _log(level, args) {
+  const line = `[${new Date().toISOString()}] [${level}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`;
+  _logStream.write(line);
+}
+console.log   = (...a) => { _origLog(...a);   _log('INFO',  a); };
+console.warn  = (...a) => { _origWarn(...a);  _log('WARN',  a); };
+console.error = (...a) => { _origError(...a); _log('ERROR', a); };
+console.log(`=== LOGESCO Backend démarrage ${new Date().toISOString()} ===`);
+console.log(`LOGESCO_DATA_DIR: ${process.env.LOGESCO_DATA_DIR || '(non défini)'}`);
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL || '(non défini)'}`);
+console.log(`NODE_ENV: ${process.env.NODE_ENV || '(non défini)'}`);
+// ──────────────────────────────────────────────────────────────────────────
+
 const express = require('express');
 const environment = require('./config/environment');
 const databaseManager = require('./config/database');
@@ -47,6 +72,162 @@ class LogescoServer {
   }
 
   /**
+   * Seed automatique au premier démarrage.
+   * Crée admin + caisse principale si la DB est vide.
+   */
+  async _runAutoSeed(prisma) {
+    try {
+      const userCount = await prisma.utilisateur.count();
+      if (userCount > 0) {
+        console.log('✅ Base de données déjà initialisée, seed ignoré');
+        return;
+      }
+
+      console.log('🌱 Première installation détectée - Initialisation des données...');
+      const bcrypt = require('bcryptjs');
+
+      // Rôle admin
+      const adminRole = await prisma.userRole.create({
+        data: {
+          nom: 'ADMIN',
+          displayName: 'Administrateur',
+          isAdmin: true,
+          privileges: JSON.stringify({
+            dashboard: { view: true },
+            sales: { view: true, create: true, edit: true, delete: true },
+            products: { view: true, create: true, edit: true, delete: true },
+            inventory: { view: true, create: true, edit: true, delete: true },
+            customers: { view: true, create: true, edit: true, delete: true },
+            suppliers: { view: true, create: true, edit: true, delete: true },
+            procurement: { view: true, create: true, edit: true, delete: true },
+            expenses: { view: true, create: true, edit: true, delete: true },
+            reports: { view: true, create: true, edit: true, delete: true },
+            users: { view: true, create: true, edit: true, delete: true },
+            roles: { view: true, create: true, edit: true, delete: true },
+            settings: { view: true, create: true, edit: true, delete: true },
+            cashRegister: { view: true, create: true, edit: true, delete: true },
+            financialMovements: { view: true, create: true, edit: true, delete: true }
+          })
+        }
+      });
+
+      // Utilisateur admin
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await prisma.utilisateur.create({
+        data: {
+          nomUtilisateur: 'admin',
+          motDePasseHash: hashedPassword,
+          email: 'admin@logesco.local',
+          roleId: adminRole.id,
+          isActive: true
+        }
+      });
+
+      // Caisse principale
+      await prisma.cashRegister.create({
+        data: {
+          nom: 'Caisse Principale',
+          description: 'Caisse principale du système',
+          isActive: true,
+          soldeActuel: 0,
+          soldeInitial: 0
+        }
+      });
+
+      // Paramètres entreprise
+      await prisma.parametresEntreprise.create({
+        data: {
+          nomEntreprise: 'Mon Entreprise',
+          adresse: '',
+          telephone: '',
+          email: 'contact@entreprise.com',
+          nuiRccm: '',
+          localisation: ''
+        }
+      });
+
+      console.log('✅ Données initiales créées (admin / admin123)');
+    } catch (err) {
+      console.warn('⚠️  Auto-seed échoué (non bloquant):', err.message);
+    }
+  }
+
+  /**
+   * Applique les migrations Prisma automatiquement au démarrage.
+   * Utilise node.exe portable + prisma CLI avec DATABASE_URL explicite.
+   */
+  async _runAutoMigration() {
+    const { execSync } = require('child_process');
+    const path = require('path');
+    const fs = require('fs');
+
+    try {
+      console.log('🔄 Vérification des migrations de base de données...');
+
+      const backendDir    = path.join(__dirname, '..');
+
+      // Chercher schema.prisma : d'abord dans prisma/, puis à la racine
+      let schemaPath = path.join(backendDir, 'prisma', 'schema.prisma');
+      if (!fs.existsSync(schemaPath)) {
+        schemaPath = path.join(backendDir, 'schema.prisma');
+      }
+      if (!fs.existsSync(schemaPath)) {
+        console.log('⚠️  schema.prisma introuvable, migration ignorée');
+        return;
+      }
+      // S'assurer que prisma/schema.prisma existe (requis par prisma CLI)
+      const prismaDirSchema = path.join(backendDir, 'prisma', 'schema.prisma');
+      if (!fs.existsSync(path.dirname(prismaDirSchema))) {
+        fs.mkdirSync(path.dirname(prismaDirSchema), { recursive: true });
+      }
+      if (schemaPath !== prismaDirSchema && !fs.existsSync(prismaDirSchema)) {
+        fs.copyFileSync(schemaPath, prismaDirSchema);
+        schemaPath = prismaDirSchema;
+      }
+      // Chercher prisma CLI dans node_modules local
+      const prismaCmdWin  = path.join(backendDir, 'node_modules/.bin/prisma.cmd');
+      const prismaCmdUnix = path.join(backendDir, 'node_modules/.bin/prisma');
+
+      const dbUrl = process.env.DATABASE_URL || (() => {
+        const dataDir = process.env.LOGESCO_DATA_DIR || backendDir;
+        const dbPath  = path.join(dataDir, 'database', 'logesco.db').replace(/\\/g, '/');
+        return `file:${dbPath}`;
+      })();
+
+      // Utiliser node.exe portable si disponible (même répertoire que ce script)
+      const nodeExe = (() => {
+        const portable = path.join(backendDir, 'node.exe');
+        return fs.existsSync(portable) ? portable : 'node';
+      })();
+
+      let cmd;
+      if (fs.existsSync(prismaCmdWin)) {
+        // Lancer prisma via node.exe portable pour éviter les conflits de version
+        const prismaJs = path.join(__dirname, '../node_modules/prisma/build/index.js');
+        if (fs.existsSync(prismaJs)) {
+          cmd = `"${nodeExe}" "${prismaJs}" db push --accept-data-loss --schema="${schemaPath}"`;
+        } else {
+          cmd = `"${prismaCmdWin}" db push --accept-data-loss --schema="${schemaPath}"`;
+        }
+      } else if (fs.existsSync(prismaCmdUnix)) {
+        cmd = `"${prismaCmdUnix}" db push --accept-data-loss --schema="${schemaPath}"`;
+      } else {
+        cmd = `"${nodeExe}" -e "require('./node_modules/prisma/build/index.js')" db push --accept-data-loss --schema="${schemaPath}"`;
+      }
+
+      execSync(cmd, {
+        stdio: 'pipe',
+        timeout: 120000, // 2 minutes pour les machines lentes
+        cwd: backendDir,
+        env: { ...process.env, DATABASE_URL: dbUrl },
+      });
+      console.log('✅ Migrations appliquées');
+    } catch (err) {
+      console.warn('⚠️  Migration automatique échouée (non bloquant):', err.message);
+    }
+  }
+
+  /**
    * Initialise et démarre le serveur
    */
   async start() {
@@ -54,8 +235,14 @@ class LogescoServer {
       // Afficher la configuration détectée
       environment.logConfiguration();
 
+      // Appliquer les migrations Prisma automatiquement (MAJ client)
+      await this._runAutoMigration();
+
       // Initialiser la base de données
       const prisma = await databaseManager.initialize();
+
+      // Seed automatique si la base est vide (première installation)
+      await this._runAutoSeed(prisma);
 
       // Initialiser les modèles et services
       this.models = new ModelFactory(prisma);
@@ -117,8 +304,45 @@ class LogescoServer {
       });
     });
 
+    // Route health check (utilisée par BackendService Flutter pour détecter le démarrage)
+    this.app.get('/health', (req, res) => {
+      res.json({ status: 'ok', uptime: process.uptime() });
+    });
+
+    // Route debug — retourne l'état de la DB et les variables d'env clés
+    this.app.get('/debug', async (req, res) => {
+      try {
+        const dbUrl = process.env.DATABASE_URL || '(non défini)';
+        const dataDir = process.env.LOGESCO_DATA_DIR || '(non défini)';
+        let userCount = -1;
+        let dbError = null;
+        try {
+          userCount = await this.models?.prisma?.utilisateur?.count() ?? -1;
+        } catch(e) { dbError = e.message; }
+        // Lire les dernières lignes du log
+        let lastLogs = '';
+        try {
+          const logPath = require('path').join(
+            process.env.LOGESCO_DATA_DIR || require('path').join(__dirname, '..'),
+            'logs', 'backend-startup.log'
+          );
+          if (require('fs').existsSync(logPath)) {
+            const content = require('fs').readFileSync(logPath, 'utf8');
+            lastLogs = content.split('\n').slice(-30).join('\n');
+          }
+        } catch(_) {}
+        res.json({ DATABASE_URL: dbUrl, LOGESCO_DATA_DIR: dataDir, userCount, dbError, lastLogs });
+      } catch(e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
     // Route pour servir les fichiers uploadés
-    this.app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));
+    // En production (pkg), les uploads sont dans DATA_DIR
+    const uploadsPath = process.env.LOGESCO_DATA_DIR
+      ? require('path').join(process.env.LOGESCO_DATA_DIR, 'uploads')
+      : require('path').join(__dirname, '../uploads');
+    this.app.use('/uploads', express.static(uploadsPath));
 
     // Routes API principales
     this.app.use(`/api/${apiVersion}/auth`, createAuthRouter(this.authService));

@@ -264,6 +264,8 @@ const venteSchemas = {
     modePaiement: baseSchemas.modePaiement.default('comptant'),
     montantRemise: baseSchemas.montant.default(0),
     montantPaye: baseSchemas.montant.default(0),
+    montantTva: baseSchemas.montant.default(0), // Montant TVA
+    tauxTva: Joi.number().min(0).max(100).allow(null).default(null), // Taux TVA en %
     dateVente: baseSchemas.date.allow(null), // Date personnalisée pour l'antidatage
     details: Joi.array().items(
       Joi.object({
@@ -333,9 +335,10 @@ const parametresEntrepriseSchemas = {
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
     nuiRccm: Joi.string().max(50).allow('', null),
-    logo: Joi.string().max(500).allow('', null), // Chemin vers le fichier logo
-    slogan: Joi.string().max(200).allow('', null), // Slogan de l'entreprise
-    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr') // Langue des factures: fr, en, es
+    logo: Joi.string().max(500).allow('', null),
+    slogan: Joi.string().max(200).allow('', null),
+    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr'),
+    tauxTva: Joi.number().min(0).max(100).allow(null) // TVA en pourcentage (optionnel)
   }),
 
   update: Joi.object({
@@ -345,9 +348,10 @@ const parametresEntrepriseSchemas = {
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
     nuiRccm: Joi.string().max(50).allow('', null),
-    logo: Joi.string().max(500).allow('', null), // Chemin vers le fichier logo
-    slogan: Joi.string().max(200).allow('', null), // Slogan de l'entreprise
-    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr') // Langue des factures: fr, en, es
+    logo: Joi.string().max(500).allow('', null),
+    slogan: Joi.string().max(200).allow('', null),
+    langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr'),
+    tauxTva: Joi.number().min(0).max(100).allow(null) // TVA en pourcentage (optionnel)
   }).min(1)
 };
 

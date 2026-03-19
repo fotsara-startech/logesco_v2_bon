@@ -9,7 +9,9 @@ const crypto = require('crypto');
 class FileUploadService {
   constructor(prisma) {
     this.prisma = prisma;
-    this.uploadDir = path.join(process.cwd(), 'uploads', 'movements');
+    // En production (pkg), utiliser DATA_DIR; sinon le dossier courant
+    const baseDir = process.env.LOGESCO_DATA_DIR || process.cwd();
+    this.uploadDir = path.join(baseDir, 'uploads', 'movements');
     this.maxFileSize = 5 * 1024 * 1024; // 5MB
     this.allowedMimeTypes = [
       'image/jpeg',

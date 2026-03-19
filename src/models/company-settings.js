@@ -63,7 +63,8 @@ class CompanySettingsModel {
             nuiRccm: data.nuiRccm || null,
             logo: logoPath,
             slogan: data.slogan || null,
-            langueFacture: data.langueFacture || 'fr'
+            langueFacture: data.langueFacture || 'fr',
+            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null
           }
         });
       } else {
@@ -78,7 +79,8 @@ class CompanySettingsModel {
             nuiRccm: data.nuiRccm || null,
             logo: logoPath,
             slogan: data.slogan || null,
-            langueFacture: data.langueFacture || 'fr'
+            langueFacture: data.langueFacture || 'fr',
+            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null
           }
         });
       }

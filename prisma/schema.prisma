@@ -190,6 +190,8 @@ model Vente {
   dateVente      DateTime         @default(now()) @map("date_vente")
   sousTotal      Float            @map("sous_total")
   montantRemise  Float            @default(0) @map("montant_remise")
+  montantTva     Float            @default(0) @map("montant_tva")
+  tauxTva        Float?           @map("taux_tva")
   montantTotal   Float            @map("montant_total")
   statut         String           @default("terminee")
   modePaiement   String           @default("comptant") @map("mode_paiement")
@@ -275,6 +277,7 @@ model ParametresEntreprise {
   logo             String?
   slogan           String?
   langueFacture    String   @default("fr") @map("langue_facture")
+  tauxTva          Float?   @map("taux_tva")
   dateCreation     DateTime @default(now()) @map("date_creation")
   dateModification DateTime @updatedAt @map("date_modification")
 

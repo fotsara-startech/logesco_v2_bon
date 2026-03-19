@@ -19,7 +19,12 @@ class DatabaseManager {
     try {
       console.log(`🗄️  Initialisation de la base de données ${environment.databaseConfig.provider}...`);
 
-      // Configuration Prisma simplifiée
+      // S'assurer que DATABASE_URL est défini dans process.env avant d'instancier Prisma
+      if (!process.env.DATABASE_URL) {
+        process.env.DATABASE_URL = environment.databaseConfig.url;
+        console.log(`📁 DATABASE_URL forcée: ${process.env.DATABASE_URL}`);
+      }
+
       this.prisma = new PrismaClient({
         log: environment.nodeEnv === 'development' ? ['error'] : ['error']
       });
@@ -120,7 +125,9 @@ class DatabaseManager {
         const path = require('path');
 
         const sourceDb = path.join(__dirname, '../../database/logesco.db');
-        const backupDir = path.join(__dirname, '../../database/backups');
+        const backupDir = process.env.LOGESCO_DATA_DIR
+          ? path.join(process.env.LOGESCO_DATA_DIR, 'database', 'backups')
+          : path.join(__dirname, '../../database/backups');
         const backupFile = path.join(backupDir, `logesco-backup-${timestamp}.db`);
 
         // Créer le dossier de sauvegarde s'il n'existe pas

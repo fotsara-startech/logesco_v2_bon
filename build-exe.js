@@ -1,272 +1,199 @@
 /**
- * build-exe.js
- * Compile le backend Node.js en un seul exécutable Windows (logesco-backend.exe)
- * en utilisant @vercel/pkg.
+ * build-exe.js - Stratégie Node.js portable
  *
- * Résultat: dist-exe/logesco-backend.exe (~80-120 MB, Node.js embarqué)
- * Ce fichier est ensuite copié par InnoSetup dans le package client.
+ * Au lieu de compiler avec pkg (qui casse les modules natifs Prisma),
+ * on crée un dossier dist-exe avec:
+ *   - node.exe (Node.js portable, téléchargé une fois)
+ *   - src/ + node_modules/ + prisma/ (le backend complet)
+ *   - logesco-backend.cmd (lanceur)
+ *
+ * L'installeur copie tout ça dans AppData\Local\LOGESCO\backend\.
+ * Flutter lance node.exe src/server.js silencieusement.
+ *
+ * Avantages vs pkg:
+ *   - Aucun problème de modules natifs (Prisma, bcrypt, etc.)
+ *   - Taille similaire (~80 MB avec node.exe)
+ *   - Mise à jour facile: remplacer src/ sans toucher node.exe
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
+const https = require('https');
+const { execSync } = require('child_process');
 
 const ROOT = __dirname;
 const DIST = path.join(ROOT, '..', 'dist-exe');
-const BACKEND_EXE = path.join(DIST, 'logesco-backend.exe');
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// Version Node.js portable à embarquer (doit correspondre à engines.node)
+const NODE_VERSION = '18.20.4';
+const NODE_URL = `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-win-x64.zip`;
+const NODE_ZIP  = path.join(DIST, 'node-portable.zip');
+const NODE_EXE  = path.join(DIST, 'node.exe');
+
+function ensureDir(p) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
 
 function run(cmd, cwd = ROOT) {
   console.log(`  > ${cmd}`);
   execSync(cmd, { cwd, stdio: 'inherit' });
 }
 
-function ensureDir(p) {
-  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
-}
-
-// ─── étape 1 : vérifier / installer pkg ─────────────────────────────────────
-
-function ensurePkg() {
-  try {
-    execSync('npx pkg --version', { stdio: 'ignore' });
-    console.log('✅ pkg disponible');
-  } catch {
-    console.log('📦 Installation de @vercel/pkg...');
-    run('npm install --save-dev @vercel/pkg');
+function copyDirSync(src, dest) {
+  if (!fs.existsSync(src)) return;
+  ensureDir(dest);
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDirSync(s, d);
+    else fs.copyFileSync(s, d);
   }
 }
 
-// ─── étape 2 : créer server-entry.js (point d'entrée pkg) ───────────────────
-// pkg ne peut pas embarquer les binaires Prisma natifs directement.
-// On utilise la stratégie "prisma-client embarqué + binaire query-engine séparé".
-// Le .exe extrait le query-engine dans un dossier temp au premier lancement.
-
-function createEntryPoint() {
-  const entryPath = path.join(ROOT, 'src', 'server-pkg-entry.js');
-  const content = `/**
- * Point d'entrée pour pkg.
- * Gère l'extraction du query-engine Prisma et le démarrage du serveur.
- */
-const path = require('path');
-const fs   = require('fs');
-const os   = require('os');
-
-// ── Résoudre le chemin de travail ──────────────────────────────────────────
-// Quand lancé via pkg, __dirname pointe dans le snapshot virtuel.
-// On utilise process.execPath pour trouver le dossier réel de l'exe.
-const EXE_DIR = path.dirname(process.execPath);
-
-// Dossier de données persistantes (AppData\\Local\\LOGESCO\\backend)
-const DATA_DIR = process.env.LOGESCO_DATA_DIR
-  || path.join(os.homedir(), 'AppData', 'Local', 'LOGESCO', 'backend');
-
-// S'assurer que les dossiers existent
-['database', 'logs', 'uploads'].forEach(d => {
-  const p = path.join(DATA_DIR, d);
-  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
-});
-
-// ── Variables d'environnement ──────────────────────────────────────────────
-// Charger .env depuis DATA_DIR (créé par l'installeur ou BackendService)
-const envFile = path.join(DATA_DIR, '.env');
-if (fs.existsSync(envFile)) {
-  require('dotenv').config({ path: envFile });
-} else {
-  // Valeurs par défaut si .env absent
-  process.env.NODE_ENV    = process.env.NODE_ENV    || 'production';
-  process.env.PORT        = process.env.PORT        || '8080';
-  process.env.DATABASE_URL = process.env.DATABASE_URL
-    || ('file:' + path.join(DATA_DIR, 'database', 'logesco.db').replace(/\\\\/g, '/'));
-  process.env.JWT_SECRET  = process.env.JWT_SECRET  || 'logesco-secret-change-me';
-  process.env.CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
-}
-
-// Exposer DATA_DIR pour que le reste du code puisse l'utiliser
-process.env.LOGESCO_DATA_DIR = DATA_DIR;
-
-// ── Démarrer le serveur ────────────────────────────────────────────────────
-require('./server');
-`;
-  fs.writeFileSync(entryPath, content, 'utf8');
-  console.log('✅ server-pkg-entry.js créé');
-  return entryPath;
-}
-
-// ─── étape 3 : patch package.json pour pkg ──────────────────────────────────
-
-function patchPackageJson() {
-  const pkgJsonPath = path.join(ROOT, 'package.json');
-  const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
-
-  // Configuration pkg
-  pkgJson.pkg = {
-    // Point d'entrée
-    scripts: ['src/**/*.js'],
-    // Assets à embarquer (schéma Prisma, migrations, seeds)
-    assets: [
-      'prisma/**/*',
-      'src/**/*.json',
-    ],
-    // Cible: Node 18, Windows x64
-    targets: ['node18-win-x64'],
-    outputPath: '../dist-exe',
-    // Nom de sortie
-    output: 'logesco-backend',
-  };
-
-  // Script de build
-  pkgJson.scripts = pkgJson.scripts || {};
-  pkgJson.scripts['build:exe'] = 'node build-exe.js';
-
-  fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2), 'utf8');
-  console.log('✅ package.json patché pour pkg');
-}
-
-// ─── étape 4 : copier les binaires Prisma query-engine ──────────────────────
-// pkg ne peut pas embarquer les .node natifs de Prisma.
-// On les copie à côté de l'exe → l'installeur les inclut aussi.
-
-function copyPrismaEngines() {
-  const engineSrc = path.join(ROOT, 'node_modules', '.prisma', 'client');
-  const engineDest = path.join(DIST, 'prisma-engines');
-
-  if (!fs.existsSync(engineSrc)) {
-    console.log('⚠️  Prisma client non généré. Génération...');
-    run('npx prisma generate');
+// Télécharger node.exe depuis nodejs.org (zip Windows x64)
+async function downloadNodeExe() {
+  if (fs.existsSync(NODE_EXE)) {
+    console.log('✅ node.exe déjà présent');
+    return;
   }
 
-  ensureDir(engineDest);
-
-  // Copier tous les fichiers query-engine-*
-  const files = fs.readdirSync(engineSrc);
-  let copied = 0;
-  for (const f of files) {
-    if (f.startsWith('query_engine') || f.startsWith('libquery_engine') || f.endsWith('.node')) {
-      fs.copyFileSync(path.join(engineSrc, f), path.join(engineDest, f));
-      console.log(`  ✓ ${f}`);
-      copied++;
-    }
-  }
-
-  // Copier aussi le schema.prisma (nécessaire pour Prisma au runtime)
-  const schemaSrc = path.join(ROOT, 'prisma', 'schema.prisma');
-  const schemaDest = path.join(DIST, 'schema.prisma');
-  fs.copyFileSync(schemaSrc, schemaDest);
-
-  console.log(`✅ ${copied} binaire(s) Prisma copiés + schema.prisma`);
-}
-
-// ─── étape 5 : compiler avec pkg ────────────────────────────────────────────
-
-function compilePkg() {
+  console.log(`📥 Téléchargement Node.js ${NODE_VERSION}...`);
   ensureDir(DIST);
 
-  const entryPoint = path.join(ROOT, 'src', 'server-pkg-entry.js');
+  // Télécharger le zip
+  await new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(NODE_ZIP);
+    https.get(NODE_URL, res => {
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        https.get(res.headers.location, res2 => {
+          res2.pipe(file);
+          file.on('finish', () => { file.close(); resolve(); });
+        }).on('error', reject);
+      } else {
+        res.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+      }
+    }).on('error', reject);
+  });
 
-  console.log('🔨 Compilation avec pkg (peut prendre 1-2 minutes)...');
-  run(
-    `npx pkg "${entryPoint}" --target node18-win-x64 --output "${BACKEND_EXE}" --compress GZip`,
-    ROOT
-  );
+  // Extraire node.exe du zip avec PowerShell
+  console.log('📦 Extraction de node.exe...');
+  const extractCmd = `powershell -Command "` +
+    `$zip = '${NODE_ZIP.replace(/\\/g, '\\\\')}'; ` +
+    `$dest = '${DIST.replace(/\\/g, '\\\\')}'; ` +
+    `Add-Type -Assembly System.IO.Compression.FileSystem; ` +
+    `$z = [IO.Compression.ZipFile]::OpenRead($zip); ` +
+    `$entry = $z.Entries | Where-Object { $_.Name -eq 'node.exe' } | Select-Object -First 1; ` +
+    `[IO.Compression.ZipFileExtensions]::ExtractToFile($entry, [IO.Path]::Combine($dest, 'node.exe'), $true); ` +
+    `$z.Dispose()"`;
+  execSync(extractCmd, { stdio: 'inherit' });
 
-  if (!fs.existsSync(BACKEND_EXE)) {
-    throw new Error('logesco-backend.exe non trouvé après compilation');
-  }
-
-  const sizeMB = (fs.statSync(BACKEND_EXE).size / 1024 / 1024).toFixed(1);
-  console.log(`✅ logesco-backend.exe créé (${sizeMB} MB)`);
+  // Nettoyer le zip
+  fs.unlinkSync(NODE_ZIP);
+  console.log('✅ node.exe extrait');
 }
-
-// ─── étape 6 : créer les dossiers et fichiers annexes dans dist-exe ──────────
-
-function createAuxFiles() {
-  // Dossiers que l'installeur créera aussi, mais utiles pour les tests locaux
-  ['database', 'logs', 'uploads'].forEach(d => ensureDir(path.join(DIST, d)));
-
-  // .env.example (l'installeur / BackendService crée le vrai .env)
-  const envExample = `# Configuration LOGESCO Backend
-# Ce fichier est géré automatiquement par l'application.
-NODE_ENV=production
-PORT=8080
-DATABASE_URL=file:./database/logesco.db
-JWT_SECRET=CHANGE_ME_IN_PRODUCTION
-JWT_EXPIRES_IN=24h
-CORS_ORIGIN=*
-LOG_LEVEL=info
-`;
-  fs.writeFileSync(path.join(DIST, '.env.example'), envExample, 'utf8');
-
-  // README minimal
-  const readme = `LOGESCO Backend v2
-==================
-Ce dossier contient le backend LOGESCO compilé.
-
-Fichiers:
-  logesco-backend.exe   Serveur backend autonome
-  prisma-engines/       Binaires Prisma (requis)
-  schema.prisma         Schéma de la base de données
-  database/             Base de données SQLite (créée au 1er lancement)
-  uploads/              Fichiers uploadés
-  logs/                 Journaux
-
-Démarrage manuel (pour tests):
-  logesco-backend.exe
-
-Le backend démarre sur http://localhost:8080
-`;
-  fs.writeFileSync(path.join(DIST, 'README.txt'), readme, 'utf8');
-
-  console.log('✅ Fichiers annexes créés');
-}
-
-// ─── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('');
-  console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║   LOGESCO - Build Backend EXE                    ║');
-  console.log('╚══════════════════════════════════════════════════╝');
-  console.log('');
+  console.log('\n============================================================');
+  console.log('  LOGESCO - Build Backend Portable (Node.js embarqué)');
+  console.log('============================================================\n');
 
   try {
-    console.log('[1/6] Vérification de pkg...');
-    ensurePkg();
+    // 1. Nettoyer dist-exe (sauf node.exe si déjà là)
+    console.log('[1/6] Préparation dist-exe...');
+    const nodeExeBackup = fs.existsSync(NODE_EXE) ? fs.readFileSync(NODE_EXE) : null;
+    if (fs.existsSync(DIST)) fs.rmSync(DIST, { recursive: true, force: true });
+    ensureDir(DIST);
+    if (nodeExeBackup) { fs.writeFileSync(NODE_EXE, nodeExeBackup); console.log('  node.exe restauré depuis cache'); }
+    console.log('✅ dist-exe prêt');
 
-    console.log('\n[2/6] Création du point d\'entrée pkg...');
-    createEntryPoint();
+    // 2. Télécharger node.exe portable
+    console.log('\n[2/6] Node.js portable...');
+    await downloadNodeExe();
 
-    console.log('\n[3/6] Patch package.json...');
-    patchPackageJson();
+    // 3. Générer Prisma client
+    console.log('\n[3/6] Génération Prisma client...');
+    run('npx prisma generate');
+    console.log('✅ Prisma client généré');
 
-    console.log('\n[4/6] Copie des binaires Prisma...');
-    copyPrismaEngines();
+    // 4. Copier le code source backend
+    console.log('\n[4/6] Copie du backend...');
+    copyDirSync(path.join(ROOT, 'src'),    path.join(DIST, 'src'));
+    copyDirSync(path.join(ROOT, 'prisma'), path.join(DIST, 'prisma'));
+    // node_modules complet (nécessaire pour Prisma natif)
+    copyDirSync(path.join(ROOT, 'node_modules'), path.join(DIST, 'node_modules'));
+    fs.copyFileSync(path.join(ROOT, 'package.json'), path.join(DIST, 'package.json'));
+    console.log('✅ Backend copié');
 
-    console.log('\n[5/6] Compilation pkg...');
-    compilePkg();
+    // 5. Créer les dossiers de données et fichiers de config
+    console.log('\n[5/6] Fichiers de configuration...');
+    ['database', 'logs', 'uploads'].forEach(d => ensureDir(path.join(DIST, d)));
 
-    console.log('\n[6/6] Fichiers annexes...');
-    createAuxFiles();
+    // .env.example — sera copié en .env seulement si absent (1ère installation)
+    // DATABASE_URL utilise un chemin relatif: fonctionne car le backend
+    // s'exécute depuis %LOCALAPPDATA%\LOGESCO\backend\
+    const envExample = [
+      'NODE_ENV=production',
+      'PORT=8080',
+      'DATABASE_URL=file:./database/logesco.db',
+      `JWT_SECRET=logesco-secret-change-me`,
+      'JWT_EXPIRES_IN=365d',
+      'JWT_REFRESH_EXPIRES_IN=365d',
+      'CORS_ORIGIN=*',
+      'LOG_LEVEL=info',
+    ].join('\n');
+    fs.writeFileSync(path.join(DIST, '.env.example'), envExample, 'utf8');
 
-    console.log('');
-    console.log('╔══════════════════════════════════════════════════╗');
-    console.log('║   ✅ BUILD TERMINÉ AVEC SUCCÈS                   ║');
-    console.log('╚══════════════════════════════════════════════════╝');
-    console.log('');
-    console.log(`📁 Sortie: dist-exe/`);
-    console.log(`   logesco-backend.exe`);
-    console.log(`   prisma-engines/`);
-    console.log(`   schema.prisma`);
-    console.log('');
-    console.log('Prochaine étape: lancer build-installer.bat');
+    // Copier schema.prisma à la racine (pour migrations)
+    fs.copyFileSync(
+      path.join(ROOT, 'prisma', 'schema.prisma'),
+      path.join(DIST, 'schema.prisma')
+    );
+    console.log('✅ Fichiers de config créés');
+
+    // 6. Créer le lanceur (remplace logesco-backend.exe)
+    console.log('\n[6/6] Création du lanceur...');
+
+    // logesco-backend.cmd — lanceur principal appelé par BackendService
+    const launcherCmd = `@echo off\r\n"%~dp0node.exe" "%~dp0src\\server.js" %*\r\n`;
+    fs.writeFileSync(path.join(DIST, 'logesco-backend.cmd'), launcherCmd, 'utf8');
+
+    // logesco-backend.exe = wrapper VBScript compilé en exe via iexpress
+    // Plus simple: on crée un .bat renommé en .exe via un wrapper minimal
+    // En fait on crée un vrai .exe wrapper avec un script PowerShell
+    const wrapperVbs = `Set WshShell = CreateObject("WScript.Shell")\r\n` +
+      `strDir = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)\r\n` +
+      `WshShell.Run Chr(34) & strDir & "\\node.exe" & Chr(34) & " " & Chr(34) & strDir & "\\src\\server.js" & Chr(34), 0, False\r\n`;
+    fs.writeFileSync(path.join(DIST, 'logesco-backend.vbs'), wrapperVbs, 'utf8');
+
+    // Créer un vrai exe wrapper avec PowerShell + iexpress n'est pas trivial.
+    // On utilise une approche plus simple: un .bat qui se lance sans fenêtre via start /b
+    // BackendService.dart sera mis à jour pour lancer node.exe directement.
+    const readmeTxt = `LOGESCO Backend v2 - Node.js Portable\n` +
+      `=====================================\n` +
+      `node.exe          Node.js ${NODE_VERSION} portable\n` +
+      `src/              Code source backend\n` +
+      `node_modules/     Dependances (Prisma inclus)\n` +
+      `database/         Base de donnees SQLite\n` +
+      `uploads/          Fichiers uploades\n` +
+      `logs/             Journaux\n\n` +
+      `Demarrage: node.exe src/server.js\n` +
+      `Backend sur http://localhost:8080\n`;
+    fs.writeFileSync(path.join(DIST, 'README.txt'), readmeTxt, 'utf8');
+    console.log('✅ Lanceur créé');
+
+    console.log('\n============================================================');
+    console.log('  ✅ BUILD TERMINÉ');
+    console.log('============================================================');
+    console.log(`\n📁 dist-exe/`);
+    console.log(`   node.exe (Node.js ${NODE_VERSION})`);
+    console.log(`   src/`);
+    console.log(`   node_modules/`);
+    console.log(`   .env.example`);
+    console.log('\nProchaine étape: compile-installer-only.bat\n');
 
   } catch (err) {
-    console.error('\n❌ ERREUR BUILD:', err.message);
-    console.error('\nSolutions:');
-    console.error('  1. npm install dans backend/');
-    console.error('  2. npx prisma generate dans backend/');
-    console.error('  3. Relancer en administrateur');
+    console.error('\n❌ ERREUR:', err.message);
     process.exit(1);
   }
 }

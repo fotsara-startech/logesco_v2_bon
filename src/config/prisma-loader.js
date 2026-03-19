@@ -1,37 +1,34 @@
 /**
  * Chargeur Prisma compatible avec pkg
- * Charge Prisma depuis le système de fichiers au lieu du snapshot
+ * Utilise module.createRequire pour bypasser le snapshot pkg
+ * et charger @prisma/client depuis le filesystem réel.
  */
 
 const path = require('path');
-const fs = require('fs');
+const fs   = require('fs');
+const { createRequire } = require('module');
 
-// Détecte si on est en mode pkg
 const isPkg = typeof process.pkg !== 'undefined';
 
-/**
- * Charge PrismaClient de manière compatible avec pkg
- * @returns {Object} PrismaClient
- */
 function loadPrismaClient() {
   if (isPkg) {
-    // En mode pkg, charger Prisma depuis le dossier à côté de l'exe
+    // En mode pkg, require() normal est intercepté par le snapshot.
+    // createRequire avec un chemin filesystem réel bypasse ça.
     const exeDir = path.dirname(process.execPath);
     const prismaClientPath = path.join(exeDir, 'node_modules', '@prisma', 'client');
-    
-    // Vérifier si le dossier existe
+
     if (!fs.existsSync(prismaClientPath)) {
       throw new Error(
         `Prisma Client introuvable dans: ${prismaClientPath}\n` +
-        `Assurez-vous que le dossier node_modules/@prisma/client est présent à côté de l'exécutable.`
+        `Assurez-vous que node_modules/@prisma/client est present a cote de l'executable.`
       );
     }
-    
-    // Charger depuis le chemin absolu
-    const { PrismaClient } = require(prismaClientPath);
+
+    // Créer un require ancré dans le dossier de l'exe (filesystem réel)
+    const requireFromExe = createRequire(path.join(exeDir, 'dummy.js'));
+    const { PrismaClient } = requireFromExe('@prisma/client');
     return PrismaClient;
   } else {
-    // En mode développement, charger normalement
     const { PrismaClient } = require('@prisma/client');
     return PrismaClient;
   }
