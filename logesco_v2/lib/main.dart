@@ -26,7 +26,7 @@ void main() async {
   await GetStorage.init();
   AppLogger.info('GetStorage initialized');
 
-  // Initialise et démarre le backend embarqué
+  // Initialise et démarre le backend embarqué silencieusement
   final backendService = BackendService();
   final backendStarted = await backendService.initialize();
   if (backendStarted) {
@@ -34,6 +34,9 @@ void main() async {
   } else {
     AppLogger.warning('Backend service failed to start - running in offline mode');
   }
+
+  // Arrêter le backend proprement à la fermeture de l'app
+  WidgetsBinding.instance.addObserver(_AppLifecycleObserver(backendService));
 
   // Nettoie les anciens logs
   await AppLogger.cleanupOldLogs();
@@ -49,6 +52,19 @@ void main() async {
 
   AppLogger.info('Application LOGESCO v2 started successfully');
   runApp(const LogescoApp());
+}
+
+/// Arrête le backend proprement quand l'application se ferme.
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  final BackendService _backend;
+  _AppLifecycleObserver(this._backend);
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      _backend.stop();
+    }
+  }
 }
 
 /// Application principale LOGESCO v2

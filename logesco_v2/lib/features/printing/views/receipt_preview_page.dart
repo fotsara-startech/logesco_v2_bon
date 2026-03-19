@@ -448,10 +448,14 @@ class ReceiptPreviewPage extends StatelessWidget {
         pw.SizedBox(height: 5),
         pw.Text('${_t('subtotal', receipt)}: ${receipt.subtotal.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize)),
         if (receipt.discountAmount > 0) pw.Text('${_t('discount', receipt)}: -${receipt.discountAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize)),
+        if (receipt.tvaAmount > 0)
+          pw.Text('TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%): +${receipt.tvaAmount.toStringAsFixed(0)} FCFA',
+              style: pw.TextStyle(fontSize: fontSize)),
         pw.SizedBox(height: 4),
         pw.Center(child: pw.Text('--------------------------------', style: pw.TextStyle(fontSize: fontSize - 1))),
         pw.SizedBox(height: 4),
-        pw.Text('${_t('totalAmount', receipt)}: ${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: fontSize)),
+        pw.Text('${receipt.tvaAmount > 0 ? 'Total TTC' : _t('totalAmount', receipt)}: ${receipt.totalAmount.toStringAsFixed(0)} FCFA',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: fontSize)),
         pw.Text('${_t('paid', receipt)}: ${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize)),
         if (receipt.remainingAmount > 0)
           pw.Text('${_t('remaining', receipt)}: ${receipt.remainingAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize, fontWeight: pw.FontWeight.bold)),
@@ -519,26 +523,8 @@ class ReceiptPreviewPage extends StatelessWidget {
                   ),
                 )
               else
-                // Placeholder si pas de logo
-                pw.Container(
-                  width: 100,
-                  height: 100,
-                  margin: const pw.EdgeInsets.only(right: 20),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.blue, width: 2),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                  ),
-                  child: pw.Center(
-                    child: pw.Text(
-                      'LOGO',
-                      style: pw.TextStyle(
-                        fontSize: 20,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue,
-                      ),
-                    ),
-                  ),
-                ),
+                // Pas de placeholder si pas de logo
+                pw.SizedBox(width: 0),
 
               // Informations de l'entreprise à droite
               pw.Expanded(
@@ -740,11 +726,21 @@ class ReceiptPreviewPage extends StatelessWidget {
                       ],
                     ),
                   ],
+                  if (receipt.tvaAmount > 0) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%):', style: pw.TextStyle(fontSize: fontSize)),
+                        pw.Text('+${receipt.tvaAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize)),
+                      ],
+                    ),
+                  ],
                   pw.Divider(thickness: 1),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('${_t('totalAmount', receipt)}:', style: pw.TextStyle(fontSize: fontSize + 2, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('${receipt.tvaAmount > 0 ? 'Total TTC' : _t('totalAmount', receipt)}:', style: pw.TextStyle(fontSize: fontSize + 2, fontWeight: pw.FontWeight.bold)),
                       pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: fontSize + 2, fontWeight: pw.FontWeight.bold)),
                     ],
                   ),

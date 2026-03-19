@@ -21,6 +21,8 @@ class CompanyProfile {
   final String? slogan; // Slogan de l'entreprise (optionnel)
   @JsonKey(name: 'langueFacture')
   final String? receiptLanguage; // Langue des factures: 'fr', 'en' ou 'es'
+  @JsonKey(name: 'tauxTva')
+  final double? tvaRate; // Taux de TVA en pourcentage (optionnel)
   @JsonKey(name: 'dateCreation')
   final DateTime? createdAt;
   @JsonKey(name: 'dateModification')
@@ -37,6 +39,7 @@ class CompanyProfile {
     this.logo,
     this.slogan,
     this.receiptLanguage = 'fr', // Par défaut en français
+    this.tvaRate,
     this.createdAt,
     this.updatedAt,
   });
@@ -57,6 +60,7 @@ class CompanyProfile {
     String? logo,
     String? slogan,
     String? receiptLanguage,
+    double? tvaRate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -71,6 +75,7 @@ class CompanyProfile {
       logo: logo ?? this.logo,
       slogan: slogan ?? this.slogan,
       receiptLanguage: receiptLanguage ?? this.receiptLanguage,
+      tvaRate: tvaRate ?? this.tvaRate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -201,6 +206,8 @@ class CompanyProfileRequest {
   final String? slogan; // Slogan de l'entreprise (optionnel)
   @JsonKey(name: 'langueFacture')
   final String? receiptLanguage; // Langue des factures
+  @JsonKey(name: 'tauxTva')
+  final double? tvaRate; // Taux de TVA en pourcentage (optionnel)
 
   CompanyProfileRequest({
     required this.name,
@@ -212,6 +219,7 @@ class CompanyProfileRequest {
     this.logo,
     this.slogan,
     this.receiptLanguage = 'fr',
+    this.tvaRate,
   });
 
   factory CompanyProfileRequest.fromJson(Map<String, dynamic> json) => _$CompanyProfileRequestFromJson(json);
@@ -230,6 +238,7 @@ class CompanyProfileRequest {
       logo: profile.logo,
       slogan: profile.slogan,
       receiptLanguage: profile.receiptLanguage,
+      tvaRate: profile.tvaRate,
     );
   }
 }

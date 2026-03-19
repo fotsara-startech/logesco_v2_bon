@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
+import '../../../core/config/api_config.dart';
 
 /// Template de reçu pour format A4
 class ReceiptTemplateA4 extends ReceiptTemplateBase {
@@ -93,41 +93,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(company.logo!),
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Si l'image ne peut pas être chargée, afficher un placeholder
-                    return const Center(
-                      child: Icon(
-                        Icons.business,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            )
-          else if (template.showLogo)
-            // Placeholder si pas de logo configuré
-            Container(
-              width: 100,
-              height: 100,
-              margin: const EdgeInsets.only(right: 20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text(
-                  'LOGO',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
+                child: _buildLogoWidget(company.logo!),
               ),
             ),
 
@@ -142,6 +108,24 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
           ),
         ],
       ),
+    );
+  }
+
+  /// Construit le widget logo (réseau ou fichier local)
+  Widget _buildLogoWidget(String logoPath) {
+    final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
+    if (isFullPath) {
+      return Image.network(
+        '$serverUrl/uploads/${logoPath.split(RegExp(r'[/\\]')).last}',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 50, color: Colors.grey),
+      );
+    }
+    return Image.network(
+      '$serverUrl/uploads/$logoPath',
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 50, color: Colors.grey),
     );
   }
 

@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/backend_service.dart';
 import '../../../shared/widgets/loading_widget.dart';
 
 /// Page de connexion
@@ -18,6 +21,86 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _backendReady = false;
+  String _backendStatus = 'Démarrage du serveur...';
+
+  @override
+  void initState() {
+    super.initState();
+    _waitForBackend();
+  }
+
+  Future<void> _waitForBackend() async {
+    final backend = BackendService();
+    if (backend.isRunning || await backend.checkHealth()) {
+      if (mounted)
+        setState(() {
+          _backendReady = true;
+        });
+      return;
+    }
+    final ready = await backend.waitUntilReady(maxSeconds: 60);
+    if (mounted) {
+      setState(() {
+        _backendReady = ready;
+        _backendStatus = ready ? '' : 'Serveur indisponible.';
+      });
+    }
+  }
+
+  Future<void> _restartBackend() async {
+    setState(() {
+      _backendReady = false;
+      _backendStatus = 'Redémarrage du serveur...';
+    });
+    final backend = BackendService();
+    await backend.stop();
+    await backend.initialize();
+    final ready = await backend.waitUntilReady(maxSeconds: 60);
+    if (mounted) {
+      setState(() {
+        _backendReady = ready;
+        _backendStatus = ready ? '' : 'Échec du démarrage. Vérifiez l\'installation.';
+      });
+    }
+  }
+
+  Future<void> _diagnose() async {
+    try {
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+      final req = await client.getUrl(Uri.parse('http://localhost:8080/debug'));
+      final res = await req.close().timeout(const Duration(seconds: 5));
+      final body = await res.transform(const Utf8Decoder()).join();
+      client.close();
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Diagnostic Backend'),
+            content: SingleChildScrollView(
+              child: SelectableText(body, style: const TextStyle(fontSize: 11)),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Backend inaccessible'),
+            content: SelectableText('Erreur: $e\n\nVérifiez que le backend est démarré.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -32,7 +115,6 @@ class _LoginPageState extends State<LoginPage> {
         _usernameController.text.trim(),
         _passwordController.text,
       );
-
       if (success) {
         Get.offAllNamed(AppRoutes.dashboard);
       }
@@ -46,7 +128,47 @@ class _LoginPageState extends State<LoginPage> {
         child: Obx(() => LoadingOverlay(
               isLoading: _authController.isLoading.value,
               loadingMessage: 'auth_logging_in'.tr,
-              child: _buildLoginForm(context),
+              child: Stack(
+                children: [
+                  _buildLoginForm(context),
+                  if (!_backendReady)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        color: (_backendStatus.contains('Échec') || _backendStatus.contains('indisponible')) ? Colors.red.shade700 : Theme.of(context).primaryColor.withOpacity(0.9),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (!_backendStatus.contains('Échec') && !_backendStatus.contains('indisponible')) ...[
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                            Expanded(
+                              child: Text(
+                                _backendStatus,
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            if (_backendStatus.contains('Échec') || _backendStatus.contains('indisponible'))
+                              TextButton.icon(
+                                onPressed: _restartBackend,
+                                icon: const Icon(Icons.refresh, color: Colors.white, size: 18),
+                                label: const Text('Réessayer', style: TextStyle(color: Colors.white)),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             )),
       ),
     );
@@ -64,12 +186,8 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Logo et titre
                 _buildHeader(),
-
                 const SizedBox(height: 48),
-
-                // Champ nom d'utilisateur
                 TextFormField(
                   controller: _usernameController,
                   decoration: InputDecoration(
@@ -84,24 +202,17 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // Champ mot de passe
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: 'auth_password_label'.tr,
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () => setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      }),
                     ),
                   ),
                   obscureText: _obscurePassword,
@@ -114,10 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 24),
-
-                // Message d'erreur
                 Obx(() {
                   if (_authController.errorMessage.value.isNotEmpty) {
                     return Container(
@@ -129,17 +237,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _authController.errorMessage.value,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
+                              style: TextStyle(color: Theme.of(context).colorScheme.error),
                             ),
                           ),
                         ],
@@ -148,22 +251,17 @@ class _LoginPageState extends State<LoginPage> {
                   }
                   return const SizedBox.shrink();
                 }),
-
-                // Bouton de connexion
                 ElevatedButton(
-                  onPressed: _handleLogin,
+                  onPressed: _backendReady ? _handleLogin : null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      'auth_login_button'.tr,
+                      _backendReady ? 'auth_login_button'.tr : 'Démarrage...',
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
-                // Informations de version
                 _buildVersionInfo(),
               ],
             ),
@@ -179,9 +277,7 @@ class _LoginPageState extends State<LoginPage> {
         Container(
           width: 80,
           height: 80,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Image.asset(
@@ -189,20 +285,13 @@ class _LoginPageState extends State<LoginPage> {
               width: 80,
               height: 80,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback vers l'icône par défaut si l'image ne charge pas
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.store,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                );
-              },
+              errorBuilder: (context, error, stackTrace) => Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.store, size: 40, color: Colors.white),
+              ),
             ),
           ),
         ),
@@ -226,13 +315,21 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildVersionInfo() {
-    return Center(
-      child: Text(
-        'auth_version'.tr + ' 2.0.0',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-      ),
+    return Column(
+      children: [
+        Center(
+          child: Text(
+            '${'auth_version'.tr} 2.0.0',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+          ),
+        ),
+        TextButton(
+          onPressed: _diagnose,
+          child: const Text('Diagnostiquer', style: TextStyle(fontSize: 11, color: Colors.grey)),
+        ),
+      ],
     );
   }
 }

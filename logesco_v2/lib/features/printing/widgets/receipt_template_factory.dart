@@ -56,6 +56,8 @@ class ReceiptTemplateFactory {
             items: receipt.items,
             subtotal: receipt.subtotal,
             discountAmount: receipt.discountAmount,
+            tvaRate: receipt.tvaRate,
+            tvaAmount: receipt.tvaAmount,
             totalAmount: receipt.totalAmount,
             paidAmount: receipt.paidAmount,
             remainingAmount: receipt.remainingAmount,
@@ -63,7 +65,7 @@ class ReceiptTemplateFactory {
             saleDate: receipt.saleDate,
             customer: receipt.customer,
             format: format,
-            language: receipt.language, // IMPORTANT: Copier la langue!
+            language: receipt.language,
             isReprint: receipt.isReprint,
             reprintCount: receipt.reprintCount,
             lastReprintDate: receipt.lastReprintDate,

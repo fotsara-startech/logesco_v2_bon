@@ -57,6 +57,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final Rx<PrintFormat> _selectedReceiptFormat = PrintFormat.thermal.obs;
   final Rx<DateTime?> _customSaleDate = Rx<DateTime?>(null);
 
+  // TVA
+  final RxBool _tvaEnabled = false.obs;
+  bool get tvaEnabled => _tvaEnabled.value;
+  void setTvaEnabled(bool value) => _tvaEnabled.value = value;
+
   // Pagination
   final RxInt _currentPage = 1.obs;
   final RxInt _totalPages = 1.obs;
@@ -107,6 +112,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   double get cartOriginalSubtotal => _cartItems.fold(0.0, (sum, item) => sum + (item.originalPrice * item.quantity));
   double get cartTotal => cartSubtotal - discount;
   double get remainingAmount => cartTotal - amountPaid;
+
+  // Calculs TVA
+  double get tvaRate => (_tvaEnabled.value ? (_companyProfile.value?.tvaRate ?? 0.0) : 0.0);
+  double get tvaAmount => cartSubtotal * tvaRate / 100;
+  double get cartTotalTTC => cartSubtotal + tvaAmount;
 
   @override
   void onInit() {
@@ -669,6 +679,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _discount.value = 0.0;
     _amountPaid.value = 0.0;
     _customSaleDate.value = null;
+    _tvaEnabled.value = false;
   }
 
   // Configuration de la vente
@@ -773,6 +784,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         modePaiement: _paymentMode.value,
         montantRemise: _discount.value,
         montantPaye: _amountPaid.value,
+        montantTva: tvaAmount,
+        tauxTva: _tvaEnabled.value ? (_companyProfile.value?.tvaRate) : null,
         dateVente: _customSaleDate.value,
         details: _cartItems.map((item) {
           final priceDifference = item.originalPrice - item.unitPrice;

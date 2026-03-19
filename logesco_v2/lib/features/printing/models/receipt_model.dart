@@ -16,6 +16,8 @@ class Receipt {
   final List<ReceiptItem> items;
   final double subtotal;
   final double discountAmount;
+  final double tvaRate; // Taux TVA en %
+  final double tvaAmount; // Montant TVA
   final double totalAmount;
   final double paidAmount;
   final double remainingAmount;
@@ -37,6 +39,8 @@ class Receipt {
     required this.items,
     required this.subtotal,
     required this.discountAmount,
+    this.tvaRate = 0.0,
+    this.tvaAmount = 0.0,
     required this.totalAmount,
     required this.paidAmount,
     required this.remainingAmount,
@@ -114,6 +118,10 @@ class Receipt {
     print('  language param: $language');
     print('  companyInfo.receiptLanguage: ${companyInfo.receiptLanguage}');
     print('  receiptLanguage FINAL: $receiptLanguage');
+    print('💰 TVA REÇU:');
+    print('  sale.tauxTva: ${sale.tauxTva}');
+    print('  sale.montantTva: ${sale.montantTva}');
+    print('  sale.montantTotal: ${sale.montantTotal}');
 
     return Receipt(
       id: 'receipt_${sale.id}_${DateTime.now().millisecondsSinceEpoch}',
@@ -123,6 +131,8 @@ class Receipt {
       items: items,
       subtotal: correctSubtotal,
       discountAmount: finalDiscountAmount,
+      tvaRate: sale.tauxTva ?? 0.0,
+      tvaAmount: sale.montantTva,
       totalAmount: sale.montantTotal,
       paidAmount: sale.montantPaye,
       remainingAmount: sale.montantRestant,
@@ -151,6 +161,8 @@ class Receipt {
       items: items,
       subtotal: subtotal,
       discountAmount: discountAmount,
+      tvaRate: tvaRate,
+      tvaAmount: tvaAmount,
       totalAmount: totalAmount,
       paidAmount: paidAmount,
       remainingAmount: remainingAmount,
@@ -194,6 +206,8 @@ class Receipt {
     List<ReceiptItem>? items,
     double? subtotal,
     double? discountAmount,
+    double? tvaRate,
+    double? tvaAmount,
     double? totalAmount,
     double? paidAmount,
     double? remainingAmount,
@@ -215,6 +229,8 @@ class Receipt {
       items: items ?? this.items,
       subtotal: subtotal ?? this.subtotal,
       discountAmount: discountAmount ?? this.discountAmount,
+      tvaRate: tvaRate ?? this.tvaRate,
+      tvaAmount: tvaAmount ?? this.tvaAmount,
       totalAmount: totalAmount ?? this.totalAmount,
       paidAmount: paidAmount ?? this.paidAmount,
       remainingAmount: remainingAmount ?? this.remainingAmount,

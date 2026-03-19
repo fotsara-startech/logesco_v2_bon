@@ -23,7 +23,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
   void initState() {
     super.initState();
     final salesController = Get.find<SalesController>();
-    _amountPaid = salesController.cartSubtotal;
+    // Utiliser le total TTC si TVA activée, sinon le sous-total
+    _amountPaid = salesController.cartTotalTTC;
     _amountController.text = _amountPaid.toStringAsFixed(0);
   }
 
@@ -79,6 +80,11 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                       children: [
                         // Résumé du montant total
                         _buildTotalSummary(salesController),
+
+                        const SizedBox(height: 16),
+
+                        // Toggle TVA
+                        _buildTvaToggle(salesController),
 
                         const SizedBox(height: 24),
 
@@ -145,7 +151,11 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
   Widget _buildTotalSummary(SalesController salesController) {
     return Obx(() {
-      final total = salesController.cartSubtotal;
+      final subtotal = salesController.cartSubtotal;
+      final tvaEnabled = salesController.tvaEnabled;
+      final tvaRate = salesController.tvaRate;
+      final tvaAmount = salesController.tvaAmount;
+      final total = salesController.cartTotalTTC;
       final itemCount = salesController.cartItems.length;
       final customer = salesController.selectedCustomer;
       final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
@@ -158,7 +168,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              // Montant de la commande actuelle
+              // Montant HT / commande
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -166,7 +176,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'sales_order_amount'.tr,
+                        tvaEnabled ? 'Montant HT' : 'sales_order_amount'.tr,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[700],
@@ -175,9 +185,9 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${total.toStringAsFixed(0)} FCFA',
-                        style: const TextStyle(
-                          fontSize: 28,
+                        '${subtotal.toStringAsFixed(0)} FCFA',
+                        style: TextStyle(
+                          fontSize: tvaEnabled ? 20 : 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.blue,
                         ),
@@ -202,7 +212,49 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 ],
               ),
 
-              // Afficher la dette existante si présente
+              // Ligne TVA si activée
+              if (tvaEnabled) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long, color: Colors.orange[700], size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'TVA (${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%)',
+                          style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '+${tvaAmount.toStringAsFixed(0)} FCFA',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Montant TTC',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[800], fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${total.toStringAsFixed(0)} FCFA',
+                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Dette existante
               if (customerDebt > 0) ...[
                 const SizedBox(height: 16),
                 const Divider(),
@@ -216,21 +268,13 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                         const SizedBox(width: 8),
                         Text(
                           'sales_existing_debt'.tr,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.red[700],
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.red[700], fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                     Text(
                       '${customerDebt.toStringAsFixed(0)} FCFA',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[700],
-                      ),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red[700]),
                     ),
                   ],
                 ),
@@ -242,25 +286,74 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                   children: [
                     Text(
                       'sales_total_to_pay'.tr,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '${totalWithDebt.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepOrange,
-                      ),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepOrange),
                     ),
                   ],
                 ),
               ],
             ],
           ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTvaToggle(SalesController salesController) {
+    return Obx(() {
+      final tvaRate = salesController.companyProfile?.tvaRate;
+      if (tvaRate == null || tvaRate <= 0) return const SizedBox.shrink();
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: salesController.tvaEnabled ? Colors.orange.shade50 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: salesController.tvaEnabled ? Colors.orange.shade300 : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.receipt_long, color: salesController.tvaEnabled ? Colors.orange[700] : Colors.grey[600], size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Appliquer la TVA',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: salesController.tvaEnabled ? Colors.orange[800] : Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    'Taux configuré : ${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: salesController.tvaEnabled,
+              onChanged: (value) {
+                salesController.setTvaEnabled(value);
+                final newTotal = salesController.cartTotalTTC;
+                final customer = salesController.selectedCustomer;
+                final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
+                setState(() {
+                  _amountPaid = newTotal + customerDebt;
+                  _amountController.text = _amountPaid.toStringAsFixed(0);
+                });
+              },
+              activeColor: Colors.orange[700],
+            ),
+          ],
         ),
       );
     });
@@ -322,7 +415,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
   Widget _buildQuickAmountButtons(SalesController salesController) {
     return Obx(() {
-      final total = salesController.cartSubtotal;
+      final total = salesController.cartTotalTTC;
       final customer = salesController.selectedCustomer;
       final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
       final totalWithDebt = total + customerDebt;
@@ -396,7 +489,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
   Widget _buildFinalSummary(SalesController salesController) {
     return Obx(() {
-      final total = salesController.cartSubtotal;
+      final total = salesController.cartTotalTTC;
       final customer = salesController.selectedCustomer;
       final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
       final totalWithDebt = total + customerDebt;
@@ -470,7 +563,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     }
 
     final salesController = Get.find<SalesController>();
-    final total = salesController.cartSubtotal;
+    final total = salesController.cartTotalTTC;
     final customer = salesController.selectedCustomer;
     final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
     final totalWithDebt = total + customerDebt;

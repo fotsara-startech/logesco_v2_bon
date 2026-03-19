@@ -76,6 +76,7 @@ class CompanySettingsService {
           logo: companyData['logo'],
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
+          tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -151,6 +152,7 @@ class CompanySettingsService {
           logo: companyData['logo'],
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
+          tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -308,6 +310,7 @@ class CompanySettingsService {
           logo: companyData['logo'],
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
+          tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -402,6 +405,7 @@ class CompanySettingsService {
           logo: companyData['logo'],
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
+          tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
@@ -494,6 +498,7 @@ class CompanySettingsService {
             logo: jsonData['logo'],
             slogan: jsonData['slogan'],
             receiptLanguage: jsonData['langueFacture'] ?? 'fr',
+            tvaRate: jsonData['tauxTva'] != null ? (jsonData['tauxTva'] as num).toDouble() : null,
             createdAt: jsonData['dateCreation'] != null ? DateTime.parse(jsonData['dateCreation']) : DateTime.now(),
             updatedAt: jsonData['dateModification'] != null ? DateTime.parse(jsonData['dateModification']) : DateTime.now(),
           );

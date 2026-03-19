@@ -816,6 +816,8 @@ class PrintingService {
     final saleDate = DateTime.tryParse(saleData['dateVente'] ?? '')?.toLocal() ?? now;
     final subtotal = (saleData['sousTotal'] ?? 0).toDouble();
     final discount = (saleData['montantRemise'] ?? 0).toDouble();
+    final tvaAmount = (saleData['montantTva'] ?? 0).toDouble();
+    final tvaRate = (saleData['tauxTva'] ?? 0).toDouble();
     final total = (saleData['montantTotal'] ?? 0).toDouble();
     final paid = (saleData['montantPaye'] ?? 0).toDouble();
     final remaining = (saleData['montantRestant'] ?? 0).toDouble();
@@ -867,6 +869,8 @@ class PrintingService {
       items: items,
       subtotal: subtotal,
       discountAmount: discount,
+      tvaRate: tvaRate,
+      tvaAmount: tvaAmount,
       totalAmount: total,
       paidAmount: paid,
       remainingAmount: remaining,
@@ -882,6 +886,7 @@ class PrintingService {
   /// Génère un reçu à partir des données de vente réelles
   Future<ApiResponse<ReceiptGenerationResponse>> _generateReceiptFromSaleData(GenerateReceiptRequest request) async {
     try {
+      print('🚀🚀🚀 _generateReceiptFromSaleData APPELÉ pour saleId: ${request.saleId}');
       final token = await _authService.getToken();
       if (token == null) {
         return ApiResponse.error(message: 'Token d\'authentification manquant');
@@ -910,9 +915,13 @@ class PrintingService {
       final saleData = json.decode(saleResponse.body);
       print('🔍 DONNÉES VENTE RÉCUPÉRÉES DEPUIS API:');
       print('  Sale ID: ${request.saleId}');
-      print('  Response: ${saleData['data']}');
+      print('  montantTva: ${saleData['data']?['montantTva']}');
+      print('  tauxTva: ${saleData['data']?['tauxTva']}');
+      print('  sousTotal: ${saleData['data']?['sousTotal']}');
+      print('  montantTotal: ${saleData['data']?['montantTotal']}');
 
       final sale = Sale.fromJson(saleData['data']);
+      print('🔍 SALE PARSÉ: montantTva=${sale.montantTva}, tauxTva=${sale.tauxTva}');
 
       // Utiliser le profil d'entreprise partagé s'il est disponible
       CompanyProfile? companyProfile = _sharedCompanyProfile;

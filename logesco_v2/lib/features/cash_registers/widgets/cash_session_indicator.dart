@@ -45,7 +45,7 @@ class CashSessionIndicator extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Aucune caisse',
+                'cash_indication'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.red.shade700,

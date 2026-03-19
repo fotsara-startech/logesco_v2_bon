@@ -30,6 +30,9 @@ class CompanySettingsController extends GetxController {
   final TextEditingController nuiRccmController = TextEditingController();
   final TextEditingController sloganController = TextEditingController();
 
+  // TVA
+  final TextEditingController tvaController = TextEditingController();
+
   // État du logo
   final Rx<String?> _logoPath = Rx<String?>(null);
   String? get logoPath => _logoPath.value;
@@ -83,6 +86,7 @@ class CompanySettingsController extends GetxController {
     emailController.dispose();
     nuiRccmController.dispose();
     sloganController.dispose();
+    tvaController.dispose();
     super.onClose();
   }
 
@@ -104,6 +108,7 @@ class CompanySettingsController extends GetxController {
     emailController.addListener(_onFormChanged);
     nuiRccmController.addListener(_onFormChanged);
     sloganController.addListener(_onFormChanged);
+    tvaController.addListener(_onFormChanged);
   }
 
   /// Appelé quand le formulaire change
@@ -128,6 +133,7 @@ class CompanySettingsController extends GetxController {
         emailController.text.trim() != (profile.email ?? '') ||
         nuiRccmController.text.trim() != (profile.nuiRccm ?? '') ||
         sloganController.text.trim() != (profile.slogan ?? '') ||
+        tvaController.text.trim() != (profile.tvaRate != null ? (profile.tvaRate! % 1 == 0 ? profile.tvaRate!.toStringAsFixed(0) : profile.tvaRate!.toStringAsFixed(2)) : '') ||
         _logoPath.value != profile.logo ||
         _selectedLanguage.value != (profile.receiptLanguage ?? 'fr');
   }
@@ -180,6 +186,7 @@ class CompanySettingsController extends GetxController {
     sloganController.text = profile.slogan ?? '';
     _logoPath.value = profile.logo;
     _selectedLanguage.value = profile.receiptLanguage ?? 'fr';
+    tvaController.text = profile.tvaRate != null ? (profile.tvaRate! % 1 == 0 ? profile.tvaRate!.toStringAsFixed(0) : profile.tvaRate!.toStringAsFixed(2)) : '';
   }
 
   /// Vide le formulaire
@@ -193,6 +200,7 @@ class CompanySettingsController extends GetxController {
     sloganController.clear();
     _logoPath.value = null;
     _hasUnsavedChanges.value = false;
+    tvaController.clear();
   }
 
   /// Sauvegarde le profil d'entreprise
@@ -274,6 +282,10 @@ class CompanySettingsController extends GetxController {
       request.fields['nuiRccm'] = nuiRccmController.text.trim().isEmpty ? '' : nuiRccmController.text.trim();
       request.fields['slogan'] = sloganController.text.trim().isEmpty ? '' : sloganController.text.trim();
       request.fields['langueFacture'] = _selectedLanguage.value;
+      if (tvaController.text.trim().isNotEmpty) {
+        // Normaliser la virgule en point pour le séparateur décimal
+        request.fields['tauxTva'] = tvaController.text.trim().replaceAll(',', '.');
+      }
 
       print('📤 Envoi de la requête multipart...');
       final response = await request.send().timeout(
@@ -302,6 +314,7 @@ class CompanySettingsController extends GetxController {
           logo: companyData['logo'],
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
+          tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
         );
 
         _companyProfile.value = profile;
@@ -350,6 +363,7 @@ class CompanySettingsController extends GetxController {
         logo: _logoPath.value,
         slogan: sloganController.text.trim().isEmpty ? null : sloganController.text.trim(),
         receiptLanguage: _selectedLanguage.value,
+        tvaRate: tvaController.text.trim().isEmpty ? null : double.tryParse(tvaController.text.trim().replaceAll(',', '.')),
       );
 
       final response = _companyProfile.value == null ? await _companySettingsService.createCompanyProfile(request) : await _companySettingsService.updateCompanyProfile(request);

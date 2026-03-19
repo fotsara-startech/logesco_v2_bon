@@ -290,27 +290,8 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
 
   /// Construit les totaux pour thermique - AMÉLIORÉ
   Widget _buildThermalTotals(BuildContext context) {
-    // Calculer la remise totale depuis les items
-    double totalDiscountFromItems = 0.0;
-    for (var item in receipt.items) {
-      // Calculer la remise de cet item
-      double expectedTotal = item.quantity * item.unitPrice;
-      double actualTotal = item.totalPrice;
-      double itemDiscount = expectedTotal - actualTotal;
-
-      if (itemDiscount > 0) {
-        totalDiscountFromItems += itemDiscount;
-      }
-    }
-
-    // Utiliser la remise calculée si receipt.discountAmount est 0
-    double actualDiscountAmount = receipt.discountAmount;
-    if (actualDiscountAmount == 0 && totalDiscountFromItems > 0) {
-      actualDiscountAmount = totalDiscountFromItems;
-    }
-
-    // Calculer le sous-total correct
-    double correctSubtotal = receipt.totalAmount + actualDiscountAmount;
+    final double actualDiscountAmount = receipt.discountAmount;
+    final double correctSubtotal = receipt.subtotal;
 
     final textStyle = TextStyle(
       fontSize: template.fontSize,
@@ -324,9 +305,12 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
 
     // DEBUG - Afficher les valeurs pour diagnostic
     print('🖨️ [THERMAL_TOTALS] Calcul des totaux:');
+    print('🖨️ [THERMAL_TOTALS] subtotal: ${receipt.subtotal}');
     print('🖨️ [THERMAL_TOTALS] Total: ${receipt.totalAmount}');
     print('🖨️ [THERMAL_TOTALS] Payé: ${receipt.paidAmount}');
     print('🖨️ [THERMAL_TOTALS] Reste: ${receipt.remainingAmount}');
+    print('🖨️ [THERMAL_TOTALS] tvaAmount: ${receipt.tvaAmount}');
+    print('🖨️ [THERMAL_TOTALS] tvaRate: ${receipt.tvaRate}');
     print('🖨️ [THERMAL_TOTALS] Monnaie calculée: ${receipt.paidAmount > receipt.totalAmount ? (receipt.paidAmount - receipt.totalAmount) : 0}');
 
     return Column(
@@ -338,6 +322,13 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
         // Remise si applicable
         if (actualDiscountAmount > 0) Text('${t('discount')}: -${actualDiscountAmount.toStringAsFixed(0)} FCFA', style: TextStyle(fontSize: template.fontSize, color: Colors.green[600])),
 
+        // TVA si applicable
+        if (receipt.tvaAmount > 0)
+          Text(
+            'TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%): +${receipt.tvaAmount.toStringAsFixed(0)} FCFA',
+            style: TextStyle(fontSize: template.fontSize, color: Colors.orange[700]),
+          ),
+
         // Ligne de séparation
         Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -347,8 +338,8 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
           ),
         ),
 
-        // Total
-        Text('${t('totalAmount')}: ${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
+        // Total (TTC si TVA applicable)
+        Text('${receipt.tvaAmount > 0 ? 'Total TTC' : t('totalAmount')}: ${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
 
         // Montant payé - TOUJOURS afficher avec formatage amélioré
         Text('${t('paid')}: ${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: textStyle),

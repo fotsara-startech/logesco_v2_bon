@@ -1,7 +1,7 @@
 /// Configuration de l'application
 class AppConfig {
   // Mode de développement/test
-  static const bool isDevelopmentMode = true;
+  static const bool isDevelopmentMode = false;
 
   // Bypass de l'authentification en mode développement
   static const bool bypassAuth = false;

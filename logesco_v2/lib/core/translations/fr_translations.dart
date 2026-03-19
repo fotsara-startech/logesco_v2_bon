@@ -57,6 +57,7 @@ const Map<String, String> frTranslations = {
   'menu_company': 'Entreprise',
   'menu_printing': 'Impressions',
   'menu_subscription': 'Abonnement',
+  'cash_indication':'Aucune Caisse',
 
   // ============================================================================
   // FOURNISSEURS / SUPPLIERS
@@ -675,6 +676,7 @@ const Map<String, String> frTranslations = {
   'auth_version': 'Version',
   'auth_splash_subtitle': 'Système de gestion commerciale',
   'auth_initializing': 'Initialisation...',
+  'auth_starting_server': 'Démarrage du serveur...',
 
   // ============================================================================
   // TABLEAU DE BORD
@@ -1547,6 +1549,12 @@ const Map<String, String> frTranslations = {
   'company_settings_save_success': 'Paramètres enregistrés avec succès',
   'company_settings_delete_success': 'Profil supprimé avec succès',
   'company_settings_undo': 'Annuler les modifications',
+  'company_settings_tva': 'TVA (optionnel)',
+  'company_settings_tva_rate': 'Taux de TVA (%)',
+  'company_settings_tva_helper': 'Laissez vide si pas de TVA. Ce taux sera proposé lors des ventes.',
+  'company_settings_tva_invalid': 'Entrez un nombre valide (ex: 19.25)',
+  'company_settings_tva_range': 'La TVA doit être entre 0 et 100',
+  'company_settings_saving': 'Sauvegarde...',
 
   // ============================================================================
   // UTILISATEURS & RÔLES
@@ -1792,6 +1800,7 @@ const Map<String, String> frTranslations = {
   // INVENTAIRE / STOCK
   // ============================================================================
   // 'inventory_title': 'Gestion du Stock',
+  'inventory_stock': 'Stock',
   'inventory_stocks': 'Stocks',
   'inventory_alerts': 'Alertes',
   // 'inventory_movements': 'Mouvements',

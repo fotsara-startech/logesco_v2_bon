@@ -635,6 +635,7 @@ const Map<String, String> esTranslations = {
   'auth_version': 'Versión',
   'auth_splash_subtitle': 'Sistema de gestión comercial',
   'auth_initializing': 'Inicializando...',
+  'auth_starting_server': 'Iniciando servidor...',
 
   // ============================================================================
   // PANEL DE CONTROL
@@ -1448,6 +1449,12 @@ const Map<String, String> esTranslations = {
   'company_settings_save_success': 'Configuración guardada con éxito',
   'company_settings_delete_success': 'Perfil eliminado con éxito',
   'company_settings_undo': 'Deshacer cambios',
+  'company_settings_tva': 'IVA (opcional)',
+  'company_settings_tva_rate': 'Tasa de IVA (%)',
+  'company_settings_tva_helper': 'Deje vacío si no hay IVA. Esta tasa se sugerirá durante las ventas.',
+  'company_settings_tva_invalid': 'Ingrese un número válido (ej: 19.25)',
+  'company_settings_tva_range': 'El IVA debe estar entre 0 y 100',
+  'company_settings_saving': 'Guardando...',
 
   // ============================================================================
   // USUARIOS Y ROLES
@@ -1651,6 +1658,7 @@ const Map<String, String> esTranslations = {
   // ============================================================================
   // INVENTARIO / STOCK
   // ============================================================================
+  'inventory_stock': 'Existencias',
   'inventory_stocks': 'Stocks',
   'inventory_alerts': 'Alertas',
   'inventory_expirations': 'Vencimientos',
@@ -1856,6 +1864,7 @@ const Map<String, String> esTranslations = {
   'cash_session_confirm_close_message': '¿Está seguro de que desea cerrar esta sesión?',
   'cash_session_declared_amount': 'Monto declarado:',
   'cash_session_irreversible': 'Esta acción es irreversible.',
+  'cash_indication': 'No hay caja registradora',
 
   'procurement_stats_pending': 'Pendientes',
   'procurement_stats_partial': 'Parciales',

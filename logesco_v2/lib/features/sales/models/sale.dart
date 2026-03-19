@@ -27,6 +27,9 @@ class Sale {
   @JsonKey(defaultValue: 0.0)
   final double montantRemise;
   @JsonKey(defaultValue: 0.0)
+  final double montantTva;
+  final double? tauxTva;
+  @JsonKey(defaultValue: 0.0)
   final double montantPaye;
   @JsonKey(defaultValue: 0.0)
   final double montantRestant;
@@ -46,6 +49,8 @@ class Sale {
     required this.sousTotal,
     required this.montantTotal,
     required this.montantRemise,
+    this.montantTva = 0.0,
+    this.tauxTva,
     required this.montantPaye,
     required this.montantRestant,
     required this.statut,
@@ -117,14 +122,18 @@ class CreateSaleRequest {
   final String modePaiement;
   final double montantRemise;
   final double montantPaye;
+  final double montantTva;
+  final double? tauxTva;
   final List<CreateSaleDetailRequest> details;
-  final DateTime? dateVente; // Date personnalisée pour l'antidatage
+  final DateTime? dateVente;
 
   const CreateSaleRequest({
     this.clientId,
     required this.modePaiement,
     required this.montantRemise,
     required this.montantPaye,
+    this.montantTva = 0.0,
+    this.tauxTva,
     required this.details,
     this.dateVente,
   });

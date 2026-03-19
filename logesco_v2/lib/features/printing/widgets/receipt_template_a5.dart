@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
+import '../../../core/config/api_config.dart';
 
 /// Template de reçu pour format A5
 class ReceiptTemplateA5 extends ReceiptTemplateBase {
@@ -91,35 +91,7 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.file(
-                  File(company.logo!),
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(
-                        Icons.business,
-                        size: 40,
-                        color: Colors.grey,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ] else if (template.showLogo) ...[
-            // Placeholder si pas de logo configuré
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.business,
-                size: 30,
-                color: Colors.grey,
+                child: _buildLogoWidget(company.logo!),
               ),
             ),
             const SizedBox(height: 8),
@@ -129,6 +101,18 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
           buildCompanyHeader(context),
         ],
       ),
+    );
+  }
+
+  /// Construit le widget logo (réseau)
+  Widget _buildLogoWidget(String logoPath) {
+    final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
+    final filename = isFullPath ? logoPath.split(RegExp(r'[/\\]')).last : logoPath;
+    return Image.network(
+      '$serverUrl/uploads/$filename',
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 40, color: Colors.grey),
     );
   }
 

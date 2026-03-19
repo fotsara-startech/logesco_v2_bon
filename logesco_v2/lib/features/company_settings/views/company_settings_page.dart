@@ -92,7 +92,7 @@ class CompanySettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  controller.hasProfile ? 'Profil d\'entreprise configuré' : 'Profil d\'entreprise non configuré',
+                  controller.hasProfile ? 'company_settings_configured'.tr : 'company_settings_not_configured'.tr,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -103,7 +103,7 @@ class CompanySettingsPage extends StatelessWidget {
             if (!controller.hasProfile) ...[
               const SizedBox(height: 8),
               Text(
-                'Configurez les informations de votre entreprise pour personnaliser vos documents.',
+                'company_settings_configure_message'.tr,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -128,7 +128,7 @@ class CompanySettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Modifications non sauvegardées',
+                      'company_settings_unsaved_changes'.tr,
                       style: TextStyle(
                         color: Colors.orange[700],
                         fontSize: 12,
@@ -153,7 +153,7 @@ class CompanySettingsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations de l\'entreprise',
+              'company_settings_company_info'.tr,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -164,7 +164,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Nom de l'entreprise
             _buildTextField(
               controller: controller.nameController,
-              label: 'Nom de l\'entreprise',
+              label: 'company_settings_company_name'.tr,
               icon: Icons.business,
               validator: (value) => controller.validateField('name', value ?? ''),
               fieldKey: 'name',
@@ -176,7 +176,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Adresse
             _buildTextField(
               controller: controller.addressController,
-              label: 'Adresse',
+              label: 'company_settings_address'.tr,
               icon: Icons.location_on,
               validator: (value) => controller.validateField('address', value ?? ''),
               fieldKey: 'address',
@@ -189,7 +189,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Localisation
             _buildTextField(
               controller: controller.locationController,
-              label: 'Localisation',
+              label: 'company_settings_location'.tr,
               icon: Icons.place,
               validator: (value) => controller.validateField('location', value ?? ''),
               fieldKey: 'location',
@@ -201,7 +201,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Téléphone
             _buildTextField(
               controller: controller.phoneController,
-              label: 'Téléphone',
+              label: 'company_settings_phone'.tr,
               icon: Icons.phone,
               validator: null, // Pas de validation - l'utilisateur peut entrer le numéro comme du texte
               fieldKey: 'phone',
@@ -214,7 +214,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Email (optionnel)
             _buildTextField(
               controller: controller.emailController,
-              label: 'Email (optionnel)',
+              label: 'company_settings_email'.tr,
               icon: Icons.email,
               validator: (value) => controller.validateField('email', value ?? ''),
               fieldKey: 'email',
@@ -227,7 +227,7 @@ class CompanySettingsPage extends StatelessWidget {
             // NUI RCCM
             _buildTextField(
               controller: controller.nuiRccmController,
-              label: 'NUI RCCM',
+              label: 'company_settings_nui_rccm'.tr,
               icon: Icons.assignment,
               validator: (value) => controller.validateField('nuiRccm', value ?? ''),
               fieldKey: 'nuiRccm',
@@ -239,7 +239,7 @@ class CompanySettingsPage extends StatelessWidget {
             // Slogan (optionnel)
             _buildTextField(
               controller: controller.sloganController,
-              label: 'Slogan (optionnel)',
+              label: 'company_settings_slogan'.tr,
               icon: Icons.format_quote,
               validator: null,
               fieldKey: 'slogan',
@@ -253,11 +253,53 @@ class CompanySettingsPage extends StatelessWidget {
             _buildLanguageDropdown(controller),
             const SizedBox(height: 16),
 
+            // TVA (optionnel)
+            _buildTvaField(controller),
+            const SizedBox(height: 16),
+
             // Logo (optionnel)
             _buildLogoSection(controller),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTvaField(CompanySettingsController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.receipt_long, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'company_settings_tva'.tr,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller.tvaController,
+          decoration: InputDecoration(
+            labelText: 'company_settings_tva_rate'.tr,
+            hintText: 'Ex: 19.25',
+            suffixText: '%',
+            border: const OutlineInputBorder(),
+            enabled: controller.canEdit,
+            helperText: 'company_settings_tva_helper'.tr,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) return null;
+            final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
+            if (parsed == null) return 'company_settings_tva_invalid'.tr;
+            if (parsed < 0 || parsed > 100) return 'company_settings_tva_range'.tr;
+            return null;
+          },
+        ),
+      ],
     );
   }
 
@@ -271,7 +313,7 @@ class CompanySettingsPage extends StatelessWidget {
               const Icon(Icons.image, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Logo (optionnel)',
+                'company_settings_logo'.tr,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -293,7 +335,7 @@ class CompanySettingsPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Logo sélectionné',
+                      'company_settings_logo_selected'.tr,
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                   ),
@@ -301,7 +343,7 @@ class CompanySettingsPage extends StatelessWidget {
                     IconButton(
                       onPressed: controller.removeLogo,
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'Supprimer le logo',
+                      tooltip: 'company_settings_remove_logo'.tr,
                     ),
                 ],
               ),
@@ -310,11 +352,11 @@ class CompanySettingsPage extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: controller.canEdit ? controller.selectLogo : null,
               icon: const Icon(Icons.upload_file),
-              label: const Text('Sélectionner un logo'),
+              label: Text('company_settings_select_logo'.tr),
             ),
             const SizedBox(height: 4),
             Text(
-              'Le logo sera affiché sur les factures A4/A5',
+              'company_settings_logo_info'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -336,7 +378,7 @@ class CompanySettingsPage extends StatelessWidget {
               const Icon(Icons.language, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Langue des factures',
+                'company_settings_receipt_language'.tr,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -350,7 +392,7 @@ class CompanySettingsPage extends StatelessWidget {
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               enabled: controller.canEdit,
-              hintText: 'Sélectionner la langue',
+              hintText: 'company_settings_select_language'.tr,
             ),
             items: const [
               DropdownMenuItem(
@@ -394,7 +436,7 @@ class CompanySettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'La langue sélectionnée sera utilisée pour toutes les factures',
+            'company_settings_language_info'.tr,
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -453,7 +495,7 @@ class CompanySettingsPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Vous n\'avez pas les permissions pour modifier ces informations.',
+                    'company_settings_no_permission'.tr,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -482,10 +524,10 @@ class CompanySettingsPage extends StatelessWidget {
                   : Icon(controller.hasProfile ? Icons.save : Icons.add_business),
               label: Text(
                 controller.isSaving
-                    ? 'Sauvegarde...'
+                    ? 'company_settings_saving'.tr
                     : controller.hasProfile
-                        ? 'Sauvegarder les modifications'
-                        : 'Créer le profil d\'entreprise',
+                        ? 'company_settings_save'.tr
+                        : 'company_settings_create'.tr,
               ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -501,9 +543,9 @@ class CompanySettingsPage extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: controller.deleteCompanyProfile,
                 icon: const Icon(Icons.delete, color: Colors.red),
-                label: const Text(
-                  'Supprimer le profil',
-                  style: TextStyle(color: Colors.red),
+                label: Text(
+                  'company_settings_delete'.tr,
+                  style: const TextStyle(color: Colors.red),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),

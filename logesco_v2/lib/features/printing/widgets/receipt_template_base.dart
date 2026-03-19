@@ -289,6 +289,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
 
   /// Construit le résumé des totaux
   Widget buildTotals(BuildContext context) {
+    print('🧾 [BUILD_TOTALS] tvaAmount=${receipt.tvaAmount}, tvaRate=${receipt.tvaRate}, subtotal=${receipt.subtotal}, total=${receipt.totalAmount}');
     final textStyle = TextStyle(
       fontSize: template.fontSize,
       color: Colors.black,
@@ -324,9 +325,21 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           ),
         ],
 
+        // TVA si applicable
+        if (receipt.tvaAmount > 0) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%):', style: textStyle),
+              Text('+${receipt.tvaAmount.toStringAsFixed(0)} FCFA', style: textStyle),
+            ],
+          ),
+        ],
+
         const SizedBox(height: 4),
 
-        // Total avec ligne de séparation
+        // Total TTC avec ligne de séparation
         Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: const BoxDecoration(
@@ -338,7 +351,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${t('totalAmount')}:', style: boldStyle),
+              Text('${receipt.tvaAmount > 0 ? 'Total TTC' : t('totalAmount')}:', style: boldStyle),
               Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: boldStyle),
             ],
           ),

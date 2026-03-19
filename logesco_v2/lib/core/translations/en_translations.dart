@@ -38,6 +38,7 @@ const Map<String, String> enTranslations = {
   // ============================================================================
   // MENU
   // ============================================================================
+  'cash_indication':'No cash register',
   'menu_sales_customers': 'SALES & CUSTOMERS',
   'menu_stock_products': 'STOCK & PRODUCTS',
   'menu_procurement': 'PROCUREMENT',
@@ -675,6 +676,7 @@ const Map<String, String> enTranslations = {
   'auth_version': 'Version',
   'auth_splash_subtitle': 'Business management system',
   'auth_initializing': 'Initializing...',
+  'auth_starting_server': 'Starting server...',
 
   // ============================================================================
   // DASHBOARD
@@ -1547,6 +1549,12 @@ const Map<String, String> enTranslations = {
   'company_settings_save_success': 'Settings saved successfully',
   'company_settings_delete_success': 'Profile deleted successfully',
   'company_settings_undo': 'Undo changes',
+  'company_settings_tva': 'VAT (optional)',
+  'company_settings_tva_rate': 'VAT Rate (%)',
+  'company_settings_tva_helper': 'Leave empty if no VAT. This rate will be suggested during sales.',
+  'company_settings_tva_invalid': 'Enter a valid number (e.g. 19.25)',
+  'company_settings_tva_range': 'VAT must be between 0 and 100',
+  'company_settings_saving': 'Saving...',
 
   // ============================================================================
   // USERS & ROLES

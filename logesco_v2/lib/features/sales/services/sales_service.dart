@@ -157,6 +157,7 @@ class SalesService {
 
       if (response.statusCode == 201) {
         final jsonData = json.decode(response.body);
+        print('💰 [CREATE_SALE] montantTva: ${jsonData['data']?['montantTva']}, tauxTva: ${jsonData['data']?['tauxTva']}');
         final sale = Sale.fromJson(jsonData['data']);
         return ApiResponse.success(
           sale,
