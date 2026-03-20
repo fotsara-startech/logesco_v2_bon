@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/sales_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class SalesFilters extends StatefulWidget {
   const SalesFilters({super.key});
@@ -87,6 +88,55 @@ class _SalesFiltersState extends State<SalesFilters> {
                 ),
               ],
             ),
+
+            // Filtre par vendeur (admins uniquement)
+            Obx(() {
+              final authController = Get.find<AuthController>();
+              final isAdmin = authController.currentUser.value?.role.isAdmin ?? false;
+              if (!isAdmin) return const SizedBox.shrink();
+              final vendeurs = controller.vendeurs;
+              if (vendeurs.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 18, color: Colors.blueGrey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: controller.vendeurIdFilter > 0 ? controller.vendeurIdFilter : null,
+                          decoration: InputDecoration(
+                            labelText: 'sales_filter_by_seller'.tr,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            isDense: true,
+                            suffixIcon: controller.vendeurIdFilter > 0
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, size: 18),
+                                    onPressed: () => controller.setVendeurFilter(0),
+                                  )
+                                : null,
+                          ),
+                          hint: Text('sales_filter_all_sellers'.tr),
+                          items: [
+                            DropdownMenuItem<int>(
+                              value: 0,
+                              child: Text('sales_filter_all_sellers'.tr),
+                            ),
+                            ...vendeurs.map((v) => DropdownMenuItem<int>(
+                                  value: v['id'] as int,
+                                  child: Text(v['nomUtilisateur'] as String),
+                                )),
+                          ],
+                          onChanged: (value) => controller.setVendeurFilter(value ?? 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }),
 
             if (_showPeriodFilters) ...[
               const SizedBox(height: 12),

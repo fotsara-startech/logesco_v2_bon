@@ -6,6 +6,7 @@ import 'package:logesco_v2/core/config/environment_config.dart';
 import 'package:logesco_v2/core/routes/app_routes.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/exceptions.dart';
 import '../../../core/config/app_config.dart';
@@ -146,10 +147,16 @@ class AuthController extends GetxController {
         final refreshToken = data['refreshToken'] as String?;
         final userData = data['utilisateur'] as Map<String, dynamic>;
 
-        // Sauvegarder les tokens
-        await _secureStorage.write(key: AppConstants.authTokenKey, value: token);
-        if (refreshToken != null) {
-          await _secureStorage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+        // Sauvegarder les tokens via AuthService (met à jour la mémoire + storage)
+        try {
+          final authService = Get.find<AuthService>();
+          await authService.setToken(token);
+          if (refreshToken != null) await authService.setRefreshToken(refreshToken);
+        } catch (e) {
+          await _secureStorage.write(key: AppConstants.authTokenKey, value: token);
+          if (refreshToken != null) {
+            await _secureStorage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+          }
         }
 
         // Configurer le client API
@@ -167,6 +174,18 @@ class AuthController extends GetxController {
         log("refreshToken: $refreshToken");
         log("userData: $userData");
 
+        // Sauvegarder les tokens via AuthService (met à jour aussi la mémoire)
+        try {
+          final authService = Get.find<AuthService>();
+          await authService.setToken(token);
+          if (refreshToken != null) await authService.setRefreshToken(refreshToken);
+        } catch (e) {
+          await _secureStorage.write(key: AppConstants.authTokenKey, value: token);
+          if (refreshToken != null) {
+            await _secureStorage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+          }
+        }
+
         // Mettre à jour l'état
         try {
           currentUser.value = User.fromJson(userData);
@@ -183,6 +202,7 @@ class AuthController extends GetxController {
         try {
           await Get.offAllNamed(AppRoutes.dashboard);
           print('✅ Navigation réussie');
+
           Get.snackbar('Succès', 'Connexion réussie');
         } catch (e) {
           print('❌ Erreur de navigation: $e');
@@ -208,22 +228,16 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     try {
       print('🚪 [AuthController] Début de la déconnexion...');
-
       // Appeler l'API de déconnexion
       await _apiClient.post('/auth/logout', {});
-      print('✅ [AuthController] API de déconnexion appelée');
     } catch (e) {
-      // Erreur silencieuse lors de la déconnexion API
       print('⚠️ [AuthController] Erreur API déconnexion (ignorée): $e');
     } finally {
-      // Nettoyer l'état local dans tous les cas
       print('🧹 [AuthController] Nettoyage des données d\'authentification...');
       await _clearAuthData();
-
-      // Rediriger vers la page de connexion
+      // currentUser.value = null déclenche le ever() dans CashSessionController
       print('🔄 [AuthController] Redirection vers la page de connexion...');
       Get.offAllNamed(AppRoutes.login);
-      print('✅ [AuthController] Déconnexion terminée');
     }
   }
 
@@ -295,10 +309,18 @@ class AuthController extends GetxController {
     await _secureStorage.delete(key: AppConstants.refreshTokenKey);
     _apiClient.clearAuthToken();
 
+    // Effacer aussi le token en mémoire dans AuthService
+    try {
+      final authService = Get.find<AuthService>();
+      await authService.clearTokens();
+    } catch (e) {
+      // ignore
+    }
+
     currentUser.value = null;
     isAuthenticated.value = false;
     errorMessage.value = '';
-    isLoading.value = false; // ✅ Arrêter le loading
+    isLoading.value = false;
   }
 
   /// Créer un utilisateur fictif pour le mode développement

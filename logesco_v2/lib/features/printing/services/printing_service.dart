@@ -31,18 +31,18 @@ class PrintingService {
   static void setCompanyProfile(CompanyProfile? profile) {
     _sharedCompanyProfile = profile;
     if (profile != null) {
-      print('🔥 DÉFINITION DU PROFIL PARTAGÉ POUR IMPRESSION');
-      print('📋 === PROFIL D\'ENTREPRISE POUR IMPRESSION ===');
-      print('📋 Nom: ${profile.name}');
-      print('📋 Adresse: ${profile.address}');
-      print('📋 Localisation: ${profile.location ?? 'Non définie'}');
-      print('📋 Téléphone: ${profile.phone ?? 'Non défini'}');
-      print('📋 Email: ${profile.email ?? 'Non défini'}');
-      print('📋 NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
-      print('📋 Langue facture: ${profile.receiptLanguage ?? 'fr'}');
-      print('📋 ============================================');
+      // print('🔥 DÉFINITION DU PROFIL PARTAGÉ POUR IMPRESSION');
+      // print('📋 === PROFIL D\'ENTREPRISE POUR IMPRESSION ===');
+      // print('📋 Nom: ${profile.name}');
+      // print('📋 Adresse: ${profile.address}');
+      // print('📋 Localisation: ${profile.location ?? 'Non définie'}');
+      // print('📋 Téléphone: ${profile.phone ?? 'Non défini'}');
+      // print('📋 Email: ${profile.email ?? 'Non défini'}');
+      // print('📋 NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
+      // print('📋 Langue facture: ${profile.receiptLanguage ?? 'fr'}');
+      // print('📋 ============================================');
     } else {
-      print('❌ TENTATIVE DE DÉFINIR UN PROFIL NULL');
+      // print('❌ TENTATIVE DE DÉFINIR UN PROFIL NULL');
     }
   }
 

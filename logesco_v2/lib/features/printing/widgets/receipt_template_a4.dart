@@ -102,7 +102,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                buildCompanyHeader(context),
+                buildCompanyHeader(context, crossAxisAlignment: CrossAxisAlignment.end, textAlign: TextAlign.right),
               ],
             ),
           ),

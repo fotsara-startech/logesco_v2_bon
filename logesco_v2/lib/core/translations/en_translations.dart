@@ -38,7 +38,7 @@ const Map<String, String> enTranslations = {
   // ============================================================================
   // MENU
   // ============================================================================
-  'cash_indication':'No cash register',
+  'cash_indication': 'No cash register',
   'menu_sales_customers': 'SALES & CUSTOMERS',
   'menu_stock_products': 'STOCK & PRODUCTS',
   'menu_procurement': 'PROCUREMENT',
@@ -1075,6 +1075,8 @@ const Map<String, String> enTranslations = {
   'sales_filters': 'Filters',
   'sales_clear_filters': 'Clear filters',
   'sales_filter_by_period': 'Filter by period',
+  'sales_filter_by_seller': 'Filter by seller',
+  'sales_filter_all_sellers': 'All sellers',
   'sales_today': 'Today',
   'sales_yesterday': 'Yesterday',
   'sales_this_week': 'This week',
@@ -3227,4 +3229,24 @@ const Map<String, String> enTranslations = {
   'users_loading_roles': 'Loading roles...',
   'users_no_role_selected': 'No role selected',
   // 'users_add_user': 'Add user',
+
+  // ============================================================================
+  // PRINTING / PREVIEW
+  // ============================================================================
+  'preview_title': 'Receipt Preview',
+  'preview_no_receipt': 'No receipt to preview',
+  'preview_print_format': 'Print format:',
+  'preview_format_thermal': 'Thermal',
+  'preview_format_a5': 'A5',
+  'preview_format_a4': 'A4',
+  'preview_receipt_label': 'Receipt',
+  'preview_total_label': 'Total',
+  'preview_close': 'Close',
+  'preview_print': 'Print',
+  'preview_printing': 'Printing...',
+  'preview_print_success_title': 'Print started',
+  'preview_print_success_msg': 'The receipt has been sent to your printer',
+  'preview_print_error_title': 'Print error',
+  'preview_print_error_msg': 'Unable to print the receipt',
+  'preview_tooltip_print': 'Print',
 };

@@ -57,7 +57,7 @@ const Map<String, String> frTranslations = {
   'menu_company': 'Entreprise',
   'menu_printing': 'Impressions',
   'menu_subscription': 'Abonnement',
-  'cash_indication':'Aucune Caisse',
+  'cash_indication': 'Aucune Caisse',
 
   // ============================================================================
   // FOURNISSEURS / SUPPLIERS
@@ -1075,6 +1075,8 @@ const Map<String, String> frTranslations = {
   'sales_filters': 'Filtres',
   'sales_clear_filters': 'Effacer les filtres',
   'sales_filter_by_period': 'Filtrer par période',
+  'sales_filter_by_seller': 'Filtrer par vendeur',
+  'sales_filter_all_sellers': 'Tous les vendeurs',
   'sales_today': 'Aujourd\'hui',
   'sales_yesterday': 'Hier',
   'sales_this_week': 'Cette semaine',
@@ -3228,5 +3230,24 @@ const Map<String, String> frTranslations = {
   'users_loading_roles': 'Chargement des rôles...',
   'users_no_role_selected': 'Aucun rôle sélectionné',
   // 'users_add_user': 'Ajouter un utilisateur',
+
+  // ============================================================================
+  // IMPRESSION / PRÉVISUALISATION
+  // ============================================================================
+  'preview_title': 'Prévisualisation du reçu',
+  'preview_no_receipt': 'Aucun reçu à prévisualiser',
+  'preview_print_format': 'Format d\'impression:',
+  'preview_format_thermal': 'Thermique',
+  'preview_format_a5': 'A5',
+  'preview_format_a4': 'A4',
+  'preview_receipt_label': 'Reçu',
+  'preview_total_label': 'Total',
+  'preview_close': 'Fermer',
+  'preview_print': 'Imprimer',
+  'preview_printing': 'Impression...',
+  'preview_print_success_title': 'Impression lancée',
+  'preview_print_success_msg': 'Le reçu a été envoyé vers votre imprimante',
+  'preview_print_error_title': 'Erreur d\'impression',
+  'preview_print_error_msg': 'Impossible d\'imprimer le reçu',
+  'preview_tooltip_print': 'Imprimer',
 };
-// };

@@ -37,9 +37,18 @@ class SalesListItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (sale.client != null) Text('sales_client_name'.trParams({'name': '${sale.client!.nom} ${sale.client!.prenom ?? ''}'})),
+            if (sale.vendeur != null)
+              Row(
+                children: [
+                  const Icon(Icons.person_outline, size: 13, color: Colors.blueGrey),
+                  const SizedBox(width: 3),
+                  Text(
+                    sale.vendeur!.nomUtilisateur,
+                    style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                  ),
+                ],
+              ),
             Text('sales_total_label'.trParams({'amount': sale.montantFinal.toStringAsFixed(0)})),
-            // SOLUTION 2: Ne plus afficher les détails de paiement partiel
-            // La dette est gérée au niveau du compte client
             Text(
               'sales_paid_label'.trParams({'amount': sale.montantPaye.toStringAsFixed(0)}),
               style: const TextStyle(fontSize: 12, color: Colors.grey),

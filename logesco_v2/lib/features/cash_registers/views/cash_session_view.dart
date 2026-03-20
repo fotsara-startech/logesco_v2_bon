@@ -18,6 +18,19 @@ class CashSessionView extends StatelessWidget {
       appBar: AppBar(
         title: Text('cash_session_title'.tr),
         actions: [
+          // Bouton admin pour gérer les sessions orphelines
+          Obx(() {
+            final authController = Get.find<AuthController>();
+            final isAdmin = authController.currentUser.value?.role.isAdmin ?? false;
+            if (isAdmin) {
+              return IconButton(
+                icon: const Icon(Icons.admin_panel_settings),
+                tooltip: 'Gérer les sessions (Admin)',
+                onPressed: () => controller.showAdminSessionsDialog(),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
           // Bouton pour voir l'historique (Admin uniquement)
           Obx(() {
             final authController = Get.find<AuthController>();

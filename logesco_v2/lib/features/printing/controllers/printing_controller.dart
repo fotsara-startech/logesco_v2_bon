@@ -241,7 +241,7 @@ class PrintingController extends GetxController {
         // Stocker le reçu généré
         _currentReceipt.value = response.data!.receipt;
 
-        SnackbarUtils.showSuccess('Reçu généré avec succès');
+        // SnackbarUtils.showSuccess('Reçu généré avec succès');
 
         // Rafraîchir la liste des reçus
         await searchReceipts(refresh: true);

@@ -117,12 +117,12 @@ class ReceiptGenerationService {
     final buffer = StringBuffer();
 
     // DEBUG - Vérifier les données de paiement
-    print('🖨️ [THERMAL] Génération données thermiques');
-    print('🖨️ [THERMAL] Receipt ID: ${receipt.id}');
-    print('🖨️ [THERMAL] Total: ${receipt.totalAmount}');
-    print('🖨️ [THERMAL] Paid: ${receipt.paidAmount}');
-    print('🖨️ [THERMAL] Remaining: ${receipt.remainingAmount}');
-    print('🖨️ [THERMAL] isReprint: ${receipt.isReprint}');
+    // print('🖨️ [THERMAL] Génération données thermiques');
+    // print('🖨️ [THERMAL] Receipt ID: ${receipt.id}');
+    // print('🖨️ [THERMAL] Total: ${receipt.totalAmount}');
+    // print('🖨️ [THERMAL] Paid: ${receipt.paidAmount}');
+    // print('🖨️ [THERMAL] Remaining: ${receipt.remainingAmount}');
+    // print('🖨️ [THERMAL] isReprint: ${receipt.isReprint}');
 
     // Commandes ESC/POS pour imprimante thermique
     buffer.writeln('\x1B\x40'); // Initialiser l'imprimante

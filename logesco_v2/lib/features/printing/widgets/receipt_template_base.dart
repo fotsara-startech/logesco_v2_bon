@@ -22,7 +22,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
   }
 
   /// Construit l'en-tête avec les informations de l'entreprise
-  Widget buildCompanyHeader(BuildContext context) {
+  Widget buildCompanyHeader(BuildContext context, {CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center, TextAlign textAlign = TextAlign.center}) {
     final company = receipt.companyInfo;
     final textStyle = TextStyle(
       fontSize: template.titleFontSize,
@@ -35,13 +35,13 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
     );
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: crossAxisAlignment,
       children: [
         // Nom de l'entreprise
         Text(
           company.name.toUpperCase(),
           style: textStyle,
-          textAlign: TextAlign.center,
+          textAlign: textAlign,
         ),
         const SizedBox(height: 4),
 
@@ -50,7 +50,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Text(
             company.address,
             style: subtitleStyle,
-            textAlign: TextAlign.center,
+            textAlign: textAlign,
           ),
 
         // Localisation
@@ -58,25 +58,29 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Text(
             company.location!,
             style: subtitleStyle,
-            textAlign: TextAlign.center,
+            textAlign: textAlign,
           ),
 
-        // Téléphone et Email sur la même ligne
-        if (company.phone?.isNotEmpty == true || company.email?.isNotEmpty == true)
+        // Téléphone et Email (avec wrap si trop long)
+        if (company.phone?.isNotEmpty == true)
+          Text(
+            '${t('phone')}: ${company.phone}',
+
+            style: subtitleStyle,
+            textAlign: TextAlign.start //textAlign,
+            // softWrap: true,
+            // overflow: TextOverflow.visible,
+          ),
+        // NUI RCCM
+        if (company.email?.isNotEmpty == true)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (company.phone?.isNotEmpty == true) ...[
-                  Text('${t('phone')}: ${company.phone}', style: subtitleStyle),
-                  if (company.email?.isNotEmpty == true) Text(' | ', style: subtitleStyle),
-                ],
-                if (company.email?.isNotEmpty == true) Text('${t('email')}: ${company.email}', style: subtitleStyle),
-              ],
+            child: Text(
+              '${t('Email')}: ${company.email}',
+              style: subtitleStyle,
+              textAlign: textAlign,
             ),
           ),
-
         // NUI RCCM
         if (company.nuiRccm?.isNotEmpty == true)
           Padding(
@@ -84,7 +88,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
             child: Text(
               '${t('nuiRccm')}: ${company.nuiRccm}',
               style: subtitleStyle,
-              textAlign: TextAlign.center,
+              textAlign: textAlign,
             ),
           ),
       ],

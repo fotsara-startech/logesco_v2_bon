@@ -301,6 +301,7 @@ const venteSchemas = {
 
   search: Joi.object({
     clientId: baseSchemas.id,
+    vendeurId: baseSchemas.id,
     statut: Joi.string().valid('terminee', 'annulee'),
     modePaiement: baseSchemas.modePaiement,
     dateDebut: baseSchemas.date,

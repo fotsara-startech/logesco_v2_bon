@@ -1001,6 +1001,8 @@ const Map<String, String> esTranslations = {
   'sales_filters': 'Filtros',
   'sales_clear_filters': 'Borrar filtros',
   'sales_filter_by_period': 'Filtrar por período',
+  'sales_filter_by_seller': 'Filtrar por vendedor',
+  'sales_filter_all_sellers': 'Todos los vendedores',
   'sales_today': 'Hoy',
   'sales_yesterday': 'Ayer',
   'sales_this_week': 'Esta semana',
@@ -3037,5 +3039,25 @@ const Map<String, String> esTranslations = {
   'users_loading_roles': 'Cargando roles...',
   'users_no_role_selected': 'Ningún rol seleccionado',
   // 'users_add_user': 'Agregar usuario',
+
+  // ============================================================================
+  // IMPRESIÓN / VISTA PREVIA
+  // ============================================================================
+  'preview_title': 'Vista previa del recibo',
+  'preview_no_receipt': 'No hay recibo para previsualizar',
+  'preview_print_format': 'Formato de impresión:',
+  'preview_format_thermal': 'Térmico',
+  'preview_format_a5': 'A5',
+  'preview_format_a4': 'A4',
+  'preview_receipt_label': 'Recibo',
+  'preview_total_label': 'Total',
+  'preview_close': 'Cerrar',
+  'preview_print': 'Imprimir',
+  'preview_printing': 'Imprimiendo...',
+  'preview_print_success_title': 'Impresión iniciada',
+  'preview_print_success_msg': 'El recibo ha sido enviado a su impresora',
+  'preview_print_error_title': 'Error de impresión',
+  'preview_print_error_msg': 'No se puede imprimir el recibo',
+  'preview_tooltip_print': 'Imprimir',
 };
 // };

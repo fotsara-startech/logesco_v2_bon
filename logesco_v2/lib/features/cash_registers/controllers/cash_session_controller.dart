@@ -32,6 +32,16 @@ class CashSessionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Recharger la session à chaque changement d'utilisateur (login/switch)
+    ever(Get.find<AuthController>().currentUser, (user) {
+      if (user != null) {
+        loadActiveSession();
+      } else {
+        // Logout : vider la session locale
+        activeSession.value = null;
+        sessionHistory.clear();
+      }
+    });
     loadActiveSession();
   }
 
@@ -72,9 +82,10 @@ class CashSessionController extends GetxController {
       final session = await CashSessionService.connectToCashRegister(cashRegisterId, soldeOuverture);
       activeSession.value = session;
 
+      final isResumed = (session as dynamic).toJson()['resumed'] == true;
       Get.snackbar(
         'Succès',
-        'Connexion à la caisse réussie',
+        isResumed ? 'Session de caisse reprise' : 'Connexion à la caisse réussie',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.shade100,
         colorText: Colors.green.shade800,
@@ -82,6 +93,22 @@ class CashSessionController extends GetxController {
       );
       return true;
     } catch (e) {
+      final errorStr = e.toString();
+      // Si l'utilisateur a déjà une session active, la recharger
+      if (errorStr.contains('USER_HAS_ACTIVE_SESSION')) {
+        await loadActiveSession();
+        if (activeSession.value != null) {
+          Get.snackbar(
+            'Session reprise',
+            'Votre session sur "${activeSession.value!.nomCaisse}" a été rechargée',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.blue.shade100,
+            colorText: Colors.blue.shade800,
+            duration: const Duration(seconds: 3),
+          );
+          return true;
+        }
+      }
       Get.snackbar(
         'Erreur',
         'Impossible de se connecter à la caisse: $e',
@@ -659,6 +686,73 @@ class CashSessionController extends GetxController {
             );
           },
         ),
+      ),
+    );
+  }
+
+  /// Afficher le dialog admin pour gérer les sessions orphelines
+  Future<void> showAdminSessionsDialog() async {
+    final sessions = await CashSessionService.getAllActiveSessions();
+
+    if (sessions.isEmpty) {
+      Get.snackbar('Info', 'Aucune session active en ce moment', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    Get.dialog(
+      AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.admin_panel_settings, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Sessions actives'),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Fermer une session libère la caisse pour un autre utilisateur.'),
+              const SizedBox(height: 12),
+              ...sessions.map((s) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.point_of_sale, color: Colors.blue),
+                      title: Text(s['nomCaisse'] ?? ''),
+                      subtitle: Text('Utilisateur: ${s['nomUtilisateur']} (ID: ${s['utilisateurId']})'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        tooltip: 'Fermer cette session',
+                        onPressed: () async {
+                          Get.back();
+                          final ok = await CashSessionService.adminCloseSession(s['id'] as int);
+                          if (ok) {
+                            Get.snackbar('Succès', 'Session fermée — la caisse est maintenant disponible', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green.shade100);
+                            await loadAvailableCashRegisters();
+                          } else {
+                            Get.snackbar('Erreur', 'Impossible de fermer la session', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red.shade100);
+                          }
+                        },
+                      ),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              final ok = await CashSessionService.cleanupOrphanSessions();
+              if (ok) {
+                Get.snackbar('Nettoyage effectué', 'Sessions orphelines fermées', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green.shade100);
+                await loadAvailableCashRegisters();
+              }
+            },
+            child: const Text('Nettoyer orphelines', style: TextStyle(color: Colors.orange)),
+          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Fermer')),
+        ],
       ),
     );
   }

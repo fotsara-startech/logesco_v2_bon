@@ -33,19 +33,18 @@ class ReceiptPreviewPage extends StatelessWidget {
     if (receipt == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Prévisualisation'),
+          title: Text('preview_title'.tr),
         ),
-        body: const Center(
-          child: Text('Aucun reçu à prévisualiser'),
+        body: Center(
+          child: Text('preview_no_receipt'.tr),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prévisualisation du reçu'),
+        title: Text('preview_title'.tr),
         actions: [
-          // Bouton d'impression
           Obx(() => IconButton(
                 onPressed: controller.isGenerating ? null : () => _printReceipt(controller, receipt),
                 icon: controller.isGenerating
@@ -55,7 +54,7 @@ class ReceiptPreviewPage extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.print),
-                tooltip: 'Imprimer',
+                tooltip: 'preview_tooltip_print'.tr,
               )),
         ],
       ),
@@ -85,28 +84,28 @@ class ReceiptPreviewPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text(
-            'Format d\'impression:',
-            style: TextStyle(fontWeight: FontWeight.w500),
+          Text(
+            'preview_print_format'.tr,
+            style: const TextStyle(fontWeight: FontWeight.w500),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Obx(() => SegmentedButton<PrintFormat>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: PrintFormat.thermal,
-                      label: Text('Thermique'),
-                      icon: Icon(Icons.receipt),
+                      label: Text('preview_format_thermal'.tr),
+                      icon: const Icon(Icons.receipt),
                     ),
                     ButtonSegment(
                       value: PrintFormat.a5,
-                      label: Text('A5'),
-                      icon: Icon(Icons.description),
+                      label: Text('preview_format_a5'.tr),
+                      icon: const Icon(Icons.description),
                     ),
                     ButtonSegment(
                       value: PrintFormat.a4,
-                      label: Text('A4'),
-                      icon: Icon(Icons.article),
+                      label: Text('preview_format_a4'.tr),
+                      icon: const Icon(Icons.article),
                     ),
                   ],
                   selected: {controller.selectedFormat},
@@ -188,18 +187,12 @@ class ReceiptPreviewPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Reçu ${receipt.saleNumber}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  '${'preview_receipt_label'.tr} ${receipt.saleNumber}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
-                  'Total: ${receipt.totalAmount.toStringAsFixed(2)} FCFA',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+                  '${'preview_total_label'.tr}: ${receipt.totalAmount.toStringAsFixed(2)} FCFA',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ],
             ),
@@ -210,19 +203,13 @@ class ReceiptPreviewPage extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => Get.back(),
             icon: const Icon(Icons.close),
-            label: const Text('Fermer'),
+            label: Text('preview_close'.tr),
           ),
           const SizedBox(width: 8),
           Obx(() => ElevatedButton.icon(
                 onPressed: controller.isGenerating ? null : () => _printReceipt(controller, receipt),
-                icon: controller.isGenerating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.print),
-                label: Text(controller.isGenerating ? 'Impression...' : 'Imprimer'),
+                icon: controller.isGenerating ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.print),
+                label: Text(controller.isGenerating ? 'preview_printing'.tr : 'preview_print'.tr),
               )),
         ],
       ),
@@ -243,8 +230,8 @@ class ReceiptPreviewPage extends StatelessWidget {
       );
 
       Get.snackbar(
-        '✅ Impression lancée',
-        'Le reçu a été envoyé vers votre imprimante',
+        'preview_print_success_title'.tr,
+        'preview_print_success_msg'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.green.shade100,
@@ -252,8 +239,8 @@ class ReceiptPreviewPage extends StatelessWidget {
       );
     } catch (e) {
       Get.snackbar(
-        '❌ Erreur d\'impression',
-        'Impossible d\'imprimer le reçu: $e',
+        'preview_print_error_title'.tr,
+        '${'preview_print_error_msg'.tr}: $e',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 4),
         backgroundColor: Colors.red.shade100,
@@ -552,12 +539,15 @@ class ReceiptPreviewPage extends StatelessWidget {
                         style: pw.TextStyle(fontSize: fontSize),
                         textAlign: pw.TextAlign.right,
                       ),
-                    // Téléphone
-                    if (receipt.companyInfo.phone?.isNotEmpty == true)
+                    // Téléphone et Email
+                    if (receipt.companyInfo.phone?.isNotEmpty == true || receipt.companyInfo.email?.isNotEmpty == true)
                       pw.Padding(
                         padding: const pw.EdgeInsets.only(top: 4),
                         child: pw.Text(
-                          '${_t('phone', receipt)}: ${receipt.companyInfo.phone}',
+                          [
+                            if (receipt.companyInfo.phone?.isNotEmpty == true) '${_t('phone', receipt)}: ${receipt.companyInfo.phone}',
+                            if (receipt.companyInfo.email?.isNotEmpty == true) '${_t('email', receipt)}: ${receipt.companyInfo.email}',
+                          ].join(' | '),
                           style: pw.TextStyle(fontSize: fontSize),
                           textAlign: pw.TextAlign.right,
                         ),

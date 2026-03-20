@@ -137,6 +137,16 @@ class SalesPage extends StatelessWidget {
                 Text('sales_client_name'.trParams({'name': '${sale.client!.nom} ${sale.client!.prenom ?? ''}'})),
                 const SizedBox(height: 8),
               ],
+              if (sale.vendeur != null) ...[
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 14, color: Colors.blueGrey),
+                    const SizedBox(width: 4),
+                    Text('Vendeur: ${sale.vendeur!.nomUtilisateur}', style: const TextStyle(color: Colors.blueGrey)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
               Text('sales_payment_mode'.tr + ': ${sale.modePaiement}'),
               Text('sales_total_amount_label'.tr + ': ${sale.montantTotal.toStringAsFixed(0)} FCFA'),
               if (sale.montantRemise > 0) ...[

@@ -72,6 +72,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final RxString _paymentModeFilter = ''.obs;
   final Rx<DateTime?> _startDateFilter = Rx<DateTime?>(null);
   final Rx<DateTime?> _endDateFilter = Rx<DateTime?>(null);
+  final RxInt _vendeurIdFilter = 0.obs;
+
+  // Liste des vendeurs pour le filtre
+  final RxList<Map<String, dynamic>> _vendeurs = <Map<String, dynamic>>[].obs;
+  List<Map<String, dynamic>> get vendeurs => _vendeurs;
 
   // Recherche
   final RxString _searchQuery = ''.obs;
@@ -100,6 +105,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Getters pour les filtres
   String get statusFilter => _statusFilter.value;
   String get paymentModeFilter => _paymentModeFilter.value;
+  int get vendeurIdFilter => _vendeurIdFilter.value;
 
   // Getters pour les produits de vente
   List<Product> get productsForSale => _productsForSale;
@@ -124,7 +130,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     loadSales();
     _initializeStocks();
     _loadCompanyProfile();
-    loadProductsForSale(); // Charger les produits pour la vente
+    loadProductsForSale();
+    _loadVendeurs();
 
     // Vérifier l'abonnement au démarrage
     _initializeSubscriptionChecks();
@@ -137,6 +144,30 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
     // Vérifier et afficher les avertissements d'abonnement
     await checkAndShowSubscriptionWarnings();
+  }
+
+  // Chargement de la liste des vendeurs pour le filtre
+  Future<void> _loadVendeurs() async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('${Get.find<ApiService>().baseUrl}/users'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final data = jsonData['data'] as List<dynamic>? ?? [];
+        _vendeurs.assignAll(data
+            .map((u) => {
+                  'id': u['id'],
+                  'nomUtilisateur': u['nomUtilisateur'] ?? '',
+                })
+            .toList());
+      }
+    } catch (e) {
+      print('⚠️ Impossible de charger les vendeurs: $e');
+    }
   }
 
   // Chargement du profil d'entreprise
@@ -266,7 +297,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
 
     print('✅ ${_productStocks.length} stocks de test chargés');
-    SnackbarUtils.showSuccess('⚠️ ${_productStocks.length} stocks de TEST chargés (pas les vraies données)');
+    // SnackbarUtils.showSuccess('⚠️ ${_productStocks.length} stocks de TEST chargés (pas les vraies données)');
   }
 
   // Méthode pour vérifier le stock réel d'un produit avant la vente
@@ -295,19 +326,32 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des ventes
   Future<void> loadSales({bool refresh = false}) async {
     if (refresh) {
-      print('⏳ [LOADSALES] Refresh demandé, réinitialisation des données');
       _currentPage.value = 1;
       _hasMoreData.value = true;
       _sales.clear();
     }
 
-    if (!_hasMoreData.value) {
-      print('⏳ [LOADSALES] Plus de données disponibles');
-      return;
-    }
+    if (!_hasMoreData.value) return;
 
     _isLoading.value = true;
-    print('⏳ [LOADSALES] Appel API avec filtres: statut=${_statusFilter.value}, modePaiement=${_paymentModeFilter.value}, dateDebut=${_startDateFilter.value}, dateFin=${_endDateFilter.value}');
+
+    // Si l'utilisateur n'est pas admin, forcer le filtre sur ses propres ventes
+    int? effectiveVendeurId;
+    try {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+      if (currentUser != null && !currentUser.role.isAdmin) {
+        // Vendeur : ne voit que ses propres ventes
+        effectiveVendeurId = currentUser.id;
+      } else {
+        // Admin : filtre manuel par vendeur (ou aucun filtre)
+        effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
+      }
+    } catch (e) {
+      effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
+    }
+
+    print('⏳ [LOADSALES] vendeurId effectif: $effectiveVendeurId');
 
     try {
       final response = await _salesService.getSales(
@@ -316,16 +360,13 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         modePaiement: _paymentModeFilter.value.isEmpty ? null : _paymentModeFilter.value,
         dateDebut: _startDateFilter.value,
         dateFin: _endDateFilter.value,
+        vendeurId: effectiveVendeurId,
       );
-
-      print('⏳ [LOADSALES] Réponse reçue: success=${response.success}, dataCount=${response.data?.length ?? 0}');
 
       if (response.success && response.data != null) {
         if (refresh) {
-          print('⏳ [LOADSALES] Remplacement des données (${response.data!.length} ventes)');
           _sales.assignAll(response.data!);
         } else {
-          print('⏳ [LOADSALES] Ajout de données (${response.data!.length} ventes)');
           _sales.addAll(response.data!);
         }
 
@@ -333,18 +374,14 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
           _currentPage.value = response.pagination!.page;
           _totalPages.value = response.pagination!.totalPages;
           _hasMoreData.value = _currentPage.value < _totalPages.value;
-          print('⏳ [LOADSALES] Pagination: page ${_currentPage.value}/${_totalPages.value}, hasMoreData=${_hasMoreData.value}');
         }
       } else {
-        print('⏳ [LOADSALES] Erreur: ${response.message}');
         SnackbarUtils.showError(response.message ?? 'Erreur lors du chargement des ventes');
       }
     } catch (e) {
-      print('⏳ [LOADSALES] Exception: $e');
       SnackbarUtils.showError('Erreur lors du chargement des ventes');
     } finally {
       _isLoading.value = false;
-      print('⏳ [LOADSALES] Chargement terminé, total ventes: ${_sales.length}');
     }
   }
 
@@ -445,7 +482,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
       print('✅ Total stocks chargés: ${_productStocks.length}');
       if (_productStocks.isNotEmpty) {
-        SnackbarUtils.showSuccess('${_productStocks.length} stocks chargés');
+        // SnackbarUtils.showSuccess('${_productStocks.length} stocks chargés');
       } else {
         print('⚠️ Aucun stock chargé depuis l\'API');
       }
@@ -1041,8 +1078,14 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     print('🔧 [CONTROLLER] setDateFilter appelé: startDate=$startDate, endDate=$endDate');
     _startDateFilter.value = startDate;
     _endDateFilter.value = endDate;
-    _searchQuery.value = ''; // Réinitialiser la recherche quand on applique un filtre
+    _searchQuery.value = '';
     print('🔧 [CONTROLLER] Filtres définis, appel loadSales(refresh: true)');
+    loadSales(refresh: true);
+  }
+
+  void setVendeurFilter(int vendeurId) {
+    _vendeurIdFilter.value = vendeurId;
+    _searchQuery.value = '';
     loadSales(refresh: true);
   }
 
@@ -1051,7 +1094,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _paymentModeFilter.value = '';
     _startDateFilter.value = null;
     _endDateFilter.value = null;
-    _searchQuery.value = ''; // Réinitialiser la recherche
+    _vendeurIdFilter.value = 0;
+    _searchQuery.value = '';
     loadSales(refresh: true);
   }
 

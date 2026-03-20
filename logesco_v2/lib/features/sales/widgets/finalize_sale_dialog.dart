@@ -753,14 +753,14 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
           arguments: receipt,
         );
 
-        Get.snackbar(
-          'success'.tr,
-          'sales_receipt_generated'.trParams({'number': receipt.saleNumber}),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
+        // Get.snackbar(
+        //   'success'.tr,
+        //   'sales_receipt_generated'.trParams({'number': receipt.saleNumber}),
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.green,
+        //   colorText: Colors.white,
+        //   duration: const Duration(seconds: 2),
+        // );
       } else {
         Get.back();
         Get.snackbar(

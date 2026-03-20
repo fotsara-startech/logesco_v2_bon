@@ -3,6 +3,20 @@ import '../../customers/models/customer.dart';
 
 part 'sale.g.dart';
 
+@JsonSerializable()
+class SellerSummary {
+  final int id;
+  final String nomUtilisateur;
+
+  const SellerSummary({
+    required this.id,
+    required this.nomUtilisateur,
+  });
+
+  factory SellerSummary.fromJson(Map<String, dynamic> json) => _$SellerSummaryFromJson(json);
+  Map<String, dynamic> toJson() => _$SellerSummaryToJson(this);
+}
+
 /// Modèle de vente - SOLUTION 2: Système de compte client centralisé
 ///
 /// IMPORTANT: Le statut de la vente est toujours "terminee" dès sa création.
@@ -19,6 +33,8 @@ class Sale {
   final String numeroVente;
   final int? clientId;
   final Customer? client;
+  final int? vendeurId;
+  final SellerSummary? vendeur;
   final String modePaiement;
   @JsonKey(defaultValue: 0.0)
   final double sousTotal;
@@ -45,6 +61,8 @@ class Sale {
     required this.numeroVente,
     this.clientId,
     this.client,
+    this.vendeurId,
+    this.vendeur,
     required this.modePaiement,
     required this.sousTotal,
     required this.montantTotal,
