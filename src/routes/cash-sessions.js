@@ -1,4 +1,5 @@
 const express = require('express');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * Créer le routeur pour la gestion des sessions de caisse
@@ -8,11 +9,13 @@ const express = require('express');
 function createCashSessionsRouter({ prisma, authService }) {
   const router = express.Router();
 
+  // Authentification requise pour toutes les routes
+  router.use(authenticateToken(authService));
+
   // GET /api/v1/cash-sessions/active - Récupérer la session active de l'utilisateur
   router.get('/active', async (req, res) => {
     try {
-      // TODO: Récupérer l'utilisateur connecté depuis le token
-      const userId = 1; // Temporaire
+      const userId = req.user.id;
       
       const activeSession = await prisma.cashSession.findFirst({
         where: {
@@ -71,7 +74,7 @@ function createCashSessionsRouter({ prisma, authService }) {
   // GET /api/v1/cash-sessions/available-cash-registers - Récupérer les caisses disponibles
   router.get('/available-cash-registers', async (req, res) => {
     try {
-      // Récupérer les caisses actives qui ne sont pas utilisées par d'autres utilisateurs
+      const userId = req.user.id;
       const availableCashRegisters = await prisma.cashRegister.findMany({
         where: {
           isActive: true,
@@ -120,8 +123,7 @@ function createCashSessionsRouter({ prisma, authService }) {
   router.post('/connect', async (req, res) => {
     try {
       const { cashRegisterId, soldeInitial } = req.body;
-      // TODO: Récupérer l'utilisateur connecté depuis le token
-      const userId = 1; // Temporaire
+      const userId = req.user.id;
       
       // Validation
       if (!cashRegisterId || soldeInitial === undefined) {
@@ -135,20 +137,27 @@ function createCashSessionsRouter({ prisma, authService }) {
       }
       
       // Vérifier si l'utilisateur a déjà une session active
-      const existingSession = await prisma.cashSession.findFirst({
+      const existingUserSession = await prisma.cashSession.findFirst({
         where: {
           utilisateurId: userId,
           isActive: true,
           dateFermeture: null
-        }
+        },
+        include: { caisse: true }
       });
-      
-      if (existingSession) {
+
+      if (existingUserSession) {
+        // L'utilisateur a déjà une session ouverte — il doit la clôturer d'abord
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Vous avez déjà une session active',
-            code: 'ACTIVE_SESSION_EXISTS'
+            message: `Vous avez déjà une session active sur "${existingUserSession.caisse.nom}". Clôturez-la avant d'en ouvrir une nouvelle.`,
+            code: 'USER_HAS_ACTIVE_SESSION',
+            existingSession: {
+              id: existingUserSession.id,
+              caisseId: existingUserSession.caisseId,
+              nomCaisse: existingUserSession.caisse.nom
+            }
           }
         });
       }
@@ -271,8 +280,7 @@ function createCashSessionsRouter({ prisma, authService }) {
   router.post('/disconnect', async (req, res) => {
     try {
       const { soldeFermeture } = req.body;
-      // TODO: Récupérer l'utilisateur connecté depuis le token
-      const userId = 1; // Temporaire
+      const userId = req.user.id;
       
       // Validation
       if (soldeFermeture === undefined || soldeFermeture === null) {
@@ -302,12 +310,23 @@ function createCashSessionsRouter({ prisma, authService }) {
         return res.status(404).json({
           success: false,
           error: {
-            message: 'Aucune session active trouvée',
+            message: 'Aucune session active trouvée pour votre compte',
             code: 'NO_ACTIVE_SESSION'
           }
         });
       }
-      
+
+      // Vérifier que c'est bien le propriétaire de la session
+      if (activeSession.utilisateurId !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            message: 'Vous ne pouvez clôturer que votre propre session de caisse',
+            code: 'SESSION_NOT_OWNED'
+          }
+        });
+      }
+
       // CALCUL DU SOLDE ATTENDU ET DE L'ÉCART
       // Le solde attendu doit être calculé à partir du soldeAttendu actuel de la session
       // (qui est mis à jour à chaque vente et dépense)
@@ -447,8 +466,7 @@ function createCashSessionsRouter({ prisma, authService }) {
   router.get('/history', async (req, res) => {
     try {
       const { limit = 10 } = req.query;
-      // TODO: Récupérer l'utilisateur connecté depuis le token
-      const userId = 1; // Temporaire
+      const userId = req.user.id;
       
       const sessions = await prisma.cashSession.findMany({
         where: {
@@ -541,8 +559,7 @@ function createCashSessionsRouter({ prisma, authService }) {
   // GET /api/v1/cash-sessions/stats - Récupérer les statistiques des sessions
   router.get('/stats', async (req, res) => {
     try {
-      // TODO: Récupérer l'utilisateur connecté depuis le token
-      const userId = 1; // Temporaire
+      const userId = req.user.id;
       
       const [totalSessions, activeSessions, recentSessions] = await Promise.all([
         prisma.cashSession.count({
@@ -614,6 +631,180 @@ function createCashSessionsRouter({ prisma, authService }) {
           code: 'SESSION_STATS_FETCH_ERROR'
         }
       });
+    }
+  });
+
+  // POST /api/v1/cash-sessions/force-close - Forcer la fermeture de la session active (admin ou propriétaire)
+  router.post('/force-close', async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const activeSession = await prisma.cashSession.findFirst({
+        where: { utilisateurId: userId, isActive: true, dateFermeture: null },
+        include: { caisse: true, utilisateur: true }
+      });
+
+      if (!activeSession) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Aucune session active trouvée', code: 'NO_ACTIVE_SESSION' }
+        });
+      }
+
+      const soldeAttendu = activeSession.soldeAttendu
+        ? parseFloat(activeSession.soldeAttendu)
+        : parseFloat(activeSession.soldeOuverture);
+
+      await prisma.cashSession.update({
+        where: { id: activeSession.id },
+        data: {
+          soldeFermeture: soldeAttendu,
+          soldeAttendu: soldeAttendu,
+          ecart: 0,
+          dateFermeture: new Date(),
+          isActive: false
+        }
+      });
+
+      await prisma.cashRegister.update({
+        where: { id: activeSession.caisseId },
+        data: { dateFermeture: new Date(), utilisateurId: null }
+      });
+
+      console.log(`🔒 Session ${activeSession.id} forcée fermée pour utilisateur ${userId}`);
+
+      res.json({ success: true, message: 'Session forcée fermée avec succès' });
+    } catch (error) {
+      console.error('Erreur force-close session:', error);
+      res.status(500).json({
+        success: false,
+        error: { message: 'Erreur serveur', code: 'FORCE_CLOSE_ERROR' }
+      });
+    }
+  });
+
+  // GET /api/v1/cash-sessions/all-active - Lister toutes les sessions actives (admin)
+  router.get('/all-active', async (req, res) => {
+    try {
+      const sessions = await prisma.cashSession.findMany({
+        where: { isActive: true, dateFermeture: null },
+        include: {
+          caisse: { select: { id: true, nom: true } },
+          utilisateur: { select: { id: true, nomUtilisateur: true } }
+        },
+        orderBy: { dateOuverture: 'desc' }
+      });
+
+      res.json({
+        success: true,
+        data: sessions.map(s => ({
+          id: s.id,
+          caisseId: s.caisseId,
+          nomCaisse: s.caisse.nom,
+          utilisateurId: s.utilisateurId,
+          nomUtilisateur: s.utilisateur.nomUtilisateur,
+          soldeOuverture: parseFloat(s.soldeOuverture),
+          soldeAttendu: s.soldeAttendu ? parseFloat(s.soldeAttendu) : null,
+          dateOuverture: s.dateOuverture,
+          isActive: true
+        }))
+      });
+    } catch (error) {
+      console.error('Erreur all-active sessions:', error);
+      res.status(500).json({ success: false, error: { message: 'Erreur serveur' } });
+    }
+  });
+
+  // POST /api/v1/cash-sessions/admin-close/:id - Fermer une session spécifique (admin)
+  router.post('/admin-close/:id', async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+
+      const session = await prisma.cashSession.findUnique({
+        where: { id: sessionId }
+      });
+
+      if (!session) {
+        return res.status(404).json({ success: false, error: { message: 'Session non trouvée' } });
+      }
+
+      const soldeAttendu = session.soldeAttendu
+        ? parseFloat(session.soldeAttendu)
+        : parseFloat(session.soldeOuverture);
+
+      await prisma.cashSession.update({
+        where: { id: sessionId },
+        data: {
+          soldeFermeture: soldeAttendu,
+          soldeAttendu: soldeAttendu,
+          ecart: 0,
+          dateFermeture: new Date(),
+          isActive: false
+        }
+      });
+
+      await prisma.cashRegister.update({
+        where: { id: session.caisseId },
+        data: { dateFermeture: new Date(), utilisateurId: null }
+      });
+
+      console.log(`🔒 [ADMIN] Session ${sessionId} fermée par admin (userId: ${req.user.id})`);
+
+      res.json({ success: true, message: `Session ${sessionId} fermée avec succès` });
+    } catch (error) {
+      console.error('Erreur admin-close session:', error);
+      res.status(500).json({ success: false, error: { message: 'Erreur serveur' } });
+    }
+  });
+
+  // POST /api/v1/cash-sessions/cleanup-orphans - Nettoyer les sessions orphelines (admin)
+  router.post('/cleanup-orphans', async (req, res) => {
+    try {
+      // Trouver toutes les sessions actives dont l'utilisateur n'existe plus
+      // ou les doublons (plusieurs sessions actives pour le même utilisateur)
+      const activeSessions = await prisma.cashSession.findMany({
+        where: { isActive: true, dateFermeture: null },
+        include: { utilisateur: true, caisse: true },
+        orderBy: { dateOuverture: 'asc' }
+      });
+
+      // Détecter les doublons par utilisateur (garder la plus récente)
+      const sessionsByUser = {};
+      for (const s of activeSessions) {
+        if (!sessionsByUser[s.utilisateurId]) {
+          sessionsByUser[s.utilisateurId] = [];
+        }
+        sessionsByUser[s.utilisateurId].push(s);
+      }
+
+      const toClose = [];
+      for (const [, sessions] of Object.entries(sessionsByUser)) {
+        if (sessions.length > 1) {
+          // Garder la plus récente, fermer les autres
+          const sorted = sessions.sort((a, b) => new Date(b.dateOuverture) - new Date(a.dateOuverture));
+          toClose.push(...sorted.slice(1));
+        }
+      }
+
+      let closed = 0;
+      for (const s of toClose) {
+        const soldeAttendu = s.soldeAttendu ? parseFloat(s.soldeAttendu) : parseFloat(s.soldeOuverture);
+        await prisma.cashSession.update({
+          where: { id: s.id },
+          data: { soldeFermeture: soldeAttendu, soldeAttendu, ecart: 0, dateFermeture: new Date(), isActive: false }
+        });
+        await prisma.cashRegister.update({
+          where: { id: s.caisseId },
+          data: { dateFermeture: new Date(), utilisateurId: null }
+        });
+        closed++;
+        console.log(`🧹 Session orpheline ${s.id} (user: ${s.utilisateurId}, caisse: ${s.caisse.nom}) fermée`);
+      }
+
+      res.json({ success: true, message: `${closed} session(s) orpheline(s) fermée(s)` });
+    } catch (error) {
+      console.error('Erreur cleanup-orphans:', error);
+      res.status(500).json({ success: false, error: { message: 'Erreur serveur' } });
     }
   });
 

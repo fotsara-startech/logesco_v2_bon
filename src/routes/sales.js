@@ -101,6 +101,9 @@ function createSalesRouter({ prisma, authService }) {
               client: {
                 select: { id: true, nom: true, prenom: true }
               },
+              vendeur: {
+                select: { id: true, nomUtilisateur: true }
+              },
               details: {
                 include: {
                   produit: {
@@ -628,10 +631,10 @@ function createSalesRouter({ prisma, authService }) {
 
         // Créer la vente dans une transaction
         const vente = await prisma.$transaction(async (tx) => {
-          // Récupérer la session active de l'utilisateur
+          // Récupérer la session active de l'utilisateur connecté
           const activeSession = await tx.cashSession.findFirst({
             where: {
-              utilisateurId: req.user?.id || 1,
+              utilisateurId: req.user.id,
               isActive: true,
               dateFermeture: null
             }
@@ -922,7 +925,7 @@ function createSalesRouter({ prisma, authService }) {
         try {
           const activeSession = await prisma.cashSession.findFirst({
             where: {
-              utilisateurId: req.user?.id || 1,
+              utilisateurId: req.user.id,
               isActive: true,
               dateFermeture: null
             }

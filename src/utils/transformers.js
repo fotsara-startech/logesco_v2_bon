@@ -127,6 +127,10 @@ function buildSalesSearchConditions(searchParams) {
     conditions.clientId = parseInt(searchParams.clientId);
   }
 
+  if (searchParams.vendeurId) {
+    conditions.vendeurId = parseInt(searchParams.vendeurId);
+  }
+
   if (searchParams.statut) {
     conditions.statut = searchParams.statut;
   }
