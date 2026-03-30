@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 /// Template de reçu pour format A4
 class ReceiptTemplateA4 extends ReceiptTemplateBase {
@@ -113,7 +113,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
 
   /// Construit le widget logo (réseau ou fichier local)
   Widget _buildLogoWidget(String logoPath) {
-    final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
     final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
     if (isFullPath) {
       return Image.network(
@@ -170,7 +170,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (company.phone?.isNotEmpty == true) Text('Tél: ${company.phone}', style: textStyle),
-                if (company.email?.isNotEmpty == true && company.phone?.isNotEmpty == true) Text(' • ', style: textStyle),
+                if (company.email?.isNotEmpty == true && company.phone?.isNotEmpty == true) Text(' À ', style: textStyle),
                 if (company.email?.isNotEmpty == true) Text('Email: ${company.email}', style: textStyle),
               ],
             ),

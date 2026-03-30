@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/inventory_model.dart';
 import '../services/stock_inventory_service.dart';
 import '../services/mock_inventory_service.dart';
 import '../services/inventory_print_service.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../products/services/category_service.dart';
 
 /// Contrôleur pour la gestion de l'inventaire de stock
@@ -49,7 +49,7 @@ class StockInventoryController extends GetxController {
   Future<void> loadInventories() async {
     try {
       isLoading.value = true;
-      final inventoryList = ApiConfig.useTestData ? await MockInventoryService.getAllInventories() : await StockInventoryService.getAllInventories();
+      final inventoryList = AppConfig.useTestData ? await MockInventoryService.getAllInventories() : await StockInventoryService.getAllInventories();
       inventories.assignAll(inventoryList);
     } catch (e) {
       Get.snackbar(
@@ -67,12 +67,12 @@ class StockInventoryController extends GetxController {
   /// Charger les catégories depuis la base de données
   Future<void> loadCategories() async {
     try {
-      print('🔄 Chargement des catégories depuis la base de données...');
-      print('🔍 Mode test: ${ApiConfig.useTestData}');
+      print('');
+      print('');
 
       // TOUJOURS utiliser le service de catégories des produits pour avoir les vraies données
       try {
-        print('🔄 Utilisation du service de catégories des produits...');
+        print('');
         final categoryList = await _categoryService.getCategories();
 
         // Convertir les objets Category en Map pour compatibilité
@@ -85,7 +85,7 @@ class StockInventoryController extends GetxController {
             .toList();
 
         categories.assignAll(categoryMaps);
-        print('✅ ${categories.length} catégories réelles chargées depuis la base de données');
+        print(' ${categories.length} catégories réelles chargées depuis la base de données');
 
         // Afficher les catégories pour debug
         for (final cat in categoryMaps) {
@@ -94,28 +94,28 @@ class StockInventoryController extends GetxController {
 
         return; // Succès, on sort de la fonction
       } catch (serviceError) {
-        print('❌ Erreur service catégories: $serviceError');
+        print(' Erreur service catégories: $serviceError');
 
         // Fallback vers l'API directe
         try {
           print('🔄 Tentative de chargement depuis l\'API directe...');
           final categoryList = await StockInventoryService.getCategories();
           categories.assignAll(categoryList);
-          print('✅ ${categories.length} catégories chargées depuis l\'API directe');
+          print(' ${categories.length} catégories chargées depuis l\'API directe');
           return; // Succès, on sort de la fonction
         } catch (apiError) {
-          print('❌ Erreur API directe: $apiError');
+          print(' Erreur API directe: $apiError');
 
           // En dernier recours, utiliser les données de test SEULEMENT si configuré
-          if (ApiConfig.useTestData) {
-            print('🔄 Utilisation des données de test en dernier recours...');
+          if (AppConfig.useTestData) {
+            print('');
             final categoryList = await MockInventoryService.getCategories();
             categories.assignAll(categoryList);
             print('⚠️ ${categories.length} catégories de test chargées en dernier recours');
           } else {
             // Pas de données de test, laisser vide
             categories.clear();
-            print('❌ Aucune catégorie disponible');
+            print(' Aucune catégorie disponible');
 
             Get.snackbar(
               'Attention',
@@ -128,7 +128,7 @@ class StockInventoryController extends GetxController {
         }
       }
     } catch (e) {
-      print('❌ Erreur générale lors du chargement des catégories: $e');
+      print(' Erreur générale lors du chargement des catégories: $e');
       categories.clear();
     }
   }
@@ -147,7 +147,7 @@ class StockInventoryController extends GetxController {
   Future<bool> createInventory(StockInventory inventory) async {
     try {
       isLoading.value = true;
-      final newInventory = ApiConfig.useTestData ? await MockInventoryService.createInventory(inventory) : await StockInventoryService.createInventory(inventory);
+      final newInventory = AppConfig.useTestData ? await MockInventoryService.createInventory(inventory) : await StockInventoryService.createInventory(inventory);
       inventories.add(newInventory);
 
       Get.snackbar(
@@ -176,7 +176,7 @@ class StockInventoryController extends GetxController {
   Future<bool> updateInventory(StockInventory inventory) async {
     try {
       isLoading.value = true;
-      final updatedInventory = ApiConfig.useTestData ? await MockInventoryService.updateInventory(inventory.id!, inventory) : await StockInventoryService.updateInventory(inventory.id!, inventory);
+      final updatedInventory = AppConfig.useTestData ? await MockInventoryService.updateInventory(inventory.id!, inventory) : await StockInventoryService.updateInventory(inventory.id!, inventory);
 
       final index = inventories.indexWhere((i) => i.id == inventory.id);
       if (index != -1) {
@@ -208,7 +208,7 @@ class StockInventoryController extends GetxController {
   /// Supprimer un inventaire
   Future<bool> deleteInventory(int inventoryId) async {
     try {
-      ApiConfig.useTestData ? await MockInventoryService.deleteInventory(inventoryId) : await StockInventoryService.deleteInventory(inventoryId);
+      AppConfig.useTestData ? await MockInventoryService.deleteInventory(inventoryId) : await StockInventoryService.deleteInventory(inventoryId);
       inventories.removeWhere((inventory) => inventory.id == inventoryId);
 
       Get.snackbar(
@@ -235,7 +235,7 @@ class StockInventoryController extends GetxController {
   Future<void> loadInventoryItems(int inventoryId) async {
     try {
       isLoading.value = true;
-      final items = ApiConfig.useTestData ? await MockInventoryService.getInventoryItems(inventoryId) : await StockInventoryService.getInventoryItems(inventoryId);
+      final items = AppConfig.useTestData ? await MockInventoryService.getInventoryItems(inventoryId) : await StockInventoryService.getInventoryItems(inventoryId);
       currentInventoryItems.assignAll(items);
     } catch (e) {
       Get.snackbar(
@@ -253,7 +253,7 @@ class StockInventoryController extends GetxController {
   /// Mettre à jour un article d'inventaire (comptage)
   Future<bool> updateInventoryItem(int itemId, double quantiteComptee, String? commentaire) async {
     try {
-      final updatedItem = ApiConfig.useTestData
+      final updatedItem = AppConfig.useTestData
           ? await MockInventoryService.updateInventoryItemSimple(itemId, quantiteComptee, commentaire)
           : await StockInventoryService.updateInventoryItem(itemId, quantiteComptee, commentaire);
 
@@ -285,7 +285,7 @@ class StockInventoryController extends GetxController {
   /// Démarrer un inventaire
   Future<bool> startInventory(int inventoryId) async {
     try {
-      final updatedInventory = ApiConfig.useTestData ? await MockInventoryService.startInventorySimple(inventoryId) : await StockInventoryService.startInventory(inventoryId);
+      final updatedInventory = AppConfig.useTestData ? await MockInventoryService.startInventorySimple(inventoryId) : await StockInventoryService.startInventory(inventoryId);
 
       final index = inventories.indexWhere((i) => i.id == inventoryId);
       if (index != -1) {
@@ -319,7 +319,7 @@ class StockInventoryController extends GetxController {
   /// Terminer un inventaire
   Future<bool> finishInventory(int inventoryId) async {
     try {
-      final updatedInventory = ApiConfig.useTestData ? await MockInventoryService.finishInventory(inventoryId) : await StockInventoryService.finishInventory(inventoryId);
+      final updatedInventory = AppConfig.useTestData ? await MockInventoryService.finishInventory(inventoryId) : await StockInventoryService.finishInventory(inventoryId);
 
       final index = inventories.indexWhere((i) => i.id == inventoryId);
       if (index != -1) {
@@ -353,7 +353,7 @@ class StockInventoryController extends GetxController {
   /// Clôturer un inventaire
   Future<bool> closeInventory(int inventoryId) async {
     try {
-      final updatedInventory = ApiConfig.useTestData ? await MockInventoryService.closeInventorySimple(inventoryId) : await StockInventoryService.closeInventory(inventoryId);
+      final updatedInventory = AppConfig.useTestData ? await MockInventoryService.closeInventorySimple(inventoryId) : await StockInventoryService.closeInventory(inventoryId);
 
       final index = inventories.indexWhere((i) => i.id == inventoryId);
       if (index != -1) {
@@ -386,7 +386,7 @@ class StockInventoryController extends GetxController {
 
   /// Imprimer une feuille de comptage
   Future<void> printCountingSheet(int inventoryId) async {
-    print('🖨️ Début impression pour inventaire $inventoryId');
+    print('️ Début impression pour inventaire $inventoryId');
 
     try {
       // Trouver l'inventaire
@@ -423,7 +423,7 @@ class StockInventoryController extends GetxController {
 
   /// Imprimer un rapport d'inventaire terminé
   Future<void> printInventoryReport(int inventoryId) async {
-    print('🖨️ Début impression rapport pour inventaire $inventoryId');
+    print('️ Début impression rapport pour inventaire $inventoryId');
 
     try {
       // Trouver l'inventaire
@@ -481,7 +481,7 @@ class StockInventoryController extends GetxController {
     Get.dialog(
       AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer l\'inventaire "${inventory.nom}" ?'),
+        content: Text('Êtestes-vous sûr de vouloir supprimer l\'inventaire "${inventory.nom}" ?'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),

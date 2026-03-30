@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/subscription_controller.dart';
 import '../views/subscription_status_page.dart';
 import '../views/license_activation_page.dart';
+import '../../../core/config/app_config.dart';
 
 /// Widget compact pour afficher le statut d'abonnement dans l'interface
 class SubscriptionStatusWidget extends StatelessWidget {
@@ -20,14 +21,13 @@ class SubscriptionStatusWidget extends StatelessWidget {
     final subscriptionController = Get.find<SubscriptionController>();
 
     return Obx(() {
-      final status = subscriptionController.currentStatus;
+      final status = subscriptionController.currentStatusRx.value;
 
       if (status == null) {
         return const SizedBox.shrink();
       }
 
-      // Ne pas afficher si tout va bien et en mode compact
-      if (compact && status.isActive && !subscriptionController.shouldShowNotifications()) {
+      if (compact && status.isActive && subscriptionController.notificationsRx.isEmpty) {
         return const SizedBox.shrink();
       }
 
@@ -38,7 +38,9 @@ class SubscriptionStatusWidget extends StatelessWidget {
   Widget _buildStatusCard(BuildContext context, dynamic status, SubscriptionController controller) {
     final isActive = status.isActive;
     final isInGracePeriod = status.isInGracePeriod;
-    final remainingDays = status.remainingDays ?? 0;
+    final int? remainingDaysNullable = status.remainingDays;
+    final bool isLifetime = remainingDaysNullable == null;
+    final int remainingDays = remainingDaysNullable ?? 999;
 
     Color backgroundColor;
     Color textColor;
@@ -58,27 +60,27 @@ class SubscriptionStatusWidget extends StatelessWidget {
       icon = Icons.warning;
       title = 'subscription_grace_label'.tr;
       subtitle = 'subscription_renew_now'.tr;
-    } else if (remainingDays <= 1) {
+    } else if (!isLifetime && remainingDays <= 1) {
       backgroundColor = Colors.red.shade100;
       textColor = Colors.red.shade800;
       icon = Icons.warning;
       title = remainingDays == 0 ? 'subscription_expires_today_label'.tr : 'subscription_expires_tomorrow_label'.tr;
       subtitle = 'subscription_renew_label'.tr;
-    } else if (remainingDays <= 3) {
+    } else if (!isLifetime && remainingDays <= 3) {
       backgroundColor = Colors.orange.shade100;
       textColor = Colors.orange.shade800;
       icon = Icons.info;
       title = 'subscription_expires_in_days_label'.trParams({'n': '$remainingDays'});
       subtitle = 'subscription_renew_label'.tr;
     } else {
-      // Abonnement actif, ne pas afficher en mode compact
+      // Abonnement actif (ou lifetime), ne pas afficher en mode compact
       if (compact) return const SizedBox.shrink();
 
       backgroundColor = Colors.green.shade100;
       textColor = Colors.green.shade800;
       icon = Icons.check_circle;
       title = 'subscription_active_label'.tr;
-      subtitle = showDetails ? 'subscription_expires_in_days_label'.trParams({'n': '$remainingDays'}) : null;
+      subtitle = (!isLifetime && showDetails) ? 'subscription_expires_in_days_label'.trParams({'n': '$remainingDays'}) : null;
     }
 
     if (compact) {
@@ -215,12 +217,12 @@ class SubscriptionNotificationBanner extends StatelessWidget {
     final subscriptionController = Get.find<SubscriptionController>();
 
     return Obx(() {
-      if (!subscriptionController.shouldShowCriticalNotifications()) {
-        return const SizedBox.shrink();
-      }
+      // Accès à l'observable en premier pour que GetX puisse tracker
+      final status = subscriptionController.currentStatusRx.value;
 
-      final status = subscriptionController.currentStatus;
+      if (!AppConfig.enableLicenseControl) return const SizedBox.shrink();
       if (status == null) return const SizedBox.shrink();
+      if (!subscriptionController.shouldShowCriticalNotifications()) return const SizedBox.shrink();
 
       String message;
       Color backgroundColor;

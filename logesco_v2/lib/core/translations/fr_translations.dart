@@ -1,4 +1,4 @@
-/// Traductions françaises de l'application LOGESCO v2
+﻿/// Traductions françaises de l'application LOGESCO v2
 const Map<String, String> frTranslations = {
   // ============================================================================
   // COMPTABILITÉ
@@ -42,7 +42,7 @@ const Map<String, String> frTranslations = {
   'menu_stock_products': 'STOCK & PRODUITS',
   'menu_procurement': 'APPROVISIONNEMENT',
   'menu_financial': 'GESTION FINANCIÈRE',
-  'menu_expenses': 'DÉPENSES',
+  'menu_expenses': 'DPENSES',
   'menu_reports': 'RAPPORTS',
   'menu_administration': 'ADMINISTRATION',
   'menu_orders': 'Commandes',
@@ -129,7 +129,7 @@ const Map<String, String> frTranslations = {
   'suppliers_print_statement': 'Imprimer le relevé',
   'suppliers_generating_statement': 'Génération du relevé...',
   'suppliers_delete': 'Supprimer',
-  'suppliers_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce fournisseur ?',
+  'suppliers_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce fournisseur ?',
   'suppliers_delete_success': 'Fournisseur supprimé avec succès',
   'suppliers_delete_error': 'Erreur lors de la suppression',
 
@@ -195,8 +195,8 @@ const Map<String, String> frTranslations = {
   // Transactions
   'suppliers_no_transactions_hint': 'L\'historique des transactions apparaîtra ici.',
   'suppliers_id_label': 'Fournisseur #@id',
-  'suppliers_credit': 'CRÉDIT',
-  'suppliers_debit': 'DÉBIT',
+  'suppliers_credit': 'CRDIT',
+  'suppliers_debit': 'DBIT',
   'suppliers_transaction_details': 'Détails de la transaction',
   'suppliers_transaction_reference': 'Référence',
   'suppliers_close': 'Fermer',
@@ -319,7 +319,7 @@ const Map<String, String> frTranslations = {
 
   // Confirmation
   'users_delete_confirm_title': 'Confirmer la suppression',
-  'users_delete_confirm_message': 'Êtes-vous sûr de vouloir supprimer l\'utilisateur "@username" ?',
+  'users_delete_confirm_message': 'Êtestes-vous sûr de vouloir supprimer l\'utilisateur "@username" ?',
   'users_change_password_title': 'Changer le mot de passe - @username',
 
   // Rôles manquants
@@ -329,7 +329,7 @@ const Map<String, String> frTranslations = {
   'users_create_custom_roles': 'Créez vos propres rôles personnalisés',
 
   // ============================================================================
-  // RÔLES / ROLES
+  // R"LES / ROLES
   // ============================================================================
   // Titres
   'roles_title': 'Gestion des rôles',
@@ -399,7 +399,7 @@ const Map<String, String> frTranslations = {
 
   // Confirmation suppression
   'roles_delete_confirm_title': 'Supprimer le rôle',
-  'roles_delete_confirm_message': 'Êtes-vous sûr de vouloir supprimer le rôle :',
+  'roles_delete_confirm_message': 'Êtestes-vous sûr de vouloir supprimer le rôle :',
   'roles_delete_irreversible': 'Cette action est irréversible.',
 
   // Widget d'accès rapide
@@ -572,7 +572,7 @@ const Map<String, String> frTranslations = {
   'subscription_refresh_status': 'Actualiser',
 
   // ============================================================================
-  // GÉNÉRAL
+  // GNRAL
   // ============================================================================
   'app_name': 'LOGESCO v2',
   'yes': 'Oui',
@@ -645,7 +645,7 @@ const Map<String, String> frTranslations = {
   'language': 'Langue',
   'currency': 'Devise',
   'from': 'De',
-  'to': 'À',
+  'to': '',
   'between': 'Entre',
   'and': 'et',
   'or': 'ou',
@@ -664,7 +664,7 @@ const Map<String, String> frTranslations = {
   'auth_password_label': 'Mot de passe',
   'auth_login_button': 'Se connecter',
   'auth_logout_button': 'Se déconnecter',
-  'auth_logout_confirm': 'Êtes-vous sûr de vouloir vous déconnecter ?',
+  'auth_logout_confirm': 'Êtestes-vous sûr de vouloir vous déconnecter ?',
   'auth_invalid_credentials': 'Identifiants invalides',
   'auth_login_success': 'Connexion réussie',
   'auth_logout_success': 'Déconnexion réussie',
@@ -735,7 +735,7 @@ const Map<String, String> frTranslations = {
   'dashboard_minutes_ago': 'Il y a @n min',
   'dashboard_hours_ago': 'Il y a @nh',
   'dashboard_days_ago': 'Il y a @nj',
-  'dashboard_sales_evolution': 'Évolution des ventes',
+  'dashboard_sales_evolution': 'volution des ventes',
   'dashboard_sales_legend': 'Ventes',
   'dashboard_revenue_legend': 'Revenus',
   'dashboard_no_sales_data': 'Aucune donnée de vente',
@@ -775,7 +775,7 @@ const Map<String, String> frTranslations = {
   'products_add': 'Ajouter un produit',
   'products_edit': 'Modifier le produit',
   'products_delete': 'Supprimer le produit',
-  'products_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce produit ?',
+  'products_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce produit ?',
   'products_name': 'Nom du produit',
   'products_code': 'Code',
   'products_barcode': 'Code-barres',
@@ -810,7 +810,7 @@ const Map<String, String> frTranslations = {
   'categories_add': 'Ajouter une catégorie',
   'categories_edit': 'Modifier la catégorie',
   'categories_delete': 'Supprimer la catégorie',
-  'categories_delete_confirm': 'Êtes-vous sûr de vouloir supprimer cette catégorie ?',
+  'categories_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer cette catégorie ?',
   'categories_name': 'Nom de la catégorie',
   'categories_description': 'Description',
   'categories_products_count': 'Nombre de produits',
@@ -826,7 +826,7 @@ const Map<String, String> frTranslations = {
   'sales_create': 'Créer une vente',
   'sales_edit': 'Modifier la vente',
   'sales_delete': 'Supprimer la vente',
-  'sales_delete_confirm': 'Êtes-vous sûr de vouloir supprimer cette vente ?',
+  'sales_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer cette vente ?',
   'sales_number': 'N° de vente',
   'sales_date': 'Date de vente',
   'sales_customer': 'Client',
@@ -902,6 +902,53 @@ const Map<String, String> frTranslations = {
   'sales_sort_category': 'Catégorie',
   'sales_sort_ascending': 'Croissant',
   'sales_sort_descending': 'Décroissant',
+
+  // Proforma
+  'proforma_title': 'Factures Proforma',
+  'proforma_edit_title': 'Modifier la Proforma',
+  'proforma_save': 'PROFORMA',
+  'proforma_update': 'METTRE À JOUR LA PROFORMA',
+  'proforma_empty': 'Aucune proforma',
+  'proforma_empty_hint': 'Créez une proforma depuis la page de vente',
+  'proforma_all': 'Toutes',
+  'proforma_status_draft': 'Brouillon',
+  'proforma_status_validated': 'Validée',
+  'proforma_status_cancelled': 'Annulée',
+  'proforma_edit': 'Modifier',
+  'proforma_validate': 'Valider',
+  'proforma_validating': 'Validation...',
+  'proforma_cancel': 'Annuler la proforma',
+  'proforma_validate_title': 'Valider la proforma',
+  'proforma_total_to_pay': 'Total à payer',
+  'proforma_payment_mode': 'Mode de paiement',
+  'proforma_cash': 'Comptant',
+  'proforma_credit': 'Crédit',
+  'proforma_mobile_money': 'Mobile Money',
+  'proforma_transfer': 'Virement',
+  'proforma_amount_paid': 'Montant reçu',
+  'proforma_amount_required': 'Montant requis',
+  'proforma_amount_invalid': 'Montant invalide',
+  'proforma_change': 'Monnaie',
+  'proforma_remaining': 'Reste à payer',
+  'proforma_confirm_validate': 'Confirmer et créer la vente',
+  'proforma_invoice_label': 'FACTURE PROFORMA',
+  'proforma_info': 'Informations',
+  'proforma_client': 'Client',
+  'proforma_date': 'Date',
+  'proforma_seller': 'Vendeur',
+  'proforma_items': 'Articles',
+  'proforma_subtotal': 'Sous-total',
+  'proforma_discount': 'Remise',
+  'proforma_tva': 'TVA',
+  'proforma_total': 'TOTAL',
+  'proforma_cancel_confirm_title': 'Annuler la proforma ?',
+  'proforma_cancel_confirm_msg': 'Voulez-vous annuler la proforma @number ?',
+  'proforma_new': 'Nouvelle proforma',
+  'proforma_create_title': 'Nouvelle Facture Proforma',
+  'proforma_save_action': 'ENREGISTRER LA PROFORMA',
+  'proforma_saving': 'Enregistrement...',
+  'proforma_no_stock_movement': 'Aucun mouvement de stock ni financier — document de référence uniquement.',
+  'proforma_print': 'Imprimer',
   'sales_no_products': 'Aucun produit',
   'sales_no_products_available': 'Aucun produit disponible pour la vente',
   'sales_reload': 'Recharger',
@@ -949,7 +996,7 @@ const Map<String, String> frTranslations = {
   'sales_discount_original_price': 'Prix original',
   'sales_discount_applied': 'Remise',
   'sales_discount_final_price': 'Prix final',
-  'sales_discount_customer_savings': 'Économie client',
+  'sales_discount_customer_savings': 'conomie client',
   'sales_discount_apply': 'Appliquer',
   'sales_discount_invalid_amount': 'Montant invalide',
   'sales_discount_negative': 'La remise ne peut pas être négative',
@@ -1016,7 +1063,7 @@ const Map<String, String> frTranslations = {
   'sales_cart_item_count': '@count article(s)',
   'sales_cart_clear': 'Vider le panier',
   'sales_cart_clear_confirm': 'Vider le panier',
-  'sales_cart_clear_message': 'Êtes-vous sûr de vouloir vider le panier ?',
+  'sales_cart_clear_message': 'Êtestes-vous sûr de vouloir vider le panier ?',
   'sales_cart_clear_button': 'Vider',
   'sales_cart_reference': 'Réf: @ref',
   'sales_cart_unit_price': 'Prix unitaire',
@@ -1112,7 +1159,7 @@ const Map<String, String> frTranslations = {
   'sales_cancel_sale': 'Annuler vente',
   'sales_close': 'Fermer',
   'sales_confirm_cancel': 'Confirmer l\'annulation',
-  'sales_confirm_cancel_message': 'Êtes-vous sûr de vouloir annuler la vente @number ?',
+  'sales_confirm_cancel_message': 'Êtestes-vous sûr de vouloir annuler la vente @number ?',
   'sales_yes_cancel': 'Oui, annuler',
   'sales_error': 'Erreur',
   'sales_company_not_configured': 'Profil d\'entreprise non configuré.\nAllez dans Paramètres > Entreprise pour configurer les informations.',
@@ -1186,7 +1233,7 @@ const Map<String, String> frTranslations = {
   'inventory_count_no_items': 'Aucun article trouvé',
   'inventory_count_qty_system': 'Qté Système',
   'inventory_count_qty_counted': 'Qté Comptée',
-  'inventory_count_variance': 'Écart',
+  'inventory_count_variance': 'cart',
   'inventory_count_to_count': 'À compter',
   'inventory_count_ok': 'OK',
   'inventory_count_counted_by': 'Compté par @user le @date',
@@ -1201,7 +1248,7 @@ const Map<String, String> frTranslations = {
   'inventory_count_finalize_title': 'Finaliser l\'inventaire',
   'inventory_count_summary': 'Résumé de l\'inventaire:',
   'inventory_count_items_counted': 'Articles comptés: @count',
-  'inventory_count_variances_detected': 'Écarts détectés: @count',
+  'inventory_count_variances_detected': 'carts détectés: @count',
   'inventory_count_warning': 'Attention: @count écart(s) seront appliqués au stock.',
   'inventory_count_confirm_question': 'Voulez-vous finaliser cet inventaire ?',
   'inventory_count_code': 'Code: @code',
@@ -1211,7 +1258,7 @@ const Map<String, String> frTranslations = {
   'inventory_detail_stats': 'Statistiques',
   'inventory_detail_actions': 'Actions',
   'inventory_detail_items': 'Articles',
-  'inventory_detail_variances': 'Écarts',
+  'inventory_detail_variances': 'carts',
   'inventory_detail_progress': 'Progression: @percent%',
   'inventory_detail_start': 'Démarrer',
   'inventory_detail_continue_count': 'Continuer le comptage',
@@ -1223,7 +1270,7 @@ const Map<String, String> frTranslations = {
   'inventory_detail_delete': 'Supprimer',
   'inventory_detail_start_date': 'Date de début',
   'inventory_detail_end_date': 'Date de fin',
-  'inventory_detail_edit_dev': 'Édition d\'inventaire - En cours de développement',
+  'inventory_detail_edit_dev': 'dition d\'inventaire - En cours de développement',
 
   // Tri
   'inventory_sort_by': 'Trier par:',
@@ -1241,7 +1288,7 @@ const Map<String, String> frTranslations = {
   'customers_add': 'Ajouter un client',
   'customers_edit': 'Modifier le client',
   'customers_delete': 'Supprimer le client',
-  'customers_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce client ?',
+  'customers_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce client ?',
   'customers_name': 'Nom du client',
   'customers_phone': 'Téléphone',
   'customers_email': 'Email',
@@ -1320,10 +1367,10 @@ const Map<String, String> frTranslations = {
   'customers_no_transactions_to_print': 'Aucune transaction à imprimer',
   'customers_statement': 'Relevé de compte',
   'customers_statement_includes': 'Le relevé inclura:',
-  'customers_statement_client_info': '• Informations du client',
-  'customers_statement_balance': '• Solde actuel du compte',
-  'customers_statement_history': '• Historique complet des transactions',
-  'customers_statement_datetime': '• Date et heure d\'impression',
+  'customers_statement_client_info': ' Informations du client',
+  'customers_statement_balance': ' Solde actuel du compte',
+  'customers_statement_history': ' Historique complet des transactions',
+  'customers_statement_datetime': ' Date et heure d\'impression',
   'customers_generating_statement': 'Génération du relevé en cours...',
   'customers_statement_error': 'Impossible de récupérer les données du relevé',
   'customers_statement_success': 'Relevé de compte généré\nEmplacement: @path',
@@ -1361,7 +1408,7 @@ const Map<String, String> frTranslations = {
   // 'suppliers_add': 'Ajouter un fournisseur',
   // 'suppliers_edit': 'Modifier le fournisseur',
   // 'suppliers_delete': 'Supprimer le fournisseur',
-  // 'suppliers_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce fournisseur ?',
+  // 'suppliers_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce fournisseur ?',
   // 'suppliers_name': 'Nom du fournisseur',
   // 'suppliers_phone': 'Téléphone',
   // 'suppliers_email': 'Email',
@@ -1408,7 +1455,7 @@ const Map<String, String> frTranslations = {
   'cash_register_closing_balance': 'Solde de fermeture',
   'cash_register_expected_balance': 'Solde attendu',
   'cash_register_actual_balance': 'Solde réel',
-  'cash_register_difference': 'Écart',
+  'cash_register_difference': 'cart',
   'cash_register_sessions': 'Sessions de caisse',
   'cash_register_session_history': 'Historique des sessions',
   'cash_register_current_session': 'Session en cours',
@@ -1451,7 +1498,7 @@ const Map<String, String> frTranslations = {
   'cash_register_open_dialog_message': 'Entrez le montant initial en caisse:',
   'cash_register_initial_amount': 'Montant initial (FCFA)',
   'cash_register_close_dialog_title': 'Fermer @name',
-  'cash_register_close_dialog_message': 'Êtes-vous sûr de vouloir fermer cette caisse ?',
+  'cash_register_close_dialog_message': 'Êtestes-vous sûr de vouloir fermer cette caisse ?',
   'cash_register_form_new': 'Nouvelle Caisse',
   'cash_register_form_edit': 'Modifier Caisse',
   'cash_register_basic_info': 'Informations de base',
@@ -1475,7 +1522,7 @@ const Map<String, String> frTranslations = {
   'cash_register_update': 'Mettre à jour',
   'cash_register_create': 'Créer',
   'cash_register_delete_confirm_title': 'Confirmer la suppression',
-  'cash_register_delete_confirm_message': 'Êtes-vous sûr de vouloir supprimer la caisse "@name" ?',
+  'cash_register_delete_confirm_message': 'Êtestes-vous sûr de vouloir supprimer la caisse "@name" ?',
   'cash_session_title': 'Session de Caisse',
   'cash_session_history_title': 'Historique des sessions',
   'cash_session_status': 'Statut de la session',
@@ -1519,7 +1566,7 @@ const Map<String, String> frTranslations = {
   'reports_print': 'Imprimer',
 
   // ============================================================================
-  // PARAMÈTRES ENTREPRISE
+  // PARAM^TRES ENTREPRISE
   // ============================================================================
   'company_settings_title': 'Paramètres de l\'entreprise',
   'company_settings_profile': 'Profil de l\'entreprise',
@@ -1546,7 +1593,7 @@ const Map<String, String> frTranslations = {
   'company_settings_save': 'Sauvegarder les modifications',
   'company_settings_create': 'Créer le profil d\'entreprise',
   'company_settings_delete': 'Supprimer le profil',
-  'company_settings_delete_confirm': 'Êtes-vous sûr de vouloir supprimer le profil de l\'entreprise ?',
+  'company_settings_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer le profil de l\'entreprise ?',
   'company_settings_no_permission': 'Vous n\'avez pas les permissions pour modifier ces informations.',
   'company_settings_save_success': 'Paramètres enregistrés avec succès',
   'company_settings_delete_success': 'Profil supprimé avec succès',
@@ -1559,14 +1606,14 @@ const Map<String, String> frTranslations = {
   'company_settings_saving': 'Sauvegarde...',
 
   // ============================================================================
-  // UTILISATEURS & RÔLES
+  // UTILISATEURS & R"LES
   // ============================================================================
   // 'users_title': 'Utilisateurs',
   'users_list': 'Liste des utilisateurs',
   // 'users_add': 'Ajouter un utilisateur',
   // 'users_edit': 'Modifier l\'utilisateur',
   // 'users_delete': 'Supprimer l\'utilisateur',
-  'users_delete_confirm': 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?',
+  'users_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer cet utilisateur ?',
   // 'users_username': 'Nom d\'utilisateur',
   'users_full_name': 'Nom complet',
   // 'users_email': 'Email',
@@ -1585,7 +1632,7 @@ const Map<String, String> frTranslations = {
   // 'roles_add': 'Ajouter un rôle',
   // 'roles_edit': 'Modifier le rôle',
   // 'roles_delete': 'Supprimer le rôle',
-  'roles_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce rôle ?',
+  'roles_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce rôle ?',
   // 'roles_name': 'Nom du rôle',
   'roles_description': 'Description',
   'roles_permissions': 'Permissions',
@@ -1605,7 +1652,7 @@ const Map<String, String> frTranslations = {
   'permissions_none': 'Aucune permission',
 
   // ============================================================================
-  // FACTURES / REÇUS
+  // FACTURES / REUS
   // ============================================================================
   'receipts_title': 'Factures',
   'receipts_list': 'Liste des factures',
@@ -1620,14 +1667,14 @@ const Map<String, String> frTranslations = {
   'receipts_reprint': 'Réimprimer',
 
   // ============================================================================
-  // DÉPENSES
+  // DPENSES
   // ============================================================================
   'expenses_title': 'Dépenses',
   'expenses_list': 'Liste des dépenses',
   'expenses_add': 'Ajouter une dépense',
   'expenses_edit': 'Modifier la dépense',
   'expenses_delete': 'Supprimer la dépense',
-  'expenses_delete_confirm': 'Êtes-vous sûr de vouloir supprimer cette dépense ?',
+  'expenses_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer cette dépense ?',
   'expenses_date': 'Date',
   'expenses_category': 'Catégorie',
   'expenses_amount': 'Montant',
@@ -1639,14 +1686,14 @@ const Map<String, String> frTranslations = {
   'expenses_total': 'Total des dépenses',
 
   // ============================================================================
-  // DÉPENSES
+  // DPENSES
   // ============================================================================
   // 'expenses_title': 'Dépenses',
   // 'expenses_list': 'Liste des dépenses',
   // 'expenses_add': 'Ajouter une dépense',
   // 'expenses_edit': 'Modifier la dépense',
   // 'expenses_delete': 'Supprimer la dépense',
-  // 'expenses_delete_confirm': 'Êtes-vous sûr de vouloir supprimer cette dépense ?',
+  // 'expenses_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer cette dépense ?',
   // 'expenses_date': 'Date',
   // 'expenses_category': 'Catégorie',
   // 'expenses_amount': 'Montant',
@@ -1663,7 +1710,7 @@ const Map<String, String> frTranslations = {
   'expenses_category_new': 'Nouvelle catégorie',
   'expenses_category_edit': 'Modifier la catégorie',
   'expenses_category_delete': 'Supprimer la catégorie',
-  'expenses_category_delete_confirm': 'Êtes-vous sûr de vouloir supprimer la catégorie "@name" ?',
+  'expenses_category_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer la catégorie "@name" ?',
   'expenses_category_name': 'Nom de la catégorie',
   'expenses_category_display_name': 'Nom d\'affichage',
   'expenses_category_system_name': 'Nom système: @name',
@@ -1692,7 +1739,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_new': 'Nouveau mouvement',
   'financial_movements_edit': 'Modifier le mouvement',
   'financial_movements_delete': 'Supprimer le mouvement',
-  'financial_movements_delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce mouvement ?',
+  'financial_movements_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer ce mouvement ?',
   'financial_movements_duplicate': 'Dupliquer',
   'financial_movements_reports': 'Rapports et statistiques',
   'financial_movements_filters': 'Filtres',
@@ -1921,10 +1968,10 @@ const Map<String, String> frTranslations = {
   // ============================================================================
   // MESSAGES DE CONFIRMATION
   // ============================================================================
-  'confirm_delete': 'Êtes-vous sûr de vouloir supprimer ?',
-  'confirm_cancel': 'Êtes-vous sûr de vouloir annuler ?',
-  'confirm_logout': 'Êtes-vous sûr de vouloir vous déconnecter ?',
-  'confirm_close_session': 'Êtes-vous sûr de vouloir fermer la session ?',
+  'confirm_delete': 'Êtestes-vous sûr de vouloir supprimer ?',
+  'confirm_cancel': 'Êtestes-vous sûr de vouloir annuler ?',
+  'confirm_logout': 'Êtestes-vous sûr de vouloir vous déconnecter ?',
+  'confirm_close_session': 'Êtestes-vous sûr de vouloir fermer la session ?',
   'confirm_discard_changes': 'Voulez-vous abandonner les modifications ?',
 
   // ============================================================================
@@ -1950,7 +1997,7 @@ const Map<String, String> frTranslations = {
   'procurement_filter_reset': 'Réinitialiser',
   'procurement_filter_apply': 'Appliquer',
   'procurement_confirm_reception': 'Confirmer la réception',
-  'procurement_confirm_reception_message': 'Êtes-vous sûr de vouloir enregistrer cette réception ?',
+  'procurement_confirm_reception_message': 'Êtestes-vous sûr de vouloir enregistrer cette réception ?',
   'procurement_receive_action': 'Réceptionner',
   'procurement_qty_received': 'Qté reçue',
   'procurement_order': 'Commande',
@@ -2012,12 +2059,12 @@ const Map<String, String> frTranslations = {
   'cash_session_invalid_amount': 'Montant invalide',
   'cash_session_admin_info': 'Informations administrateur',
   'cash_session_expected_balance': 'Solde attendu',
-  'cash_session_variance': 'Écart prévisionnel:',
-  'cash_session_instructions': '• Comptez soigneusement tout l\'argent dans la caisse\n• Incluez les billets et les pièces\n• L\'écart sera calculé automatiquement',
+  'cash_session_variance': 'cart prévisionnel:',
+  'cash_session_instructions': ' Comptez soigneusement tout l\'argent dans la caisse\n Incluez les billets et les pièces\n L\'écart sera calculé automatiquement',
   'cash_session_closing': 'Clôture...',
   'cash_session_close_button': 'Clôturer la caisse',
   'cash_session_confirm_close': 'Confirmer la clôture',
-  'cash_session_confirm_close_message': 'Êtes-vous sûr de vouloir clôturer cette session ?',
+  'cash_session_confirm_close_message': 'Êtestes-vous sûr de vouloir clôturer cette session ?',
   'cash_session_declared_amount': 'Montant déclaré:',
   'cash_session_irreversible': 'Cette action est irréversible.',
 
@@ -2185,7 +2232,7 @@ const Map<String, String> frTranslations = {
   'categories_create_button': 'Créer',
   'categories_update_button': 'Modifier',
   'categories_delete_title': 'Supprimer la catégorie',
-  // 'categories_delete_confirm': 'Êtes-vous sûr de vouloir supprimer la catégorie :',
+  // 'categories_delete_confirm': 'Êtestes-vous sûr de vouloir supprimer la catégorie :',
   'categories_delete_warning': 'Cette action est irréversible.',
   'categories_created_success': 'Catégorie créée avec succès',
   'categories_updated_success': 'Catégorie modifiée avec succès',
@@ -2202,7 +2249,7 @@ const Map<String, String> frTranslations = {
   'excel_template_button': 'Template',
   'excel_instructions_title': 'Instructions',
   'excel_instructions_text':
-      '• Pour l\'import, utilisez le template fourni\n• Les colonnes Référence, Nom et Prix Unitaire sont obligatoires\n• Ajoutez une "Quantité Initiale" pour créer automatiquement le stock\n• Les valeurs "Oui/Non" pour Est Actif et Est Service\n• Les prix doivent être des nombres (utilisez . pour les décimales)\n• Les lignes incomplètes seront ignorées',
+      ' Pour l\'import, utilisez le template fourni\n Les colonnes Référence, Nom et Prix Unitaire sont obligatoires\n Ajoutez une "Quantité Initiale" pour créer automatiquement le stock\n Les valeurs "Oui/Non" pour Est Actif et Est Service\n Les prix doivent être des nombres (utilisez . pour les décimales)\n Les lignes incomplètes seront ignorées',
   'excel_preview_title': 'Aperçu de l\'import',
   'excel_preview_count': '@count produits prêts à importer',
   'excel_preview_with_stock': '@count avec stock initial',
@@ -2250,7 +2297,7 @@ const Map<String, String> frTranslations = {
   'product_detail_expiration_enabled': 'Activée',
   'product_detail_expiration_disabled': 'Désactivée',
   'product_detail_delete_confirm_title': 'Confirmer la suppression',
-  'product_detail_delete_confirm_message': 'Êtes-vous sûr de vouloir supprimer le produit "@name" ?\n\nCette action est irréversible.',
+  'product_detail_delete_confirm_message': 'Êtestes-vous sûr de vouloir supprimer le produit "@name" ?\n\nCette action est irréversible.',
   'product_detail_delete_cancel': 'Annuler',
   'product_detail_delete_button': 'Supprimer',
   'product_detail_category_none': 'Aucune',
@@ -2539,14 +2586,14 @@ const Map<String, String> frTranslations = {
   // Profit Analysis Widget
   'reports_profit_title': 'Analyse des Bénéfices',
   'reports_profit_profitable': 'RENTABLE',
-  'reports_profit_unprofitable': 'DÉFICITAIRE',
+  'reports_profit_unprofitable': 'DFICITAIRE',
   'reports_profit_gross': 'Marge Brute',
   'reports_profit_net': 'Bénéfice Net',
   'reports_profit_margin_percent': 'Marge (%)',
   'reports_profit_cost_breakdown': 'Répartition des Coûts',
   'reports_profit_cogs': 'Coût des Marchandises Vendues',
   'reports_profit_operating_expenses': 'Dépenses Opérationnelles',
-  'reports_profit_trend': 'Évolution',
+  'reports_profit_trend': 'volution',
   'reports_profit_trend_positive': 'Tendance Positive',
   'reports_profit_trend_negative': 'Tendance Négative',
   'reports_profit_previous_period': 'Période précédente: @amount',
@@ -2582,8 +2629,8 @@ const Map<String, String> frTranslations = {
   // ============================================================================
   // RELEVÉS DE COMPTE - TRADUCTIONS PDF
   // ============================================================================
-  'statement_title_customer': 'RELEVÉ DE COMPTE CLIENT',
-  'statement_title_supplier': 'RELEVÉ DE COMPTE FOURNISSEUR',
+  'statement_title_customer': 'RELEVÀ DE COMPTE CLIENT',
+  'statement_title_supplier': 'RELEVÀ DE COMPTE FOURNISSEUR',
   'statement_generated_date': 'Date: @date',
   'statement_client_label': 'CLIENT',
   'statement_supplier_label': 'FOURNISSEUR',
@@ -2910,13 +2957,13 @@ const Map<String, String> frTranslations = {
   'stock_reason_damage_loss': 'Casse/Perte',
   'stock_reason_expiration': 'Péremption',
   'stock_reason_supplier_return': 'Retour fournisseur',
-  'stock_reason_sample': 'Échantillon',
+  'stock_reason_sample': 'chantillon',
   'stock_reason_internal_use': 'Usage interne',
   'stock_reason_other_exit': 'Autre sortie',
 
   // Correction reasons
   'stock_reason_entry_error': 'Erreur de saisie',
-  'stock_reason_inventory_gap': 'Écart d\'inventaire',
+  'stock_reason_inventory_gap': 'cart d\'inventaire',
   'stock_reason_regularization': 'Régularisation',
 
   // Transfer reasons
@@ -2949,7 +2996,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_loading_error': 'Erreur de chargement',
   'financial_movements_no_expenses_today': 'Aucune dépense aujourd\'hui',
   // 'financial_movements_no_results': 'Aucun résultat',
-  'financial_movements_empty_summary': '0 FCFA • 0 mouvement',
+  'financial_movements_empty_summary': '0 FCFA  0 mouvement',
   'financial_movements_movement_singular': '@count mouvement',
   'financial_movements_movement_plural': '@count mouvements',
   'financial_movements_average_label': 'Moy: ',
@@ -2971,7 +3018,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_chart_horizontal_bars': 'Barres H.',
   'financial_movements_expense_ranking': 'Classement des dépenses',
   'financial_movements_category_distribution': 'Répartition par catégorie',
-  'financial_movements_daily_evolution': 'Évolution quotidienne',
+  'financial_movements_daily_evolution': 'volution quotidienne',
   'financial_movements_trend_average': 'Moyenne',
   'financial_movements_trend_maximum': 'Maximum',
   'financial_movements_trend_minimum': 'Minimum',
@@ -3000,7 +3047,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_saved_presets': 'Presets sauvegardés',
   'financial_movements_no_custom_presets': 'Aucun preset personnalisé sauvegardé',
   'financial_movements_delete_preset_title': 'Supprimer le preset',
-  'financial_movements_delete_preset_confirm': 'Êtes-vous sûr de vouloir supprimer le preset "@name" ?',
+  'financial_movements_delete_preset_confirm': 'Êtestes-vous sûr de vouloir supprimer le preset "@name" ?',
   'financial_movements_save_filters_title': 'Sauvegarder les filtres',
   'financial_movements_preset_name_label': 'Nom du preset *',
   'financial_movements_preset_description_label': 'Description (optionnelle)',
@@ -3015,7 +3062,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_period_previous_quarter': 'Trimestre précédent',
   'financial_movements_compare_periods_button': 'Comparer les périodes',
   'financial_movements_comparing': 'Comparaison...',
-  'financial_movements_swap_periods_tooltip': 'Échanger les périodes',
+  'financial_movements_swap_periods_tooltip': 'changer les périodes',
   'financial_movements_comparison_results_title': 'Comparaison des périodes',
   'financial_movements_close_comparison_tooltip': 'Fermer la comparaison',
   'financial_movements_period_1_label': 'Période 1',
@@ -3039,7 +3086,7 @@ const Map<String, String> frTranslations = {
   'financial_movements_period_comparison_period': 'Période de comparaison',
   'financial_movements_period_suggested': 'Périodes de comparaison suggérées:',
   'financial_movements_compare_periods': 'Comparer les périodes',
-  'financial_movements_swap_periods': 'Échanger les périodes',
+  'financial_movements_swap_periods': 'changer les périodes',
   'financial_movements_comparison_results': 'Comparaison des périodes',
   'financial_movements_close_comparison': 'Fermer la comparaison',
   'financial_movements_period_1': 'Période 1',
@@ -3108,7 +3155,7 @@ const Map<String, String> frTranslations = {
   'reports_rec_maintain_performance': 'Maintenir la performance actuelle et chercher des opportunités de croissance',
 
   // PDF export labels
-  'reports_pdf_title': 'BILAN COMPTABLE D\'ACTIVITÉS',
+  'reports_pdf_title': 'BILAN COMPTABLE D\'ACTIVITS',
   'reports_pdf_period': 'Période',
   'reports_pdf_generated_on': 'Généré le',
   'reports_pdf_company_info': 'INFORMATIONS ENTREPRISE',
@@ -3117,14 +3164,14 @@ const Map<String, String> frTranslations = {
   'reports_pdf_phone': 'Tél',
   'reports_pdf_system': 'Système',
   'reports_pdf_currency': 'Devise',
-  'reports_pdf_executive_summary': 'RÉSUMÉ EXÉCUTIF',
+  'reports_pdf_executive_summary': 'RSUMÀ EXCUTIF',
   'reports_pdf_status': 'Statut',
   'reports_pdf_key_points': 'Points clés',
   'reports_pdf_revenue': 'Chiffre d\'affaires',
   'reports_pdf_net_profit': 'Bénéfice net',
   'reports_pdf_profit_margin': 'Marge de profit',
   'reports_pdf_customer_debts_label': 'Dettes clients',
-  'reports_pdf_key_indicators': 'INDICATEURS CLÉS',
+  'reports_pdf_key_indicators': 'INDICATEURS CLS',
   'reports_pdf_indicator': 'Indicateur',
   'reports_pdf_value': 'Valeur',
   'reports_pdf_trend': 'Tendance',
@@ -3151,7 +3198,7 @@ const Map<String, String> frTranslations = {
   'reports_pdf_profit_analysis': 'Analyse des Bénéfices',
   'reports_pdf_gross_profit': 'Marge brute',
   'reports_pdf_cogs': 'Coût marchandises',
-  'reports_pdf_evolution': 'Évolution',
+  'reports_pdf_evolution': 'volution',
   'reports_pdf_previous_period': 'Période précédente',
   'reports_pdf_growth': 'Croissance',
   'reports_pdf_customer_debts': 'Dettes Clients',
@@ -3185,7 +3232,7 @@ const Map<String, String> frTranslations = {
   'analytics_action_pricing': 'Revoir la stratégie de prix',
   'analytics_action_visibility': 'Améliorer la visibilité du produit',
   'analytics_action_promotions': 'Considérer des promotions ciblées',
-  'analytics_action_quality': 'Évaluer la qualité du produit',
+  'analytics_action_quality': 'valuer la qualité du produit',
   'reports_pdf_email': 'Email',
 
   // Users module - module names
@@ -3232,7 +3279,7 @@ const Map<String, String> frTranslations = {
   // 'users_add_user': 'Ajouter un utilisateur',
 
   // ============================================================================
-  // IMPRESSION / PRÉVISUALISATION
+  // IMPRESSION / PRVISUALISATION
   // ============================================================================
   'preview_title': 'Prévisualisation du reçu',
   'preview_no_receipt': 'Aucun reçu à prévisualiser',

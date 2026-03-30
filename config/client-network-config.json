@@ -1,0 +1,22 @@
+{
+  "serverConfig": {
+    "host": "192.168.1.100",
+    "port": 8080,
+    "protocol": "http",
+    "baseUrl": "http://192.168.1.100:8080"
+  },
+  "clientInfo": {
+    "clientId": "client-network-001",
+    "clientName": "Client Réseau",
+    "version": "2.0.0"
+  },
+  "features": {
+    "offlineMode": false,
+    "localDatabase": false,
+    "requiresServerConnection": true
+  },
+  "ui": {
+    "language": "fr",
+    "theme": "light"
+  }
+}

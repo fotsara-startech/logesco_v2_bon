@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
@@ -341,8 +341,8 @@ class DashboardPage extends StatelessWidget {
           label: 'Catégories',
           color: Colors.purple,
           onTap: () {
-            // print('🔍 Dashboard - Bouton Catégories cliqué');
-            // print('🔍 Dashboard - Navigation vers les catégories');
+            // print('');
+            // print('');
             Get.toNamed(AppRoutes.categories);
           },
         ),
@@ -813,7 +813,7 @@ class DashboardPage extends StatelessWidget {
     };
 
     if (implementedModules.contains(module.route)) {
-      print('🔄 Navigation vers module: ${module.title} (${module.route})');
+      print('');
       Get.toNamed(module.route);
     } else {
       Get.snackbar(
@@ -831,7 +831,7 @@ class DashboardPage extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         title: const Text('Déconnexion'),
-        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+        content: const Text('Êtestes-vous sûr de vouloir vous déconnecter ?'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),

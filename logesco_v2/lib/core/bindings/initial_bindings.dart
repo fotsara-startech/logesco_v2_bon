@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
 import '../api/api_client.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -23,7 +22,6 @@ import '../../features/dashboard/services/dashboard_stats_service.dart';
 import '../../features/reports/services/discount_report_service.dart';
 import '../../features/expenses/services/expense_category_service.dart';
 import '../../features/cash_registers/controllers/cash_session_controller.dart';
-
 import '../../features/subscription/services/interfaces/i_subscription_manager.dart';
 import '../../features/subscription/services/interfaces/i_license_service.dart';
 import '../../features/subscription/services/interfaces/i_device_service.dart';
@@ -33,35 +31,25 @@ import '../../features/subscription/services/implementations/device_service.dart
 import '../../features/subscription/services/implementations/crypto_service.dart';
 import '../../features/subscription/controllers/subscription_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/app_config.dart';
 
 /// Bindings initiaux pour l'injection de dépendances avec GetX
 class InitialBindings extends Bindings {
   @override
   void dependencies() {
-    // Déterminer l'URL de base selon la plateforme
-    String baseUrl;
-    if (kIsWeb) {
-      // Flutter Web
-      baseUrl = 'http://localhost:8080/api/v1';
-    } else if (Platform.isAndroid) {
-      // Émulateur Android utilise 10.0.2.2 pour accéder à localhost de l'hôte
-      baseUrl = 'http://10.0.2.2:8080/api/v1';
-    } else {
-      // iOS, Desktop, etc.
-      baseUrl = 'http://localhost:8080/api/v1';
-    }
+    // Utiliser l'URL centralisée depuis AppConfig
+    final String baseUrl = AppConfig.currentBaseUrl;
 
-    print('🔍 Configuration API - Plateforme: ${kIsWeb ? 'Web' : Platform.operatingSystem}');
-    print('🔍 Configuration API - URL de base: $baseUrl');
+    print('🔧 Configuration API - URL de base: $baseUrl');
 
     // Services de base
     Get.put<ApiClient>(ApiClient(), permanent: true);
     Get.put<ApiService>(ApiService(baseUrl: baseUrl), permanent: true);
 
-    // Services métier - utilisation d'ApiProductService pour de vraies données
+    // Services métier
     Get.put<ApiProductService>(ApiProductService(), permanent: true);
 
-    print('🔍 [InitialBindings] Injection de AccountApiService...');
+    print('🔧 [InitialBindings] Injection de AccountApiService...');
     final accountService = AccountApiService();
     Get.put<AccountService>(accountService, permanent: true);
     print('✅ [InitialBindings] AccountApiService injecté avec succès: ${accountService.runtimeType}');
@@ -82,7 +70,7 @@ class InitialBindings extends Bindings {
     Get.lazyPut(() => UserService(), fenix: true);
     Get.lazyPut(() => RoleService(), fenix: true);
 
-    // Service admin (pour s'assurer qu'un admin existe toujours)
+    // Service admin
     Get.put<AdminService>(AdminService(), permanent: true);
 
     // Service d'initialisation de l'application
@@ -117,31 +105,24 @@ class InitialBindings extends Bindings {
     // Contrôleur de session de caisse
     Get.put<CashSessionController>(CashSessionController(), permanent: true);
 
-    // Contrôleur de stock pour les ventes
     Get.lazyPut(() => Get.find<AuthService>());
 
-    // Services d'abonnement - Configuration en tant que singletons permanents
+    // Services d'abonnement
     _configureSubscriptionServices();
   }
 
   /// Configure les services d'abonnement en tant que singletons permanents
   void _configureSubscriptionServices() {
-    print('🔐 [InitialBindings] Configuration des services d\'abonnement...');
+    print('🔧 [InitialBindings] Configuration des services d\'abonnement...');
 
-    // Services de base - singletons permanents pour la stabilité
     Get.put<FlutterSecureStorage>(
       const FlutterSecureStorage(
-        aOptions: AndroidOptions(
-          encryptedSharedPreferences: true,
-        ),
-        iOptions: IOSOptions(
-          accessibility: KeychainAccessibility.first_unlock_this_device,
-        ),
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
       ),
       permanent: true,
     );
 
-    // Services d'infrastructure - permanents pour éviter les reinitialisations
     Get.put<CryptoService>(CryptoService(), permanent: true);
     Get.put<IDeviceService>(DeviceService(), permanent: true);
 
@@ -153,7 +134,6 @@ class InitialBindings extends Bindings {
       permanent: true,
     );
 
-    // Gestionnaire principal d'abonnements - singleton permanent
     Get.put<ISubscriptionManager>(
       SubscriptionManager(
         licenseService: Get.find<ILicenseService>(),
@@ -164,11 +144,8 @@ class InitialBindings extends Bindings {
       permanent: true,
     );
 
-    // Contrôleur d'abonnement - singleton permanent pour maintenir l'état
     Get.put<SubscriptionController>(
-      SubscriptionController(
-        subscriptionManager: Get.find<ISubscriptionManager>(),
-      ),
+      SubscriptionController(subscriptionManager: Get.find<ISubscriptionManager>()),
       permanent: true,
     );
 

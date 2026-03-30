@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 
 /// Service dédié aux rapports et analyses des mouvements financiers
@@ -25,9 +25,9 @@ class MovementReportService {
         'endDate': endDate.toIso8601String(),
       };
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}$_endpoint/summary').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/summary').replace(queryParameters: queryParams);
 
-      print('🔄 Récupération du résumé depuis: $uri');
+      print('📊 Récupération du résumé depuis: $uri');
 
       final response = await http.get(
         uri,
@@ -51,7 +51,7 @@ class MovementReportService {
         throw Exception(errorData['message'] ?? 'Erreur lors de la récupération du résumé');
       }
     } catch (e) {
-      print('💥 Erreur récupération résumé: $e');
+      print('❌ Erreur récupération résumé: $e');
       throw Exception('Erreur de connexion: $e');
     }
   }
@@ -69,9 +69,9 @@ class MovementReportService {
         'endDate': endDate.toIso8601String(),
       };
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}$_endpoint/category-summary').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/category-summary').replace(queryParameters: queryParams);
 
-      print('🔄 Récupération du résumé par catégorie depuis: $uri');
+      print('📊 Récupération du résumé par catégorie depuis: $uri');
 
       final response = await http.get(
         uri,
@@ -106,7 +106,7 @@ class MovementReportService {
         throw Exception(errorData['message'] ?? 'Erreur lors de la récupération du résumé par catégorie');
       }
     } catch (e) {
-      print('💥 Erreur récupération résumé catégories: $e');
+      print('❌ Erreur récupération résumé catégories: $e');
       throw Exception('Erreur de connexion: $e');
     }
   }
@@ -124,9 +124,9 @@ class MovementReportService {
         'endDate': endDate.toIso8601String(),
       };
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}$_endpoint/daily-summary').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/daily-summary').replace(queryParameters: queryParams);
 
-      print('🔄 Récupération du résumé quotidien depuis: $uri');
+      print('📊 Récupération du résumé quotidien depuis: $uri');
 
       final response = await http.get(
         uri,
@@ -161,7 +161,7 @@ class MovementReportService {
         throw Exception(errorData['message'] ?? 'Erreur lors de la récupération du résumé quotidien');
       }
     } catch (e) {
-      print('💥 Erreur récupération résumé quotidien: $e');
+      print('❌ Erreur récupération résumé quotidien: $e');
       throw Exception('Erreur de connexion: $e');
     }
   }
@@ -174,11 +174,11 @@ class MovementReportService {
         throw Exception('Token d\'authentification manquant');
       }
 
-      print('🔄 Export PDF du rapport: ${request.title}');
+      print('📄 Export PDF du rapport: ${request.title}');
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}$_endpoint/export/pdf'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/export/pdf'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -217,7 +217,7 @@ class MovementReportService {
         throw Exception(errorData['message'] ?? 'Erreur lors de l\'export PDF');
       }
     } catch (e) {
-      print('💥 Erreur export PDF: $e');
+      print('❌ Erreur export PDF: $e');
       throw Exception('Erreur d\'export: $e');
     }
   }
@@ -230,11 +230,11 @@ class MovementReportService {
         throw Exception('Token d\'authentification manquant');
       }
 
-      print('🔄 Export Excel du rapport: ${request.title}');
+      print('📊 Export Excel du rapport: ${request.title}');
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}$_endpoint/export/excel'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/export/excel'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -273,7 +273,7 @@ class MovementReportService {
         throw Exception(errorData['message'] ?? 'Erreur lors de l\'export Excel');
       }
     } catch (e) {
-      print('💥 Erreur export Excel: $e');
+      print('❌ Erreur export Excel: $e');
       throw Exception('Erreur d\'export: $e');
     }
   }
@@ -281,7 +281,7 @@ class MovementReportService {
   /// Génère un rapport complet avec toutes les données
   Future<MovementReport> generateCompleteReport(DateTime startDate, DateTime endDate) async {
     try {
-      print('🔄 Génération du rapport complet du ${startDate.toIso8601String()} au ${endDate.toIso8601String()}');
+      print('📊 Génération du rapport complet du ${startDate.toIso8601String()} au ${endDate.toIso8601String()}');
 
       // Récupérer toutes les données en parallèle
       final futures = await Future.wait([
@@ -306,7 +306,7 @@ class MovementReportService {
       print('✅ Rapport complet généré avec succès');
       return report;
     } catch (e) {
-      print('💥 Erreur génération rapport complet: $e');
+      print('❌ Erreur génération rapport complet: $e');
       throw Exception('Erreur de génération: $e');
     }
   }
@@ -319,7 +319,7 @@ class MovementReportService {
     DateTime period2End,
   ) async {
     try {
-      print('🔄 Comparaison entre périodes:');
+      print('📊 Comparaison entre périodes:');
       print('   Période 1: ${period1Start.toIso8601String()} - ${period1End.toIso8601String()}');
       print('   Période 2: ${period2Start.toIso8601String()} - ${period2End.toIso8601String()}');
 
@@ -351,7 +351,7 @@ class MovementReportService {
       print('✅ Comparaison entre périodes générée avec succès');
       return comparison;
     } catch (e) {
-      print('💥 Erreur comparaison périodes: $e');
+      print('❌ Erreur comparaison périodes: $e');
       throw Exception('Erreur de comparaison: $e');
     }
   }

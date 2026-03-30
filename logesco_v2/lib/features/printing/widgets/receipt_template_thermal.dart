@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
@@ -138,7 +138,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
   /// Construit les informations de vente pour thermique
   Widget _buildThermalSaleInfo(BuildContext context) {
     // Test de la méthode t()
-    print('🧪 TEST TRADUCTION dans thermal template:');
+    print('Y TEST TRADUCTION dans thermal template:');
     print('  t("invoice") = ${t("invoice")}');
     print('  t("saleNumber") = ${t("saleNumber")}');
     print('  receipt.language = ${receipt.language}');
@@ -158,7 +158,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
       children: [
         // Titre du reçu
         Text(
-          t('invoice'),
+          receipt.isProforma ? t('proformaInvoice') : t('invoice'),
           style: headerStyle,
           textAlign: TextAlign.center,
         ),
@@ -288,7 +288,7 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
     );
   }
 
-  /// Construit les totaux pour thermique - AMÉLIORÉ
+  /// Construit les totaux pour thermique - AMLIOR
   Widget _buildThermalTotals(BuildContext context) {
     final double actualDiscountAmount = receipt.discountAmount;
     final double correctSubtotal = receipt.subtotal;
@@ -304,14 +304,14 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
     );
 
     // DEBUG - Afficher les valeurs pour diagnostic
-    print('🖨️ [THERMAL_TOTALS] Calcul des totaux:');
-    print('🖨️ [THERMAL_TOTALS] subtotal: ${receipt.subtotal}');
-    print('🖨️ [THERMAL_TOTALS] Total: ${receipt.totalAmount}');
-    print('🖨️ [THERMAL_TOTALS] Payé: ${receipt.paidAmount}');
-    print('🖨️ [THERMAL_TOTALS] Reste: ${receipt.remainingAmount}');
-    print('🖨️ [THERMAL_TOTALS] tvaAmount: ${receipt.tvaAmount}');
-    print('🖨️ [THERMAL_TOTALS] tvaRate: ${receipt.tvaRate}');
-    print('🖨️ [THERMAL_TOTALS] Monnaie calculée: ${receipt.paidAmount > receipt.totalAmount ? (receipt.paidAmount - receipt.totalAmount) : 0}');
+    print('️ [THERMAL_TOTALS] Calcul des totaux:');
+    print('️ [THERMAL_TOTALS] subtotal: ${receipt.subtotal}');
+    print('️ [THERMAL_TOTALS] Total: ${receipt.totalAmount}');
+    print('️ [THERMAL_TOTALS] Payé: ${receipt.paidAmount}');
+    print('️ [THERMAL_TOTALS] Reste: ${receipt.remainingAmount}');
+    print('️ [THERMAL_TOTALS] tvaAmount: ${receipt.tvaAmount}');
+    print('️ [THERMAL_TOTALS] tvaRate: ${receipt.tvaRate}');
+    print('️ [THERMAL_TOTALS] Monnaie calculée: ${receipt.paidAmount > receipt.totalAmount ? (receipt.paidAmount - receipt.totalAmount) : 0}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

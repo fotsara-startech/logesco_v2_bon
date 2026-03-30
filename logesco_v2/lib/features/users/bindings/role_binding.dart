@@ -6,12 +6,12 @@ import '../services/role_service.dart';
 class RoleBinding extends Bindings {
   @override
   void dependencies() {
-    print('🔍 RoleBinding - Injection des dépendances');
+    print('📦 RoleBinding - Injection des dépendances');
 
     // Service des rôles
     Get.lazyPut<RoleService>(
       () {
-        print('🔍 RoleBinding - Création du RoleService');
+        print('🔧 RoleBinding - Création du RoleService');
         return RoleService();
       },
       fenix: true,
@@ -20,12 +20,12 @@ class RoleBinding extends Bindings {
     // Contrôleur des rôles
     Get.lazyPut<RoleController>(
       () {
-        print('🔍 RoleBinding - Création du RoleController');
+        print('🎮 RoleBinding - Création du RoleController');
         return RoleController();
       },
       fenix: true,
     );
 
-    print('🔍 RoleBinding - Injection terminée');
+    print('✅ RoleBinding - Injection terminée');
   }
 }

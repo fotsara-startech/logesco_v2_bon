@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Contrôleur GetX pour la gestion des approvisionnements
  */
 
@@ -82,7 +82,7 @@ class ProcurementController extends GetxController {
       final commandesList = result['commandes'] as List<CommandeApprovisionnement>;
       final pagination = result['pagination'] as Map<String, dynamic>;
 
-      print('🔍 DONNÉES REÇUES: ${commandesList.length} commandes');
+      print('');
       print('   - Total pagination: ${pagination['total']}');
       print('   - Page actuelle: ${pagination['page']}/${pagination['pages']}');
 
@@ -92,15 +92,15 @@ class ProcurementController extends GetxController {
 
       if (refresh) {
         commandes.assignAll(commandesList);
-        print('✅ LISTE ASSIGNÉE: ${commandes.length} commandes affichées');
+        print(' LISTE ASSIGNE: ${commandes.length} commandes affichées');
       } else {
         commandes.addAll(commandesList);
-        print('✅ LISTE AJOUTÉE: ${commandes.length} commandes total (page ${currentPage.value})');
+        print(' LISTE AJOUTE: ${commandes.length} commandes total (page ${currentPage.value})');
       }
 
       currentPage.value++;
     } catch (e) {
-      print('❌ ERREUR CHARGEMENT: $e');
+      print(' ERREUR CHARGEMENT: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de charger les commandes: $e',

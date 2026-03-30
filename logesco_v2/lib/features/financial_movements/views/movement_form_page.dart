@@ -141,7 +141,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
         setState(() {
           _currentCashBalance = cashSessionController.currentCashBalance;
         });
-        print('💰 Solde caisse chargé: ${_currentCashBalance?.toStringAsFixed(0)} FCFA');
+        print('✅ Solde caisse chargé: ${_currentCashBalance?.toStringAsFixed(0)} FCFA');
       }
     } catch (e) {
       print('⚠️ Impossible de charger le solde de caisse: $e');
@@ -439,7 +439,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
             ...errors.map((error) => Padding(
                   padding: const EdgeInsets.only(left: 28, bottom: 4),
                   child: Text(
-                    '• $error',
+                    '⚠️ $error',
                     style: TextStyle(
                       color: Colors.red.shade600,
                       fontSize: 14,

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/expiration_date.dart';
 
 /// Service pour gérer les dates de péremption via l'API
 class ExpirationDateService {
-  final String baseUrl = '${ApiConfig.baseUrl}/expiration-dates';
+  final String baseUrl = '${AppConfig.currentBaseUrl}/expiration-dates';
   final AuthService _authService = AuthService();
 
   /// Récupère les headers avec le token d'authentification

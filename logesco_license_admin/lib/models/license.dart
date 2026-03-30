@@ -30,6 +30,8 @@ class License {
   final double? price;
   final String? currency;
   final String? notes;
+  final String? privateKey;
+  final String? publicKey;
   final DateTime? revokedAt;
   final String? revocationReason;
   final DateTime createdAt;
@@ -48,6 +50,8 @@ class License {
     this.price,
     this.currency = 'EUR',
     this.notes,
+    this.privateKey,
+    this.publicKey,
     this.revokedAt,
     this.revocationReason,
     required this.createdAt,
@@ -70,6 +74,8 @@ class License {
     double? price,
     String? currency,
     String? notes,
+    String? privateKey,
+    String? publicKey,
     DateTime? revokedAt,
     String? revocationReason,
     DateTime? createdAt,
@@ -88,6 +94,8 @@ class License {
       price: price ?? this.price,
       currency: currency ?? this.currency,
       notes: notes ?? this.notes,
+      privateKey: privateKey ?? this.privateKey,
+      publicKey: publicKey ?? this.publicKey,
       revokedAt: revokedAt ?? this.revokedAt,
       revocationReason: revocationReason ?? this.revocationReason,
       createdAt: createdAt ?? this.createdAt,

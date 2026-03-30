@@ -1,0 +1,30 @@
+TEST DE SYNCHRONISATION D'ALGORITHME
+====================================
+
+DONNÉES DE TEST:
+- Empreinte: P9ZD-GFQD-AWL4-L5MR
+- Attendu (4ème segment): L5MR
+
+ALGORITHME CORRIGÉ:
+1. Nettoyer: P9ZD-GFQD-AWL4-L5MR → P9ZDGFQDAWL4L5MR
+2. Hash avec boucle:
+   - Initialiser: hash = 0
+   - Pour chaque caractère:
+     hash = ((hash << 5) - hash + codeUnit) & 0xFFFFFFFF
+3. Appliquer .abs() % 1048576
+4. Encoder en base-32 (4 caractères)
+
+RÉSULTAT ATTENDU:
+- Segment 4: L5MR ✅
+
+VÉRIFICATION:
+Si vous générez une clé avec l'empreinte P9ZD-GFQD-AWL4-L5MR,
+le 4ème segment DOIT être L5MR (pas VGMT).
+
+Si ce n'est pas le cas, il y a encore un problème de synchronisation.
+
+PROCHAINES ÉTAPES:
+1. Recompiler logesco_license_admin
+2. Régénérer la clé avec l'empreinte exacte
+3. Vérifier que le 4ème segment est L5MR
+4. Tester l'activation dans logesco_v2

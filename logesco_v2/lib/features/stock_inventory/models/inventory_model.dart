@@ -1,4 +1,4 @@
-﻿/// Modèle pour l'inventaire de stock
+/// Modèle pour l'inventaire de stock
 class StockInventory {
   final int? id;
   final String nom;

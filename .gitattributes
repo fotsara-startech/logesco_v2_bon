@@ -1,0 +1,22 @@
+﻿# Forcer UTF-8 sans conversion de fins de ligne
+* text=auto eol=lf
+*.dart text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+
+# Fichiers binaires  ne jamais modifier
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
+*.sqlite binary
+*.exe binary
+*.dll binary

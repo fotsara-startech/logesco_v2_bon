@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/subscription_controller.dart';
 import '../services/notification_service.dart';
@@ -49,16 +49,16 @@ class _NotificationUsageExampleState extends State<NotificationUsageExample> wit
               ),
               const SizedBox(height: 24),
               _buildExampleSection(
-                'Écrans de blocage',
+                'crans de blocage',
                 'Affichage selon requirement 1.3 - blocage après expiration',
                 [
                   _buildExampleButton(
-                    'Écran blocage complet',
+                    'cran blocage complet',
                     'Abonnement expiré sans période de grâce',
                     () => _showBlockedScreen(false),
                   ),
                   _buildExampleButton(
-                    'Écran période de grâce',
+                    'cran période de grâce',
                     'Abonnement expiré avec période de grâce',
                     () => _showBlockedScreen(true),
                   ),

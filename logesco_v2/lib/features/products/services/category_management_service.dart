@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/category_model.dart';
 import 'category_service.dart';
 
@@ -18,22 +18,22 @@ class CategoryManagementService extends GetxService {
         _cachedCategories.isNotEmpty && 
         _lastCacheUpdate != null &&
         DateTime.now().difference(_lastCacheUpdate!) < _cacheValidityDuration) {
-      print('📋 Utilisation du cache des catégories (${_cachedCategories.length} catégories)');
+      print('');
       return _cachedCategories.toList();
     }
 
     try {
-      print('🔄 Rechargement des catégories depuis l\'API');
+      print('📡 Chargement catégories depuis API');
       final categories = await _categoryService.getCategories();
       
       // Mettre à jour le cache
       _cachedCategories.assignAll(categories);
       _lastCacheUpdate = DateTime.now();
       
-      print('✅ Cache des catégories mis à jour (${categories.length} catégories)');
+      print(' Cache des catégories mis à jour (${categories.length} catégories)');
       return categories;
     } catch (e) {
-      print('❌ Erreur lors du rechargement des catégories: $e');
+      print(' Erreur lors du rechargement des catégories: $e');
       // Retourner le cache même s'il est expiré en cas d'erreur
       return _cachedCategories.toList();
     }
@@ -58,12 +58,12 @@ class CategoryManagementService extends GetxService {
     // Vérifier si la catégorie existe déjà
     final existingCategory = await findCategoryByName(categoryName);
     if (existingCategory != null) {
-      print('✅ Catégorie "$categoryName" existe déjà (ID: ${existingCategory.id})');
+      print(' Catégorie "$categoryName" existe déjà (ID: ${existingCategory.id})');
       return existingCategory;
     }
 
     try {
-      print('🔄 Création de la nouvelle catégorie: "$categoryName"');
+      print('');
       
       final newCategory = Category(
         id: 0, // L'ID sera assigné par le backend
@@ -78,10 +78,10 @@ class CategoryManagementService extends GetxService {
       // Mettre à jour le cache
       _cachedCategories.add(createdCategory);
       
-      print('✅ Catégorie "$categoryName" créée avec succès (ID: ${createdCategory.id})');
+      print(' Catégorie "$categoryName" créée avec succès (ID: ${createdCategory.id})');
       return createdCategory;
     } catch (e) {
-      print('❌ Erreur lors de la création de la catégorie "$categoryName": $e');
+      print(' Erreur lors de la création de la catégorie "$categoryName": $e');
       rethrow;
     }
   }
@@ -95,19 +95,19 @@ class CategoryManagementService extends GetxService {
       return categoryMap;
     }
 
-    print('🔍 Validation de ${uniqueNames.length} catégories uniques');
+    print('');
 
     for (final categoryName in uniqueNames) {
       try {
         final category = await createCategoryIfNotExists(categoryName);
         categoryMap[categoryName] = category;
       } catch (e) {
-        print('❌ Impossible de créer la catégorie "$categoryName": $e');
+        print(' Impossible de créer la catégorie "$categoryName": $e');
         // Continuer avec les autres catégories
       }
     }
 
-    print('✅ ${categoryMap.length}/${uniqueNames.length} catégories validées/créées');
+    print(' ${categoryMap.length}/${uniqueNames.length} catégories validées/créées');
     return categoryMap;
   }
 
@@ -115,7 +115,7 @@ class CategoryManagementService extends GetxService {
   void invalidateCache() {
     _cachedCategories.clear();
     _lastCacheUpdate = null;
-    print('🗑️ Cache des catégories invalidé');
+    print('️ Cache des catégories invalidé');
   }
 
   /// Ajoute une catégorie au cache (utile après création)
@@ -127,13 +127,13 @@ class CategoryManagementService extends GetxService {
     } else {
       _cachedCategories.add(category);
     }
-    print('📋 Catégorie "${category.nom}" ajoutée au cache');
+    print('');
   }
 
   /// Supprime une catégorie du cache
   void removeFromCache(int categoryId) {
     _cachedCategories.removeWhere((cat) => cat.id == categoryId);
-    print('🗑️ Catégorie ID $categoryId supprimée du cache');
+    print('️ Catégorie ID $categoryId supprimée du cache');
   }
 
   /// Récupère les noms de catégories pour l'autocomplétion

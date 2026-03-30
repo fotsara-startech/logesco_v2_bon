@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/company_settings_controller.dart';
 import '../../../core/widgets/language_selector.dart';
@@ -399,7 +399,7 @@ class CompanySettingsPage extends StatelessWidget {
                 value: 'fr',
                 child: Row(
                   children: [
-                    Text('🇫🇷'),
+                    Text(''),
                     SizedBox(width: 8),
                     Text('Français'),
                   ],
@@ -409,7 +409,7 @@ class CompanySettingsPage extends StatelessWidget {
                 value: 'en',
                 child: Row(
                   children: [
-                    Text('🇬🇧'),
+                    Text(''),
                     SizedBox(width: 8),
                     Text('English'),
                   ],
@@ -419,7 +419,7 @@ class CompanySettingsPage extends StatelessWidget {
                 value: 'es',
                 child: Row(
                   children: [
-                    Text('🇪🇸'),
+                    Text(''),
                     SizedBox(width: 8),
                     Text('Español'),
                   ],

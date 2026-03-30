@@ -1,6 +1,6 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 
-/// Énumération des différents états de chargement
+/// numération des différents états de chargement
 enum LoadingStateType {
   idle,
   loading,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/dashboard_controller.dart';
@@ -90,6 +90,7 @@ class ModernDashboardPage extends StatelessWidget {
                 children: [
                   _buildMenuSection('menu_sales_customers'.tr, [
                     if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.point_of_sale, 'sales_title'.tr, Colors.green, () => Get.toNamed(AppRoutes.sales)),
+                    if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.description_outlined, 'proforma_title'.tr, Colors.orange, () => Get.toNamed(AppRoutes.proforma)),
                     if (_hasPermission('customers', 'READ')) _buildMenuItem(Icons.people, 'customers_title'.tr, Colors.blue, () => Get.toNamed(AppRoutes.customers)),
                     // if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.receipt_long, 'receipts_title'.tr, Colors.orange, () {}),
                   ]),
@@ -193,7 +194,7 @@ class ModernDashboardPage extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Obx(() => SalesChartWidget(
-                            chartData: dashboardController.salesChartData,
+                            chartData: dashboardController.salesChartData.toList(),
                             isLoading: dashboardController.isLoadingChart.value,
                           )),
                     ),
@@ -204,7 +205,7 @@ class ModernDashboardPage extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Obx(() => RecentActivitiesWidget(
-                            activities: dashboardController.recentActivities,
+                            activities: dashboardController.recentActivities.toList(),
                             isLoading: dashboardController.isLoadingActivities.value,
                           )),
                     ),

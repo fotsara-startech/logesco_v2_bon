@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
@@ -11,7 +11,7 @@ import '../models/procurement_models.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 class ProcurementPdfExportService {
   static final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -43,7 +43,7 @@ class ProcurementPdfExportService {
       final response = await companyService.getCompanyProfile();
       if (response.isSuccess && response.data != null) {
         companyProfile = response.data;
-        print('✅ CompanyProfile récupéré: ${companyProfile!.name}, logo: ${companyProfile.logo}');
+        print(' CompanyProfile récupéré: ${companyProfile!.name}, logo: ${companyProfile.logo}');
       }
     } catch (e) {
       print('Erreur lors de la récupération des paramètres entreprise: $e');
@@ -54,18 +54,18 @@ class ProcurementPdfExportService {
     if (companyProfile?.logo != null && companyProfile!.logo!.isNotEmpty) {
       try {
         var logoPath = companyProfile.logo!;
-        print('🖼️ Chargement logo procurement PDF: $logoPath');
+        print('️ Chargement logo procurement PDF: $logoPath');
         if (logoPath.contains('\\') || logoPath.contains('/')) {
           logoPath = logoPath.replaceAll('\\', '/').split('/').last;
           print('   Chemin nettoyé: $logoPath');
         }
-        final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+        final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
         final logoUrl = '$serverUrl/uploads/$logoPath';
         print('   URL logo: $logoUrl');
         final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {
           logoBytes = response.bodyBytes;
-          print('✅ Logo chargé (${logoBytes.length} bytes)');
+          print(' Logo chargé (${logoBytes.length} bytes)');
         } else {
           print('⚠️ Erreur HTTP ${response.statusCode} pour le logo');
         }

@@ -7,10 +7,10 @@ import 'package:path/path.dart' as p;
 ///
 /// Le backend est installé dans:
 ///   %LOCALAPPDATA%\LOGESCO\backend\
-///     node.exe        — Node.js portable
-///     src\server.js   — Code source backend
-///     node_modules\   — Dépendances
-///     database\       — SQLite (données persistantes)
+///     node.exe        → Node.js portable
+///     src\server.js   → Code source backend
+///     node_modules\   → Dépendances
+///     database\       → SQLite (données persistantes)
 ///
 /// Stratégie de démarrage sur Windows (app sans console) :
 ///   1. Écrire un .vbs qui lance node.exe sans fenêtre (windowStyle=0)
@@ -28,7 +28,7 @@ class BackendService {
   int get port => _port;
   String get baseUrl => 'http://localhost:$_port';
 
-  // ── Chemins ──────────────────────────────────────────────────────────────
+  // ═══ Chemins ═══════════════════════════════════════════════════════════════
 
   String get _backendDir {
     final localAppData = Platform.environment['LOCALAPPDATA'] ?? p.join(Platform.environment['USERPROFILE'] ?? r'C:\Users\Default', 'AppData', 'Local');
@@ -49,13 +49,13 @@ class BackendService {
 
   String get _serverJs => p.join(_backendDir, 'src', 'server.js');
 
-  // ── API publique ──────────────────────────────────────────────────────────
+  // ═══ API publique ══════════════════════════════════════════════════════════
 
   Future<bool> initialize() async {
     debugPrint('🚀 BackendService: initialisation...');
 
     if (!Platform.isWindows) {
-      debugPrint('⚠️  Plateforme non supportée');
+      debugPrint('⚠️ Plateforme non supportée');
       return false;
     }
 
@@ -71,7 +71,7 @@ class BackendService {
     }
 
     _ensureEnvFile();
-    _start(); // non-awaité — l'app attend via waitUntilReady
+    _start(); // non-awaité → l'app attend via waitUntilReady
     return true;
   }
 
@@ -110,7 +110,7 @@ class BackendService {
     }
   }
 
-  // ── Privé ─────────────────────────────────────────────────────────────────
+  // ═══ Privé ═════════════════════════════════════════════════════════════════
 
   void _ensureEnvFile() {
     final envFile = File(p.join(_backendDir, '.env'));
@@ -145,7 +145,7 @@ class BackendService {
       final serverJs = _serverJs;
       final dbPath = p.join(backendDir, 'database', 'logesco.db').replaceAll('\\', '/');
 
-      debugPrint('▶️  Démarrage backend via wscript + cmd...');
+      debugPrint('⚙️ Démarrage backend via wscript + cmd...');
       debugPrint('   node: $nodeExe');
       debugPrint('   server: $serverJs');
 
@@ -164,7 +164,7 @@ class BackendService {
 
       // Étape 2 : générer un .vbs qui lance ce .cmd sans fenêtre console.
       // WshShell.Run avec windowStyle=0 et bWaitOnReturn=False = invisible + non-bloquant.
-      // NOTE: WshShell.Environment("PROCESS") n'est PAS hérité par les enfants —
+      // NOTE: WshShell.Environment("PROCESS") n'est PAS hérité par les enfants →
       //       c'est pourquoi on passe par un .cmd intermédiaire avec SET.
       final vbsPath = p.join(backendDir, '_logesco_start.vbs');
       final vbsContent = [

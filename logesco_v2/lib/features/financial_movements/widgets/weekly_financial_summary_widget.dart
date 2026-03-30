@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/movement_report_controller.dart';
 import '../services/movement_report_service.dart';
@@ -397,7 +397,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
     if (amount == 0) return 0;
     if (amount < 50000) return 1; // Faible
     if (amount < 200000) return 2; // Moyen
-    return 3; // Élevé
+    return 3; // levé
   }
 
   /// Obtient la couleur de l'indicateur selon le montant
@@ -438,7 +438,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
     try {
       Get.toNamed(AppRoutes.financialMovementReports);
     } catch (e) {
-      print('❌ Erreur navigation vers rapports financiers: $e');
+      print(' Erreur navigation vers rapports financiers: $e');
       Get.snackbar(
         'common_navigation'.tr,
         'financial_movements_reports_navigation_error'.tr,
@@ -456,7 +456,7 @@ class WeeklyFinancialSummaryWidget extends StatelessWidget {
       controller.setPredefinedPeriod('thisWeek');
       controller.loadSummary(forceRefresh: true);
     } catch (e) {
-      print('❌ Erreur lors du rechargement: $e');
+      print(' Erreur lors du rechargement: $e');
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: 'financial_movements_weekly_summary_retry_error'.tr,

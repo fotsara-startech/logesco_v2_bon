@@ -1,4 +1,4 @@
-import 'movement_category.dart';
+﻿import 'movement_category.dart';
 
 /// Modèle de données pour un mouvement financier
 class FinancialMovement {
@@ -88,8 +88,8 @@ class FinancialMovement {
         utilisateurNom: json['utilisateurNom']?.toString(),
       );
     } catch (e) {
-      print('❌ [FinancialMovement.fromJson] Erreur de parsing: $e');
-      print('📋 [FinancialMovement.fromJson] JSON reçu: $json');
+      print(' [FinancialMovement.fromJson] Erreur de parsing: $e');
+      print('');
       rethrow;
     }
   }

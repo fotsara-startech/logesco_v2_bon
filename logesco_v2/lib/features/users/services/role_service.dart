@@ -14,19 +14,19 @@ class RoleService extends GetxService {
 
       final response = await _apiClient.get<Map<String, dynamic>>(_endpoint);
 
-      print('📡 [RoleService] Response success: ${response.isSuccess}');
-      print('📄 [RoleService] Response data: ${response.data}');
+      print('📊 [RoleService] Response success: ${response.isSuccess}');
+      print('📋 [RoleService] Response data: ${response.data}');
 
       if (response.isSuccess && response.data != null) {
         final dynamic dataField = response.data!['data'];
-        print('📋 [RoleService] Data Field: $dataField');
+        print('📦 [RoleService] Data Field: $dataField');
 
         if (dataField is List) {
           final List<dynamic> data = dataField;
           print('✅ [RoleService] Data is List with ${data.length} items');
 
           final roles = data.map((json) {
-            print('👤 [RoleService] Processing role: $json');
+            print('🔄 [RoleService] Processing role: $json');
             return UserRole.fromJson(json as Map<String, dynamic>);
           }).toList();
 
@@ -64,8 +64,8 @@ class RoleService extends GetxService {
   Future<UserRole> createRole(UserRole role) async {
     final body = role.toJson();
 
-    print('🔍 [RoleService] Creating role with data: $body');
-    print('🔍 [RoleService] Endpoint: $_endpoint');
+    print('📝 [RoleService] Creating role with data: $body');
+    print('🌐 [RoleService] Endpoint: $_endpoint');
 
     final response = await _apiClient.post<Map<String, dynamic>>(_endpoint, body);
 

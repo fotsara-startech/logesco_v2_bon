@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:printing/printing.dart';
@@ -89,12 +89,12 @@ class PrintingController extends GetxController {
       final response = await _companyService.getCompanyProfile();
       if (response.success && response.data != null) {
         _companyProfile.value = response.data;
-        print('✅ Profil d\'entreprise chargé pour l\'impression');
+        print(' Profil d\'entreprise chargé pour l\'impression');
       } else {
         print('⚠️ Aucun profil d\'entreprise configuré');
       }
     } catch (e) {
-      print('❌ Erreur lors du chargement du profil d\'entreprise: $e');
+      print(' Erreur lors du chargement du profil d\'entreprise: $e');
     }
   }
 
@@ -151,7 +151,7 @@ class PrintingController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Erreur lors de la recherche des reçus');
       }
     } catch (e) {
-      print('❌ Erreur recherche reçus: $e');
+      print(' Erreur recherche reçus: $e');
 
       // Gestion spécifique des erreurs de cast
       if (e.toString().contains('type \'Null\' is not a subtype of type \'String\'')) {
@@ -187,7 +187,7 @@ class PrintingController extends GetxController {
       }
     } catch (e) {
       SnackbarUtils.showError('Erreur lors de la récupération du reçu');
-      print('❌ Erreur récupération reçu: $e');
+      print(' Erreur récupération reçu: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -206,7 +206,7 @@ class PrintingController extends GetxController {
       }
     } catch (e) {
       SnackbarUtils.showError('Erreur lors de la récupération du reçu');
-      print('❌ Erreur récupération reçu par vente: $e');
+      print(' Erreur récupération reçu par vente: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -253,7 +253,7 @@ class PrintingController extends GetxController {
       }
     } catch (e) {
       SnackbarUtils.showError('Erreur lors de la génération du reçu');
-      print('❌ Erreur génération reçu: $e');
+      print(' Erreur génération reçu: $e');
       return false;
     } finally {
       _isGenerating.value = false;
@@ -271,7 +271,7 @@ class PrintingController extends GetxController {
       );
     } catch (e) {
       SnackbarUtils.showError('Erreur lors de la génération de la prévisualisation');
-      print('❌ Erreur prévisualisation: $e');
+      print(' Erreur prévisualisation: $e');
       return const Center(
         child: Text('Erreur de prévisualisation'),
       );
@@ -385,7 +385,7 @@ class PrintingController extends GetxController {
   /// Imprime directement le reçu sur l'imprimante avec boîte de dialogue
   Future<void> printReceiptDirect(Receipt receipt) async {
     try {
-      print('🖨️ Impression du reçu ${receipt.saleNumber}');
+      print('️ Impression du reçu ${receipt.saleNumber}');
 
       // Générer le PDF du reçu
       final pdf = await _generateReceiptPdf(receipt);
@@ -396,9 +396,9 @@ class PrintingController extends GetxController {
         name: 'Reçu ${receipt.saleNumber}',
       );
 
-      print('✅ Impression lancée');
+      print(' Impression lancée');
     } catch (e) {
-      print('❌ Erreur impression directe: $e');
+      print(' Erreur impression directe: $e');
       SnackbarUtils.showError('Erreur lors de l\'impression: $e');
     }
   }
@@ -409,7 +409,7 @@ class PrintingController extends GetxController {
       // Générer directement un PDF formaté selon les templates prédéfinis
       return await _generateFallbackPdf(receipt);
     } catch (e) {
-      print('❌ Erreur génération PDF: $e');
+      print(' Erreur génération PDF: $e');
       rethrow;
     }
   }

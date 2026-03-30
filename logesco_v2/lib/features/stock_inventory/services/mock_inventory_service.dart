@@ -1,4 +1,4 @@
-import '../models/inventory_model.dart';
+﻿import '../models/inventory_model.dart';
 
 /// Service mock pour la gestion de l'inventaire de stock (données simulées)
 class MockInventoryService {
@@ -26,12 +26,12 @@ class MockInventoryService {
     ),
     StockInventory(
       id: 2,
-      nom: 'Inventaire Électronique',
-      description: 'Inventaire partiel - Catégorie Électronique',
+      nom: 'Inventaire lectronique',
+      description: 'Inventaire partiel - Catégorie lectronique',
       type: InventoryType.PARTIEL,
       status: InventoryStatus.TERMINE,
       categorieId: 1,
-      nomCategorie: 'Électronique',
+      nomCategorie: 'lectronique',
       utilisateurId: 1,
       nomUtilisateur: 'Admin',
       dateCreation: DateTime.now().subtract(const Duration(days: 7)),
@@ -70,7 +70,7 @@ class MockInventoryService {
       produitId: 1,
       nomProduit: 'iPhone 15 Pro',
       codeProduit: 'IPH15P',
-      categorieProduit: 'Électronique',
+      categorieProduit: 'lectronique',
       quantiteSysteme: 25.0,
       quantiteComptee: 23.0,
       ecart: -2.0,
@@ -84,7 +84,7 @@ class MockInventoryService {
       produitId: 2,
       nomProduit: 'Samsung Galaxy S24',
       codeProduit: 'SGS24',
-      categorieProduit: 'Électronique',
+      categorieProduit: 'lectronique',
       quantiteSysteme: 15.0,
       quantiteComptee: 16.0,
       ecart: 1.0,
@@ -98,7 +98,7 @@ class MockInventoryService {
       produitId: 3,
       nomProduit: 'MacBook Air M3',
       codeProduit: 'MBA-M3',
-      categorieProduit: 'Électronique',
+      categorieProduit: 'lectronique',
       quantiteSysteme: 8.0,
     ),
     InventoryItem(
@@ -107,7 +107,7 @@ class MockInventoryService {
       produitId: 4,
       nomProduit: 'AirPods Pro',
       codeProduit: 'APP',
-      categorieProduit: 'Électronique',
+      categorieProduit: 'lectronique',
       quantiteSysteme: 30.0,
     ),
     // Items pour l'inventaire 2 (terminé)
@@ -117,7 +117,7 @@ class MockInventoryService {
       produitId: 1,
       nomProduit: 'iPhone 15 Pro',
       codeProduit: 'IPH15P',
-      categorieProduit: 'Électronique',
+      categorieProduit: 'lectronique',
       quantiteSysteme: 25.0,
       quantiteComptee: 25.0,
       ecart: 0.0,
@@ -173,10 +173,10 @@ class MockInventoryService {
   static Future<void> _generateInventoryItems(StockInventory inventory) async {
     // Simulation de produits selon le type d'inventaire
     final mockProducts = [
-      {'id': 1, 'nom': 'iPhone 15 Pro', 'code': 'IPH15P', 'categorie': 'Électronique', 'stock': 25.0},
-      {'id': 2, 'nom': 'Samsung Galaxy S24', 'code': 'SGS24', 'categorie': 'Électronique', 'stock': 15.0},
-      {'id': 3, 'nom': 'MacBook Air M3', 'code': 'MBA-M3', 'categorie': 'Électronique', 'stock': 8.0},
-      {'id': 4, 'nom': 'AirPods Pro', 'code': 'APP', 'categorie': 'Électronique', 'stock': 30.0},
+      {'id': 1, 'nom': 'iPhone 15 Pro', 'code': 'IPH15P', 'categorie': 'lectronique', 'stock': 25.0},
+      {'id': 2, 'nom': 'Samsung Galaxy S24', 'code': 'SGS24', 'categorie': 'lectronique', 'stock': 15.0},
+      {'id': 3, 'nom': 'MacBook Air M3', 'code': 'MBA-M3', 'categorie': 'lectronique', 'stock': 8.0},
+      {'id': 4, 'nom': 'AirPods Pro', 'code': 'APP', 'categorie': 'lectronique', 'stock': 30.0},
       {'id': 5, 'nom': 'T-shirt Homme', 'code': 'TSH-H', 'categorie': 'Vêtements', 'stock': 50.0},
       {'id': 6, 'nom': 'Jean Femme', 'code': 'JF', 'categorie': 'Vêtements', 'stock': 35.0},
       {'id': 7, 'nom': 'Chaussures Sport', 'code': 'CHS', 'categorie': 'Vêtements', 'stock': 20.0},
@@ -188,7 +188,7 @@ class MockInventoryService {
       productsToInclude = mockProducts;
     } else {
       // Inventaire partiel - filtrer par catégorie
-      final categoryName = inventory.nomCategorie ?? 'Électronique';
+      final categoryName = inventory.nomCategorie ?? 'lectronique';
       productsToInclude = mockProducts.where((p) => p['categorie'] == categoryName).toList();
     }
 
@@ -427,7 +427,7 @@ class MockInventoryService {
     await Future.delayed(const Duration(milliseconds: 200));
 
     return [
-      {'id': 1, 'nom': 'Électronique'},
+      {'id': 1, 'nom': 'lectronique'},
       {'id': 2, 'nom': 'Vêtements'},
       {'id': 3, 'nom': 'Alimentation'},
       {'id': 4, 'nom': 'Maison & Jardin'},

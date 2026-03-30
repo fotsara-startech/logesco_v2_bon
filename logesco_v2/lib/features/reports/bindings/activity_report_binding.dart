@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:logesco_v2/features/accounts/services/account_service.dart';
 import '../controllers/activity_report_controller.dart';
 import '../services/activity_report_service.dart';
@@ -9,21 +9,21 @@ import '../../../core/services/auth_service.dart';
 class ActivityReportBinding extends Bindings {
   @override
   void dependencies() {
-    print('📊 [ActivityReportBinding] Initialisation des dépendances...');
+    print('');
     
     // Vérifier que les services de base sont disponibles
     try {
       final authService = Get.find<AuthService>();
-      print('✅ [ActivityReportBinding] AuthService trouvé: ${authService.runtimeType}');
+      print(' [ActivityReportBinding] AuthService trouvé: ${authService.runtimeType}');
     } catch (e) {
-      print('❌ [ActivityReportBinding] AuthService non trouvé: $e');
+      print(' [ActivityReportBinding] AuthService non trouvé: $e');
     }
     
     try {
       final accountService = Get.find<AccountService>();
-      print('✅ [ActivityReportBinding] AccountService trouvé: ${accountService.runtimeType}');
+      print(' [ActivityReportBinding] AccountService trouvé: ${accountService.runtimeType}');
     } catch (e) {
-      print('❌ [ActivityReportBinding] AccountService non trouvé: $e');
+      print(' [ActivityReportBinding] AccountService non trouvé: $e');
     }
     
     // Services
@@ -43,6 +43,6 @@ class ActivityReportBinding extends Bindings {
       ),
     );
     
-    print('✅ [ActivityReportBinding] Toutes les dépendances initialisées');
+    print(' [ActivityReportBinding] Toutes les dépendances initialisées');
   }
 }

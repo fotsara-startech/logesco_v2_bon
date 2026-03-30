@@ -1,0 +1,582 @@
+﻿[
+    {
+        "value":  "/// Modèle pour la gestion des caisses",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  1
+    },
+    {
+        "value":  "class CashRegister {",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  2
+    },
+    {
+        "value":  "  final int? id;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  3
+    },
+    {
+        "value":  "  final String nom;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  4
+    },
+    {
+        "value":  "  final String description;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  5
+    },
+    {
+        "value":  "  final double soldeInitial;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  6
+    },
+    {
+        "value":  "  final double soldeActuel;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  7
+    },
+    {
+        "value":  "  final bool isActive;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  8
+    },
+    {
+        "value":  "  final int? utilisateurId;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  9
+    },
+    {
+        "value":  "  final String? nomUtilisateur;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  10
+    },
+    {
+        "value":  "  final DateTime? dateCreation;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  11
+    },
+    {
+        "value":  "  final DateTime? dateModification;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  12
+    },
+    {
+        "value":  "  final DateTime? dateOuverture;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  13
+    },
+    {
+        "value":  "  final DateTime? dateFermeture;",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  14
+    },
+    {
+        "value":  "",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  15
+    },
+    {
+        "value":  "  CashRegister({",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  16
+    },
+    {
+        "value":  "    this.id,",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  17
+    },
+    {
+        "value":  "    required this.nom,",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  18
+    },
+    {
+        "value":  "    this.description = \u0027\u0027,",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  19
+    },
+    {
+        "value":  "    this.soldeInitial = 0.0,",
+        "PSPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models\\cash_register_model.dart",
+        "PSParentPath":  "D:\\projects\\Logesco_bon\\logesco_app\\logesco_v2\\lib\\features\\cash_registers\\models",
+        "PSChildName":  "cash_register_model.dart",
+        "PSDrive":  {
+                        "CurrentLocation":  "projects\\Logesco_bon\\logesco_app\\logesco_v2",
+                        "Name":  "D",
+                        "Provider":  "Microsoft.PowerShell.Core\\FileSystem",
+                        "Root":  "D:\\",
+                        "Description":  "Nouveau nom",
+                        "MaximumSize":  null,
+                        "Credential":  "System.Management.Automation.PSCredential",
+                        "DisplayRoot":  null
+                    },
+        "PSProvider":  {
+                           "ImplementingType":  "Microsoft.PowerShell.Commands.FileSystemProvider",
+                           "HelpFile":  "System.Management.Automation.dll-Help.xml",
+                           "Name":  "FileSystem",
+                           "PSSnapIn":  "Microsoft.PowerShell.Core",
+                           "ModuleName":  "Microsoft.PowerShell.Core",
+                           "Module":  null,
+                           "Description":  "",
+                           "Capabilities":  52,
+                           "Home":  "C:\\Users\\DIGITAL MARKET",
+                           "Drives":  "C D E"
+                       },
+        "ReadCount":  20
+    }
+]

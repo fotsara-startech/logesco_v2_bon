@@ -1,4 +1,4 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import '../controllers/cash_register_controller.dart';
 import '../controllers/cash_session_controller.dart';
 

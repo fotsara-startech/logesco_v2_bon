@@ -36,7 +36,7 @@ class PermissionService extends GetxService {
     }
 
     final hasPriv = role.hasPrivilege(module, privilege);
-    print('🔐 [PermissionService] $module.$privilege = $hasPriv (role: ${role.nom}, isAdmin: ${role.isAdmin})');
+    print('🔍 [PermissionService] $module.$privilege = $hasPriv (role: ${role.nom}, isAdmin: ${role.isAdmin})');
     return hasPriv;
   }
 

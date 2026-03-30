@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/features/subscription/models/license_data.dart';
@@ -6,12 +6,12 @@ import '../services/interfaces/i_subscription_manager.dart';
 import '../services/notification_service.dart';
 import '../models/subscription_status.dart';
 import '../models/license_errors.dart';
+import '../../../core/config/app_config.dart';
 
-/// Contrôleur pour la gestion des abonnements dans l'interface utilisateur
+/// Contrleur pour la gestion des abonnements dans l'interface utilisateur
 class SubscriptionController extends GetxController {
   final ISubscriptionManager _subscriptionManager;
 
-  // État observable
   final Rx<SubscriptionStatus?> _currentStatus = Rx<SubscriptionStatus?>(null);
   final RxBool _isLoading = false.obs;
   final RxString _errorMessage = ''.obs;
@@ -19,13 +19,16 @@ class SubscriptionController extends GetxController {
 
   SubscriptionController({required ISubscriptionManager subscriptionManager}) : _subscriptionManager = subscriptionManager;
 
-  // Getters pour l'état observable
   SubscriptionStatus? get currentStatus => _currentStatus.value;
   bool get isLoading => _isLoading.value;
   String get errorMessage => _errorMessage.value;
   List<String> get notifications => _notifications;
 
-  // Getters pour l'état de l'abonnement
+  // Exposer les Rx directement pour les Obx widgets
+  Rx<SubscriptionStatus?> get currentStatusRx => _currentStatus;
+  RxBool get isLoadingRx => _isLoading;
+  RxList<String> get notificationsRx => _notifications;
+
   bool get isSubscriptionActive => _currentStatus.value?.isActive ?? false;
   bool get isTrialActive => _currentStatus.value?.type == SubscriptionType.trial && isSubscriptionActive;
   bool get isInGracePeriod => _currentStatus.value?.isInGracePeriod ?? false;
@@ -44,16 +47,24 @@ class SubscriptionController extends GetxController {
     super.onClose();
   }
 
-  /// Initialise le gestionnaire d'abonnements et écoute les changements
   Future<void> _initializeSubscription() async {
+    // Contrle de licence dÊtesactiv - statut "actif  vie" par dfaut
+    if (!AppConfig.enableLicenseControl) {
+      _currentStatus.value = SubscriptionStatus(
+        isActive: true,
+        type: SubscriptionType.lifetime,
+        remainingDays: null,
+        warnings: [],
+      );
+      return;
+    }
+
     try {
       _isLoading.value = true;
       _errorMessage.value = '';
 
-      // Initialiser le gestionnaire
       await _subscriptionManager.initialize();
 
-      // Écouter les changements de statut
       _subscriptionManager.statusStream.listen(
         (status) {
           _currentStatus.value = status;
@@ -64,7 +75,6 @@ class SubscriptionController extends GetxController {
         },
       );
 
-      // Obtenir le statut initial
       await refreshStatus();
     } catch (e) {
       _errorMessage.value = 'Erreur d\'initialisation: ${e.toString()}';
@@ -73,8 +83,10 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Actualise le statut de l'abonnement
   Future<void> refreshStatus() async {
+    // Contrle de licence dÊtesactiv
+    if (!AppConfig.enableLicenseControl) return;
+
     try {
       _isLoading.value = true;
       _errorMessage.value = '';
@@ -89,7 +101,6 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Active une licence avec la clé fournie
   Future<bool> activateLicense(String licenseKey) async {
     try {
       _isLoading.value = true;
@@ -98,16 +109,11 @@ class SubscriptionController extends GetxController {
       final success = await _subscriptionManager.activateLicense(licenseKey);
 
       if (success) {
-        // Actualiser le statut après activation
         await refreshStatus();
-        // Réinitialiser les compteurs de notification
         await SubscriptionNotificationService.resetNotificationCounters();
         return true;
       } else {
-        throw LicenseException(
-          LicenseError.invalidKey,
-          'Clé d\'activation invalide',
-        );
+        throw LicenseException(LicenseError.invalidKey, 'Clé d\'activation invalide');
       }
     } catch (e) {
       if (e is LicenseException) {
@@ -121,12 +127,10 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Démarre la période d'essai
   Future<void> startTrial() async {
     try {
       _isLoading.value = true;
       _errorMessage.value = '';
-
       await _subscriptionManager.startTrialPeriod();
       await refreshStatus();
     } catch (e) {
@@ -137,40 +141,45 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Vérifie si l'application doit être bloquée
   Future<bool> shouldBlockApplication() async {
+    // Contrle de licence dÊtesactiv - ne jamais bloquer
+    if (!AppConfig.enableLicenseControl) return false;
+
     try {
       return await _subscriptionManager.shouldBlockApplication();
     } catch (e) {
-      // En cas d'erreur, bloquer par sécurité
       return true;
     }
   }
 
-  /// Vérifie et affiche les notifications appropriées
   Future<void> checkAndShowNotifications(BuildContext context) async {
+    if (!AppConfig.enableLicenseControl) return;
+
     final status = _currentStatus.value;
     if (status != null) {
       await SubscriptionNotificationService.checkAndShowNotifications(context, status);
     }
   }
 
-  /// Vérifie si l'application est en mode dégradé
   bool isInDegradedMode() {
+    if (!AppConfig.enableLicenseControl) return false;
     return SubscriptionNotificationService.isInDegradedMode(_currentStatus.value);
   }
 
-  /// Obtient les notifications d'expiration
   Future<List<String>> getExpirationNotifications() async {
+    if (!AppConfig.enableLicenseControl) return [];
     try {
       return await _subscriptionManager.getExpirationNotifications();
     } catch (e) {
-      return ['Erreur lors de la récupération des notifications'];
+      return [];
     }
   }
 
-  /// Met à jour les notifications
   Future<void> _updateNotifications() async {
+    if (!AppConfig.enableLicenseControl) {
+      _notifications.clear();
+      return;
+    }
     try {
       final notificationList = await _subscriptionManager.getExpirationNotifications();
       _notifications.assignAll(notificationList);
@@ -179,85 +188,37 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Vérifie si des notifications doivent être affichées
-  bool shouldShowNotifications() {
-    return _notifications.isNotEmpty;
-  }
+  bool shouldShowNotifications() => _notifications.isNotEmpty;
 
-  /// Vérifie si des notifications critiques doivent être affichées
   bool shouldShowCriticalNotifications() {
+    if (!AppConfig.enableLicenseControl) return false;
     if (_currentStatus.value == null) return false;
-
     final status = _currentStatus.value!;
-
-    // Notifications critiques si:
-    // - Abonnement expiré sans période de grâce
-    // - En période de grâce
-    // - Expire aujourd'hui ou demain
-    return !status.isActive || status.isInGracePeriod || (status.remainingDays != null && status.remainingDays! <= 1);
+    if (status.remainingDays == null) return false; // lifetime, jamais d'alerte
+    return !status.isActive || status.isInGracePeriod || status.remainingDays! <= 1;
   }
 
-  /// Obtient le message de statut principal
   String getStatusMessage() {
+    if (!AppConfig.enableLicenseControl) return 'Licence à vie - accès complet';
+
     final status = _currentStatus.value;
     if (status == null) return 'Statut inconnu';
-
     if (!status.isActive) {
-      if (status.isInGracePeriod) {
-        return 'Période de grâce active - Renouvelez maintenant';
-      } else {
-        return 'Abonnement expiré - Activation requise';
-      }
+      return status.isInGracePeriod ? 'Période de grâce active - Renouvelez maintenant' : 'Abonnement expir - Activation requise';
     }
-
     if (status.type == SubscriptionType.trial) {
       final days = status.remainingDays ?? 0;
-      if (days <= 1) {
-        return 'Période d\'essai expire ${days == 0 ? 'aujourd\'hui' : 'demain'}';
-      } else {
-        return 'Période d\'essai - $days jours restants';
-      }
+      return days <= 1 ? 'Période d\'essai expire ${days == 0 ? 'aujourd\'hui' : 'demain'}' : 'Période d\'essai - $days jours restants';
     }
-
     final days = status.remainingDays ?? 0;
-    if (days <= 3) {
-      return 'Abonnement expire dans $days jour${days > 1 ? 's' : ''}';
-    }
-
+    if (days <= 3) return 'Abonnement expire dans $days jour${days > 1 ? 's' : ''}';
     return 'Abonnement actif';
   }
 
-  /// Obtient la couleur du statut
-  String getStatusColor() {
-    final status = _currentStatus.value;
-    if (status == null || !status.isActive) return 'error';
+  void clearError() => _errorMessage.value = '';
 
-    final days = status.remainingDays ?? 0;
-    if (days <= 1) return 'error';
-    if (days <= 3) return 'warning';
-
-    return 'success';
-  }
-
-  /// Obtient l'icône du statut
-  String getStatusIcon() {
-    final status = _currentStatus.value;
-    if (status == null || !status.isActive) return 'error';
-
-    final days = status.remainingDays ?? 0;
-    if (days <= 1) return 'warning';
-    if (days <= 3) return 'info';
-
-    return 'check_circle';
-  }
-
-  /// Efface les messages d'erreur
-  void clearError() {
-    _errorMessage.value = '';
-  }
-
-  /// Force une validation périodique
   Future<void> forceValidation() async {
+    if (!AppConfig.enableLicenseControl) return;
     try {
       _isLoading.value = true;
       await _subscriptionManager.performPeriodicValidation();
@@ -269,36 +230,22 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Vérifie si une période d'essai peut être démarrée
   Future<bool> canStartTrial() async {
-    try {
-      // Vérifier s'il n'y a pas déjà un abonnement actif
-      if (isSubscriptionActive) return false;
-
-      // Vérifier via le gestionnaire si un essai peut être démarré
-      // Cette méthode devrait être ajoutée à l'interface si nécessaire
-      return true; // Pour l'instant, autoriser si pas d'abonnement actif
-    } catch (e) {
-      return false;
-    }
+    if (isSubscriptionActive) return false;
+    return true;
   }
 
-  /// Obtient des informations détaillées sur l'abonnement
   Map<String, dynamic> getSubscriptionDetails() {
+    if (!AppConfig.enableLicenseControl) {
+      return {'type': 'Lifetime', 'status': 'Actif', 'isActive': true, 'remainingDays': null};
+    }
     final status = _currentStatus.value;
     if (status == null) {
-      return {
-        'type': 'Inconnu',
-        'status': 'Non disponible',
-        'expirationDate': null,
-        'remainingDays': null,
-        'isActive': false,
-      };
+      return {'type': 'Inconnu', 'status': 'Non disponible', 'isActive': false};
     }
-
     return {
       'type': _getSubscriptionTypeLabel(status.type),
-      'status': status.isActive ? 'Actif' : 'Expiré',
+      'status': status.isActive ? 'Actif' : 'Expir',
       'expirationDate': status.expirationDate,
       'remainingDays': status.remainingDays,
       'isActive': status.isActive,
@@ -307,7 +254,6 @@ class SubscriptionController extends GetxController {
     };
   }
 
-  /// Obtient le libellé du type d'abonnement
   String _getSubscriptionTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
@@ -321,51 +267,35 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  /// Récupère la clé de licence actuelle
   Future<String?> getCurrentLicenseKey() async {
     try {
-      // Récupérer la licence depuis le gestionnaire
       final license = await _subscriptionManager.getCurrentLicense();
       return license?.key;
     } catch (e) {
-      debugPrint('Erreur lors de la récupération de la clé: $e');
       return null;
     }
   }
 
-  /// Copie la clé de licence dans le presse-papiers
   Future<void> copyLicenseKeyToClipboard(String key) async {
-    try {
-      await Clipboard.setData(ClipboardData(text: key));
-    } catch (e) {
-      debugPrint('Erreur lors de la copie de la clé: $e');
-      rethrow;
-    }
+    await Clipboard.setData(ClipboardData(text: key));
   }
 
-  /// Récupère l'empreinte de l'appareil
   Future<String?> getDeviceFingerprint() async {
     try {
       return await _subscriptionManager.getDeviceFingerprint();
     } catch (e) {
-      debugPrint('Erreur lors de la récupération de l\'empreinte: $e');
       return null;
     }
   }
 
-  /// Réinitialise complètement la licence (pour tests uniquement)
   Future<void> resetLicenseData() async {
     try {
       _isLoading.value = true;
       _errorMessage.value = '';
-
       await _subscriptionManager.resetLicenseData();
       await refreshStatus();
-
-      debugPrint('✅ Licence réinitialisée avec succès');
     } catch (e) {
-      _errorMessage.value = 'Erreur de réinitialisation: ${e.toString()}';
-      debugPrint('❌ Erreur réinitialisation: $e');
+      _errorMessage.value = 'Erreur de rinitialisation: ${e.toString()}';
       rethrow;
     } finally {
       _isLoading.value = false;

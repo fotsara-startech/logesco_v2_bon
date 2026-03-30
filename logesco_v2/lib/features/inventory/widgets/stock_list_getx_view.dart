@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
@@ -31,7 +31,7 @@ class _StockListViewState extends State<StockListGetxView> {
     final controller = Get.find<InventoryGetxController>();
 
     return Obx(() {
-      print('=== 📋 WIDGET RECONSTRUIT ===');
+      print('=== ');
       print('   - Stocks chargés: ${controller.stocks.length}');
       print('   - isLoading: ${controller.isLoading.value}');
       print('   - Erreur: ${controller.stocksError.value.isEmpty ? 'Aucune' : controller.stocksError.value}');

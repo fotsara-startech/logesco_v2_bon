@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/account_controller.dart';
 import '../models/account.dart';
@@ -126,7 +126,7 @@ class AccountDetailView extends GetView<AccountController> {
               Expanded(
                 child: _buildSummaryItem(
                   label: 'Statut',
-                  value: compte.estEnDepassement ? 'DÉPASSEMENT' : 'OK',
+                  value: compte.estEnDepassement ? 'DPASSEMENT' : 'OK',
                   icon: compte.estEnDepassement ? Icons.warning : Icons.check_circle,
                 ),
               ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:convert';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../printing/services/printing_service.dart';
 import '../models/company_profile.dart';
@@ -251,7 +251,7 @@ class CompanySettingsController extends GetxController {
       }
 
       // Créer une requête multipart manuellement
-      final uri = Uri.parse('${ApiConfig.baseUrl}/company-settings');
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}/company-settings');
       final request = http.MultipartRequest('POST', uri);
 
       // Ajouter le token
@@ -403,7 +403,7 @@ class CompanySettingsController extends GetxController {
       AlertDialog(
         title: const Text('Confirmer la suppression'),
         content: const Text(
-          'Êtes-vous sûr de vouloir supprimer le profil d\'entreprise ? '
+          'Êtestes-vous sûr de vouloir supprimer le profil d\'entreprise ? '
           'Cette action est irréversible.',
         ),
         actions: [

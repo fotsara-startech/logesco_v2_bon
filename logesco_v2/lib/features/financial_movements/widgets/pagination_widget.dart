@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Types de pagination disponibles
@@ -219,7 +219,7 @@ class PaginationWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Text(
-          'Éléments par page:',
+          'léments par page:',
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(width: 8),

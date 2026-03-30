@@ -5,13 +5,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../products/models/product.dart';
 
 class ProcurementSuggestionService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final String _baseUrl = '${ApiConfig.baseUrl}/procurement';
+  final String _baseUrl = '${AppConfig.currentBaseUrl}/procurement';
 
   /// Récupère le token d'authentification
   Future<String?> _getToken() async {

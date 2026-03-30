@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/sale.dart';
@@ -38,7 +38,7 @@ class SalesService {
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -108,7 +108,7 @@ class SalesService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -136,11 +136,11 @@ class SalesService {
       }
 
       print('Creating sale with data: ${json.encode(request.toJson())}');
-      print('API URL: ${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}');
+      print('API URL: ${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}');
 
       final response = await http
           .post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -159,7 +159,7 @@ class SalesService {
 
       if (response.statusCode == 201) {
         final jsonData = json.decode(response.body);
-        print('💰 [CREATE_SALE] montantTva: ${jsonData['data']?['montantTva']}, tauxTva: ${jsonData['data']?['tauxTva']}');
+        print('📊 [CREATE_SALE] montantTva: ${jsonData['data']?['montantTva']}, tauxTva: ${jsonData['data']?['tauxTva']}');
         final sale = Sale.fromJson(jsonData['data']);
         return ApiResponse.success(
           sale,
@@ -188,7 +188,7 @@ class SalesService {
       }
 
       final response = await http.put(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -220,7 +220,7 @@ class SalesService {
       }
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}/$id/payment'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$id/payment'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -252,7 +252,7 @@ class SalesService {
       }
 
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.salesEndpoint}/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

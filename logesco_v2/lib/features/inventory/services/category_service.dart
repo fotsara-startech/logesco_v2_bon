@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 
 /// Service pour récupérer les catégories de produits
@@ -19,7 +19,7 @@ class CategoryService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}/categories'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}/categories'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -34,7 +34,7 @@ class CategoryService {
         final categories = categoriesData
             .map((item) => item.toString())
             .where((category) => category.isNotEmpty && category != 'null')
-            .toSet() // Éliminer les doublons
+            .toSet() // liminer les doublons
             .toList();
         
         categories.sort(); // Trier alphabétiquement
@@ -66,7 +66,7 @@ class CategoryService {
 
       // Récupérer tous les produits avec une limite élevée
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}?limit=1000'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}?limit=1000'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -102,7 +102,7 @@ class CategoryService {
       'Alimentation',
       'Automobile',
       'Beauté & Santé',
-      'Électronique',
+      'lectronique',
       'Livres & Médias',
       'Maison & Jardin',
       'Sport & Loisirs',

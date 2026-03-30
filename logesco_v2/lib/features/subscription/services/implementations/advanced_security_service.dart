@@ -1,4 +1,4 @@
-﻿import '../interfaces/i_security_validator.dart';
+import '../interfaces/i_security_validator.dart';
 import '../interfaces/i_code_obfuscator.dart';
 import 'security_validator.dart';
 import 'code_obfuscator.dart';

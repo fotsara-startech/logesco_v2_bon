@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../widgets/inventory_search_bar.dart';

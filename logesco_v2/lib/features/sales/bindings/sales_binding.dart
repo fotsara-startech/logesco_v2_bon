@@ -15,7 +15,7 @@ import '../../../core/services/auth_service.dart';
 class SalesBinding extends Bindings {
   @override
   void dependencies() {
-    print('🔧 Configuration SalesBinding');
+    print('📦 Configuration SalesBinding');
 
     // Services nécessaires pour les ventes (création immédiate)
     if (!Get.isRegistered<CustomerService>()) {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/authorization_service.dart';
 
@@ -8,17 +8,17 @@ class AuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    print('🔐 [AuthMiddleware] Vérification accès route: $route');
+    print('');
 
     // Vérifier si l'utilisateur est connecté
     if (!_authService.isAuthenticated) {
-      print('❌ [AuthMiddleware] Utilisateur non connecté, redirection vers login');
+      print(' [AuthMiddleware] Utilisateur non connecté, redirection vers login');
       return const RouteSettings(name: '/login');
     }
 
     // Vérifier les permissions pour la route
     if (route != null && !_authService.canAccessRoute(route)) {
-      print('❌ [AuthMiddleware] Permission refusée pour la route: $route');
+      print(' [AuthMiddleware] Permission refusée pour la route: $route');
 
       // Afficher un message d'erreur
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -36,7 +36,7 @@ class AuthMiddleware extends GetMiddleware {
       return const RouteSettings(name: '/dashboard');
     }
 
-    print('✅ [AuthMiddleware] Accès autorisé pour la route: $route');
+    print(' [AuthMiddleware] Accès autorisé pour la route: $route');
     return null; // Continuer vers la route demandée
   }
 }
@@ -47,15 +47,15 @@ class AdminMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    print('👑 [AdminMiddleware] Vérification privilèges admin pour: $route');
+    print(' [AdminMiddleware] Vérification privilèges admin pour: $route');
 
     if (!_authService.isAuthenticated) {
-      print('❌ [AdminMiddleware] Utilisateur non connecté');
+      print(' [AdminMiddleware] Utilisateur non connecté');
       return const RouteSettings(name: '/login');
     }
 
     if (!_authService.isAdmin) {
-      print('❌ [AdminMiddleware] Privilèges administrateur requis');
+      print(' [AdminMiddleware] Privilèges administrateur requis');
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.snackbar(
@@ -71,7 +71,7 @@ class AdminMiddleware extends GetMiddleware {
       return const RouteSettings(name: '/dashboard');
     }
 
-    print('✅ [AdminMiddleware] Accès administrateur autorisé');
+    print(' [AdminMiddleware] Accès administrateur autorisé');
     return null;
   }
 }

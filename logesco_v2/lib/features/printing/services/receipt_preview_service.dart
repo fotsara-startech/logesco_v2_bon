@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import '../widgets/receipt_template_factory.dart';
@@ -126,7 +126,7 @@ class ReceiptPreviewService {
           ),
           const Spacer(),
           Text(
-            '${format.widthMm.toInt()} x ${format.heightMm > 0 ? format.heightMm.toInt() : '∞'} mm',
+            '${format.widthMm.toInt()} x ${format.heightMm > 0 ? format.heightMm.toInt() : ''} mm',
             style: TextStyle(
               fontSize: 10,
               color: Colors.blue[600],

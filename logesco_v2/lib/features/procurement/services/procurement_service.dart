@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Service pour la gestion des approvisionnements
  */
 
@@ -6,13 +6,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../models/procurement_models.dart';
 
 class ProcurementService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final String _baseUrl = '${ApiConfig.baseUrl}/procurement';
+  final String _baseUrl = '${AppConfig.currentBaseUrl}/procurement';
 
   ProcurementService();
 
@@ -44,7 +44,7 @@ class ProcurementService {
       final uri = Uri.parse(_baseUrl).replace(queryParameters: queryParams);
       final token = await _getToken();
 
-      print('📨 API REQUEST (Procurement): GET $uri');
+      print('');
       print('   - page=$page, limit=$limit');
 
       final response = await http.get(
@@ -55,7 +55,7 @@ class ProcurementService {
         },
       );
 
-      print('📨 API RESPONSE STATUS (Procurement): ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -63,7 +63,7 @@ class ProcurementService {
           final commandes = (data['data']['commandes'] as List).map((json) => CommandeApprovisionnement.fromJson(json)).toList();
           final pagination = data['data']['pagination'] as Map<String, dynamic>;
 
-          print('✅ SUCCÈS: ${commandes.length} commandes reçues');
+          print(' SUCCÈS: ${commandes.length} commandes reçues');
           print('   - Total disponible: ${pagination['total']}');
           print('   - Page: ${pagination['page']}/${pagination['pages']}');
           print('   - hasNext: ${(pagination['page'] as int) < (pagination['pages'] as int)}');
@@ -76,11 +76,11 @@ class ProcurementService {
           throw Exception(data['error']['message'] ?? 'Erreur lors de la récupération des commandes');
         }
       } else {
-        print('❌ ERREUR API: Status ${response.statusCode}');
+        print(' ERREUR API: Status ${response.statusCode}');
         throw Exception('Erreur HTTP: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ERREUR: $e');
+      print(' ERREUR: $e');
       throw Exception('Erreur lors de la récupération des commandes: $e');
     }
   }

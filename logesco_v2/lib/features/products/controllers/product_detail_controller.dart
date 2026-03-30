@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/product.dart';
 import '../services/api_product_service.dart';
 
@@ -26,13 +26,13 @@ class ProductDetailController extends GetxController {
       Product? argumentProduct = Get.arguments as Product?;
 
       if (argumentProduct != null) {
-        print('🔍 Produit reçu via arguments: ${argumentProduct.reference}');
+        print('');
         
         // Recharger le produit via l'API pour avoir la catégorie résolue
         final fullProduct = await _productService.getProductById(argumentProduct.id);
         
         if (fullProduct != null) {
-          print('✅ Produit rechargé avec catégorie: "${fullProduct.categorie}"');
+          print(' Produit rechargé avec catégorie: "${fullProduct.categorie}"');
           product.value = fullProduct;
         } else {
           // Fallback avec le produit des arguments
@@ -43,12 +43,12 @@ class ProductDetailController extends GetxController {
         // Essayer de récupérer l'ID depuis les paramètres de route
         final String? productId = Get.parameters['id'];
         if (productId != null) {
-          print('🔍 Chargement produit par ID: $productId');
+          print('');
           
           final loadedProduct = await _productService.getProductById(int.parse(productId));
           
           if (loadedProduct != null) {
-            print('✅ Produit chargé avec catégorie: "${loadedProduct.categorie}"');
+            print(' Produit chargé avec catégorie: "${loadedProduct.categorie}"');
             product.value = loadedProduct;
           } else {
             errorMessage.value = 'Produit non trouvé';
@@ -58,7 +58,7 @@ class ProductDetailController extends GetxController {
         }
       }
     } catch (e) {
-      print('❌ Erreur chargement produit: $e');
+      print(' Erreur chargement produit: $e');
       errorMessage.value = 'Erreur lors du chargement: $e';
     } finally {
       isLoading.value = false;

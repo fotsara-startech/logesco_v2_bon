@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
 /// Widget de graphique de l'évolution quotidienne
@@ -25,7 +25,7 @@ class DailyBalanceChartWidget extends StatelessWidget {
                 Icon(Icons.show_chart, color: Colors.teal.shade600),
                 const SizedBox(width: 8),
                 const Text(
-                  'Évolution Quotidienne',
+                  'volution Quotidienne',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

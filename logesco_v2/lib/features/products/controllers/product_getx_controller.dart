@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/product.dart';
 import '../services/api_product_service.dart';
 
@@ -31,9 +31,9 @@ class ProductGetxController extends GetxController {
       );
 
       products.assignAll(result);
-      print('✅ ${result.length} produits chargés');
+      print(' ${result.length} produits chargés');
     } catch (e) {
-      print('❌ Erreur chargement produits: $e');
+      print(' Erreur chargement produits: $e');
       error.value = e.toString();
     } finally {
       isLoading.value = false;

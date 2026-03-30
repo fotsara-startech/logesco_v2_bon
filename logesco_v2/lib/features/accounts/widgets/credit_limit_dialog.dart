@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/account_controller.dart';
 import '../../../shared/constants/constants.dart';
@@ -99,7 +99,7 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
                 }
                 final limit = double.tryParse(value);
                 if (limit == null || limit < 0) {
-                  return 'Veuillez saisir une limite valide (≥ 0)';
+                  return 'Veuillez saisir une limite valide (À 0)';
                 }
                 return null;
               },

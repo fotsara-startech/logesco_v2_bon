@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/product.dart';
@@ -35,9 +35,9 @@ class HttpProductService {
         queryParams['isActive'] = isActive.toString();
       }
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}').replace(queryParameters: queryParams);
 
-      print('🔄 Récupération des produits depuis: $uri');
+      print('');
 
       final response = await http.get(
         uri,
@@ -47,11 +47,11 @@ class HttpProductService {
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse API produits: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        print('📦 Données JSON produits reçues');
+        print('');
 
         final products = <Product>[];
         final dataList = jsonData['data'] as List;
@@ -65,7 +65,7 @@ class HttpProductService {
           }
         }
 
-        print('✅ ${products.length} produits récupérés avec succès');
+        print(' ${products.length} produits récupérés avec succès');
         return ApiResponse.success(
           products,
           pagination: jsonData['pagination'] != null ? Pagination.fromJson(jsonData['pagination']) : null,
@@ -91,7 +91,7 @@ class HttpProductService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -123,7 +123,7 @@ class HttpProductService {
       final productsData = products.map((p) => p.toJson()).toList();
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}/import'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}/import'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -153,7 +153,7 @@ class HttpProductService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.productsEndpoint}/all'),
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.productsEndpoint}/all'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

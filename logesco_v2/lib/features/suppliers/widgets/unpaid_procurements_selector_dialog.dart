@@ -162,7 +162,7 @@ class _UnpaidProcurementsSelectorDialogState extends State<UnpaidProcurementsSel
   }
 
   void _validateAndSelect() {
-    print('🔵 [UnpaidProcurementsSelectorDialog] _validateAndSelect appelée');
+    print('🔍 [UnpaidProcurementsSelectorDialog] _validateAndSelect appelée');
     print('  - Commande sélectionnée: ${_selectedProcurement!.reference}');
     print('  - Montant restant: ${_selectedProcurement!.montantRestant}');
 

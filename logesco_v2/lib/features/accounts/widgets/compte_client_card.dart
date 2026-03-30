@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../../../shared/constants/constants.dart';
 
@@ -119,7 +119,7 @@ class CompteClientCard extends StatelessWidget {
     if (compte.estEnDepassement) {
       return Chip(
         label: const Text(
-          'DÉPASSEMENT',
+          'DPASSEMENT',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,

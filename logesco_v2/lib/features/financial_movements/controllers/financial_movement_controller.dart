@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/financial_movement.dart';
@@ -92,7 +92,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       paginationType.value = savedType;
       limit.value = savedPageSize;
 
-      print('📄 Préférences de pagination chargées: ${savedType.name}, taille: $savedPageSize');
+      print('');
     } catch (e) {
       print('⚠️ Erreur lors du chargement des préférences de pagination: $e');
       // Utilise les valeurs par défaut
@@ -176,7 +176,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     } on TypeError catch (e) {
       // Gestion spécifique des erreurs de cast de type
       final errorMessage = 'Erreur de format des données reçues du serveur';
-      print('❌ [loadMovements] Erreur de cast de type: $e');
+      print(' [loadMovements] Erreur de cast de type: $e');
 
       error.value = errorMessage;
       setError(
@@ -200,7 +200,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // Vérification spéciale pour les erreurs de cast
       if (e.toString().contains('type \'Null\' is not a subtype of type \'num\'') || e.toString().contains('is not a subtype of type')) {
         final errorMessage = 'Erreur de format des données reçues du serveur';
-        print('❌ [loadMovements] Erreur de cast détectée: $e');
+        print(' [loadMovements] Erreur de cast détectée: $e');
 
         error.value = errorMessage;
         setError(
@@ -257,7 +257,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // En cas d'erreur, utilise les catégories par défaut
       categories.value = MovementCategory.defaultCategories;
       update(); // Notify GetBuilder widgets
-      print('📦 Utilisation des catégories par défaut suite à une erreur');
+      print('');
     } catch (e) {
       final financialError = FinancialErrorHandler.handleError(e, operation: 'loadCategories');
       FinancialErrorHandler.logError(financialError, operation: 'loadCategories');
@@ -265,7 +265,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // En cas d'erreur, utilise les catégories par défaut
       categories.value = MovementCategory.defaultCategories;
       update(); // Notify GetBuilder widgets
-      print('📦 Utilisation des catégories par défaut suite à une erreur');
+      print('');
     }
   }
 
@@ -284,7 +284,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
 
   /// Rafraîchit uniquement les mouvements (utilisé après création externe)
   Future<void> refreshMovements() async {
-    print('🔄 [refreshMovements] Rafraîchissement des mouvements financiers');
+    print('');
     await loadMovements(forceRefresh: true);
   }
 
@@ -549,7 +549,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // Sauvegarde la préférence utilisateur
       try {
         await PaginationPreferencesService.savePaginationType(newType);
-        print('📄 Mode de pagination changé et sauvegardé: ${newType.name}');
+        print('');
       } catch (e) {
         print('⚠️ Erreur lors de la sauvegarde du mode de pagination: $e');
       }
@@ -825,7 +825,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       // Sauvegarde la préférence utilisateur
       try {
         await PaginationPreferencesService.savePageSize(newLimit);
-        print('📄 Taille de page changée et sauvegardée: $newLimit');
+        print('');
       } catch (e) {
         print('⚠️ Erreur lors de la sauvegarde de la taille de page: $e');
       }

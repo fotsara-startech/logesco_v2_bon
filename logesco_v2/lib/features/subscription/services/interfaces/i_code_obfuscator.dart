@@ -1,4 +1,4 @@
-﻿/// Service d'obfuscation pour protéger le code critique
+/// Service d'obfuscation pour protéger le code critique
 /// Applique diverses techniques de protection contre le reverse engineering
 abstract class ICodeObfuscator {
   /// Obfusque une chaîne de caractères sensible

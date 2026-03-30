@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
@@ -152,7 +152,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
             Text('Type: ${_getTypeLabel(movement.typeMouvement)}'),
             Text('Date: ${_formatDate(movement.dateMouvement)}'),
             const SizedBox(height: 4),
-            // Affichage du stock initial → changement → stock final
+            // Affichage du stock initial ' changement ' stock final
             Row(
               children: [
                 Text(

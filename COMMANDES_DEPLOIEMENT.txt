@@ -1,0 +1,109 @@
+================================================================================
+                    COMMANDES DE DÉPLOIEMENT
+================================================================================
+
+ÉTAPE 1: RECOMPILER logesco_license_admin
+==========================================
+
+cd logesco_license_admin
+flutter clean
+flutter pub get
+flutter build windows
+
+# Ou pour macOS:
+flutter build macos
+
+# Ou pour Linux:
+flutter build linux
+
+# Résultat attendu:
+# ✅ Build réussi
+# ✅ Exécutable généré dans build/windows/runner/Release/
+
+ÉTAPE 2: RECOMPILER logesco_v2
+===============================
+
+cd logesco_v2
+flutter clean
+flutter pub get
+flutter build windows
+
+# Ou pour macOS:
+flutter build macos
+
+# Ou pour Linux:
+flutter build linux
+
+# Résultat attendu:
+# ✅ Build réussi
+# ✅ Exécutable généré dans build/windows/runner/Release/
+
+ÉTAPE 3: TESTER LA GÉNÉRATION
+==============================
+
+1. Ouvrir logesco_license_admin
+2. Créer une nouvelle licence
+3. Empreinte: P9ZD-GFQD-AWL4-L5MR
+4. Générer
+5. Vérifier: 4ème segment = L5MR ✅
+
+ÉTAPE 4: TESTER L'ACTIVATION
+=============================
+
+1. Ouvrir LOGESCO (nouvelle version)
+2. Paramètres → Abonnement → Activer une licence
+3. Coller: AAAE-4L8T-8H99-L5MR
+4. Valider
+5. Résultat: ✅ "Licence activée avec succès"
+
+ÉTAPE 5: DÉPLOYER
+=================
+
+# Copier les exécutables
+cp logesco_license_admin/build/windows/runner/Release/logesco_license_admin.exe \
+   /path/to/deployment/
+
+cp logesco_v2/build/windows/runner/Release/logesco_v2.exe \
+   /path/to/deployment/
+
+# Ou créer des installateurs
+# Utiliser les fichiers .iss pour InnoSetup
+
+ÉTAPE 6: NOTIFIER LES CLIENTS
+==============================
+
+Envoyer email:
+- Nouvelle version disponible
+- Instructions d'installation
+- Procédure d'activation
+- Support contact
+
+VÉRIFICATION FINALE
+===================
+
+✅ logesco_license_admin recompilé
+✅ logesco_v2 recompilé
+✅ Test de génération réussi
+✅ Test d'activation réussi
+✅ Clé AAAE-4L8T-8H99-L5MR acceptée
+✅ Nouvelles versions déployées
+✅ Clients notifiés
+
+================================================================================
+                    COMMANDES RAPIDES
+================================================================================
+
+# Nettoyer et recompiler tout
+cd logesco_license_admin && flutter clean && flutter pub get && flutter build windows
+cd ../logesco_v2 && flutter clean && flutter pub get && flutter build windows
+
+# Vérifier les modifications
+git diff logesco_license_admin/lib/core/services/license_generator_service.dart
+git diff logesco_v2/lib/features/subscription/models/license_key.dart
+
+# Committer les changements
+git add logesco_license_admin/lib/core/services/license_generator_service.dart
+git add logesco_v2/lib/features/subscription/models/license_key.dart
+git commit -m "Fix: Synchroniser algorithmes de génération et validation de clés"
+
+================================================================================

@@ -1,0 +1,21 @@
+# Liste des clients pour le déploiement LOGESCO v2
+# Format: Un nom d'ordinateur par ligne
+# Les lignes commençant par # sont ignorées
+
+# Exemple de noms d'ordinateurs:
+# - Noms NetBIOS: CLIENT-01, CLIENT-02, etc.
+# - Adresses IP: 192.168.1.10, 192.168.1.11, etc.
+# - Noms FQDN: client01.example.com, client02.example.com, etc.
+
+# Clients du magasin principal
+CLIENT-01
+CLIENT-02
+CLIENT-03
+
+# Clients du magasin secondaire
+MAGASIN2-CLIENT-01
+MAGASIN2-CLIENT-02
+
+# Clients administratifs
+ADMIN-OFFICE-01
+ADMIN-OFFICE-02

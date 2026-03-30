@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
@@ -128,9 +128,9 @@ class ProductController extends GetxController {
       final validCategories = apiCategories.where((cat) => cat.trim().isNotEmpty).toList()..sort();
 
       categories.assignAll(validCategories);
-      print('✅ ${validCategories.length} catégories chargées: $validCategories');
+      print(' ${validCategories.length} catégories chargées: $validCategories');
     } catch (e) {
-      print('❌ Erreur lors du chargement des catégories: $e');
+      print(' Erreur lors du chargement des catégories: $e');
       // En cas d'erreur, utiliser une liste vide
       categories.clear();
     }
@@ -229,21 +229,21 @@ class ProductController extends GetxController {
   /// Navigue vers l'édition d'un produit
   Future<void> goToEditProduct(Product product) async {
     try {
-      print('🔍 Navigation vers édition produit ID: ${product.id}');
+      print('');
 
       // Récupérer le produit complet avec catégorie résolue via l'API
       final fullProduct = await _productService.getProductById(product.id);
 
       if (fullProduct != null) {
-        print('✅ Produit complet récupéré avec catégorie: "${fullProduct.categorie}"');
+        print(' Produit complet récupéré avec catégorie: "${fullProduct.categorie}"');
         Get.toNamed('/products/${product.id}/edit', arguments: fullProduct);
       } else {
-        print('❌ Impossible de récupérer le produit complet');
+        print(' Impossible de récupérer le produit complet');
         // Fallback avec le produit original
         Get.toNamed('/products/${product.id}/edit', arguments: product);
       }
     } catch (e) {
-      print('❌ Erreur lors de la récupération du produit: $e');
+      print(' Erreur lors de la récupération du produit: $e');
       // Fallback avec le produit original
       Get.toNamed('/products/${product.id}/edit', arguments: product);
     }
@@ -260,7 +260,7 @@ class ProductController extends GetxController {
       AlertDialog(
         title: const Text('Confirmer la suppression'),
         content: Text(
-          'Êtes-vous sûr de vouloir supprimer le produit "${product.nom}" ?',
+          'Êtestes-vous sûr de vouloir supprimer le produit "${product.nom}" ?',
         ),
         actions: [
           TextButton(
@@ -292,7 +292,7 @@ class ProductController extends GetxController {
 
         if (success) {
           products.remove(product);
-          print('✅ Produit supprimé de la liste locale');
+          print(' Produit supprimé de la liste locale');
 
           Future.delayed(const Duration(milliseconds: 100), () {
             Get.snackbar(
@@ -307,7 +307,7 @@ class ProductController extends GetxController {
           throw Exception('Échec de la suppression');
         }
       } catch (e) {
-        print('❌ Erreur suppression: $e');
+        print(' Erreur suppression: $e');
         String message = 'Erreur lors de la suppression du produit';
         String title = 'Erreur';
         Color backgroundColor = Colors.red.shade100;

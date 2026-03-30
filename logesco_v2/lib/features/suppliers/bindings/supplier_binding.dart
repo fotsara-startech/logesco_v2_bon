@@ -9,7 +9,7 @@ import '../../../core/config/app_config.dart';
 class SupplierBinding extends Bindings {
   @override
   void dependencies() {
-    print('🔧 Configuration SupplierBinding');
+    print('📦 Configuration SupplierBinding');
     print('  - UseMockServices: ${AppConfig.useMockServices}');
 
     // Service - toujours utiliser le vrai service API

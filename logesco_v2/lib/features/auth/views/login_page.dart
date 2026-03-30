@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/backend_service.dart';
+import '../../../core/config/app_config.dart';
 import '../../../shared/widgets/loading_widget.dart';
 
 /// Page de connexion
@@ -21,22 +22,23 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _backendReady = false;
-  String _backendStatus = 'Démarrage du serveur...';
+
+  // En mode client, le backend est toujours "prêt" (c'est le serveur distant)
+  bool _backendReady = AppConfig.isClientMode;
+  String _backendStatus = AppConfig.isClientMode ? '' : 'Démarrage du serveur...';
 
   @override
   void initState() {
     super.initState();
-    _waitForBackend();
+    if (!AppConfig.isClientMode) {
+      _waitForBackend();
+    }
   }
 
   Future<void> _waitForBackend() async {
     final backend = BackendService();
     if (backend.isRunning || await backend.checkHealth()) {
-      if (mounted)
-        setState(() {
-          _backendReady = true;
-        });
+      if (mounted) setState(() => _backendReady = true);
       return;
     }
     final ready = await backend.waitUntilReady(maxSeconds: 60);
@@ -68,7 +70,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _diagnose() async {
     try {
       final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
-      final req = await client.getUrl(Uri.parse('http://localhost:8080/debug'));
+      final serverBase = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
+      final req = await client.getUrl(Uri.parse('$serverBase/debug'));
       final res = await req.close().timeout(const Duration(seconds: 5));
       final body = await res.transform(const Utf8Decoder()).join();
       client.close();
@@ -92,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Backend inaccessible'),
-            content: SelectableText('Erreur: $e\n\nVérifiez que le backend est démarré.'),
+            content: SelectableText('Erreur: $e'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
             ],
@@ -131,7 +134,8 @@ class _LoginPageState extends State<LoginPage> {
               child: Stack(
                 children: [
                   _buildLoginForm(context),
-                  if (!_backendReady)
+                  // Bannière de statut backend — uniquement en mode serveur
+                  if (!AppConfig.isClientMode && !_backendReady)
                     Positioned(
                       bottom: 0,
                       left: 0,
@@ -210,9 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      }),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   obscureText: _obscurePassword,
@@ -325,10 +327,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
           ),
         ),
-        TextButton(
-          onPressed: _diagnose,
-          child: const Text('Diagnostiquer', style: TextStyle(fontSize: 11, color: Colors.grey)),
-        ),
+        if (!AppConfig.isClientMode)
+          TextButton(
+            onPressed: _diagnose,
+            child: const Text('Diagnostiquer', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          ),
       ],
     );
   }

@@ -29,7 +29,7 @@ class SafeFinancialParser {
       );
     } catch (e) {
       print('❌ Erreur lors du parsing du mouvement financier: $e');
-      print('📋 JSON problématique: $json');
+      print('📦 JSON problématique: $json');
       return null;
     }
   }
@@ -203,7 +203,7 @@ class SafeFinancialParser {
       }
     }
     
-    print('🔍 ${filteredMovements.length}/${movements.length} mouvements dans la période');
+    print('📊 ${filteredMovements.length}/${movements.length} mouvements dans la période');
     return filteredMovements;
   }
 }

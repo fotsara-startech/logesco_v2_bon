@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/loading_state.dart';
 import '../services/movement_report_service.dart';
 import '../services/financial_report_pdf_service.dart';
@@ -77,7 +77,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         currentSummary.value = summary;
         isLoadingSummary.value = false;
         isLoading.value = false;
-        print('✅ Résumé chargé avec succès');
+        print(' Résumé chargé avec succès');
       },
       loadingState: LoadingState.loading(
         message: 'Chargement du résumé...',
@@ -105,7 +105,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'loadSummary',
       );
-      print('❌ Erreur chargement résumé: ${error.value}');
+      print(' Erreur chargement résumé: ${error.value}');
     });
   }
 
@@ -126,7 +126,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
 
       categorySummaries.value = summaries;
-      print('✅ Résumés par catégorie chargés avec succès');
+      print(' Résumés par catégorie chargés avec succès');
     } on Exception catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
       FinancialErrorHandler.logError(
@@ -138,7 +138,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'loadCategorySummaries',
       );
-      print('❌ Erreur chargement résumés catégories: ${error.value}');
+      print(' Erreur chargement résumés catégories: ${error.value}');
     } catch (e) {
       error.value = 'Erreur lors du chargement des statistiques par catégorie';
       FinancialErrorHandler.logError(
@@ -150,7 +150,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'loadCategorySummaries',
       );
-      print('❌ Erreur inconnue chargement résumés catégories: $e');
+      print(' Erreur inconnue chargement résumés catégories: $e');
     } finally {
       isLoading.value = false;
     }
@@ -173,7 +173,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
 
       dailySummaries.value = summaries;
-      print('✅ Résumés quotidiens chargés avec succès');
+      print(' Résumés quotidiens chargés avec succès');
     } on Exception catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
       FinancialErrorHandler.logError(
@@ -185,7 +185,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'loadDailySummaries',
       );
-      print('❌ Erreur chargement résumés quotidiens: ${error.value}');
+      print(' Erreur chargement résumés quotidiens: ${error.value}');
     } catch (e) {
       error.value = 'Erreur lors du chargement des statistiques quotidiennes';
       FinancialErrorHandler.logError(
@@ -197,7 +197,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'loadDailySummaries',
       );
-      print('❌ Erreur inconnue chargement résumés quotidiens: $e');
+      print(' Erreur inconnue chargement résumés quotidiens: $e');
     } finally {
       isLoading.value = false;
     }
@@ -226,7 +226,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       categorySummaries.value = report.categorySummaries;
       dailySummaries.value = report.dailySummaries;
 
-      print('✅ Rapport complet généré avec succès');
+      print(' Rapport complet généré avec succès');
     } on Exception catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
       FinancialErrorHandler.logError(
@@ -238,7 +238,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'generateCompleteReport',
       );
-      print('❌ Erreur génération rapport: ${error.value}');
+      print(' Erreur génération rapport: ${error.value}');
     } catch (e) {
       error.value = 'Erreur lors de la génération du rapport';
       FinancialErrorHandler.logError(
@@ -250,7 +250,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'generateCompleteReport',
       );
-      print('❌ Erreur inconnue génération rapport: $e');
+      print(' Erreur inconnue génération rapport: $e');
     } finally {
       isGeneratingReport.value = false;
     }
@@ -287,7 +287,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         throw Exception('Impossible de charger les données du résumé');
       }
 
-      print('📄 Génération PDF du rapport financier...');
+      print('');
 
       // Générer et imprimer le PDF localement
       await FinancialReportPdfService.printFinancialReport(
@@ -299,7 +299,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
 
       isExporting.value = false;
-      print('✅ PDF généré et ouvert avec succès');
+      print(' PDF généré et ouvert avec succès');
 
       // Retourner un message de succès au lieu d'un chemin de fichier
       return 'PDF généré avec succès';
@@ -317,7 +317,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         operation: 'exportToPdf',
       );
 
-      print('❌ Erreur export PDF: ${error.value}');
+      print(' Erreur export PDF: ${error.value}');
       return null;
     }
   }
@@ -346,7 +346,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
 
       final filePath = await _reportService.exportReportToExcel(request);
 
-      print('✅ Export Excel réussi: $filePath');
+      print(' Export Excel réussi: $filePath');
       return filePath;
     } on Exception catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
@@ -359,7 +359,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'exportToExcel',
       );
-      print('❌ Erreur export Excel: ${error.value}');
+      print(' Erreur export Excel: ${error.value}');
       return null;
     } catch (e) {
       error.value = 'Erreur lors de l\'export Excel';
@@ -372,7 +372,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'exportToExcel',
       );
-      print('❌ Erreur inconnue export Excel: $e');
+      print(' Erreur inconnue export Excel: $e');
       return null;
     } finally {
       isExporting.value = false;
@@ -501,7 +501,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
 
         currentComparison.value = comparison;
         isLoadingComparison.value = false;
-        print('✅ Comparaison de périodes générée avec succès');
+        print(' Comparaison de périodes générée avec succès');
       },
       loadingState: LoadingState.loading(
         message: 'Comparaison des périodes en cours...',
@@ -528,7 +528,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         ),
         operation: 'comparePeriods',
       );
-      print('❌ Erreur comparaison périodes: ${error.value}');
+      print(' Erreur comparaison périodes: ${error.value}');
     });
   }
 
@@ -589,7 +589,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
     currentComparison.value = null;
   }
 
-  /// Échange les périodes principale et de comparaison
+  /// change les périodes principale et de comparaison
   void swapPeriods() {
     final tempStart = startDate.value;
     final tempEnd = endDate.value;

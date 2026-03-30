@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/category_model.dart';
 
 /// Service mock pour tester les catégories sans backend
@@ -27,18 +27,18 @@ class MockCategoryService extends GetxService {
 
   /// Récupère toutes les catégories (simulation)
   Future<List<Category>> getCategories() async {
-    print('🔍 MockCategoryService - Simulation chargement catégories');
+    print('');
 
     // Simuler un délai réseau
     await Future.delayed(const Duration(milliseconds: 500));
 
-    print('🔍 MockCategoryService - Retour de ${_mockCategories.length} catégories');
+    print('');
     return List.from(_mockCategories);
   }
 
   /// Crée une nouvelle catégorie (simulation)
   Future<Category> createCategory(Category category) async {
-    print('🔍 MockCategoryService - Création catégorie: ${category.nom}');
+    print('');
 
     await Future.delayed(const Duration(milliseconds: 300));
 
@@ -48,21 +48,21 @@ class MockCategoryService extends GetxService {
     );
 
     _mockCategories.add(newCategory);
-    print('🔍 MockCategoryService - Catégorie créée avec ID: ${newCategory.id}');
+    print('');
 
     return newCategory;
   }
 
   /// Met à jour une catégorie (simulation)
   Future<Category> updateCategory(Category category) async {
-    print('🔍 MockCategoryService - Mise à jour catégorie ID: ${category.id}');
+    print('');
 
     await Future.delayed(const Duration(milliseconds: 300));
 
     final index = _mockCategories.indexWhere((cat) => cat.id == category.id);
     if (index != -1) {
       _mockCategories[index] = category.copyWith(dateModification: DateTime.now());
-      print('🔍 MockCategoryService - Catégorie mise à jour');
+      print('');
       return _mockCategories[index];
     }
 
@@ -71,19 +71,19 @@ class MockCategoryService extends GetxService {
 
   /// Supprime une catégorie (simulation)
   Future<void> deleteCategory(int categoryId) async {
-    print('🔍 MockCategoryService - Suppression catégorie ID: $categoryId');
+    print('');
 
     await Future.delayed(const Duration(milliseconds: 300));
 
     _mockCategories.removeWhere((cat) => cat.id == categoryId);
-    print('🔍 MockCategoryService - Catégorie supprimée');
+    print('');
 
-    print('🔍 MockCategoryService - Catégorie supprimée');
+    print('');
   }
 
   /// Récupère une catégorie par ID (simulation)
   Future<Category?> getCategoryById(int id) async {
-    print('🔍 MockCategoryService - Recherche catégorie ID: $id');
+    print('');
 
     await Future.delayed(const Duration(milliseconds: 200));
 

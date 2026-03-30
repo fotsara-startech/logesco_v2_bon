@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/cash_session_controller.dart';
@@ -396,7 +396,7 @@ class CashSessionHistoryView extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Écarts Positifs',
+                  'carts Positifs',
                   '${totalEcartPositif > 0 ? '+' : ''}${totalEcartPositif.toStringAsFixed(0)} F',
                   Icons.trending_up,
                   Colors.green,
@@ -406,7 +406,7 @@ class CashSessionHistoryView extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Écarts Négatifs',
+                  'carts Négatifs',
                   '${totalEcartNegatif.toStringAsFixed(0)} F',
                   Icons.trending_down,
                   Colors.red,
@@ -487,7 +487,7 @@ class CashSessionHistoryView extends StatelessWidget {
     final isClosed = session.isClosed;
 
     // LOG DE DEBUG
-    print('📊 Affichage session ${session.id}:');
+    print('');
     print('   ecart brut: ${session.ecart}');
     print('   ecart calculé: $ecart');
     print('   isPositive: $isPositive');
@@ -580,7 +580,7 @@ class CashSessionHistoryView extends StatelessWidget {
                     ),
                     Expanded(
                       child: _buildInfoColumn(
-                        'Écart',
+                        'cart',
                         '${isPositive ? '+' : ''}${ecart.toStringAsFixed(0)} F',
                         isPositive ? Icons.trending_up : Icons.trending_down,
                         color: isPositive ? Colors.green : Colors.red,
@@ -796,7 +796,7 @@ class CashSessionHistoryView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Écart:',
+                        'cart:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: (session.ecart! >= 0) ? Colors.green.shade700 : Colors.red.shade700,

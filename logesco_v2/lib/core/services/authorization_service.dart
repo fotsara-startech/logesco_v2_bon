@@ -1,9 +1,9 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import 'permission_service.dart';
 
 /// Service de gestion des autorisations basées sur les rôles
-/// DÉPRÉCIÉ: Utilise maintenant PermissionService en interne
+/// DPRCI: Utilise maintenant PermissionService en interne
 class AuthorizationService extends GetxService {
   final AuthService _authService = Get.put(AuthService());
 
@@ -26,7 +26,7 @@ class AuthorizationService extends GetxService {
   bool get isLoading => false; // Simplifié
 
   /// Simuler la connexion d'un utilisateur spécifique (pour les tests)
-  /// DÉPRÉCIÉ: Utilise PermissionService à la place
+  /// DPRCI: Utilise PermissionService à la place
   Future<void> loginAsUser(String username) async {
     // Cette méthode est conservée pour compatibilité mais ne fait rien
     // Le PermissionService gère maintenant l'authentification
@@ -73,7 +73,7 @@ class AuthorizationService extends GetxService {
   /// Peut supprimer des produits
   bool get canDeleteProducts => _permissionService.canManageProducts;
 
-  // ==================== DÉLÉGATION AU PERMISSION SERVICE ====================
+  // ==================== DLGATION AU PERMISSION SERVICE ====================
   // Toutes les méthodes délèguent maintenant au PermissionService
 
   bool get canManageSales => _permissionService.canManageSales;
@@ -111,7 +111,7 @@ class AuthorizationService extends GetxService {
   bool get canManageSuppliers => _permissionService.canManageProducts || _permissionService.isAdmin;
   bool get canViewSuppliers => canManageSuppliers;
 
-  // ==================== MÉTHODES UTILITAIRES ====================
+  // ==================== MTHODES UTILITAIRES ====================
 
   /// Vérifie si l'utilisateur a une permission spécifique (délègue au PermissionService)
   bool hasPermission(String permission) {

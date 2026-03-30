@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dialog pour l'annulation d'une commande d'approvisionnement
  */
 
@@ -137,7 +137,7 @@ class CancelCommandeDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             const Text(
-              'Êtes-vous sûr de vouloir annuler cette commande ?',
+              'Êtestes-vous sûr de vouloir annuler cette commande ?',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

@@ -58,6 +58,7 @@ const { createCashRegistersRouter } = require('./routes/cash-registers');
 const { createCashSessionsRouter } = require('./routes/cash-sessions');
 const licensesRouter = require('./routes/licenses');
 const { createExpirationDatesRouter } = require('./routes/expiration-dates');
+const { createProformaRouter } = require('./routes/proformas');
 
 /**
  * Serveur principal LOGESCO API
@@ -376,6 +377,10 @@ class LogescoServer {
       ...this.models, 
       authService: this.authService,
       prisma: this.models.prisma 
+    }));
+    this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
+      prisma: this.models.prisma,
+      authService: this.authService,
     }));
     this.app.use(`/api/${apiVersion}/discount-reports`, createDiscountReportsRouter({ 
       ...this.models, 

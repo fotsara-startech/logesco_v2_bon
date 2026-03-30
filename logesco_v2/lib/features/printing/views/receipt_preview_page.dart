@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +6,7 @@ import '../controllers/printing_controller.dart';
 import '../models/models.dart';
 import '../widgets/receipt_template_factory.dart';
 import '../utils/receipt_translations.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 // Imports pour l'impression réelle
 import 'package:printing/printing.dart';
@@ -298,9 +298,9 @@ class ReceiptPreviewPage extends StatelessWidget {
         }
       } else {
         // C'est juste un nom de fichier, le télécharger depuis le backend
-        print('🖼️ Téléchargement du logo depuis le backend: $logoPath');
+        print('️ Téléchargement du logo depuis le backend: $logoPath');
 
-        final baseUrl = ApiConfig.currentBaseUrl;
+        final baseUrl = AppConfig.currentBaseUrl;
         final serverUrl = baseUrl.replaceAll('/api/v1', '');
         final logoUrl = '$serverUrl/uploads/$logoPath';
 
@@ -315,7 +315,7 @@ class ReceiptPreviewPage extends StatelessWidget {
         );
 
         if (response.statusCode == 200) {
-          print('✅ Logo téléchargé (${response.bodyBytes.length} bytes)');
+          print(' Logo téléchargé (${response.bodyBytes.length} bytes)');
           return response.bodyBytes;
         } else {
           print('⚠️ Erreur HTTP ${response.statusCode} lors du chargement du logo');
@@ -387,7 +387,7 @@ class ReceiptPreviewPage extends StatelessWidget {
         pw.SizedBox(height: 10),
         pw.Center(
           child: pw.Text(
-            _t('invoice', receipt).toUpperCase(),
+            receipt.isProforma ? _t('proformaInvoice', receipt).toUpperCase() : _t('invoice', receipt).toUpperCase(),
             style: pw.TextStyle(fontSize: titleSize - 2, fontWeight: pw.FontWeight.bold),
             textAlign: pw.TextAlign.center,
           ),
@@ -571,10 +571,10 @@ class ReceiptPreviewPage extends StatelessWidget {
 
         pw.SizedBox(height: 24),
 
-        // Titre "FACTURE"
+        // Titre "FACTURE" ou "FACTURE PROFORMA"
         pw.Center(
           child: pw.Text(
-            _t('invoice', receipt).toUpperCase(),
+            receipt.isProforma ? _t('proformaInvoice', receipt).toUpperCase() : _t('invoice', receipt).toUpperCase(),
             style: pw.TextStyle(fontSize: headerSize, fontWeight: pw.FontWeight.bold),
           ),
         ),

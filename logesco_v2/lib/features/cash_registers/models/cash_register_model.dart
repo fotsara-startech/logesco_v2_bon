@@ -1,4 +1,4 @@
-﻿/// Modèle pour la gestion des caisses
+/// Modèle pour la gestion des caisses
 class CashRegister {
   final int? id;
   final String nom;

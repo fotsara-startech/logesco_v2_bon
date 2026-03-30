@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Page principale de gestion des approvisionnements avec contrôle des permissions
  */
 
@@ -43,14 +43,14 @@ class _ProcurementPageState extends State<ProcurementPage> {
   void _onScroll() {
     final controller = Get.find<ProcurementController>();
     if (_scrollController.position.pixels > _scrollController.position.maxScrollExtent - 500) {
-      print('📜 SCROLL VERS FIN DÉTECTÉ (Procurement)');
+      print('');
       print('   - Position: ${_scrollController.position.pixels}');
       print('   - MaxExtent: ${_scrollController.position.maxScrollExtent}');
       print('   - hasMoreCommandes: ${controller.hasMoreCommandes.value}');
       print('   - isLoading: ${controller.isLoading.value}');
 
       if (controller.hasMoreCommandes.value && !controller.isLoading.value) {
-        print('✅ Chargement de la page suivante...');
+        print(' Chargement de la page suivante...');
         controller.loadCommandes();
       } else {
         print('⚠️ Impossible de charger: hasMore=${controller.hasMoreCommandes.value}, loading=${controller.isLoading.value}');
@@ -154,7 +154,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
             // Liste des commandes
             Expanded(
               child: Obx(() {
-                print('=== 📋 WIDGET RECONSTRUCTION (Procurement) ===');
+                print('=== ');
                 print('   - Commandes chargées: ${controller.commandes.length}');
                 print('   - Total pagination: ${controller.totalCommandes.value}');
                 print('   - Page: ${controller.currentPage.value - 1}/${controller.totalPages.value}');

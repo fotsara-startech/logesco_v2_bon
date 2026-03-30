@@ -26,12 +26,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
   void initState() {
     super.initState();
     _salesController = Get.put(SalesController());
-    _customersController = Get.find<CustomerController>();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+    _customersController = Get.isRegistered<CustomerController>() ? Get.find<CustomerController>() : Get.put(CustomerController());
   }
 
   // Méthode pour nettoyer la recherche client
@@ -644,44 +639,49 @@ class _CreateSalePageState extends State<CreateSalePage> {
           // Bouton de confirmation
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Obx(() => SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _salesController.isCreating || _salesController.cartItems.isEmpty ? null : _finalizeSale,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      disabledBackgroundColor: Colors.grey[300],
-                    ),
-                    child: _salesController.isCreating
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.payment, size: 22),
-                              const SizedBox(width: 8),
-                              Text(
-                                _salesController.cartItems.isEmpty ? 'sales_cart_empty_action'.tr : 'sales_proceed_payment'.tr,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+            child: Obx(() => Column(
+                  children: [
+                    // Bouton principal : Procéder au paiement
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _salesController.isCreating || _salesController.cartItems.isEmpty ? null : _finalizeSale,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[600],
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                  ),
+                          disabledBackgroundColor: Colors.grey[300],
+                        ),
+                        child: _salesController.isCreating
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.payment, size: 22),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _salesController.cartItems.isEmpty ? 'sales_cart_empty_action'.tr : 'sales_proceed_payment'.tr,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
                 )),
           ),
 

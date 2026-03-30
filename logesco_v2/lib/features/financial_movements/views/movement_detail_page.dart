@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/financial_movement.dart';
 import '../controllers/financial_movement_controller.dart';
@@ -600,7 +600,7 @@ class MovementDetailPage extends StatelessWidget {
       // Si pas trouvé, charger depuis l'API
       return await controller.getMovementById(id);
     } catch (e) {
-      print('❌ Erreur lors du chargement du mouvement $movementId: $e');
+      print(' Erreur lors du chargement du mouvement $movementId: $e');
       throw Exception('Impossible de charger le mouvement: $e');
     }
   }

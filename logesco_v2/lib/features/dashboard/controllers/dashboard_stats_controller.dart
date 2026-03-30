@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 
 /// Contrôleur pour gérer les statistiques du dashboard
 class DashboardStatsController extends GetxController {
@@ -55,7 +55,7 @@ class DashboardStatsController extends GetxController {
       ]);
     } catch (e) {
       error.value = 'Erreur lors du chargement des statistiques: $e';
-      print('❌ Erreur dashboard stats: $e');
+      print(' Erreur dashboard stats: $e');
     } finally {
       isLoading.value = false;
     }
@@ -71,7 +71,7 @@ class DashboardStatsController extends GetxController {
       todaySalesCount.value = '15';
       salesTrend.value = '+12%';
     } catch (e) {
-      print('❌ Erreur stats ventes: $e');
+      print(' Erreur stats ventes: $e');
     }
   }
 
@@ -85,7 +85,7 @@ class DashboardStatsController extends GetxController {
       totalCategories.value = '23';
       productsTrend.value = '+5%';
     } catch (e) {
-      print('❌ Erreur stats produits: $e');
+      print(' Erreur stats produits: $e');
     }
   }
 
@@ -99,7 +99,7 @@ class DashboardStatsController extends GetxController {
       newCustomersThisMonth.value = '12';
       customersTrend.value = '+8%';
     } catch (e) {
-      print('❌ Erreur stats clients: $e');
+      print(' Erreur stats clients: $e');
     }
   }
 
@@ -113,7 +113,7 @@ class DashboardStatsController extends GetxController {
       monthlyExpensesCount.value = '67';
       expensesTrend.value = '-3%';
     } catch (e) {
-      print('❌ Erreur stats financières: $e');
+      print(' Erreur stats financières: $e');
     }
   }
 
@@ -126,7 +126,7 @@ class DashboardStatsController extends GetxController {
       stockValue.value = '2.1M';
       stockTrend.value = '+15%';
     } catch (e) {
-      print('❌ Erreur stats stock: $e');
+      print(' Erreur stats stock: $e');
     }
   }
 
@@ -139,7 +139,7 @@ class DashboardStatsController extends GetxController {
       totalSuppliers.value = '24';
       pendingOrders.value = '3';
     } catch (e) {
-      print('❌ Erreur stats fournisseurs: $e');
+      print(' Erreur stats fournisseurs: $e');
     }
   }
 
@@ -152,7 +152,7 @@ class DashboardStatsController extends GetxController {
       clientCredits.value = '78,500';
       creditsTrend.value = '-5%';
     } catch (e) {
-      print('❌ Erreur stats comptes: $e');
+      print(' Erreur stats comptes: $e');
     }
   }
 
@@ -165,7 +165,7 @@ class DashboardStatsController extends GetxController {
       openCashRegisters.value = '3';
       activeCashRegisters.value = '2';
     } catch (e) {
-      print('❌ Erreur stats caisses: $e');
+      print(' Erreur stats caisses: $e');
     }
   }
 

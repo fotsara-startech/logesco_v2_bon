@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import '../translations/app_translations.dart';
@@ -85,13 +85,13 @@ class LanguageController extends GetxController {
   String get currentLanguageFlag {
     switch (currentLanguage.value) {
       case 'fr':
-        return '🇫🇷';
+        return '';
       case 'en':
-        return '🇬🇧';
+        return '';
       case 'es':
-        return '🇪🇸';
+        return '';
       default:
-        return '🇫🇷';
+        return '';
     }
   }
 }

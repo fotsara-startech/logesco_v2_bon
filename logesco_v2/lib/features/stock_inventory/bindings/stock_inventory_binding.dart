@@ -1,4 +1,4 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import '../controllers/stock_inventory_controller.dart';
 import '../../products/services/category_service.dart';
 
@@ -11,7 +11,7 @@ class StockInventoryBinding extends Bindings {
       () => CategoryService(),
       fenix: true,
     );
-    
+
     // Contrôleur d'inventaire de stock
     Get.lazyPut<StockInventoryController>(() => StockInventoryController());
   }

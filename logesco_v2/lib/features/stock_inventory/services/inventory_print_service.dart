@@ -1,4 +1,4 @@
-import 'package:pdf/pdf.dart';
+﻿import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/inventory_model.dart';
@@ -76,7 +76,7 @@ class InventoryPrintService {
             _buildStatistics(inventory, items),
             pw.SizedBox(height: 20),
             pw.Text(
-              'DÉTAIL DES ARTICLES',
+              'DTAIL DES ARTICLES',
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
@@ -111,7 +111,7 @@ class InventoryPrintService {
         }
       }
     } catch (e) {
-      print('❌ Erreur lors de la récupération du profil d\'entreprise: $e');
+      print(' Erreur lors de la récupération du profil d\'entreprise: $e');
     }
 
     // Retourner un profil par défaut si échec
@@ -314,7 +314,7 @@ class InventoryPrintService {
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Écarts détectés:', '$itemsWithVariance')),
+              pw.Expanded(child: _buildStatItem('carts détectés:', '$itemsWithVariance')),
               pw.Expanded(child: _buildStatItem('Progression:', '${progress.toStringAsFixed(1)}%')),
             ],
           ),
@@ -336,7 +336,7 @@ class InventoryPrintService {
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Écart de valeur:', '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
+              pw.Expanded(child: _buildStatItem('cart de valeur:', '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
               pw.Expanded(child: pw.Container()),
             ],
           ),
@@ -414,7 +414,7 @@ class InventoryPrintService {
         7: pw.Alignment.center,
       },
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Écart', 'Valeur Sys.', 'Écart Val.', 'Statut'],
+      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'cart', 'Valeur Sys.', 'cart Val.', 'Statut'],
       data: items
           .map((item) => [
                 item.nomProduit,
@@ -424,7 +424,7 @@ class InventoryPrintService {
                 item.isCounted ? item.calculatedEcart.toStringAsFixed(0) : '-',
                 item.valeurSysteme.toStringAsFixed(0),
                 item.isCounted ? item.ecartValeur.toStringAsFixed(0) : '-',
-                item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'À COMPTER',
+                item.isCounted ? (item.hasVariance ? 'CART' : 'OK') : 'À COMPTER',
               ])
           .toList(),
     );

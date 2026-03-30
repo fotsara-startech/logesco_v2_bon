@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/customer.dart';
@@ -114,7 +114,7 @@ class CustomerFormController extends GetxController {
 
     try {
       isLoading.value = true;
-      print('🔄 Début de la sauvegarde...');
+      print('💾 Début de la sauvegarde...');
 
       final customerForm = CustomerForm(
         nom: nomController.text.trim(),
@@ -163,13 +163,13 @@ class CustomerFormController extends GetxController {
       try {
         final customerController = Get.find<CustomerController>();
         customerController.onCustomerSaved(savedCustomer, isEdit: isEditing.value);
-        print('📞 Contrôleur principal notifié avec succès');
+        print('🔔 Contrôleur principal notifié avec succès');
       } catch (e) {
         print('⚠️ Impossible de notifier le contrôleur principal: $e');
       }
 
       // Retourner à la liste avec le client créé/modifié
-      print('🔙 Retour vers la liste avec le client: ${savedCustomer.nomComplet}');
+      print('↩️ Retour vers la liste avec le client: ${savedCustomer.nomComplet}');
 
       // Attendre un peu pour que le snackbar s'affiche
       await Future.delayed(const Duration(milliseconds: 500));

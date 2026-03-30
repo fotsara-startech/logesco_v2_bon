@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 
@@ -63,7 +63,7 @@ class AuthService extends GetxService {
       // Dans une vraie implémentation, on ferait un appel API simple comme /health
       return true;
     } catch (e) {
-      print('❌ [AuthService] Erreur test connexion: $e');
+      print(' [AuthService] Erreur test connexion: $e');
       return false;
     }
   }

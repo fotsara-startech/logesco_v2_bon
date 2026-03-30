@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/models.dart';
@@ -71,7 +71,7 @@ class PrintingService {
       }
 
       final queryParams = request.toQueryParams();
-      final uri = Uri.parse('${ApiConfig.baseUrl}/printing/receipts').replace(
+      final uri = Uri.parse('${AppConfig.baseUrl}/printing/receipts').replace(
         queryParameters: queryParams.map((key, value) => MapEntry(key, value.toString())),
       );
 
@@ -84,7 +84,7 @@ class PrintingService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -275,13 +275,13 @@ class PrintingService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/printing/receipts/$receiptId'),
+        Uri.parse('${AppConfig.baseUrl}/printing/receipts/$receiptId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -359,13 +359,13 @@ class PrintingService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/printing/receipts/by-sale/$saleId'),
+        Uri.parse('${AppConfig.baseUrl}/printing/receipts/by-sale/$saleId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -437,7 +437,7 @@ class PrintingService {
 
       final response = await http
           .post(
-        Uri.parse('${ApiConfig.baseUrl}/printing/receipts/${request.receiptId}/reprint'),
+        Uri.parse('${AppConfig.baseUrl}/printing/receipts/${request.receiptId}/reprint'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -445,7 +445,7 @@ class PrintingService {
         body: json.encode(request.toJson()),
       )
           .timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -508,13 +508,13 @@ class PrintingService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/printing/receipts/$receiptId/reprints'),
+        Uri.parse('${AppConfig.baseUrl}/printing/receipts/$receiptId/reprints'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -783,12 +783,12 @@ class PrintingService {
       if (token == null) return null;
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/sales/$saleId'),
+        Uri.parse('${AppConfig.baseUrl}/sales/$saleId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(ApiConfig.connectTimeout);
+      ).timeout(AppConfig.connectTimeout);
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -894,13 +894,13 @@ class PrintingService {
 
       // Récupérer les données de la vente depuis l'API
       final saleResponse = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/sales/${request.saleId}'),
+        Uri.parse('${AppConfig.baseUrl}/sales/${request.saleId}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -933,12 +933,12 @@ class PrintingService {
         try {
           print('🏢 RÉCUPÉRATION PROFIL ENTREPRISE DEPUIS API...');
           final companyResponse = await http.get(
-            Uri.parse('${ApiConfig.baseUrl}/company/profile'),
+            Uri.parse('${AppConfig.baseUrl}/company/profile'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-          ).timeout(ApiConfig.connectTimeout);
+          ).timeout(AppConfig.connectTimeout);
 
           if (companyResponse.statusCode == 200) {
             final companyData = json.decode(companyResponse.body);

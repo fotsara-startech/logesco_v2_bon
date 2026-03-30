@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -160,7 +160,7 @@ class ExportService {
 
       return null;
     } catch (e) {
-      print('❌ Erreur lors de l\'export Excel mouvements: $e');
+      print(' Erreur lors de l\'export Excel mouvements: $e');
       return null;
     }
   }
@@ -170,7 +170,7 @@ class ExportService {
     try {
       await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
     } catch (e) {
-      print('❌ Erreur lors du partage: $e');
+      print(' Erreur lors du partage: $e');
     }
   }
 

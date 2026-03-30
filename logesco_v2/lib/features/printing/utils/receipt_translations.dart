@@ -1,9 +1,10 @@
-/// Traductions pour les reçus/factures
+﻿/// Traductions pour les reçus/factures
 class ReceiptTranslations {
   static const Map<String, Map<String, String>> _translations = {
     'fr': {
       'invoice': 'FACTURE',
-      'reprint': 'RÉIMPRESSION',
+      'proformaInvoice': 'FACTURE PROFORMA',
+      'reprint': 'RIMPRESSION',
       'saleNumber': 'N° Vente',
       'date': 'Date',
       'customer': 'Client',
@@ -28,6 +29,7 @@ class ReceiptTranslations {
     },
     'en': {
       'invoice': 'INVOICE',
+      'proformaInvoice': 'PROFORMA INVOICE',
       'reprint': 'REPRINT',
       'saleNumber': 'Sale No',
       'date': 'Date',
@@ -53,6 +55,7 @@ class ReceiptTranslations {
     },
     'es': {
       'invoice': 'FACTURA',
+      'proformaInvoice': 'FACTURA PROFORMA',
       'reprint': 'REIMPRESIÓN',
       'saleNumber': 'N° Venta',
       'date': 'Fecha',

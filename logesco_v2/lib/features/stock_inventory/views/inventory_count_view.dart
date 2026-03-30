@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/inventory_model.dart';
 import '../controllers/stock_inventory_controller.dart';
@@ -35,29 +35,29 @@ class _InventoryCountViewState extends State<InventoryCountView> {
   void _loadInventoryData() async {
     // Récupérer l'ID de l'inventaire depuis les paramètres de route
     final String? inventoryIdStr = Get.parameters['id'];
-    print('🔍 ID inventaire depuis paramètres: $inventoryIdStr');
+    print('');
 
     if (inventoryIdStr != null) {
       _inventoryId = int.tryParse(inventoryIdStr);
-      print('🔍 ID inventaire parsé: $_inventoryId');
+      print('');
 
       if (_inventoryId != null) {
         // S'assurer que les inventaires sont chargés
         if (_controller.inventories.isEmpty) {
-          print('📦 Chargement des inventaires...');
+          print('');
           await _controller.loadInventories();
         }
 
         // Charger les articles de l'inventaire
-        print('📋 Chargement des articles pour inventaire $_inventoryId...');
+        print('');
         await _controller.loadInventoryItems(_inventoryId!);
-        print('📋 Articles chargés: ${_controller.currentInventoryItems.length}');
+        print('');
 
         // Sélectionner l'inventaire dans le contrôleur
         final inventory = _controller.inventories.firstWhereOrNull(
           (inv) => inv.id == _inventoryId,
         );
-        print('🎯 Inventaire trouvé: ${inventory?.nom}');
+        print(' Inventaire trouvé: ${inventory?.nom}');
 
         if (inventory != null) {
           _controller.selectInventory(inventory);
@@ -269,7 +269,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
   }
 
   List<InventoryItem> _getFilteredItems() {
-    print('🔍 Filtrage des articles: ${_controller.currentInventoryItems.length} articles disponibles');
+    print('');
     var filtered = _controller.currentInventoryItems.where((item) {
       final matchesSearch = _searchQuery.isEmpty || item.nomProduit.toLowerCase().contains(_searchQuery) || (item.codeProduit?.toLowerCase().contains(_searchQuery) ?? false);
 
@@ -287,7 +287,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       return a.nomProduit.compareTo(b.nomProduit);
     });
 
-    print('🔍 Articles filtrés: ${filtered.length}');
+    print('');
     return filtered;
   }
 

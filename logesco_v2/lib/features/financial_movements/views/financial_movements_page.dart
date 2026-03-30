@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/widgets/permission_widget.dart';
 import '../../../core/services/permission_service.dart';
@@ -768,7 +768,7 @@ class FinancialMovementsPage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: controller.movements.length + (controller.canLoadMore.value ? 1 : 0),
       itemBuilder: (context, index) {
-        // Élément de chargement pour pagination infinie
+        // lément de chargement pour pagination infinie
         if (index == controller.movements.length) {
           if (controller.isLoadingMore.value) {
             return const Padding(

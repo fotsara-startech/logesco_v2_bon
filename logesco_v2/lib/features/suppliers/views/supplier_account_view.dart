@@ -509,7 +509,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
               onPressed: selectedProcurement == null
                   ? null
                   : () {
-                      print('🔵 [Dialog] Bouton "Confirmer le paiement" cliqué');
+                      print('💰 [Dialog] Bouton "Confirmer le paiement" cliqué');
                       print('  - selectedProcurement: ${selectedProcurement?.reference}');
                       print('  - amountController.text: ${amountController.text}');
                       print('  - createFinancialMovement: $createFinancialMovement');
@@ -538,7 +538,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
     UnpaidProcurement selectedProcurement,
     bool createFinancialMovement,
   ) async {
-    print('🔵 [_processPayment] Début du traitement');
+    print('💰 [_processPayment] Début du traitement');
     print('  - amountText: $amountText');
     print('  - description: $description');
     print('  - selectedProcurement: ${selectedProcurement.reference}');
@@ -561,7 +561,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
     print('✅ [_processPayment] Montant valide: $amount');
     Navigator.of(context).pop(); // Fermer le dialogue
 
-    print('🎯 [_processPayment] Appel paySupplierForProcurement');
+    print('🔍 [_processPayment] Appel paySupplierForProcurement');
     print('  - supplierId: ${_supplier!.id}');
     print('  - amount: $amount');
     print('  - procurementId: ${selectedProcurement.id}');

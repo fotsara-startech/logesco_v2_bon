@@ -1,4 +1,4 @@
-import '../services/implementations/public_key_integration_service.dart';
+﻿import '../services/implementations/public_key_integration_service.dart';
 
 /// Exemple d'utilisation du système de clés publiques intégré
 class PublicKeyUsageExample {
@@ -13,7 +13,7 @@ class PublicKeyUsageExample {
     // 1. Initialisation du système
     print('1. Initialisation du système...');
     await _integrationService.initialize();
-    print('✓ Système initialisé\n');
+    print('" Système initialisé\n');
 
     // 2. Vérification de l'état de santé
     print('2. Vérification de l\'état de santé...');

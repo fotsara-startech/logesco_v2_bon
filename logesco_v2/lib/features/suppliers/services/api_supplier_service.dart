@@ -56,7 +56,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
   /// Crée un nouveau fournisseur
   @override
   Future<Supplier> createSupplier(SupplierForm supplierForm) async {
-    print('🔄 Création fournisseur - Données envoyées:');
+    print('📝 Création fournisseur - Données envoyées:');
     print(supplierForm.toJson());
 
     final response = await _apiClient.post<Map<String, dynamic>>(
@@ -99,7 +99,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
     try {
       final response = await _apiClient.delete<Map<String, dynamic>>('/suppliers/$id');
 
-      print('📡 Réponse DELETE:');
+      print('📋 Réponse DELETE:');
       print('  - Success: ${response.isSuccess}');
       print('  - Status Code: ${response.data}');
       print('  - Data: ${response.data}');
@@ -161,7 +161,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
     double montant, {
     String? description,
   }) async {
-    print('💰 Appel API POST /accounts/suppliers/$supplierId/transactions');
+    print('💾 Appel API POST /accounts/suppliers/$supplierId/transactions');
     print('  - Montant: $montant');
     print('  - Description: $description');
 
@@ -172,14 +172,14 @@ class ApiSupplierService extends GetxService implements SupplierService {
         if (description != null) 'description': description,
       };
 
-      print('📤 Body: $body');
+      print('📋 Body: $body');
 
       final response = await _apiClient.post<Map<String, dynamic>>(
         '/accounts/suppliers/$supplierId/transactions',
         body,
       );
 
-      print('📡 Réponse paiement:');
+      print('📋 Réponse paiement:');
       print('  - Success: ${response.isSuccess}');
       print('  - Data: ${response.data}');
 
@@ -204,14 +204,14 @@ class ApiSupplierService extends GetxService implements SupplierService {
   /// Récupère les commandes impayées d'un fournisseur
   @override
   Future<List<UnpaidProcurement>> getUnpaidProcurements(int supplierId) async {
-    print('🔍 Appel API GET /accounts/suppliers/$supplierId/unpaid-procurements');
+    print('📋 Appel API GET /accounts/suppliers/$supplierId/unpaid-procurements');
 
     try {
       final response = await _apiClient.get<Map<String, dynamic>>(
         '/accounts/suppliers/$supplierId/unpaid-procurements',
       );
 
-      print('📡 Réponse commandes impayées:');
+      print('📋 Réponse commandes impayées:');
       print('  - Success: ${response.isSuccess}');
 
       if (response.isSuccess && response.data != null) {
@@ -230,7 +230,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
   /// Récupère les données du relevé de compte fournisseur
   @override
   Future<Map<String, dynamic>?> getSupplierStatement(int supplierId) async {
-    print('� Appel API GET /accounts/suppliers/$supplierId/statement');
+    print('📄 Appel API GET /accounts/suppliers/$supplierId/statement');
 
     try {
       final response = await _apiClient.get<Map<String, dynamic>>(
@@ -257,7 +257,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
     String? description,
     bool createFinancialMovement = false,
   }) async {
-    print('💰 Appel API POST /accounts/suppliers/$supplierId/transactions (commande spécifique)');
+    print('💾 Appel API POST /accounts/suppliers/$supplierId/transactions (commande spécifique)');
     print('  - Montant: $montant');
     print('  - Commande ID: $procurementId');
     print('  - Description: $description');
@@ -273,14 +273,14 @@ class ApiSupplierService extends GetxService implements SupplierService {
         'createFinancialMovement': createFinancialMovement,
       };
 
-      print('📤 Body: $body');
+      print('📋 Body: $body');
 
       final response = await _apiClient.post<Map<String, dynamic>>(
         '/accounts/suppliers/$supplierId/transactions',
         body,
       );
 
-      print('📡 Réponse paiement commande:');
+      print('📋 Réponse paiement commande:');
       print('  - Success: ${response.isSuccess}');
       print('  - Data: ${response.data}');
 
@@ -306,11 +306,11 @@ class ApiSupplierService extends GetxService implements SupplierService {
   @override
   Future<bool> canDeleteSupplier(int id) async {
     try {
-      print('🔍 Vérification suppression possible pour fournisseur $id');
+      print('📋 Vérification suppression possible pour fournisseur $id');
 
       final response = await _apiClient.get<Map<String, dynamic>>('/suppliers/$id/can-delete');
 
-      print('📡 Réponse can-delete:');
+      print('📋 Réponse can-delete:');
       print('  - Success: ${response.isSuccess}');
       print('  - Data: ${response.data}');
 
@@ -321,21 +321,16 @@ class ApiSupplierService extends GetxService implements SupplierService {
         return canDelete;
       }
 
-      // Si l'endpoint n'existe pas ou échoue, on autorise la suppression
-      // Le serveur gérera les contraintes lors de la suppression effective
       print('⚠️ Endpoint can-delete non disponible, autorisation par défaut');
       return true;
     } catch (e) {
       print('❌ Erreur lors de la vérification: $e');
 
-      // Si l'endpoint n'existe pas (404) ou autre erreur, on autorise la suppression
-      // Le serveur gérera les contraintes lors de la suppression effective
       if (e is ApiException && e.statusCode == 404) {
-        print('📝 Endpoint can-delete non implémenté, autorisation par défaut');
+        print('📋 Endpoint can-delete non implémenté, autorisation par défaut');
         return true;
       }
 
-      // Pour les autres erreurs, on autorise aussi mais on log
       print('⚠️ Erreur inattendue, autorisation par défaut');
       return true;
     }

@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../services/dashboard_stats_service.dart';
 
 /// Contrôleur pour le dashboard
@@ -40,7 +40,7 @@ class DashboardController extends GetxController {
       final stats = await _statsService.getGeneralStats();
       generalStats.value = stats;
     } catch (e) {
-      print('❌ Erreur chargement stats générales: $e');
+      print(' Erreur chargement stats générales: $e');
     } finally {
       isLoadingStats.value = false;
     }
@@ -53,7 +53,7 @@ class DashboardController extends GetxController {
       final stats = await _statsService.getSalesStats();
       salesStats.value = stats;
     } catch (e) {
-      print('❌ Erreur chargement stats ventes: $e');
+      print(' Erreur chargement stats ventes: $e');
     } finally {
       isLoadingSales.value = false;
     }
@@ -66,7 +66,7 @@ class DashboardController extends GetxController {
       final activities = await _statsService.getRecentActivities();
       recentActivities.value = activities;
     } catch (e) {
-      print('❌ Erreur chargement activités: $e');
+      print(' Erreur chargement activités: $e');
     } finally {
       isLoadingActivities.value = false;
     }
@@ -79,7 +79,7 @@ class DashboardController extends GetxController {
       final chartData = await _statsService.getSalesChartData();
       salesChartData.value = chartData;
     } catch (e) {
-      print('❌ Erreur chargement graphique: $e');
+      print(' Erreur chargement graphique: $e');
     } finally {
       isLoadingChart.value = false;
     }

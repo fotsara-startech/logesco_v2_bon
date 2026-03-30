@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -186,12 +186,12 @@ class ExcelService {
           columnMap['estService'] = i;
         } else if (cellValue.contains('quantité') || cellValue.contains('quantite') || cellValue.contains('qte') || cellValue.contains('stock initial') || cellValue.contains('initiale')) {
           columnMap['quantiteInitiale'] = i;
-          print('📋 Colonne quantité trouvée: "$cellValue" -> index $i');
+          print('');
         }
       }
 
       // Afficher le mapping des colonnes pour débogage
-      print('📋 Mapping des colonnes:');
+      print('');
       columnMap.forEach((key, value) => print('  $key -> colonne $value'));
 
       // Parser chaque ligne de données
@@ -230,19 +230,19 @@ class ExcelService {
           // Gérer la quantité initiale si ce n'est pas un service
           if (!product.estService) {
             String? quantiteStr = _getCellValue(row, columnMap['quantiteInitiale']);
-            print('🔍 Ligne $i - Référence: $reference, Quantité brute: "$quantiteStr"');
+            print('');
 
             // Toujours créer le stock, même si la quantité n'est pas spécifiée (par défaut: 0)
             int quantiteInitiale = _parseInt(quantiteStr) ?? 0;
-            print('🔍 Ligne $i - Quantité parsée: $quantiteInitiale');
+            print('');
 
             initialStocks.add(InitialStock(
               productReference: reference,
               quantite: quantiteInitiale,
             ));
-            print('✅ Stock initial ajouté: $reference -> $quantiteInitiale');
+            print(' Stock initial ajouté: $reference -> $quantiteInitiale');
           } else {
-            print('ℹ️ Service ignoré pour stock: $reference');
+            print('️ Service ignoré pour stock: $reference');
           }
         } catch (e) {
           print('Erreur lors du parsing de la ligne $i: $e');
@@ -315,7 +315,7 @@ class ExcelService {
           '2500',
           '1500',
           '1234567890123',
-          'Électronique',
+          'lectronique',
           '10',
           '5.0',
           'Oui',
@@ -392,23 +392,23 @@ class ExcelService {
       final categoryNames = products.map((p) => p.categorie).where((cat) => cat != null && cat.trim().isNotEmpty).cast<String>().toSet().toList();
 
       if (categoryNames.isEmpty) {
-        print('ℹ️ Aucune catégorie à valider');
+        print('️ Aucune catégorie à valider');
         return;
       }
 
-      print('🔍 Validation de ${categoryNames.length} catégories: ${categoryNames.join(', ')}');
+      print('📋 Catégories à valider: ${categoryNames.join(', ')}');
 
       // Valider et créer les catégories manquantes
       final categoryMap = await _categoryManagementService!.validateAndCreateCategories(categoryNames);
 
-      print('✅ ${categoryMap.length} catégories validées/créées');
+      print(' ${categoryMap.length} catégories validées/créées');
 
       // Afficher le résumé
       categoryMap.forEach((name, category) {
-        print('  - "$name" → ID: ${category.id}');
+        // print('  - "$name" → ID: ${category.id}');
       });
     } catch (e) {
-      print('❌ Erreur lors de la validation des catégories: $e');
+      print(' Erreur lors de la validation des catégories: $e');
       // Ne pas faire échouer l'import pour autant
     }
   }
@@ -421,7 +421,7 @@ class ExcelService {
       final productId = productIdMap[initialStock.productReference];
       if (productId != null) {
         try {
-          print('🔄 Tentative création mouvement pour ${initialStock.productReference} (ID: $productId)');
+          print('');
           print('   - Type: achat');
           print('   - Quantité: ${initialStock.quantite}');
 
@@ -431,21 +431,21 @@ class ExcelService {
             changementQuantite: initialStock.quantite,
             notes: 'Stock initial importé depuis Excel',
           );
-          print('✅ Stock initial créé pour ${initialStock.productReference}: ${initialStock.quantite}');
+          print(' Stock initial créé pour ${initialStock.productReference}: ${initialStock.quantite}');
         } catch (e) {
-          print('❌ Erreur création stock initial pour ${initialStock.productReference}: $e');
+          print(' Erreur création stock initial pour ${initialStock.productReference}: $e');
 
           // Essayer avec adjustStock comme alternative
           try {
-            print('🔄 Tentative avec adjustStock...');
+            print('');
             await _inventoryService!.adjustStock(
               produitId: productId,
               changementQuantite: initialStock.quantite,
               notes: 'Stock initial importé depuis Excel',
             );
-            print('✅ Stock initial créé (adjustStock) pour ${initialStock.productReference}: ${initialStock.quantite}');
+            print(' Stock initial créé (adjustStock) pour ${initialStock.productReference}: ${initialStock.quantite}');
           } catch (e2) {
-            print('❌ Échec même avec adjustStock: $e2');
+            print(' Échec même avec adjustStock: $e2');
           }
         }
       }

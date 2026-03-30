@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 /// Template de reçu pour format A5
 class ReceiptTemplateA5 extends ReceiptTemplateBase {
@@ -106,7 +106,7 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
 
   /// Construit le widget logo (réseau)
   Widget _buildLogoWidget(String logoPath) {
-    final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
     final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
     final filename = isFullPath ? logoPath.split(RegExp(r'[/\\]')).last : logoPath;
     return Image.network(

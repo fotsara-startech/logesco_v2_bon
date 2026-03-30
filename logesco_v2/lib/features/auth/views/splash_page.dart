@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/backend_service.dart';
+import '../../../core/config/app_config.dart';
 
-/// Page de démarrage — attend le backend puis vérifie l'authentification.
+/// Page de démarrage — attend le backend (mode serveur) ou va directement au login (mode client)
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -23,12 +24,28 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _startupSequence() async {
+    // MODE CLIENT — pas de backend local, connexion directe au serveur distant
+    if (AppConfig.isClientMode) {
+      _setStatus('Connexion au serveur...');
+      await Future.delayed(const Duration(milliseconds: 500));
+      try {
+        final isAuthenticated = await _authController.checkAuthentication();
+        if (isAuthenticated) {
+          Get.offAllNamed(AppRoutes.dashboard);
+        } else {
+          Get.offAllNamed(AppRoutes.login);
+        }
+      } catch (_) {
+        Get.offAllNamed(AppRoutes.login);
+      }
+      return;
+    }
+
+    // MODE SERVEUR — attendre que le backend local soit prêt
     _setStatus('Démarrage du serveur...');
 
-    // Attendre que le backend soit prêt (max 120s — migration incluse)
     final backend = BackendService();
     if (!backend.isRunning && !await backend.checkHealth()) {
-      // Afficher un message d'attente progressif
       int elapsed = 0;
       final timer = Stream.periodic(const Duration(seconds: 5)).listen((_) {
         elapsed += 5;
@@ -45,7 +62,6 @@ class _SplashPageState extends State<SplashPage> {
       timer.cancel();
 
       if (!ready) {
-        // Backend indisponible — aller au login qui affichera le bouton Réessayer
         Get.offAllNamed(AppRoutes.login);
         return;
       }

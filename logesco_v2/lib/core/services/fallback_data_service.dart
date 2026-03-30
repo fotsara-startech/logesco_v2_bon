@@ -1,4 +1,4 @@
-// import 'package:get/get.dart';
+﻿// import 'package:get/get.dart';
 // import 'default_data_service.dart';
 // import '../../features/users/models/user_model.dart';
 // import '../../features/financial_movements/models/movement_category.dart';
@@ -16,17 +16,17 @@
 //         final apiRoles = await userService.getAllRoles();
 
 //         if (apiRoles.isNotEmpty) {
-//           print('✅ Rôles récupérés depuis l\'API: ${apiRoles.length}');
+//           print(' Rôles récupérés depuis l\'API: ${apiRoles.length}');
 //           return apiRoles;
 //         }
 //       }
 //     } catch (e) {
-//       print('⚠️ Erreur API pour les rôles, utilisation du fallback: $e');
+//       print('Êtes️ Erreur API pour les rôles, utilisation du fallback: $e');
 //     }
 
 //     // Fallback sur les données par défaut
 //     final defaultRoles = DefaultDataService.getDefaultRoles();
-//     print('🔄 Utilisation des rôles par défaut: ${defaultRoles.length}');
+//     print('');
 //     return defaultRoles;
 //   }
 
@@ -40,12 +40,12 @@
 //       //   return apiCategories;
 //       // }
 //     } catch (e) {
-//       print('⚠️ Erreur API pour les catégories, utilisation du fallback: $e');
+//       print('Êtes️ Erreur API pour les catégories, utilisation du fallback: $e');
 //     }
 
 //     // Fallback sur les données par défaut
 //     final defaultCategories = DefaultDataService.getDefaultCategories();
-//     print('🔄 Utilisation des catégories par défaut: ${defaultCategories.length}');
+//     print('');
 //     return defaultCategories;
 //   }
 
@@ -56,7 +56,7 @@
 //       final roles = await getRolesWithFallback();
 //       return roles.firstWhereOrNull((role) => role.nom == roleName);
 //     } catch (e) {
-//       print('⚠️ Erreur lors de la récupération du rôle $roleName: $e');
+//       print('Êtes️ Erreur lors de la récupération du rôle $roleName: $e');
 //       return DefaultDataService.getDefaultRoleByName(roleName);
 //     }
 //   }
@@ -68,14 +68,14 @@
 //       final categories = await getCategoriesWithFallback();
 //       return categories.firstWhereOrNull((cat) => cat.name == categoryName);
 //     } catch (e) {
-//       print('⚠️ Erreur lors de la récupération de la catégorie $categoryName: $e');
+//       print('Êtes️ Erreur lors de la récupération de la catégorie $categoryName: $e');
 //       return DefaultDataService.getDefaultCategoryByName(categoryName);
 //     }
 //   }
 
 //   /// Initialise les données par défaut si nécessaire
 //   static Future<void> ensureDefaultDataExists() async {
-//     print('🔄 Vérification des données par défaut...');
+//     print('');
 
 //     // Vérifier et initialiser les rôles
 //     await _ensureDefaultRoles();
@@ -83,7 +83,7 @@
 //     // Vérifier et initialiser les catégories
 //     await _ensureDefaultCategories();
 
-//     print('✅ Vérification des données par défaut terminée');
+//     print(' Vérification des données par défaut terminée');
 //   }
 
 //   static Future<void> _ensureDefaultRoles() async {
@@ -91,11 +91,11 @@
 //       final roles = await getRolesWithFallback();
 //       if (roles.length < 4) {
 //         // Moins de 4 rôles = données manquantes
-//         print('⚠️ Rôles manquants détectés, utilisation du fallback');
+//         print('Êtes️ Rôles manquants détectés, utilisation du fallback');
 //         // Ici vous pourriez déclencher une synchronisation ou un avertissement
 //       }
 //     } catch (e) {
-//       print('❌ Erreur lors de la vérification des rôles: $e');
+//       print(' Erreur lors de la vérification des rôles: $e');
 //     }
 //   }
 
@@ -104,11 +104,11 @@
 //       final categories = await getCategoriesWithFallback();
 //       if (categories.length < 6) {
 //         // Moins de 6 catégories = données manquantes
-//         print('⚠️ Catégories manquantes détectées, utilisation du fallback');
+//         print('Êtes️ Catégories manquantes détectées, utilisation du fallback');
 //         // Ici vous pourriez déclencher une synchronisation ou un avertissement
 //       }
 //     } catch (e) {
-//       print('❌ Erreur lors de la vérification des catégories: $e');
+//       print(' Erreur lors de la vérification des catégories: $e');
 //     }
 //   }
 // }

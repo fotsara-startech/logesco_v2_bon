@@ -1,4 +1,4 @@
-/// Modèle pour les catégories de mouvements financiers
+﻿/// Modèle pour les catégories de mouvements financiers
 class MovementCategory {
   final int id;
   final String name;
@@ -31,8 +31,8 @@ class MovementCategory {
         isActive: json['isActive'] == true || json['isActive']?.toString().toLowerCase() == 'true',
       );
     } catch (e) {
-      print('❌ [MovementCategory.fromJson] Erreur de parsing: $e');
-      print('📋 [MovementCategory.fromJson] JSON reçu: $json');
+      print(' [MovementCategory.fromJson] Erreur de parsing: $e');
+      print('');
       rethrow;
     }
   }

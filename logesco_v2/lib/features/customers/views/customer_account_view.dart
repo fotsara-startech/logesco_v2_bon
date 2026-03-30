@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/customer.dart';
 import '../controllers/customer_controller.dart';
@@ -434,12 +434,12 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               onPressed: selectedSale == null
                   ? null
                   : () {
-                      print('🔵 [Dialog] Bouton "Confirmer le paiement" cliqué');
+                      print('');
                       print('  - selectedSale: ${selectedSale?.reference}');
                       print('  - amountController.text: ${amountController.text}');
                       print('  - descriptionController.text: ${descriptionController.text}');
 
-                      print('✅ [Dialog] Validation OK, appel de _processPayment');
+                      print(' [Dialog] Validation OK, appel de _processPayment');
                       _processPayment(
                         amountController.text,
                         descriptionController.text,
@@ -457,14 +457,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
   /// Traite le paiement de la dette
   Future<void> _processPayment(String amountText, String description, UnpaidSale? selectedSale) async {
-    print('🔵 [_processPayment] Début du traitement');
+    print('');
     print('  - amountText: $amountText');
     print('  - description: $description');
     print('  - selectedSale: ${selectedSale?.reference}');
 
     // Vérifier qu'une vente est sélectionnée (obligatoire)
     if (selectedSale == null) {
-      print('❌ [_processPayment] Aucune vente sélectionnée');
+      print(' [_processPayment] Aucune vente sélectionnée');
       Get.snackbar(
         'error'.tr,
         'customers_select_sale_error'.tr,
@@ -478,7 +478,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     final amount = double.tryParse(amountText);
 
     if (amount == null || amount <= 0) {
-      print('❌ [_processPayment] Montant invalide');
+      print(' [_processPayment] Montant invalide');
       Get.snackbar(
         'error'.tr,
         'customers_invalid_amount'.tr,
@@ -489,11 +489,11 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       return;
     }
 
-    print('✅ [_processPayment] Montant valide: $amount');
+    print(' [_processPayment] Montant valide: $amount');
     Navigator.of(context).pop(); // Fermer le dialogue
 
     // Payer la vente spécifique sélectionnée
-    print('🎯 [_processPayment] Appel payCustomerDebtForSale');
+    print(' [_processPayment] Appel payCustomerDebtForSale');
     print('  - customerId: ${_customer!.id}');
     print('  - amount: $amount');
     print('  - venteId: ${selectedSale.id}');
@@ -505,21 +505,21 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       description: description.isEmpty ? 'Paiement Dette (Vente #${selectedSale.reference})' : description,
     );
 
-    print('📊 [_processPayment] Résultat payCustomerDebtForSale: $success');
+    print('');
 
     if (success) {
-      print('✅ [_processPayment] Paiement réussi, rechargement des transactions');
+      print(' [_processPayment] Paiement réussi, rechargement des transactions');
 
       // Recharger les transactions du client
       await _loadTransactions();
 
       // Rafraîchir le cache des mouvements financiers si le contrôleur existe
-      print('🔄 [_processPayment] Tentative de rafraîchissement des mouvements financiers');
+      print('');
       try {
         if (Get.isRegistered<FinancialMovementController>()) {
           final financialController = Get.find<FinancialMovementController>();
           await financialController.refreshMovements();
-          print('✅ [_processPayment] Cache des mouvements financiers rafraîchi');
+          print(' [_processPayment] Cache des mouvements financiers rafraîchi');
         } else {
           print('⚠️ [_processPayment] FinancialMovementController non enregistré');
         }
@@ -528,16 +528,16 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       }
 
       // Rafraîchir le solde de la caisse via le service singleton
-      print('🔄 [_processPayment] Rafraîchissement du solde de la caisse via service');
+      print('');
       try {
         final refreshService = CashRegisterRefreshService();
         await refreshService.refreshCashRegisters();
-        print('✅ [_processPayment] Solde de la caisse rafraîchi avec succès');
+        print(' [_processPayment] Solde de la caisse rafraîchi avec succès');
       } catch (e) {
         print('⚠️ [_processPayment] Erreur lors du rafraîchissement de la caisse: $e');
       }
     } else {
-      print('❌ [_processPayment] Paiement échoué');
+      print(' [_processPayment] Paiement échoué');
     }
   }
 

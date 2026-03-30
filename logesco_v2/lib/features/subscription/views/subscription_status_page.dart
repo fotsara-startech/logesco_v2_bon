@@ -209,7 +209,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
 
   Widget _buildSubscriptionDetails() {
     final details = _subscriptionController.getSubscriptionDetails();
-    final isActive = details['isActive'] as bool;
+    final isActive = details['isActive'] == true;
 
     return Card(
       child: Padding(
@@ -228,14 +228,14 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             // Type d'abonnement
             _buildDetailRow(
               'subscription_type'.tr,
-              details['type'] as String,
+              details['type']?.toString() ?? 'subscription_unknown'.tr,
               Icons.card_membership,
             ),
 
             // Statut
             _buildDetailRow(
               'status'.tr,
-              details['status'] as String,
+              details['status']?.toString() ?? '',
               Icons.info_outline,
               valueColor: isActive ? Colors.green : Colors.red,
             ),
@@ -249,7 +249,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
               ),
 
             // Jours restants
-            if (details['remainingDays'] != null && details['remainingDays'] as int > 0)
+            if (details['remainingDays'] != null && (details['remainingDays'] as int) > 0)
               _buildDetailRow(
                 'subscription_remaining_days'.tr,
                 '${details['remainingDays']} ${'days'.tr}',
@@ -258,7 +258,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
               ),
 
             // Période de grâce
-            if (details['isInGracePeriod'] as bool)
+            if (details['isInGracePeriod'] == true)
               _buildDetailRow(
                 'subscription_grace_period'.tr,
                 'subscription_active'.tr,
@@ -643,22 +643,20 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
   Color _getStatusColor() {
     final status = _subscriptionController.currentStatus;
     if (status == null || !status.isActive) return Colors.red;
-
-    final days = status.remainingDays ?? 0;
+    if (status.remainingDays == null) return Colors.green; // lifetime
+    final days = status.remainingDays!;
     if (days <= 1) return Colors.red;
     if (days <= 3) return Colors.orange;
-
     return Colors.green;
   }
 
   IconData _getStatusIcon() {
     final status = _subscriptionController.currentStatus;
     if (status == null || !status.isActive) return Icons.error;
-
-    final days = status.remainingDays ?? 0;
+    if (status.remainingDays == null) return Icons.check_circle; // lifetime
+    final days = status.remainingDays!;
     if (days <= 1) return Icons.warning;
     if (days <= 3) return Icons.info;
-
     return Icons.check_circle;
   }
 

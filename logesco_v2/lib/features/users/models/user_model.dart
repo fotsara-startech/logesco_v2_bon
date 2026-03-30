@@ -24,8 +24,8 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     try {
-      print('👤 [User.fromJson] Input JSON: $json');
-      print('👤 [User.fromJson] JSON Type: ${json.runtimeType}');
+      print('🔄 [User.fromJson] Input JSON: $json');
+      print('📋 [User.fromJson] JSON Type: ${json.runtimeType}');
 
       final user = User(
         id: json['id'],

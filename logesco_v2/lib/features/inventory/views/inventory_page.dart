@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/features/inventory/views/stock_movement_page.dart';
 import '../controllers/inventory_controller.dart';

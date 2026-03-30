@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:get/get.dart';
@@ -8,7 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../models/activity_report.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 /// Service pour exporter les bilans comptables en PDF
 class PdfExportService {
@@ -39,7 +39,7 @@ class PdfExportService {
         if (logoPath.contains('\\') || logoPath.contains('/')) {
           logoPath = logoPath.replaceAll('\\', '/').split('/').last;
         }
-        final serverUrl = ApiConfig.currentBaseUrl.replaceAll('/api/v1', '');
+        final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
         final logoUrl = '$serverUrl/uploads/$logoPath';
         final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {

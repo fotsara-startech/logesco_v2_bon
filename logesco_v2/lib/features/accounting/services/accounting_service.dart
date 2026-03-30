@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/financial_balance.dart';
 import '../../sales/models/sale.dart';
@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 /// Service pour la gestion de la comptabilité et des bilans financiers
 class AccountingService {
   final AuthService _authService;
-  final String _baseUrl = ApiConfig.baseUrl;
+  final String _baseUrl = AppConfig.currentBaseUrl;
 
   AccountingService(this._authService);
 
@@ -25,7 +25,7 @@ class AccountingService {
     // Format avec heure de début/fin de journée
     final startOfDay = DateTime(date.year, date.month, date.day);
 
-    print('🗓️ Formats de date testés pour ${date.day}/${date.month}/${date.year}:');
+    print('️ Formats de date testés pour ${date.day}/${date.month}/${date.year}:');
     print('  - ISO8601: $iso8601');
     print('  - Date seule: $dateOnly');
     print('  - Début de journée: ${startOfDay.toIso8601String()}');
@@ -40,7 +40,7 @@ class AccountingService {
     int? categoryId,
   }) async {
     try {
-      print('🔍 Récupération des données pour la période: ${startDate.toIso8601String()} - ${endDate.toIso8601String()}');
+      print('');
       if (categoryId != null) {
         print('   Filtre catégorie: $categoryId');
       }
@@ -86,11 +86,11 @@ class AccountingService {
         final categoriesList = (data['data'] ?? data) as List;
         return categoriesList.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        print('❌ Erreur API catégories: ${response.statusCode}');
+        print(' Erreur API catégories: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('❌ Erreur getProductCategories: $e');
+      print(' Erreur getProductCategories: $e');
       return [];
     }
   }
@@ -113,7 +113,7 @@ class AccountingService {
       };
 
       final uri = Uri.parse('$_baseUrl/sales').replace(queryParameters: queryParams);
-      print('🔍 Requête ventes: $uri');
+      // print('');
 
       final response = await http.get(
         uri,
@@ -126,7 +126,7 @@ class AccountingService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final salesList = (data['data'] ?? []) as List;
-        print('📊 Réponse API ventes: ${salesList.length} éléments trouvés');
+        // print('');
 
         // Log des dates des ventes pour vérification
         for (final sale in salesList) {
@@ -175,18 +175,18 @@ class AccountingService {
           }
 
           filteredSales = filteredByCategorySales;
-          print('🔍 Filtrage par catégorie $categoryId: ${filteredSales.length} ventes');
+          print('');
         }
 
         print('🔍 Filtrage côté client: ${sales.length} → ${filteredSales.length} ventes pour la période');
 
         return filteredSales;
       } else {
-        print('❌ Erreur API ventes: ${response.statusCode} - ${response.body}');
+        print(' Erreur API ventes: ${response.statusCode} - ${response.body}');
         throw Exception('Erreur lors de la récupération des ventes: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Erreur _getSalesForPeriod: $e');
+      print(' Erreur _getSalesForPeriod: $e');
       return []; // Retourner une liste vide en cas d'erreur
     }
   }
@@ -221,7 +221,7 @@ class AccountingService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final movementsList = (data['data'] ?? []) as List;
-        print('📊 Réponse API mouvements: ${movementsList.length} éléments trouvés');
+        print('');
 
         // Log des dates des mouvements pour vérification
         for (final movement in movementsList) {
@@ -233,7 +233,7 @@ class AccountingService {
 
         final movements = movementsList.map((item) => FinancialMovement.fromJson(item as Map<String, dynamic>)).toList();
 
-        // FILTRAGE CÔTÉ CLIENT car l'API ne filtre pas correctement
+        // FILTRAGE C"TÀ CLIENT car l'API ne filtre pas correctement
         final filteredMovements = movements.where((movement) {
           final movementDate = DateTime(movement.date.year, movement.date.month, movement.date.day);
           final start = DateTime(startDate.year, startDate.month, startDate.day);
@@ -246,11 +246,11 @@ class AccountingService {
 
         return filteredMovements;
       } else {
-        print('❌ Erreur API mouvements: ${response.statusCode} - ${response.body}');
+        print(' Erreur API mouvements: ${response.statusCode} - ${response.body}');
         throw Exception('Erreur lors de la récupération des dépenses: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Erreur _getExpensesForPeriod: $e');
+      print(' Erreur _getExpensesForPeriod: $e');
       return []; // Retourner une liste vide en cas d'erreur
     }
   }
@@ -366,7 +366,7 @@ class AccountingService {
         return productData['prixAchat'] != null ? (productData['prixAchat'] as num).toDouble() : null;
       }
     } catch (e) {
-      print('❌ Erreur lors de la récupération du prix d\'achat pour le produit $productId: $e');
+      print(' Erreur lors de la récupération du prix d\'achat pour le produit $productId: $e');
     }
     return null;
   }
@@ -391,7 +391,7 @@ class AccountingService {
         return productData['categorieId'] as int?;
       }
     } catch (e) {
-      print('❌ Erreur lors de la récupération de la catégorie pour le produit $productId: $e');
+      print(' Erreur lors de la récupération de la catégorie pour le produit $productId: $e');
     }
     return null;
   }
@@ -516,7 +516,7 @@ class AccountingService {
         daysToBreakEven: daysToBreakEven,
       );
     } catch (e) {
-      print('❌ Erreur lors du calcul des KPI: $e');
+      print(' Erreur lors du calcul des KPI: $e');
       rethrow;
     }
   }
@@ -544,7 +544,7 @@ class AccountingService {
         'totalExpenses': balance.totalExpenses,
       };
     } catch (e) {
-      print('❌ Erreur lors du résumé de rentabilité: $e');
+      print(' Erreur lors du résumé de rentabilité: $e');
       return {
         'isProfitable': false,
         'netProfit': 0.0,
@@ -564,7 +564,7 @@ class AccountingService {
       final token = await _authService.getToken();
       if (token == null) return;
 
-      print('🧪 Test API sans filtres...');
+      print('Y Test API sans filtres...');
 
       // Test ventes sans filtre
       final salesResponse = await http.get(
@@ -578,7 +578,7 @@ class AccountingService {
       if (salesResponse.statusCode == 200) {
         final salesData = json.decode(salesResponse.body);
         final allSales = (salesData['data'] ?? []) as List;
-        print('📊 Total ventes dans la base: ${allSales.length}');
+        print('');
 
         // Afficher les 3 dernières ventes avec leurs dates
         final recentSales = allSales.take(3);
@@ -602,7 +602,7 @@ class AccountingService {
       if (movementsResponse.statusCode == 200) {
         final movementsData = json.decode(movementsResponse.body);
         final allMovements = (movementsData['data'] ?? []) as List;
-        print('📊 Total mouvements dans la base: ${allMovements.length}');
+        print('');
 
         // Afficher les 3 derniers mouvements avec leurs dates
         final recentMovements = allMovements.take(3);
@@ -614,7 +614,7 @@ class AccountingService {
         }
       }
     } catch (e) {
-      print('❌ Erreur test API: $e');
+      print(' Erreur test API: $e');
     }
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
@@ -249,8 +249,8 @@ class FinancialErrorHandler {
       if (context != null) 'context': context,
     };
 
-    print('🚨 FinancialMovementError: ${error.errorType} - ${error.message}');
-    print('📊 Context: $logContext');
+    print(' FinancialMovementError: ${error.errorType} - ${error.message}');
+    print('');
   }
 
   /// Détermine si une erreur peut être récupérée automatiquement

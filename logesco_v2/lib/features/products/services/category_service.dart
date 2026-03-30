@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../../../core/services/api_service.dart';
 import '../models/category_model.dart';
 
@@ -9,23 +9,23 @@ class CategoryService extends GetxService {
   /// Récupère toutes les catégories
   Future<List<Category>> getCategories() async {
     try {
-      print('🔍 CategoryService - Début appel API /categories');
+      print('');
       final response = await _apiService.get('/categories');
-      print('🔍 CategoryService - Réponse reçue: success=${response.success}');
+      print('');
 
       if (response.success && response.data != null) {
-        print('🔍 CategoryService - Data type: ${response.data.runtimeType}');
+        print('');
         if (response.data is List) {
           final categories = (response.data as List).map((json) => Category.fromJson(json as Map<String, dynamic>)).toList();
-          print('🔍 CategoryService - ${categories.length} catégories parsées');
+          print('');
           return categories;
         }
       }
 
-      print('❌ CategoryService - Erreur: ${response.message}');
+      print(' CategoryService - Erreur: ${response.message}');
       throw Exception(response.message ?? 'Erreur lors de la récupération des catégories');
     } catch (e) {
-      print('❌ CategoryService - Exception: $e');
+      print(' CategoryService - Exception: $e');
       rethrow;
     }
   }
@@ -41,7 +41,7 @@ class CategoryService extends GetxService {
 
       throw Exception(response.message ?? 'Erreur lors de la création de la catégorie');
     } catch (e) {
-      print('❌ Erreur lors de la création de la catégorie: $e');
+      print(' Erreur lors de la création de la catégorie: $e');
       rethrow;
     }
   }
@@ -57,7 +57,7 @@ class CategoryService extends GetxService {
 
       throw Exception(response.message ?? 'Erreur lors de la mise à jour de la catégorie');
     } catch (e) {
-      print('❌ Erreur lors de la mise à jour de la catégorie: $e');
+      print(' Erreur lors de la mise à jour de la catégorie: $e');
       rethrow;
     }
   }
@@ -71,7 +71,7 @@ class CategoryService extends GetxService {
         throw Exception(response.message ?? 'Erreur lors de la suppression de la catégorie');
       }
     } catch (e) {
-      print('❌ Erreur lors de la suppression de la catégorie: $e');
+      print(' Erreur lors de la suppression de la catégorie: $e');
       rethrow;
     }
   }
@@ -87,7 +87,7 @@ class CategoryService extends GetxService {
 
       return null;
     } catch (e) {
-      print('❌ Erreur lors de la récupération de la catégorie $id: $e');
+      print(' Erreur lors de la récupération de la catégorie $id: $e');
       return null;
     }
   }

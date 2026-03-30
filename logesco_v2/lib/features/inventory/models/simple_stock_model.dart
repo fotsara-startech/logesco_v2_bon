@@ -1,4 +1,4 @@
-// Modèle Stock simplifié pour le débogage
+﻿// Modèle Stock simplifié pour le débogage
 class SimpleStock {
   final int id;
   final int produitId;
@@ -21,41 +21,41 @@ class SimpleStock {
     int id = 0;
     try {
       id = _extractInt(json, ['id']);
-      print('✓ id: $id');
+      print('" id: $id');
     } catch (e) {
-      print('❌ Erreur id: $e');
+      print(' Erreur id: $e');
     }
 
     int produitId = 0;
     try {
       produitId = _extractInt(json, ['produitId', 'productId', 'product_id']);
-      print('✓ produitId: $produitId');
+      print('" produitId: $produitId');
     } catch (e) {
-      print('❌ Erreur produitId: $e');
+      print(' Erreur produitId: $e');
     }
 
     int quantiteDisponible = 0;
     try {
       quantiteDisponible = _extractInt(json, ['quantiteDisponible', 'quantite_disponible', 'availableQuantity', 'available_quantity']);
-      print('✓ quantiteDisponible: $quantiteDisponible');
+      print('" quantiteDisponible: $quantiteDisponible');
     } catch (e) {
-      print('❌ Erreur quantiteDisponible: $e');
+      print(' Erreur quantiteDisponible: $e');
     }
 
     int quantiteReservee = 0;
     try {
       quantiteReservee = _extractInt(json, ['quantiteReservee', 'quantite_reservee', 'reservedQuantity', 'reserved_quantity']);
-      print('✓ quantiteReservee: $quantiteReservee');
+      print('" quantiteReservee: $quantiteReservee');
     } catch (e) {
-      print('❌ Erreur quantiteReservee: $e');
+      print(' Erreur quantiteReservee: $e');
     }
 
     DateTime derniereMaj = DateTime.now();
     try {
       derniereMaj = _extractDateTime(json, ['derniereMaj', 'derniere_maj', 'lastUpdate', 'last_update', 'updatedAt', 'updated_at']);
-      print('✓ derniereMaj: $derniereMaj');
+      print('" derniereMaj: $derniereMaj');
     } catch (e) {
-      print('❌ Erreur derniereMaj: $e');
+      print(' Erreur derniereMaj: $e');
     }
 
     return SimpleStock(

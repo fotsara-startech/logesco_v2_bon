@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../interfaces/i_subscription_manager.dart';
 import '../interfaces/i_license_service.dart';
@@ -6,6 +6,7 @@ import '../interfaces/i_device_service.dart';
 import '../interfaces/i_crypto_service.dart';
 import '../../models/subscription_status.dart';
 import '../../models/license_data.dart';
+import '../../../../../core/config/app_config.dart';
 
 /// Modes de dégradation de l'application
 enum DegradationMode {
@@ -343,12 +344,15 @@ class SubscriptionManager implements ISubscriptionManager {
       // Nettoyer le cache si nécessaire
       await _cleanupExpiredCache();
 
-      print('✅ [SubscriptionManager] Validation périodique terminée avec succès');
+      print(' [SubscriptionManager] Validation périodique terminée avec succès');
     }, 'validation périodique');
   }
 
   @override
   Future<bool> shouldBlockApplication() async {
+    // Contrle de licence dÊtesactiv - ne jamais bloquer
+    if (!AppConfig.enableLicenseControl) return false;
+
     const cacheKey = 'should_block_application';
 
     // Vérifier le cache rapide pour cette vérification critique
@@ -380,7 +384,7 @@ class SubscriptionManager implements ISubscriptionManager {
       return shouldBlock;
     } catch (e) {
       // En cas d'erreur, bloquer par sécurité mais ne pas mettre en cache
-      print('❌ [SubscriptionManager] Erreur shouldBlockApplication: $e');
+      print(' [SubscriptionManager] Erreur shouldBlockApplication: $e');
       return true;
     }
   }
@@ -458,7 +462,7 @@ class SubscriptionManager implements ISubscriptionManager {
       }
 
       if (status.isInGracePeriod) {
-        notifications.add('PÉRIODE DE GRÂCE: Renouvelez immédiatement');
+        notifications.add('PÉRIODE DE grâce: Renouvelez immédiatement');
         return notifications;
       }
 
@@ -916,7 +920,7 @@ class SubscriptionManager implements ISubscriptionManager {
 
       return isValid;
     } catch (e) {
-      print('❌ [SubscriptionManager] Erreur validation crypto: $e');
+      print(' [SubscriptionManager] Erreur validation crypto: $e');
       return false;
     }
   }
@@ -926,11 +930,11 @@ class SubscriptionManager implements ISubscriptionManager {
     try {
       return await operation();
     } catch (e) {
-      print('❌ [SubscriptionManager] Erreur $operationName: $e');
+      print(' [SubscriptionManager] Erreur $operationName: $e');
 
       // Tentative de récupération automatique
       try {
-        print('🔄 [SubscriptionManager] Tentative de récupération pour $operationName...');
+        print('');
 
         // Nettoyer le cache en cas d'erreur
         _invalidateCache();
@@ -939,7 +943,7 @@ class SubscriptionManager implements ISubscriptionManager {
         await Future.delayed(const Duration(milliseconds: 500));
         return await operation();
       } catch (recoveryError) {
-        print('❌ [SubscriptionManager] Échec de récupération pour $operationName: $recoveryError');
+        print(' [SubscriptionManager] Échec de récupération pour $operationName: $recoveryError');
 
         // Retourner la valeur de fallback si disponible
         if (fallbackValue != null) {
@@ -977,11 +981,11 @@ class SubscriptionManager implements ISubscriptionManager {
   }
 
   /// Réinitialise complètement la licence et la période d'essai
-  /// ⚠️ ATTENTION: Cette méthode supprime toutes les données de licence
+  /// Êtes️ ATTENTION: Cette méthode supprime toutes les données de licence
   /// À utiliser uniquement pour les tests ou le support client
   Future<void> resetLicenseData() async {
     try {
-      print('🔄 Réinitialisation de la licence...');
+      print('');
 
       // Supprimer la licence stockée
       await _licenseService.revokeLicense();
@@ -1005,9 +1009,9 @@ class SubscriptionManager implements ISubscriptionManager {
       _validationCache.clear();
       _cacheTimestamps.clear();
 
-      print('✅ Réinitialisation terminée');
+      print(' Réinitialisation terminée');
 
-      // Émettre un statut vide
+      // mettre un statut vide
       final emptyStatus = SubscriptionStatus(
         isActive: false,
         type: SubscriptionType.trial,
@@ -1016,9 +1020,9 @@ class SubscriptionManager implements ISubscriptionManager {
       );
       _statusController.add(emptyStatus);
 
-      print('📝 Redémarrez l\'application pour démarrer une nouvelle période d\'essai');
+      print('🔄 Réinitialisation de l\'application pour démarrer une nouvelle période d\'essai');
     } catch (e) {
-      print('❌ Erreur lors de la réinitialisation: $e');
+      print(' Erreur lors de la réinitialisation: $e');
       rethrow;
     }
   }

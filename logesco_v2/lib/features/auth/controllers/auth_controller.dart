@@ -99,7 +99,7 @@ class AuthController extends GetxController {
       await _loadUserProfile();
 
       final isValid = isAuthenticated.value && currentUser.value != null;
-      print('🎯 Résultat de l\'authentification: $isValid');
+      print('🔍 Résultat de l\'authentification: $isValid');
       return isValid;
     } catch (e) {
       print('❌ Erreur lors de la vérification de l\'authentification: $e');
@@ -270,13 +270,13 @@ class AuthController extends GetxController {
   /// Charger le profil utilisateur
   Future<void> _loadUserProfile() async {
     try {
-      print('🔍 Chargement du profil utilisateur...');
+      print('👤 Chargement du profil utilisateur...');
       final response = await _apiClient.get('/auth/me');
       print('📡 Réponse /auth/me: success=${response.isSuccess}');
 
       if (response.isSuccess) {
         final userData = response.data['data'] as Map<String, dynamic>;
-        print('👤 Données utilisateur reçues: ${userData.keys.toList()}');
+        print('💾 Données utilisateur reçues: ${userData.keys.toList()}');
 
         try {
           currentUser.value = User.fromJson(userData);

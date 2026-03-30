@@ -62,9 +62,9 @@ class DevModeInfo extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '• Authentification bypassée\n'
-            '• Données simulées (pas de backend requis)\n'
-            '• Toutes les fonctionnalités sont testables',
+            '✅ Authentification bypassée\n'
+            '✅ Données simulées (pas de backend requis)\n'
+            '✅ Toutes les fonctionnalités sont testables',
             style: TextStyle(
               fontSize: 12,
               color: Colors.orange.shade700,

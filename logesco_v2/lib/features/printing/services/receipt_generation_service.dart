@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
@@ -117,12 +117,12 @@ class ReceiptGenerationService {
     final buffer = StringBuffer();
 
     // DEBUG - Vérifier les données de paiement
-    // print('🖨️ [THERMAL] Génération données thermiques');
-    // print('🖨️ [THERMAL] Receipt ID: ${receipt.id}');
-    // print('🖨️ [THERMAL] Total: ${receipt.totalAmount}');
-    // print('🖨️ [THERMAL] Paid: ${receipt.paidAmount}');
-    // print('🖨️ [THERMAL] Remaining: ${receipt.remainingAmount}');
-    // print('🖨️ [THERMAL] isReprint: ${receipt.isReprint}');
+    // print('️ [THERMAL] Génération données thermiques');
+    // print('️ [THERMAL] Receipt ID: ${receipt.id}');
+    // print('️ [THERMAL] Total: ${receipt.totalAmount}');
+    // print('️ [THERMAL] Paid: ${receipt.paidAmount}');
+    // print('️ [THERMAL] Remaining: ${receipt.remainingAmount}');
+    // print('️ [THERMAL] isReprint: ${receipt.isReprint}');
 
     // Commandes ESC/POS pour imprimante thermique
     buffer.writeln('\x1B\x40'); // Initialiser l'imprimante
@@ -216,19 +216,19 @@ class ReceiptGenerationService {
     // CORRECTION : Afficher la monnaie si le montant payé > total
     if (receipt.paidAmount > receipt.totalAmount) {
       final change = (receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0);
-      print('🖨️ [THERMAL] Affichage Monnaie: $change FCFA');
+      print('️ [THERMAL] Affichage Monnaie: $change FCFA');
       buffer.writeln('Monnaie: $change FCFA');
     } else {
-      print('🖨️ [THERMAL] Pas de monnaie (Paid: ${receipt.paidAmount}, Total: ${receipt.totalAmount})');
+      print('️ [THERMAL] Pas de monnaie (Paid: ${receipt.paidAmount}, Total: ${receipt.totalAmount})');
     }
 
     // CORRECTION : Afficher le reste si > 0
     if (receipt.remainingAmount > 0) {
       final remaining = receipt.remainingAmount.toStringAsFixed(0);
-      print('🖨️ [THERMAL] Affichage Reste: $remaining FCFA');
+      print('️ [THERMAL] Affichage Reste: $remaining FCFA');
       buffer.writeln('Reste: $remaining FCFA');
     } else {
-      print('🖨️ [THERMAL] Pas de reste (Remaining: ${receipt.remainingAmount})');
+      print('️ [THERMAL] Pas de reste (Remaining: ${receipt.remainingAmount})');
     }
 
     buffer.writeln('================================');

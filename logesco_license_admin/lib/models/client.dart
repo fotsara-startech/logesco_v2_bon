@@ -6,7 +6,7 @@ part 'client.g.dart';
 class Client {
   final String id;
   final String name;
-  final String email;
+  final String? email;
   final String company;
   final String? phone;
   final String? address;
@@ -18,7 +18,7 @@ class Client {
   const Client({
     required this.id,
     required this.name,
-    required this.email,
+    this.email,
     required this.company,
     this.phone,
     this.address,

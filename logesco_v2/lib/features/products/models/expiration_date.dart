@@ -1,4 +1,4 @@
-/// Modèle pour les dates de péremption des produits
+﻿/// Modèle pour les dates de péremption des produits
 class ExpirationDate {
   final int id;
   final int produitId;
@@ -113,7 +113,7 @@ class ExpirationDate {
   /// Retourne une description du statut
   String getStatusDescription() {
     if (estEpuise) {
-      return 'Épuisé';
+      return 'puisé';
     }
     if (estPerime) {
       return 'Périmé depuis ${joursRestants.abs()} jour(s)';

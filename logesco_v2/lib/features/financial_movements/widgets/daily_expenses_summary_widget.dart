@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/movement_report_controller.dart';
 import '../services/movement_report_service.dart';
@@ -221,7 +221,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
               if (showDetails) ...[
                 const SizedBox(height: 4),
                 Text(
-                  '0 FCFA • 0 mouvement',
+                  '0 FCFA À 0 mouvement',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -429,7 +429,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
     if (amount == 0) return 0;
     if (amount < 10000) return 1; // Faible
     if (amount < 50000) return 2; // Moyen
-    return 3; // Élevé
+    return 3; // levé
   }
 
   /// Obtient la couleur de l'indicateur selon le montant
@@ -475,7 +475,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
     try {
       Get.toNamed('/financial-movements');
     } catch (e) {
-      print('❌ Erreur navigation vers mouvements financiers: $e');
+      print(' Erreur navigation vers mouvements financiers: $e');
       Get.snackbar(
         'common_navigation'.tr,
         'financial_movements_navigation_error'.tr,
@@ -493,7 +493,7 @@ class DailyExpensesSummaryWidget extends StatelessWidget {
       controller.setPredefinedPeriod('today');
       controller.loadSummary(forceRefresh: true);
     } catch (e) {
-      print('❌ Erreur lors du rechargement: $e');
+      print(' Erreur lors du rechargement: $e');
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: 'financial_movements_daily_summary_retry_error'.tr,

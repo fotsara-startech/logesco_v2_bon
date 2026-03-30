@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/test_data_service.dart';
 import '../../../core/models/api_response.dart';
@@ -27,7 +27,7 @@ class InventoryService {
         'limit': limit.toString(),
       };
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -173,7 +173,7 @@ class InventoryService {
       final token = await _authService.getToken();
       if (token == null) {
         print('⚠️ Token d\'authentification manquant pour produit $productId');
-        if (ApiConfig.isDevelopment && ApiConfig.useTestData) {
+        if (AppConfig.isDevelopment && AppConfig.useTestData) {
           final testStock = TestDataService.getTestStockByProductId(productId);
           return ApiResponse.success(testStock);
         }
@@ -182,7 +182,7 @@ class InventoryService {
 
       // L'endpoint correct est /inventory/:id où :id est le produitId
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/$productId'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/$productId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -199,7 +199,7 @@ class InventoryService {
         return ApiResponse.success(null);
       } else if (response.statusCode == 401) {
         print('🔐 Erreur d\'authentification pour produit $productId');
-        if (ApiConfig.isDevelopment && ApiConfig.useTestData) {
+        if (AppConfig.isDevelopment && AppConfig.useTestData) {
           final testStock = TestDataService.getTestStockByProductId(productId);
           return ApiResponse.success(testStock);
         }
@@ -210,7 +210,7 @@ class InventoryService {
       }
     } catch (e) {
       print('💥 Erreur de connexion pour produit $productId: $e');
-      if (ApiConfig.isDevelopment && ApiConfig.useTestData) {
+      if (AppConfig.isDevelopment && AppConfig.useTestData) {
         final testStock = TestDataService.getTestStockByProductId(productId);
         return ApiResponse.success(testStock);
       }
@@ -243,7 +243,7 @@ class InventoryService {
       if (searchQuery != null && searchQuery.isNotEmpty) queryParams['search'] = searchQuery;
       if (category != null && category.isNotEmpty) queryParams['category'] = category;
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
 
       // Log toutes les requêtes API
       print('📨 API REQUEST: GET $uri');
@@ -329,7 +329,7 @@ class InventoryService {
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/movements').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/movements').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -365,7 +365,7 @@ class InventoryService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/summary'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/summary'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -392,7 +392,7 @@ class InventoryService {
     try {
       final token = await _authService.getToken();
       if (token == null) {
-        if (ApiConfig.isDevelopment && ApiConfig.useTestData) {
+        if (AppConfig.isDevelopment && AppConfig.useTestData) {
           return _createTestStockAdjustment(produitId, changementQuantite, notes);
         }
         throw Exception('Token d\'authentification manquant');
@@ -400,7 +400,7 @@ class InventoryService {
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/adjust'),
+            Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/adjust'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -415,15 +415,13 @@ class InventoryService {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-
         return Stock.fromJson(jsonData['data']);
       } else {
         final errorData = json.decode(response.body);
-
         throw Exception(errorData['message'] ?? 'Erreur lors de l\'ajustement du stock');
       }
     } catch (e) {
-      if (ApiConfig.isDevelopment && ApiConfig.useTestData) {
+      if (AppConfig.isDevelopment && AppConfig.useTestData) {
         return _createTestStockAdjustment(produitId, changementQuantite, notes);
       }
       throw Exception('Erreur de connexion: $e');
@@ -477,7 +475,7 @@ class InventoryService {
       }
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/bulk-adjust'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/bulk-adjust'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -506,7 +504,7 @@ class InventoryService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/product/$productId'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/product/$productId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -517,7 +515,7 @@ class InventoryService {
         final jsonData = json.decode(response.body);
         return Stock.fromJson(jsonData['data']);
       } else if (response.statusCode == 404) {
-        return null; // Pas de stock pour ce produit
+        return null;
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Erreur lors de la récupération du stock');
@@ -542,14 +540,9 @@ class InventoryService {
       if (alerteStock != null) queryParams['alerteStock'] = alerteStock.toString();
       if (produitId != null) queryParams['produitId'] = produitId.toString();
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/export/csv').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/export/csv').replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
 
       if (response.statusCode == 200) {
         return response.body;
@@ -581,14 +574,9 @@ class InventoryService {
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/movements/export/csv').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/movements/export/csv').replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
 
       if (response.statusCode == 200) {
         return response.body;
@@ -601,7 +589,7 @@ class InventoryService {
     }
   }
 
-  /// Crée un mouvement de stock (remplace adjustStock)
+  /// Crée un mouvement de stock
   Future<StockMovement> createStockMovement({
     required int produitId,
     required String typeMouvement,
@@ -617,7 +605,7 @@ class InventoryService {
       }
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.inventoryEndpoint}/movements'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/movements'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -678,7 +666,7 @@ class PaginationInfo {
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 20,
       total: json['total'] ?? 0,
-      totalPages: json['pages'] ?? json['totalPages'] ?? 0,
+      totalPages: json['totalPages'] ?? 0,
       hasNext: json['hasNext'] ?? false,
       hasPrev: json['hasPrev'] ?? false,
     );

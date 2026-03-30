@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
@@ -139,7 +139,7 @@ class CustomerController extends GetxController {
 
   /// Navigue vers la création d'un client
   Future<void> goToCreateCustomer() async {
-    print('🔄 Navigation vers création client');
+    print('🚀 Navigation vers création client');
     print('  - Route: /customers/create');
 
     // Sauvegarder l'état actuel pour comparaison
@@ -148,7 +148,7 @@ class CustomerController extends GetxController {
 
     try {
       final result = await Get.toNamed('/customers/create');
-      print('🔙 Retour de la navigation, résultat: $result');
+      print('↩️ Retour de la navigation, résultat: $result');
       print('📊 Type du résultat: ${result.runtimeType}');
 
       // Toujours rafraîchir la liste après retour du formulaire
@@ -170,7 +170,7 @@ class CustomerController extends GetxController {
           duration: const Duration(seconds: 2),
         );
       } else if (result != null && result is Customer) {
-        print('🆕 Client créé selon le résultat: ${result.nomComplet}');
+        print('✅ Client créé selon le résultat: ${result.nomComplet}');
         // Forcer l'ajout si pas détecté dans le rafraîchissement
         customers.insert(0, result);
         Get.snackbar(
@@ -196,7 +196,7 @@ class CustomerController extends GetxController {
 
   /// Navigue vers l'édition d'un client
   Future<void> goToEditCustomer(Customer customer) async {
-    print('🔄 Navigation vers édition client ${customer.id}');
+    print('🚀 Navigation vers édition client ${customer.id}');
 
     try {
       final result = await Get.toNamed('/customers/${customer.id}/edit', arguments: customer);
@@ -241,7 +241,7 @@ class CustomerController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Êtes-vous sûr de vouloir supprimer le client "${customer.nomComplet}" ?'),
+            Text('Êtestes-vous sûr de vouloir supprimer le client "${customer.nomComplet}" ?'),
             const SizedBox(height: 8),
             Text(
               'Note: La suppression échouera si le client a des ventes associées.',
@@ -324,7 +324,7 @@ class CustomerController extends GetxController {
 
   /// Méthode appelée directement par le formulaire après création/modification
   void onCustomerSaved(Customer customer, {bool isEdit = false}) {
-    print('📞 onCustomerSaved appelée pour: ${customer.nomComplet}');
+    print('🔔 onCustomerSaved appelée pour: ${customer.nomComplet}');
 
     if (isEdit) {
       // Mise à jour d'un client existant
@@ -349,7 +349,7 @@ class CustomerController extends GetxController {
   /// Charge l'historique des transactions d'un client
   Future<void> loadCustomerTransactions(int customerId) async {
     try {
-      print('📥 Chargement des transactions pour le client $customerId...');
+      print('📊 Chargement des transactions pour le client $customerId...');
       isLoading.value = true;
       hasError.value = false;
 
@@ -429,7 +429,7 @@ class CustomerController extends GetxController {
 
       // Vérifier que le service est ApiCustomerService
       if (_customerService is! ApiCustomerService) {
-        print('❌ [Controller] Service n\'est pas ApiCustomerService');
+        print('❌ Service n\'est pas ApiCustomerService');
         throw Exception('Service non supporté pour le paiement');
       }
 
@@ -638,7 +638,7 @@ class CustomerController extends GetxController {
   /// Importe des clients depuis Excel
   Future<void> importFromExcel() async {
     try {
-      print('🔄 Début de l\'import Excel...');
+      print('📊 Début de l\'import Excel...');
 
       Get.snackbar(
         'customers_import_success'.tr,

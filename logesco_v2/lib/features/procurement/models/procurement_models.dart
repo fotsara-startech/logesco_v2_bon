@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Modèles de données pour la gestion des approvisionnements
  */
 

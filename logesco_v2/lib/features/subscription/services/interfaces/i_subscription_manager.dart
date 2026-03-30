@@ -1,4 +1,4 @@
-import '../../../subscription/models/subscription_status.dart';
+﻿import '../../../subscription/models/subscription_status.dart';
 
 /// Interface principale pour la gestion des abonnements
 abstract class ISubscriptionManager {
@@ -42,7 +42,7 @@ abstract class ISubscriptionManager {
   Future<String> getDeviceFingerprint();
 
   /// Réinitialise complètement la licence et la période d'essai
-  /// ⚠️ ATTENTION: Supprime toutes les données de licence
+  /// Êtes️ ATTENTION: Supprime toutes les données de licence
   Future<void> resetLicenseData();
 
   /// Libère les ressources utilisées

@@ -173,7 +173,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Chargement du profil d'entreprise
   Future<void> _loadCompanyProfile() async {
     try {
-      print('🔄 Chargement du profil d\'entreprise depuis l\'API...');
+      print('📊 Chargement du profil d\'entreprise depuis l\'API...');
       final response = await _companyService.getCompanyProfile(forceRefresh: true);
       if (response.success && response.data != null) {
         _companyProfile.value = response.data;
@@ -447,7 +447,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des stocks
   Future<void> loadStocks() async {
     try {
-      print('🔄 Chargement des stocks...');
+      print('📦 Chargement des stocks...');
       _productStocks.clear();
 
       int page = 1;
@@ -470,7 +470,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
           if (response.pagination != null) {
             hasMore = response.pagination!.hasNext;
             page++;
-            print('📄 Page $page chargée, ${response.data!.length} stocks');
+            print('📦 Page $page chargée, ${response.data!.length} stocks');
           } else {
             hasMore = false;
           }
@@ -495,7 +495,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des produits pour la vente
   Future<void> loadProductsForSale() async {
     try {
-      print('🔄 Chargement des produits pour la vente...');
+      print('📦 Chargement des produits pour la vente...');
       final productController = Get.find<ProductController>();
 
       // Charger les produits si nécessaire
@@ -690,11 +690,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     if (index >= 0) {
       final item = _cartItems[index];
 
-      // 🔧 CORRECTION: Préserver le prix original lors de la modification du prix
+      // 🔍 CORRECTION: Préserver le prix original lors de la modification du prix
       if (item.originalPrice == item.unitPrice) {
         // Le prix original n'a pas encore été modifié, le sauvegarder
         print('💰 REMISE APPLIQUÉE: ${item.productName} (${item.originalPrice} → $price FCFA)');
-
         _cartItems[index] = item.copyWith(unitPrice: price);
       } else {
         // Le prix original est déjà sauvegardé, juste changer le prix actuel
@@ -707,6 +706,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   void removeFromCart(int productId) {
     _cartItems.removeWhere((item) => item.productId == productId);
+  }
+
+  /// Charge directement une liste d'items dans le panier (pour édition proforma)
+  void loadCartItems(List<CartItem> items) {
+    _cartItems.assignAll(items);
   }
 
   void clearCart() {
@@ -1075,7 +1079,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   }
 
   void setDateFilter(DateTime? startDate, DateTime? endDate) {
-    print('🔧 [CONTROLLER] setDateFilter appelé: startDate=$startDate, endDate=$endDate');
+    print('📅 [CONTROLLER] setDateFilter appelé: startDate=$startDate, endDate=$endDate');
     _startDateFilter.value = startDate;
     _endDateFilter.value = endDate;
     _searchQuery.value = '';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/expense_category.dart';
@@ -19,7 +19,7 @@ class ExpenseCategoryService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/expense-categories'),
+        Uri.parse('${AppConfig.currentBaseUrl}/expense-categories'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -50,7 +50,7 @@ class ExpenseCategoryService {
       }
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/expense-categories'),
+        Uri.parse('${AppConfig.currentBaseUrl}/expense-categories'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -82,7 +82,7 @@ class ExpenseCategoryService {
       }
 
       final response = await http.put(
-        Uri.parse('${ApiConfig.baseUrl}/expense-categories/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}/expense-categories/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -114,7 +114,7 @@ class ExpenseCategoryService {
       }
 
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/expense-categories/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}/expense-categories/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

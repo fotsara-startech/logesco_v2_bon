@@ -1,4 +1,4 @@
-/// Traducciones españolas de la aplicación LOGESCO v2
+﻿/// Traducciones españolas de la aplicación LOGESCO v2
 const Map<String, String> esTranslations = {
   // ============================================================================
   // CONTABILIDAD
@@ -36,7 +36,7 @@ const Map<String, String> esTranslations = {
   'analytics_all_data': 'Todos los datos',
 
   // ============================================================================
-  // MENÚ
+  // MENÚS
   // ============================================================================
   'menu_sales_customers': 'VENTAS Y CLIENTES',
   'menu_stock_products': 'STOCK Y PRODUCTOS',
@@ -858,6 +858,53 @@ const Map<String, String> esTranslations = {
   'sales_sort_category': 'Categoría',
   'sales_sort_ascending': 'Ascendente',
   'sales_sort_descending': 'Descendente',
+
+  // Proforma
+  'proforma_title': 'Facturas Proforma',
+  'proforma_edit_title': 'Editar Proforma',
+  'proforma_save': 'PROFORMA',
+  'proforma_update': 'ACTUALIZAR PROFORMA',
+  'proforma_empty': 'Sin proformas',
+  'proforma_empty_hint': 'Cree una proforma desde la página de ventas',
+  'proforma_all': 'Todas',
+  'proforma_status_draft': 'Borrador',
+  'proforma_status_validated': 'Validada',
+  'proforma_status_cancelled': 'Cancelada',
+  'proforma_edit': 'Editar',
+  'proforma_validate': 'Validar',
+  'proforma_validating': 'Validando...',
+  'proforma_cancel': 'Cancelar proforma',
+  'proforma_validate_title': 'Validar proforma',
+  'proforma_total_to_pay': 'Total a pagar',
+  'proforma_payment_mode': 'Modo de pago',
+  'proforma_cash': 'Contado',
+  'proforma_credit': 'Crédito',
+  'proforma_mobile_money': 'Mobile Money',
+  'proforma_transfer': 'Transferencia',
+  'proforma_amount_paid': 'Monto recibido',
+  'proforma_amount_required': 'Monto requerido',
+  'proforma_amount_invalid': 'Monto inválido',
+  'proforma_change': 'Cambio',
+  'proforma_remaining': 'Restante',
+  'proforma_confirm_validate': 'Confirmar y crear venta',
+  'proforma_invoice_label': 'FACTURA PROFORMA',
+  'proforma_info': 'Información',
+  'proforma_client': 'Cliente',
+  'proforma_date': 'Fecha',
+  'proforma_seller': 'Vendedor',
+  'proforma_items': 'Artículos',
+  'proforma_subtotal': 'Subtotal',
+  'proforma_discount': 'Descuento',
+  'proforma_tva': 'IVA',
+  'proforma_total': 'TOTAL',
+  'proforma_cancel_confirm_title': '¿Cancelar proforma?',
+  'proforma_cancel_confirm_msg': '¿Desea cancelar la proforma @number?',
+  'proforma_new': 'Nueva proforma',
+  'proforma_create_title': 'Nueva Factura Proforma',
+  'proforma_save_action': 'GUARDAR PROFORMA',
+  'proforma_saving': 'Guardando...',
+  'proforma_no_stock_movement': 'Sin movimiento de stock ni financiero — solo documento de referencia.',
+  'proforma_print': 'Imprimir',
   'sales_no_products': 'Sin productos',
   'sales_no_products_available': 'No hay productos disponibles para la venta',
   'sales_reload': 'Recargar',
@@ -1234,10 +1281,10 @@ const Map<String, String> esTranslations = {
   'customers_no_transactions_to_print': 'Sin transacciones para imprimir',
   'customers_statement': 'Estado de cuenta',
   'customers_statement_includes': 'El estado incluirá:',
-  'customers_statement_client_info': '• Información del cliente',
-  'customers_statement_balance': '• Saldo actual de la cuenta',
-  'customers_statement_history': '• Historial completo de transacciones',
-  'customers_statement_datetime': '• Fecha y hora de impresión',
+  'customers_statement_client_info': '✓ Información del cliente',
+  'customers_statement_balance': '✓ Saldo actual de la cuenta',
+  'customers_statement_history': '✓ Historial completo de transacciones',
+  'customers_statement_datetime': '✓ Fecha y hora de impresión',
   'customers_generating_statement': 'Generando estado de cuenta...',
   'customers_statement_error': 'No se pueden obtener los datos del estado de cuenta',
   'customers_statement_success': 'Estado de cuenta generado\nUbicación: @path',
@@ -1859,7 +1906,7 @@ const Map<String, String> esTranslations = {
   'cash_session_admin_info': 'Información del administrador',
   'cash_session_expected_balance': 'Saldo esperado',
   'cash_session_variance': 'Varianza:',
-  'cash_session_instructions': '• Cuente cuidadosamente todo el dinero en la caja\n• Incluya billetes y monedas\n• La varianza se calculará automáticamente',
+  'cash_session_instructions': '✓ Cuente cuidadosamente todo el dinero en la caja\n✓ Incluya billetes y monedas\n✓ La varianza se calculará automáticamente',
   'cash_session_closing': 'Cerrando...',
   'cash_session_close_button': 'Cerrar caja',
   'cash_session_confirm_close': 'Confirmar cierre',
@@ -2031,7 +2078,7 @@ const Map<String, String> esTranslations = {
   'excel_template_button': 'Plantilla',
   'excel_instructions_title': 'Instrucciones',
   'excel_instructions_text':
-      '• Para la importación, use la plantilla proporcionada\n• Las columnas Referencia, Nombre y Precio Unitario son obligatorias\n• Agregue una "Cantidad Inicial" para crear el stock automáticamente\n• Los valores "Sí/No" para Es Activo y Es Servicio\n• Los precios deben ser números (use . para decimales)\n• Las filas incompletas serán ignoradas',
+      '✓ Para la importación, use la plantilla proporcionada\n✓ Las columnas Referencia, Nombre y Precio Unitario son obligatorias\n✓ Agregue una "Cantidad Inicial" para crear el stock automáticamente\n✓ Los valores "Sí/No" para Es Activo y Es Servicio\n✓ Los precios deben ser números (use . para decimales)\n✓ Las filas incompletas serán ignoradas',
   'excel_preview_title': 'Vista previa de la importación',
   'excel_preview_count': '@count productos listos para importar',
   'excel_preview_with_stock': '@count con stock inicial',
@@ -2067,7 +2114,7 @@ const Map<String, String> esTranslations = {
   'product_detail_stock_threshold': 'Umbral de stock',
   'product_detail_units': 'unidades',
   'product_detail_creation_date': 'Fecha de creación',
-  'product_detail_modification_date': 'Última modificación',
+  'product_detail_modification_date': 'Êtesltima modificación',
   'product_detail_type': 'Tipo',
   'product_detail_service': 'Servicio',
   'product_detail_physical': 'Producto físico',
@@ -2443,7 +2490,7 @@ const Map<String, String> esTranslations = {
   // 'excel_inactive_chip': 'Inactivo',
 
   // ============================================================================
-  // GESTIÓN DE STOCK - VISTAS Y WIDGETS
+  // GESTI"N DE STOCK - VISTAS Y WIDGETS
   // ============================================================================
   'stock_title': 'Gestión de Stock',
   'stock_refresh': 'Actualizar',
@@ -2550,8 +2597,8 @@ const Map<String, String> esTranslations = {
   'stock_start_date': 'Fecha de inicio',
   'stock_end_date': 'Fecha de fin',
   'stock_today': 'Hoy',
-  'stock_last_7_days': 'Últimos 7 días',
-  'stock_last_30_days': 'Últimos 30 días',
+  'stock_last_7_days': 'Êtesltimos 7 días',
+  'stock_last_30_days': 'Êtesltimos 30 días',
   'stock_this_month': 'Este mes',
   'stock_sort_date': 'Fecha de creación',
   'stock_sort_asc': 'Orden ascendente',
@@ -2672,7 +2719,7 @@ const Map<String, String> esTranslations = {
   'stock_quantities_available': 'Disponible',
   'stock_quantities_reserved': 'Reservado',
   'stock_quantities_total': 'Total',
-  'stock_last_update': 'Última actualización',
+  'stock_last_update': 'Êtesltima actualización',
   'stock_status_rupture': 'Stock por debajo del umbral mínimo',
   'stock_status_low': 'STOCK BAJO',
   'stock_status_ok': 'STOCK OK',
@@ -2691,7 +2738,7 @@ const Map<String, String> esTranslations = {
   'stock_units': 'unidades',
   'stock_detail_low_stock_threshold': 'Stock por debajo del umbral mínimo',
   'stock_detail_quantities': 'Cantidades en stock',
-  'stock_detail_last_update': 'Última actualización',
+  'stock_detail_last_update': 'Êtesltima actualización',
   'stock_status_stockout': 'RUPTURA DE STOCK',
   'stock_status_low_stock': 'STOCK BAJO',
 
@@ -2758,13 +2805,13 @@ const Map<String, String> esTranslations = {
   'financial_movements_loading_error': 'Error de Carga',
   'financial_movements_no_expenses_today': 'Sin gastos hoy',
   // 'financial_movements_no_results': 'Sin resultados',
-  'financial_movements_empty_summary': '0 FCFA • 0 movimiento',
+  'financial_movements_empty_summary': '0 FCFA  0 movimiento',
   'financial_movements_movement_singular': '@count movimiento',
   'financial_movements_movement_plural': '@count movimientos',
   'financial_movements_average_label': 'Prom: ',
   'financial_movements_average_short': 'Prom:',
   'financial_movements_average_per_day_short': 'Prom/día:',
-  'financial_movements_last_movement_label': 'Último: ',
+  'financial_movements_last_movement_label': 'Êtesltimo: ',
   'financial_movements_no_expenses': 'Sin gastos',
   'financial_movements_low_expenses': 'Gastos bajos',
   'financial_movements_moderate_expenses': 'Gastos moderados',
@@ -3041,7 +3088,7 @@ const Map<String, String> esTranslations = {
   // 'users_add_user': 'Agregar usuario',
 
   // ============================================================================
-  // IMPRESIÓN / VISTA PREVIA
+  // IMPRESI"N / VISTA PREVIA
   // ============================================================================
   'preview_title': 'Vista previa del recibo',
   'preview_no_receipt': 'No hay recibo para previsualizar',

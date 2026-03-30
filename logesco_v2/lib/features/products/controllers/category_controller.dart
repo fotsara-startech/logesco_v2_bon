@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/category_model.dart';
 import '../services/category_service.dart';
 
@@ -15,8 +15,8 @@ class CategoryController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    print('🏗️ CategoryController initialisé');
-    print('🔍 Début du chargement des catégories...');
+    print('Y️ CategoryController initialisé');
+    print('');
     loadCategories();
   }
 
@@ -28,14 +28,14 @@ class CategoryController extends GetxController {
       }
       error.value = '';
 
-      print('🔄 Chargement des catégories...');
+      print('');
       final result = await _categoryService.getCategories();
 
       categories.assignAll(result);
-      print('✅ ${categories.length} catégories chargées');
+      print(' ${categories.length} catégories chargées');
     } catch (e) {
       error.value = 'Erreur lors du chargement: ${e.toString()}';
-      print('❌ Erreur chargement catégories: $e');
+      print(' Erreur chargement catégories: $e');
     } finally {
       isLoading.value = false;
     }
@@ -63,15 +63,15 @@ class CategoryController extends GetxController {
         description: description?.trim(),
       );
 
-      print('➕ Création de la catégorie: ${newCategory.nom}');
+      print(' Création de la catégorie: ${newCategory.nom}');
       final createdCategory = await _categoryService.createCategory(newCategory);
 
       categories.add(createdCategory);
-      print('✅ Catégorie créée avec succès: ${createdCategory.nom}');
+      print(' Catégorie créée avec succès: ${createdCategory.nom}');
       return true;
     } catch (e) {
       error.value = 'Erreur lors de la création: ${e.toString()}';
-      print('❌ Erreur création catégorie: $e');
+      print(' Erreur création catégorie: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -100,7 +100,7 @@ class CategoryController extends GetxController {
         description: newDescription?.trim(),
       );
 
-      print('✏️ Mise à jour de la catégorie: ${category.nom} -> ${updatedCategory.nom}');
+      print('️ Mise à jour de la catégorie: ${category.nom} -> ${updatedCategory.nom}');
       final result = await _categoryService.updateCategory(updatedCategory);
 
       // Mettre à jour dans la liste
@@ -109,11 +109,11 @@ class CategoryController extends GetxController {
         categories[index] = result;
       }
 
-      print('✅ Catégorie mise à jour avec succès');
+      print(' Catégorie mise à jour avec succès');
       return true;
     } catch (e) {
       error.value = 'Erreur lors de la mise à jour: ${e.toString()}';
-      print('❌ Erreur mise à jour catégorie: $e');
+      print(' Erreur mise à jour catégorie: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -131,7 +131,7 @@ class CategoryController extends GetxController {
         return false;
       }
 
-      print('🗑️ Suppression de la catégorie: ${category.nom}');
+      print('️ Suppression de la catégorie: ${category.nom}');
       await _categoryService.deleteCategory(category.id!);
 
       categories.removeWhere((cat) => cat.id == category.id);
@@ -141,11 +141,11 @@ class CategoryController extends GetxController {
         selectedCategory.value = null;
       }
 
-      print('✅ Catégorie supprimée avec succès');
+      print(' Catégorie supprimée avec succès');
       return true;
     } catch (e) {
       error.value = 'Erreur lors de la suppression: ${e.toString()}';
-      print('❌ Erreur suppression catégorie: $e');
+      print(' Erreur suppression catégorie: $e');
       return false;
     } finally {
       isLoading.value = false;

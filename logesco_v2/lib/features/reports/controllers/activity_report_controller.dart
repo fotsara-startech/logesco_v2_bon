@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/activity_report.dart';
@@ -180,7 +180,7 @@ class ActivityReportController extends GetxController {
         colorText: Colors.green.shade800,
       );
     } catch (e) {
-      print('❌ Erreur lors de la génération du bilan: $e');
+      print(' Erreur lors de la génération du bilan: $e');
       Get.snackbar(
         'Erreur',
         'Erreur lors de la génération du bilan: $e',
@@ -223,7 +223,7 @@ class ActivityReportController extends GetxController {
       // Proposer d'ouvrir le fichier
       _showPdfActions(pdfFile);
     } catch (e) {
-      print('❌ Erreur lors de l\'export PDF: $e');
+      print(' Erreur lors de l\'export PDF: $e');
       Get.snackbar(
         'Erreur',
         'Erreur lors de l\'export PDF: $e',
@@ -316,7 +316,7 @@ class ActivityReportController extends GetxController {
         );
       }
     } catch (e) {
-      print('❌ Erreur lors de l\'ouverture du PDF: $e');
+      print(' Erreur lors de l\'ouverture du PDF: $e');
       Get.snackbar(
         'Erreur',
         'Impossible d\'ouvrir le PDF: $e',
@@ -336,7 +336,7 @@ class ActivityReportController extends GetxController {
         subject: 'Bilan comptable - ${_currentReport.value?.companyName}',
       );
     } catch (e) {
-      print('❌ Erreur lors du partage du PDF: $e');
+      print(' Erreur lors du partage du PDF: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de partager le PDF: $e',

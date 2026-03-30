@@ -1,4 +1,4 @@
-/// Module des mouvements financiers
+﻿/// Module des mouvements financiers
 ///
 /// Ce module gère la traçabilité des sorties d'argent de la boutique
 library financial_movements;

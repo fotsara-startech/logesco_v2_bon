@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/customer.dart';
@@ -55,7 +55,7 @@ class ApiCustomerService extends GetxService implements CustomerService {
   /// Crée un nouveau client
   @override
   Future<Customer> createCustomer(CustomerForm customerForm) async {
-    print('🔄 Création client - Données envoyées:');
+    print('📝 Création client - Données envoyées:');
     print(customerForm.toJson());
 
     final response = await _apiClient.post<Map<String, dynamic>>(
@@ -158,7 +158,7 @@ class ApiCustomerService extends GetxService implements CustomerService {
   Future<List<CustomerTransaction>> getCustomerTransactions(int customerId) async {
     final response = await _apiClient.get<Map<String, dynamic>>('/accounts/customers/$customerId/transactions');
 
-    print('🔍 [getCustomerTransactions] Response debug:');
+    print('📊 [getCustomerTransactions] Response debug:');
     print('  - isSuccess: ${response.isSuccess}');
     print('  - data: ${response.data}');
     print('  - success: ${response.success}');
@@ -189,7 +189,7 @@ class ApiCustomerService extends GetxService implements CustomerService {
         print('  - Available keys: ${responseMap.keys.toList()}');
       }
     } else {
-      print('  - ❌ Response not successful or data is null');
+      print('  -  Response not successful or data is null');
       print('  - isSuccess: ${response.isSuccess}');
       print('  - success: ${response.success}');
     }
@@ -234,8 +234,8 @@ class ApiCustomerService extends GetxService implements CustomerService {
         'typeTransactionDetail': 'paiement_dette',
       };
 
-      print('📤 [Service] Body de la requête: $requestBody');
-      print('📤 [Service] Endpoint: /customers/$customerId/payment');
+      print('📋 [Service] Body de la requête: $requestBody');
+      print('📡 [Service] Endpoint: /customers/$customerId/payment');
 
       final response = await _apiClient.post<Map<String, dynamic>>(
         '/customers/$customerId/payment',
@@ -329,7 +329,7 @@ class ApiCustomerService extends GetxService implements CustomerService {
 
       // Si l'endpoint n'existe pas (404) ou autre erreur, on autorise la suppression
       if (e is ApiException && e.statusCode == 404) {
-        print('📝 Endpoint can-delete non implémenté, autorisation par défaut');
+        print('ℹ️ Endpoint can-delete non implémenté, autorisation par défaut');
         return true;
       }
 

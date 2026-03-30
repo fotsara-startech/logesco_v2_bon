@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/account.dart';
 import '../services/account_service.dart';
@@ -178,14 +178,14 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
   }
 
   void _validateAndPay() {
-    print('🔵 [UnpaidSalesSelectorDialog] _validateAndPay appelée');
+    print('');
 
     final montant = double.tryParse(_montantController.text);
     print('  - Montant saisi: ${_montantController.text}');
     print('  - Montant parsé: $montant');
 
     if (montant == null || montant <= 0) {
-      print('❌ [UnpaidSalesSelectorDialog] Montant invalide');
+      print(' [UnpaidSalesSelectorDialog] Montant invalide');
       Get.snackbar(
         'Erreur',
         'Veuillez saisir un montant valide',
@@ -197,7 +197,7 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
     }
 
     if (montant > _selectedSale!.montantRestant) {
-      print('❌ [UnpaidSalesSelectorDialog] Montant dépasse le reste à payer');
+      print(' [UnpaidSalesSelectorDialog] Montant dépasse le reste à payer');
       Get.snackbar(
         'Erreur',
         'Le montant dépasse le reste à payer (${_selectedSale!.montantRestantFormatted})',
@@ -208,7 +208,7 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
       return;
     }
 
-    print('✅ [UnpaidSalesSelectorDialog] Validation OK, appel du callback');
+    print(' [UnpaidSalesSelectorDialog] Validation OK, appel du callback');
     print('  - Vente: ${_selectedSale!.reference}');
     print('  - Montant: $montant');
 

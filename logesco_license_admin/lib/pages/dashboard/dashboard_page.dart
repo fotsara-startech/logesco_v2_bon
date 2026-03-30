@@ -87,47 +87,66 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.admin_panel_settings,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Bienvenue dans LOGESCO License Admin',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isNarrow = constraints.maxWidth < 500;
+                            return isNarrow
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 48,
+                                            height: 48,
+                                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                                            child: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text('Bienvenue dans LOGESCO License Admin', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => context.go('/clients/new'),
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Nouveau client'),
                                         ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Gérez vos clients et leurs licences facilement',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                                        child: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Bienvenue dans LOGESCO License Admin', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                            const SizedBox(height: 4),
+                                            Text('Gérez vos clients et leurs licences facilement',
+                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+                                          ],
                                         ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () => context.go('/clients/new'),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Nouveau client'),
-                            ),
-                          ],
+                                      ),
+                                      ElevatedButton.icon(
+                                        onPressed: () => context.go('/clients/new'),
+                                        icon: const Icon(Icons.add),
+                                        label: const Text('Nouveau client'),
+                                      ),
+                                    ],
+                                  );
+                          },
                         ),
                       ),
                     ),
@@ -143,52 +162,55 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     const SizedBox(height: 16),
 
                     if (_stats != null) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: StatsCard(
-                              title: 'Clients',
-                              value: _stats!['totalClients']?.toString() ?? '0',
-                              icon: Icons.people,
-                              color: Colors.blue,
-                              onTap: () => context.go('/clients'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: StatsCard(
-                              title: 'Licences actives',
-                              value: _stats!['activeLicenses']?.toString() ?? '0',
-                              icon: Icons.key,
-                              color: Colors.green,
-                              onTap: () => context.go('/licenses'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: StatsCard(
-                              title: 'Total licences',
-                              value: _stats!['totalLicenses']?.toString() ?? '0',
-                              icon: Icons.inventory,
-                              color: Colors.orange,
-                              onTap: () => context.go('/licenses'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: StatsCard(
-                              title: 'Licences expirées',
-                              value: _stats!['expiredLicenses']?.toString() ?? '0',
-                              icon: Icons.warning,
-                              color: Colors.red,
-                              onTap: () => context.go('/licenses'),
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 500;
+                          if (isNarrow) {
+                            return Column(
+                              children: [
+                                StatsCard(title: 'Clients', value: _stats!['totalClients']?.toString() ?? '0', icon: Icons.people, color: Colors.blue, onTap: () => context.go('/clients')),
+                                const SizedBox(height: 12),
+                                StatsCard(title: 'Licences actives', value: _stats!['activeLicenses']?.toString() ?? '0', icon: Icons.key, color: Colors.green, onTap: () => context.go('/licenses')),
+                                const SizedBox(height: 12),
+                                StatsCard(
+                                    title: 'Total licences', value: _stats!['totalLicenses']?.toString() ?? '0', icon: Icons.inventory, color: Colors.orange, onTap: () => context.go('/licenses')),
+                                const SizedBox(height: 12),
+                                StatsCard(
+                                    title: 'Licences expirées', value: _stats!['expiredLicenses']?.toString() ?? '0', icon: Icons.warning, color: Colors.red, onTap: () => context.go('/licenses')),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              Row(children: [
+                                Expanded(
+                                    child: StatsCard(title: 'Clients', value: _stats!['totalClients']?.toString() ?? '0', icon: Icons.people, color: Colors.blue, onTap: () => context.go('/clients'))),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                    child: StatsCard(
+                                        title: 'Licences actives', value: _stats!['activeLicenses']?.toString() ?? '0', icon: Icons.key, color: Colors.green, onTap: () => context.go('/licenses'))),
+                              ]),
+                              const SizedBox(height: 16),
+                              Row(children: [
+                                Expanded(
+                                    child: StatsCard(
+                                        title: 'Total licences',
+                                        value: _stats!['totalLicenses']?.toString() ?? '0',
+                                        icon: Icons.inventory,
+                                        color: Colors.orange,
+                                        onTap: () => context.go('/licenses'))),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                    child: StatsCard(
+                                        title: 'Licences expirées',
+                                        value: _stats!['expiredLicenses']?.toString() ?? '0',
+                                        icon: Icons.warning,
+                                        color: Colors.red,
+                                        onTap: () => context.go('/licenses'))),
+                              ]),
+                            ],
+                          );
+                        },
                       ),
                     ],
                     const SizedBox(height: 32),
@@ -215,7 +237,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                   children: [
                                     Icon(Icons.person_add, size: 32, color: Colors.blue),
                                     SizedBox(height: 8),
-                                    Text('Ajouter un client'),
+                                    Text('Ajouter un client', textAlign: TextAlign.center),
                                   ],
                                 ),
                               ),
@@ -234,7 +256,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                   children: [
                                     Icon(Icons.key_outlined, size: 32, color: Colors.green),
                                     SizedBox(height: 8),
-                                    Text('Générer une licence'),
+                                    Text('Générer une licence', textAlign: TextAlign.center),
                                   ],
                                 ),
                               ),
@@ -246,44 +268,50 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     const SizedBox(height: 32),
 
                     // Licences récentes et expirant bientôt
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Licences récentes
-                        Expanded(
-                          child: Column(
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 600;
+                        if (isNarrow) {
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Licences récentes',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
+                              Text('Licences récentes', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
                               RecentLicensesWidget(licenses: _recentLicenses ?? []),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-
-                        // Licences expirant bientôt
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Expirent bientôt',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
+                              const SizedBox(height: 24),
+                              Text('Expirent bientôt', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
                               ExpiringLicensesWidget(licenses: _expiringLicenses ?? []),
                             ],
-                          ),
-                        ),
-                      ],
+                          );
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Licences récentes', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 16),
+                                  RecentLicensesWidget(licenses: _recentLicenses ?? []),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Expirent bientôt', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 16),
+                                  ExpiringLicensesWidget(licenses: _expiringLicenses ?? []),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

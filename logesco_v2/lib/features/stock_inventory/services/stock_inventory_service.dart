@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../models/inventory_model.dart';
 
 /// Service pour la gestion de l'inventaire de stock via API
@@ -12,10 +12,10 @@ class StockInventoryService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -34,10 +34,10 @@ class StockInventoryService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -65,11 +65,11 @@ class StockInventoryService {
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
@@ -96,11 +96,11 @@ class StockInventoryService {
 
       final response = await http
           .put(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -119,10 +119,10 @@ class StockInventoryService {
     try {
       final response = await http
           .delete(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 204) {
         return;
@@ -142,10 +142,10 @@ class StockInventoryService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$inventoryId/items'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$inventoryId/items'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -170,11 +170,11 @@ class StockInventoryService {
 
       final response = await http
           .put(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/items/$itemId'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/items/$itemId'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -195,11 +195,11 @@ class StockInventoryService {
 
       final response = await http
           .patch(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id/status'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id/status'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -220,11 +220,11 @@ class StockInventoryService {
 
       final response = await http
           .patch(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id/status'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id/status'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -245,11 +245,11 @@ class StockInventoryService {
 
       final response = await http
           .patch(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$id/status'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id/status'),
+            headers: AppConfig.defaultHeaders,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -268,10 +268,10 @@ class StockInventoryService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}/categories'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}/categories'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -294,10 +294,10 @@ class StockInventoryService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/$inventoryId/print'),
-            headers: ApiConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$inventoryId/print'),
+            headers: AppConfig.defaultHeaders,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

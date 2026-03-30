@@ -137,20 +137,20 @@ class SupplierController extends GetxController {
 
   /// Navigue vers la création d'un fournisseur
   Future<void> goToCreateSupplier() async {
-    print('🔄 Navigation vers création fournisseur');
+    print('📝 Navigation vers création fournisseur');
     print('  - Route: /suppliers/create');
 
     try {
       final result = await Get.toNamed('/suppliers/create');
-      print('🔙 Retour de la navigation, résultat: $result');
+      print('📄 Retour de la navigation, résultat: $result');
 
       // Toujours rafraîchir la liste après retour du formulaire
-      print('🔄 Rafraîchissement de la liste des fournisseurs...');
+      print('📝 Rafraîchissement de la liste des fournisseurs...');
       await refreshSuppliers();
 
       // Si un fournisseur a été créé, afficher un message
       if (result != null && result is Supplier) {
-        print('🆕 Nouveau fournisseur créé: ${result.nom}');
+        print('🎉 Nouveau fournisseur créé: ${result.nom}');
         Get.snackbar(
           'Succès',
           'Fournisseur "${result.nom}" ajouté à la liste',
@@ -174,7 +174,7 @@ class SupplierController extends GetxController {
 
   /// Navigue vers l'édition d'un fournisseur
   Future<void> goToEditSupplier(Supplier supplier) async {
-    print('🔄 Navigation vers édition fournisseur ${supplier.id}');
+    print('📝 Navigation vers édition fournisseur ${supplier.id}');
 
     try {
       final result = await Get.toNamed('/suppliers/${supplier.id}/edit', arguments: supplier);
@@ -207,7 +207,7 @@ class SupplierController extends GetxController {
 
   /// Navigue vers les détails d'un fournisseur
   void goToSupplierDetail(Supplier supplier) {
-    print('🔄 Navigation vers détails fournisseur ${supplier.id}');
+    print('📝 Navigation vers détails fournisseur ${supplier.id}');
     Get.toNamed('/suppliers/${supplier.id}', arguments: supplier);
   }
 
@@ -252,10 +252,10 @@ class SupplierController extends GetxController {
     if (confirmed == true) {
       try {
         isLoading.value = true;
-        print('🔄 Début suppression fournisseur ID: ${supplier.id}');
+        print('📝 Début suppression fournisseur ID: ${supplier.id}');
 
         final success = await _supplierService.deleteSupplier(supplier.id);
-        print('📋 Résultat suppression: $success');
+        print('📦 Résultat suppression: $success');
 
         if (success) {
           // Supprimer de la liste locale
@@ -341,7 +341,7 @@ class SupplierController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      print('🔄 Chargement des transactions du fournisseur $supplierId...');
+      print('📝 Chargement des transactions du fournisseur $supplierId...');
 
       final transactions = await _supplierService.getSupplierTransactions(supplierId);
       supplierTransactions.assignAll(transactions);
@@ -376,7 +376,7 @@ class SupplierController extends GetxController {
     String? description,
   }) async {
     try {
-      print('💰 Paiement fournisseur $supplierId: $montant FCFA');
+      print('💾 Paiement fournisseur $supplierId: $montant FCFA');
 
       final success = await _supplierService.paySupplier(
         supplierId,
@@ -431,7 +431,7 @@ class SupplierController extends GetxController {
     bool createFinancialMovement = false,
   }) async {
     try {
-      print('💰 Paiement commande $procurementId du fournisseur $supplierId: $montant FCFA');
+      print('💾 Paiement commande $procurementId du fournisseur $supplierId: $montant FCFA');
       print('  - Créer mouvement financier: $createFinancialMovement');
 
       final success = await _supplierService.paySupplierForProcurement(
@@ -483,7 +483,7 @@ class SupplierController extends GetxController {
   /// Récupère les données du relevé de compte fournisseur
   Future<Map<String, dynamic>?> getSupplierStatement(int supplierId) async {
     try {
-      print('📄 Récupération relevé fournisseur $supplierId');
+      print('📝 Récupération relevé fournisseur $supplierId');
       return await _supplierService.getSupplierStatement(supplierId);
     } catch (e) {
       print('❌ Erreur récupération relevé: $e');
@@ -500,7 +500,7 @@ class SupplierController extends GetxController {
 
   /// Méthode appelée directement par le formulaire après création/modification
   void onSupplierSaved(Supplier supplier, {bool isEdit = false}) {
-    print('📞 onSupplierSaved appelée pour: ${supplier.nom}');
+    print('✅ onSupplierSaved appelée pour: ${supplier.nom}');
 
     if (isEdit) {
       // Mise à jour d'un fournisseur existant
@@ -660,7 +660,7 @@ class SupplierController extends GetxController {
   /// Importe des fournisseurs depuis Excel
   Future<void> importFromExcel() async {
     try {
-      print('🔄 Début de l\'import Excel des fournisseurs...');
+      print('📝 Début de l\'import Excel des fournisseurs...');
 
       Get.snackbar(
         'Import en cours',

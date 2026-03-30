@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../config/api_config.dart';
+import '../config/app_config.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 import 'error_service.dart';
@@ -16,8 +16,8 @@ class ServiceLocator {
 
     Get.lazyPut<ApiService>(
       () => ApiService(
-        baseUrl: ApiConfig.currentBaseUrl,
-        defaultHeaders: ApiConfig.defaultHeaders,
+        baseUrl: AppConfig.currentBaseUrl,
+        defaultHeaders: AppConfig.defaultHeaders,
       ),
       fenix: true,
     );

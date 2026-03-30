@@ -1,4 +1,4 @@
-class CustomerTransaction {
+﻿class CustomerTransaction {
   final int id;
   final String typeTransaction;
   final double montant;
@@ -75,8 +75,8 @@ class CustomerTransaction {
         referenceId: json['referenceId'] != null ? parseInt(json['referenceId']) : null,
       );
     } catch (e) {
-      print('❌ [CustomerTransaction.fromJson] Erreur de parsing: $e');
-      print('📋 [CustomerTransaction.fromJson] JSON reçu: $json');
+      print(' [CustomerTransaction.fromJson] Erreur de parsing: $e');
+      print('');
       rethrow;
     }
   }

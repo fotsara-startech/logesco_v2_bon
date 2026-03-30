@@ -15,7 +15,7 @@ class RoleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    print('🏗️ RoleController initialisé');
+    print('🎯 RoleController initialisé');
     loadRoles();
   }
 

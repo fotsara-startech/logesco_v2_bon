@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/discount_report.dart';
@@ -33,7 +33,7 @@ class DiscountReportService {
         queryParams['dateFin'] = dateFin.toIso8601String();
       }
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}/discount-reports/summary').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}/discount-reports/summary').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -43,8 +43,8 @@ class DiscountReportService {
         },
       );
 
-      print('📊 Discount Summary API Response Status: ${response.statusCode}');
-      print('📊 Discount Summary API Response Body: ${response.body}');
+      print('');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -57,7 +57,7 @@ class DiscountReportService {
         );
       }
     } catch (e) {
-      print('❌ Erreur récupération résumé remises: $e');
+      print(' Erreur récupération résumé remises: $e');
       return ApiResponse.error(message: 'Erreur de connexion: $e');
     }
   }
@@ -91,7 +91,7 @@ class DiscountReportService {
         queryParams['dateFin'] = dateFin.toIso8601String();
       }
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}/discount-reports/by-vendor').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}/discount-reports/by-vendor').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -101,8 +101,8 @@ class DiscountReportService {
         },
       );
 
-      print('📊 Vendor Discounts API Response Status: ${response.statusCode}');
-      print('📊 Vendor Discounts API Response Body: ${response.body}');
+      print('');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -115,7 +115,7 @@ class DiscountReportService {
         );
       }
     } catch (e) {
-      print('❌ Erreur récupération remises par vendeur: $e');
+      print(' Erreur récupération remises par vendeur: $e');
       return ApiResponse.error(message: 'Erreur de connexion: $e');
     }
   }
@@ -136,7 +136,7 @@ class DiscountReportService {
         'limit': limit.toString(),
       };
 
-      final uri = Uri.parse('${ApiConfig.baseUrl}/discount-reports/top-discounts').replace(queryParameters: queryParams);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}/discount-reports/top-discounts').replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -146,8 +146,8 @@ class DiscountReportService {
         },
       );
 
-      print('📊 Top Discounts API Response Status: ${response.statusCode}');
-      print('📊 Top Discounts API Response Body: ${response.body}');
+      print('');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -161,7 +161,7 @@ class DiscountReportService {
         );
       }
     } catch (e) {
-      print('❌ Erreur récupération top remises: $e');
+      print(' Erreur récupération top remises: $e');
       return ApiResponse.error(message: 'Erreur de connexion: $e');
     }
   }
@@ -185,7 +185,7 @@ class DiscountReportService {
       };
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/sales/validate-discount'),
+        Uri.parse('${AppConfig.currentBaseUrl}/sales/validate-discount'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -193,8 +193,8 @@ class DiscountReportService {
         body: json.encode(requestBody),
       );
 
-      print('📊 Validate Discount API Response Status: ${response.statusCode}');
-      print('📊 Validate Discount API Response Body: ${response.body}');
+      print('');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -206,7 +206,7 @@ class DiscountReportService {
         );
       }
     } catch (e) {
-      print('❌ Erreur validation remise: $e');
+      print(' Erreur validation remise: $e');
       return ApiResponse.error(message: 'Erreur de connexion: $e');
     }
   }

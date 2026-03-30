@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dialogue pour créer une nouvelle commande d'approvisionnement
  */
 
@@ -611,7 +611,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
           final response = await inventoryService.getProductStock(product.id);
           if (response.success && response.data != null) {
             _productStocks[product.id] = response.data!.quantiteDisponible;
-            print('📦 Stock chargé pour ${product.nom}: ${response.data!.quantiteDisponible}');
+            print('');
           }
         } catch (e) {
           print('⚠️ Erreur chargement stock ${product.nom}: $e');
@@ -621,9 +621,9 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
 
       // Attendre que tous les stocks soient chargés
       await Future.wait(futures);
-      print('✅ Tous les stocks ont été chargés');
+      print(' Tous les stocks ont été chargés');
     } catch (e) {
-      print('❌ Erreur lors du chargement des stocks: $e');
+      print(' Erreur lors du chargement des stocks: $e');
     }
   }
 
@@ -646,7 +646,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
       if (query.isEmpty) {
         _isSearching = false;
         filteredProducts = productController.products.where((product) => product.estActif && !product.estService).toList();
-        print('🔍 Affichage: ${filteredProducts.length} produits actifs');
+        print('');
       } else {
         _isSearching = true;
         filteredProducts = productController.products.where((product) {
@@ -654,7 +654,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
               !product.estService &&
               (product.nom.toLowerCase().contains(query) || product.reference.toLowerCase().contains(query) || (product.description?.toLowerCase().contains(query) ?? false));
         }).toList();
-        print('🔍 Recherche "$query": ${filteredProducts.length} produits trouvés');
+        print('');
       }
 
       if (selectedProduct != null && !filteredProducts.contains(selectedProduct)) {
@@ -828,7 +828,7 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
                                                 setState(() {
                                                   selectedProduct = product;
                                                   _unitCostController.text = (product.prixAchat ?? product.prixUnitaire * 0.8).toStringAsFixed(0);
-                                                  print('✅ Produit sélectionné: ${product.nom}');
+                                                  print(' Produit sélectionné: ${product.nom}');
                                                 });
                                               },
                                             );

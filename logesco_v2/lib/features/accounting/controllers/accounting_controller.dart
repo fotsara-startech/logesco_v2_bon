@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/financial_balance.dart';
 import '../services/accounting_service.dart';
 import '../../../core/services/auth_service.dart';
@@ -47,7 +47,7 @@ class AccountingController extends GetxController {
 
     try {
       isLoading.value = true;
-      print('📊 Chargement du bilan pour la période: ${periodFormatted}');
+      print('');
       if (selectedCategoryId.value != null) {
         print('   Filtre catégorie: ${selectedCategoryId.value}');
       }
@@ -59,12 +59,12 @@ class AccountingController extends GetxController {
       );
 
       currentBalance.value = balance;
-      print('✅ Bilan chargé: ${balance.totalRevenue} FCFA de revenus, ${balance.totalExpenses} FCFA de dépenses');
+      print(' Bilan chargé: ${balance.totalRevenue} FCFA de revenus, ${balance.totalExpenses} FCFA de dépenses');
 
       // Charger aussi les KPI
       await loadKPIs();
     } catch (e) {
-      print('❌ Erreur lors du chargement du bilan: $e');
+      print(' Erreur lors du chargement du bilan: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de charger le bilan financier: ${e.toString()}',
@@ -82,9 +82,9 @@ class AccountingController extends GetxController {
     try {
       final categories = await _accountingService.getProductCategories();
       productCategories.assignAll(categories);
-      print('✅ ${categories.length} catégories de produits chargées');
+      print(' ${categories.length} catégories de produits chargées');
     } catch (e) {
-      print('❌ Erreur lors du chargement des catégories: $e');
+      print(' Erreur lors du chargement des catégories: $e');
     }
   }
 
@@ -100,7 +100,7 @@ class AccountingController extends GetxController {
       final summary = await _accountingService.getQuickProfitabilitySummary();
       quickSummary.value = summary;
     } catch (e) {
-      print('❌ Erreur lors du chargement du résumé: $e');
+      print(' Erreur lors du chargement du résumé: $e');
     }
   }
 
@@ -117,7 +117,7 @@ class AccountingController extends GetxController {
 
       kpiIndicators.value = kpis;
     } catch (e) {
-      print('❌ Erreur lors du chargement des KPI: $e');
+      print(' Erreur lors du chargement des KPI: $e');
     }
   }
 

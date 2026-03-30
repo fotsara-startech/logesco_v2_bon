@@ -1,7 +1,9 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'app_routes.dart';
 import '../../features/auth/views/login_page.dart';
 import '../../features/auth/views/splash_page.dart';
+import '../../features/proforma/views/proforma_list_page.dart';
+import '../../features/proforma/bindings/proforma_binding.dart';
 
 import '../../features/dashboard/views/modern_dashboard_page.dart';
 import '../../features/products/views/product_list_view.dart';
@@ -137,7 +139,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.categories,
       page: () {
-        // print('🔍 Route categories appelée - Chargement CategoriesPage');
+        // print('');
         return const CategoriesPage();
       },
       binding: CategoryBinding(),
@@ -282,6 +284,13 @@ class AppPages {
       name: AppRoutes.salesPreferences,
       page: () => const SalesPreferencesPage(),
       binding: SalesBinding(),
+    ),
+
+    // Proforma
+    GetPage(
+      name: AppRoutes.proforma,
+      page: () => const ProformaListPage(),
+      binding: ProformaBinding(),
     ),
 
     // Paramètres d'entreprise

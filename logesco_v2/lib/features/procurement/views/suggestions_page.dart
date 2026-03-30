@@ -1,10 +1,10 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../controllers/procurement_controller.dart';
 import '../services/suggestion_service.dart';
@@ -53,7 +53,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
     try {
       // Charger les fournisseurs depuis l'API
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/procurement/suppliers'),
+        Uri.parse('${AppConfig.currentBaseUrl}/procurement/suppliers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await _getToken()}',
@@ -380,7 +380,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${'procurement_suggestion_avg_sales'.tr}: ${suggestion.moyenneVentesJournalieres.toStringAsFixed(1)} • '
+                      '${'procurement_suggestion_avg_sales'.tr}: ${suggestion.moyenneVentesJournalieres.toStringAsFixed(1)} À '
                       '${'procurement_suggestion_rotation_rate'.tr}: ${(suggestion.tauxRotation * 100).toStringAsFixed(1)}%',
                       style: TextStyle(
                         fontSize: 12,

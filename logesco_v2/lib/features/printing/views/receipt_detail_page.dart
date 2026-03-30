@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/printing_controller.dart';
 import '../models/models.dart';
@@ -403,7 +403,7 @@ class ReceiptDetailPage extends StatelessWidget {
                           ],
                           const SizedBox(height: 4),
                           Text(
-                            '${item.quantity} × ${item.formattedUnitPrice}',
+                            '${item.quantity}  ${item.formattedUnitPrice}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[700],

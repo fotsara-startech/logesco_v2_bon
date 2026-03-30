@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -67,10 +67,10 @@ class CustomerExcelService {
         ..createSync(recursive: true)
         ..writeAsBytesSync(excel.encode()!);
 
-      print('✅ Export Excel réussi: $filePath');
+      print(' Export Excel réussi: $filePath');
       return filePath;
     } catch (e) {
-      print('❌ Erreur lors de l\'export Excel: $e');
+      print(' Erreur lors de l\'export Excel: $e');
       return null;
     }
   }
@@ -85,11 +85,11 @@ class CustomerExcelService {
       );
 
       if (result == null) {
-        print('❌ Aucun fichier sélectionné');
+        print(' Aucun fichier sélectionné');
         return null;
       }
 
-      print('✅ Fichier sélectionné: ${result.files.single.name}');
+      print(' Fichier sélectionné: ${result.files.single.name}');
 
       // Sur desktop (Windows/Linux/Mac), utiliser le path au lieu de bytes
       Uint8List? bytes;
@@ -97,20 +97,20 @@ class CustomerExcelService {
       if (result.files.single.bytes != null) {
         // Web: utiliser bytes directement
         bytes = result.files.single.bytes!;
-        print('✅ Bytes du fichier (Web): ${bytes.length} octets');
+        print(' Bytes du fichier (Web): ${bytes.length} octets');
       } else if (result.files.single.path != null) {
         // Desktop: lire le fichier depuis le path
         final file = File(result.files.single.path!);
         bytes = await file.readAsBytes();
-        print('✅ Bytes du fichier (Desktop): ${bytes.length} octets');
+        print(' Bytes du fichier (Desktop): ${bytes.length} octets');
       } else {
-        print('❌ Impossible de lire le fichier (ni bytes ni path disponible)');
+        print(' Impossible de lire le fichier (ni bytes ni path disponible)');
         return null;
       }
 
       return await _parseExcelBytes(bytes);
     } catch (e) {
-      print('❌ Erreur lors de l\'import Excel: $e');
+      print(' Erreur lors de l\'import Excel: $e');
       print('Stack trace: ${StackTrace.current}');
       return null;
     }
@@ -121,21 +121,21 @@ class CustomerExcelService {
     List<CustomerImportData> customers = [];
 
     try {
-      print('📊 Début du parsing Excel...');
+      print('');
       var excel = Excel.decodeBytes(bytes);
-      print('✅ Excel décodé, ${excel.tables.length} feuille(s) trouvée(s)');
+      print(' Excel décodé, ${excel.tables.length} feuille(s) trouvée(s)');
 
       // Prendre la première feuille
       if (excel.tables.isEmpty) {
-        print('❌ Aucune feuille trouvée dans le fichier Excel');
+        print(' Aucune feuille trouvée dans le fichier Excel');
         return customers;
       }
 
       var table = excel.tables.keys.first;
       var sheet = excel.tables[table]!;
-      print('📄 Feuille sélectionnée: $table');
-      print('📊 Nombre de lignes: ${sheet.maxRows}');
-      print('📊 Nombre de colonnes: ${sheet.maxColumns}');
+      print('');
+      print('');
+      print('');
 
       // Afficher les en-têtes (première ligne)
       if (sheet.maxRows > 0) {
@@ -180,7 +180,7 @@ class CustomerExcelService {
           continue;
         }
 
-        print('✅ Ligne $rowIndex: $nom ${prenom ?? ''} - $telephone');
+        print(' Ligne $rowIndex: $nom ${prenom ?? ''} - $telephone');
 
         customers.add(CustomerImportData(
           nom: nom,
@@ -193,11 +193,11 @@ class CustomerExcelService {
         parsedCount++;
       }
 
-      print('✅ ${customers.length} clients parsés depuis Excel');
-      print('📊 Statistiques: $parsedCount parsés, $skippedCount ignorés');
+      print(' ${customers.length} clients parsés depuis Excel');
+      print('');
       return customers;
     } catch (e) {
-      print('❌ Erreur lors du parsing Excel: $e');
+      print(' Erreur lors du parsing Excel: $e');
       print('Stack trace: ${StackTrace.current}');
       rethrow;
     }
@@ -253,10 +253,10 @@ class CustomerExcelService {
         ..createSync(recursive: true)
         ..writeAsBytesSync(excel.encode()!);
 
-      print('✅ Template généré: $filePath');
+      print(' Template généré: $filePath');
       return filePath;
     } catch (e) {
-      print('❌ Erreur lors de la génération du template: $e');
+      print(' Erreur lors de la génération du template: $e');
       return null;
     }
   }

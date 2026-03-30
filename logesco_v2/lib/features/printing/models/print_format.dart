@@ -1,8 +1,8 @@
-import 'package:json_annotation/json_annotation.dart';
+﻿import 'package:json_annotation/json_annotation.dart';
 
 part 'print_format.g.dart';
 
-/// Énumération des formats d'impression supportés
+/// numération des formats d'impression supportés
 enum PrintFormat {
   @JsonValue('a4')
   a4,

@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/cash_register_model.dart';
 import '../services/cash_register_service.dart';
 import '../services/mock_cash_register_service.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 /// Contrôleur pour la gestion des caisses
 class CashRegisterController extends GetxController {
@@ -52,7 +52,7 @@ class CashRegisterController extends GetxController {
       print('🔄 [CashRegisterController] Actualisation automatique des soldes...');
 
       // Ne pas afficher le loader pour ne pas perturber l'utilisateur
-      final cashRegisterList = ApiConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
+      final cashRegisterList = AppConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
 
       print('📊 [CashRegisterController] ${cashRegisterList.length} caisse(s) récupérée(s) de l\'API');
 
@@ -68,7 +68,7 @@ class CashRegisterController extends GetxController {
           final newSolde = updatedCashRegister.soldeActuel;
 
           if (oldSolde != newSolde || cashRegisters[index].isActive != updatedCashRegister.isActive) {
-            print('💰 [CashRegisterController] Mise à jour caisse: ${updatedCashRegister.nom}');
+            print('🔄 [CashRegisterController] Mise à jour caisse: ${updatedCashRegister.nom}');
             print('   Ancien solde: $oldSolde FCFA → Nouveau solde: $newSolde FCFA');
             cashRegisters[index] = updatedCashRegister;
             updated++;
@@ -105,7 +105,7 @@ class CashRegisterController extends GetxController {
   Future<void> loadCashRegisters() async {
     try {
       isLoading.value = true;
-      final cashRegisterList = ApiConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
+      final cashRegisterList = AppConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
       cashRegisters.assignAll(cashRegisterList);
     } catch (e) {
       Get.snackbar(
@@ -139,7 +139,7 @@ class CashRegisterController extends GetxController {
   Future<bool> createCashRegister(CashRegister cashRegister) async {
     try {
       isLoading.value = true;
-      final newCashRegister = ApiConfig.useTestData ? await MockCashRegisterService.createCashRegister(cashRegister) : await CashRegisterService.createCashRegister(cashRegister);
+      final newCashRegister = AppConfig.useTestData ? await MockCashRegisterService.createCashRegister(cashRegister) : await CashRegisterService.createCashRegister(cashRegister);
       cashRegisters.add(newCashRegister);
 
       Get.snackbar(
@@ -169,7 +169,7 @@ class CashRegisterController extends GetxController {
     try {
       isLoading.value = true;
       final updatedCashRegister =
-          ApiConfig.useTestData ? await MockCashRegisterService.updateCashRegister(cashRegister.id!, cashRegister) : await CashRegisterService.updateCashRegister(cashRegister.id!, cashRegister);
+          AppConfig.useTestData ? await MockCashRegisterService.updateCashRegister(cashRegister.id!, cashRegister) : await CashRegisterService.updateCashRegister(cashRegister.id!, cashRegister);
 
       final index = cashRegisters.indexWhere((c) => c.id == cashRegister.id);
       if (index != -1) {
@@ -201,7 +201,7 @@ class CashRegisterController extends GetxController {
   /// Supprimer une caisse
   Future<bool> deleteCashRegister(int cashRegisterId) async {
     try {
-      ApiConfig.useTestData ? await MockCashRegisterService.deleteCashRegister(cashRegisterId) : await CashRegisterService.deleteCashRegister(cashRegisterId);
+      AppConfig.useTestData ? await MockCashRegisterService.deleteCashRegister(cashRegisterId) : await CashRegisterService.deleteCashRegister(cashRegisterId);
       cashRegisters.removeWhere((cashRegister) => cashRegister.id == cashRegisterId);
 
       Get.snackbar(
@@ -227,7 +227,7 @@ class CashRegisterController extends GetxController {
   /// Ouvrir une caisse
   Future<bool> openCashRegister(int cashRegisterId, double soldeInitial) async {
     try {
-      final updatedCashRegister = ApiConfig.useTestData
+      final updatedCashRegister = AppConfig.useTestData
           ? await MockCashRegisterService.openCashRegister(cashRegisterId, soldeInitial, 1, 'Utilisateur') // TODO: Récupérer l'utilisateur connecté
           : await CashRegisterService.openCashRegister(cashRegisterId, soldeInitial);
 
@@ -263,7 +263,7 @@ class CashRegisterController extends GetxController {
       final currentCashRegister = cashRegisters.firstWhere((c) => c.id == cashRegisterId);
       final finalAmount = currentCashRegister.soldeActuel;
 
-      final updatedCashRegister = ApiConfig.useTestData
+      final updatedCashRegister = AppConfig.useTestData
           ? await MockCashRegisterService.closeCashRegister(cashRegisterId, finalAmount, 1, 'Utilisateur') // TODO: Récupérer l'utilisateur connecté
           : await CashRegisterService.closeCashRegister(cashRegisterId);
 
@@ -307,7 +307,7 @@ class CashRegisterController extends GetxController {
     Get.dialog(
       AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer la caisse "${cashRegister.nom}" ?'),
+        content: Text('Êtestes-vous sûr de vouloir supprimer la caisse "${cashRegister.nom}" ?'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),

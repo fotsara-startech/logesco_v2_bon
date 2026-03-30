@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/excel_controller.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -187,12 +187,12 @@ class ExcelImportExportPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '• ${'excel_instructions_line1'.tr}\n'
-                    '• ${'excel_instructions_line2'.tr}\n'
-                    '• ${'excel_instructions_line3'.tr}\n'
-                    '• ${'excel_instructions_line4'.tr}\n'
-                    '• ${'excel_instructions_line5'.tr}\n'
-                    '• ${'excel_instructions_line6'.tr}',
+                    'À ${'excel_instructions_line1'.tr}\n'
+                    'À ${'excel_instructions_line2'.tr}\n'
+                    'À ${'excel_instructions_line3'.tr}\n'
+                    'À ${'excel_instructions_line4'.tr}\n'
+                    'À ${'excel_instructions_line5'.tr}\n'
+                    'À ${'excel_instructions_line6'.tr}',
                     style: TextStyle(color: Colors.blue[700]),
                   ),
                 ],

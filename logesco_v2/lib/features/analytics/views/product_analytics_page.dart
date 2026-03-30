@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:logesco_v2/shared/themes/app_theme.dart';
 import 'package:get/get.dart';
 import '../services/analytics_service.dart';
@@ -485,11 +485,11 @@ class _ProductAnalyticsPageState extends State<ProductAnalyticsPage> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text('• ${'analytics_action_market'.tr}'),
-              Text('• ${'analytics_action_pricing'.tr}'),
-              Text('• ${'analytics_action_visibility'.tr}'),
-              Text('• ${'analytics_action_promotions'.tr}'),
-              Text('• ${'analytics_action_quality'.tr}'),
+              Text('À ${'analytics_action_market'.tr}'),
+              Text('À ${'analytics_action_pricing'.tr}'),
+              Text('À ${'analytics_action_visibility'.tr}'),
+              Text('À ${'analytics_action_promotions'.tr}'),
+              Text('À ${'analytics_action_quality'.tr}'),
             ],
           ),
         ),

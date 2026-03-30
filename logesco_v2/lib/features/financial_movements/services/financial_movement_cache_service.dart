@@ -21,14 +21,14 @@ class FinancialMovementCacheService {
   /// Initialise le service de cache
   Future<void> init() async {
     if (_isInitialized) {
-      print('💾 Cache service déjà initialisé, ignoré');
+      print('✅ Cache service déjà initialisé, ignoré');
       return;
     }
 
     await GetStorage.init(_boxName);
     _storage = GetStorage(_boxName);
     _isInitialized = true;
-    print('💾 Cache service initialisé avec succès');
+    print('✅ Cache service initialisé avec succès');
   }
 
   /// Vérifie si le cache est valide
@@ -52,7 +52,7 @@ class FinancialMovementCacheService {
       await _storage.write(key, json.encode(movementsJson));
       await _storage.write('${key}_timestamp', DateTime.now().millisecondsSinceEpoch);
 
-      print('💾 ${movements.length} mouvements mis en cache avec la clé: $key');
+      print('✅ ${movements.length} mouvements mis en cache avec la clé: $key');
     } catch (e) {
       print('⚠️ Erreur lors de la mise en cache des mouvements: $e');
     }
@@ -90,7 +90,7 @@ class FinancialMovementCacheService {
       await _storage.write(_categoriesKey, json.encode(categoriesJson));
       await _storage.write('${_categoriesKey}_timestamp', DateTime.now().millisecondsSinceEpoch);
 
-      print('💾 ${categories.length} catégories mises en cache');
+      print('✅ ${categories.length} catégories mises en cache');
     } catch (e) {
       print('⚠️ Erreur lors de la mise en cache des catégories: $e');
     }
@@ -126,7 +126,7 @@ class FinancialMovementCacheService {
       await _storage.write(key, json.encode(statistics));
       await _storage.write('${key}_timestamp', DateTime.now().millisecondsSinceEpoch);
 
-      print('💾 Statistiques mises en cache avec la clé: $key');
+      print('✅ Statistiques mises en cache avec la clé: $key');
     } catch (e) {
       print('⚠️ Erreur lors de la mise en cache des statistiques: $e');
     }
@@ -163,7 +163,7 @@ class FinancialMovementCacheService {
       await _storage.write(key, json.encode(movement.toJson()));
       await _storage.write('${key}_timestamp', DateTime.now().millisecondsSinceEpoch);
 
-      print('💾 Détail du mouvement ${movement.id} mis en cache');
+      print('✅ Détail du mouvement ${movement.id} mis en cache');
     } catch (e) {
       print('⚠️ Erreur lors de la mise en cache du détail du mouvement: $e');
     }

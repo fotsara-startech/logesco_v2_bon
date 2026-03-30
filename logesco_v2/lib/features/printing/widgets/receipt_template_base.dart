@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import '../utils/receipt_translations.dart';
@@ -63,14 +63,10 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
 
         // Téléphone et Email (avec wrap si trop long)
         if (company.phone?.isNotEmpty == true)
-          Text(
-            '${t('phone')}: ${company.phone}',
-
-            style: subtitleStyle,
-            textAlign: TextAlign.start //textAlign,
-            // softWrap: true,
-            // overflow: TextOverflow.visible,
-          ),
+          Text('${t('phone')}: ${company.phone}', style: subtitleStyle, textAlign: TextAlign.start //textAlign,
+              // softWrap: true,
+              // overflow: TextOverflow.visible,
+              ),
         // NUI RCCM
         if (company.email?.isNotEmpty == true)
           Padding(
@@ -113,7 +109,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
         // Titre du reçu
         Center(
           child: Text(
-            t('invoice'),
+            receipt.isProforma ? t('proformaInvoice') : t('invoice'),
             style: headerStyle,
           ),
         ),
@@ -293,7 +289,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
 
   /// Construit le résumé des totaux
   Widget buildTotals(BuildContext context) {
-    print('🧾 [BUILD_TOTALS] tvaAmount=${receipt.tvaAmount}, tvaRate=${receipt.tvaRate}, subtotal=${receipt.subtotal}, total=${receipt.totalAmount}');
+    print('À [BUILD_TOTALS] tvaAmount=${receipt.tvaAmount}, tvaRate=${receipt.tvaRate}, subtotal=${receipt.subtotal}, total=${receipt.totalAmount}');
     final textStyle = TextStyle(
       fontSize: template.fontSize,
       color: Colors.black,

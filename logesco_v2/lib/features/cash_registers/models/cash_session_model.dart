@@ -1,4 +1,4 @@
-/// Modèle pour les sessions de caisse
+﻿/// Modèle pour les sessions de caisse
 class CashSession {
   final int? id;
   final int caisseId;
@@ -35,7 +35,7 @@ class CashSession {
   });
 
   factory CashSession.fromJson(Map<String, dynamic> json) {
-    print('📦 MODEL - Parsing CashSession:');
+    print('');
     print('   json[\'ecart\']: ${json['ecart']}');
     print('   Type: ${json['ecart'].runtimeType}');
 

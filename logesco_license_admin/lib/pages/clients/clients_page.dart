@@ -236,7 +236,7 @@ class _ClientsPageState extends ConsumerState<ClientsPage> {
                       ),
                     ),
                     DataCell(Text(client.company)),
-                    DataCell(Text(client.email)),
+                    DataCell(Text(client.email ?? '—')),
                     DataCell(
                       Text(DateFormat('dd/MM/yyyy').format(client.createdAt)),
                     ),

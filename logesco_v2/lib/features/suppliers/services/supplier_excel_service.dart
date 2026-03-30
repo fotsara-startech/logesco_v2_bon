@@ -126,14 +126,14 @@ class SupplierExcelService {
 
       var table = excel.tables.keys.first;
       var sheet = excel.tables[table]!;
-      print('📄 Feuille sélectionnée: $table');
+      print('📝 Feuille sélectionnée: $table');
       print('📊 Nombre de lignes: ${sheet.maxRows}');
       print('📊 Nombre de colonnes: ${sheet.maxColumns}');
 
       // Afficher les en-têtes (première ligne)
       if (sheet.maxRows > 0) {
         var headerRow = sheet.rows[0];
-        print('📋 En-têtes: ${headerRow.map((cell) => cell?.value?.toString() ?? 'null').join(' | ')}');
+        print('📦 En-têtes: ${headerRow.map((cell) => cell?.value?.toString() ?? 'null').join(' | ')}');
       }
 
       // Ignorer la première ligne (en-têtes)

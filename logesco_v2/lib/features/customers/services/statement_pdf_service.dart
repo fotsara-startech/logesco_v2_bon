@@ -1,11 +1,11 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 
 /// Service pour générer les PDF de relevés de compte
 class StatementPdfService {
@@ -13,7 +13,7 @@ class StatementPdfService {
   static Future<Uint8List> generateStatementPDF(Map<String, dynamic> data) async {
     final pdf = pw.Document();
 
-    print('📊 [PDF] Données reçues:');
+    print('');
     print('   - Type: ${data.runtimeType}');
     print('   - Clés: ${data.keys.toList()}');
 
@@ -22,7 +22,7 @@ class StatementPdfService {
     final compte = data['compte'] as Map<String, dynamic>;
     final transactions = (data['transactions'] as List<dynamic>?) ?? [];
 
-    print('📊 Génération PDF relevé de compte:');
+    print('');
     print('   Transactions reçues: ${transactions.length}');
     print('   Logo path: ${entreprise?['logoPath']}');
     print('   Entreprise: ${entreprise?['nom']}');
@@ -32,7 +32,7 @@ class StatementPdfService {
     if (entreprise?['logoPath'] != null && (entreprise!['logoPath'] as String).isNotEmpty) {
       try {
         var logoPath = entreprise['logoPath'] as String;
-        print('🖼️ Tentative de chargement du logo depuis le backend: $logoPath');
+        print('️ Tentative de chargement du logo depuis le backend: $logoPath');
 
         // Nettoyer le chemin: extraire juste le nom du fichier au cas où
         // (au cas où le backend envoie encore un chemin complet)
@@ -43,7 +43,7 @@ class StatementPdfService {
         }
 
         // Construire l'URL du logo depuis le backend
-        final baseUrl = ApiConfig.currentBaseUrl;
+        final baseUrl = AppConfig.currentBaseUrl;
         // Retirer /api/v1 de la fin pour obtenir l'URL de base du serveur
         final serverUrl = baseUrl.replaceAll('/api/v1', '');
         final logoUrl = '$serverUrl/uploads/$logoPath';
@@ -60,7 +60,7 @@ class StatementPdfService {
 
         if (response.statusCode == 200) {
           logoBytes = response.bodyBytes;
-          print('✅ Logo chargé depuis le backend (${logoBytes.length} bytes)');
+          print(' Logo chargé depuis le backend (${logoBytes.length} bytes)');
         } else {
           print('⚠️ Erreur HTTP ${response.statusCode} lors du chargement du logo');
         }
@@ -79,7 +79,7 @@ class StatementPdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // ── En-tête : logo + infos entreprise ──────────────────────────
+              // "?"? En-tête : logo + infos entreprise "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: pw.BoxDecoration(
@@ -156,7 +156,7 @@ class StatementPdfService {
 
               pw.SizedBox(height: 12),
 
-              // ── Bannière fusionnée : titre + infos client + solde ──────────
+              // "?"? Bannière fusionnée : titre + infos client + solde "?"?"?"?"?"?"?"?"?"?
               pw.Container(
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.blue700, width: 1.5),
@@ -165,7 +165,7 @@ class StatementPdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    // ── Titre du relevé ──
+                    // "?"? Titre du relevé "?"?
                     pw.Container(
                       width: double.infinity,
                       padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -198,7 +198,7 @@ class StatementPdfService {
                       ),
                     ),
 
-                    // ── Infos client + solde côte à côte ──
+                    // "?"? Infos client + solde côte à côte "?"?
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: pw.Row(
@@ -298,7 +298,7 @@ class StatementPdfService {
 
               pw.SizedBox(height: 12),
 
-              // ── Tableau des transactions ────────────────────────────────────
+              // "?"? Tableau des transactions "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
               pw.Text(
                 _getTranslation('statement_transactions_history').replaceAll('@count', transactions.length.toString()),
                 style: pw.TextStyle(
@@ -336,7 +336,7 @@ class StatementPdfService {
 
               pw.Spacer(),
 
-              // ── Pied de page ───────────────────────────────────────────────
+              // "?"? Pied de page "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
               pw.Divider(),
               pw.SizedBox(height: 8),
               pw.Text(
@@ -369,7 +369,7 @@ class StatementPdfService {
 
   /// Construit les lignes du tableau des transactions
   static List<pw.TableRow> _buildTransactionRows(List<dynamic> transactions) {
-    print('📊 [PDF] Construction des lignes du tableau');
+    print('');
     print('   - Nombre de transactions: ${transactions.length}');
     print('   - Type: ${transactions.runtimeType}');
 
@@ -392,7 +392,7 @@ class StatementPdfService {
     for (int i = 0; i < transactions.length; i++) {
       try {
         final t = transactions[i];
-        print('📝 [PDF] Traitement transaction #$i');
+        print('');
         print('   - Type: ${t.runtimeType}');
         print('   - Clés: ${(t as Map).keys.toList()}');
 
@@ -412,7 +412,7 @@ class StatementPdfService {
         final montant = t['montant'] is num ? t['montant'] : double.tryParse(t['montant'].toString()) ?? 0;
         final soldeApres = t['soldeApres'] is num ? t['soldeApres'] : double.tryParse(t['soldeApres'].toString()) ?? 0;
 
-        print('   ✅ Description: $description, Montant: $montant, Solde: $soldeApres');
+        print('    Description: $description, Montant: $montant, Solde: $soldeApres');
 
         rows.add(
           pw.TableRow(
@@ -443,7 +443,7 @@ class StatementPdfService {
       }
     }
 
-    print('📊 [PDF] ${rows.length} lignes construites (1 en-tête + ${rows.length - 1} transactions)');
+    print('');
     return rows;
   }
 
@@ -492,15 +492,15 @@ class StatementPdfService {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/$filename');
 
-      // Écrire le fichier
+      // crire le fichier
       await file.writeAsBytes(pdfBytes);
 
-      print('✅ PDF sauvegardé: ${file.path}');
+      print(' PDF sauvegardé: ${file.path}');
 
       // Retourner le chemin
       return file.path;
     } catch (e) {
-      print('❌ Erreur sauvegarde PDF: $e');
+      print(' Erreur sauvegarde PDF: $e');
       throw Exception('Erreur lors de la sauvegarde du PDF: $e');
     }
   }

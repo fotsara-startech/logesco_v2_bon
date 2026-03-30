@@ -1,4 +1,4 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import '../controllers/user_controller.dart';
 import '../services/user_service.dart';
 

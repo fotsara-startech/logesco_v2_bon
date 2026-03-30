@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/cash_session_model.dart';
 
@@ -27,10 +27,10 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/active'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/active'),
             headers: headers,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -54,10 +54,10 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/available-cash-registers'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/available-cash-registers'),
             headers: headers,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -81,11 +81,11 @@ class CashSessionService {
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/connect'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/connect'),
             headers: headers,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       // 201 = nouvelle session, 200 = session existante reprise
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -106,11 +106,11 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/force-close'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/force-close'),
             headers: headers,
             body: json.encode({}),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
@@ -129,11 +129,11 @@ class CashSessionService {
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/disconnect'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/disconnect'),
             headers: headers,
             body: json.encode(body),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -160,9 +160,9 @@ class CashSessionService {
       if (endDate != null) queryParams['endDate'] = endDate.toIso8601String();
       if (userId != null) queryParams['userId'] = userId.toString();
 
-      final uri = Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/history').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/history').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
-      final response = await http.get(uri, headers: headers).timeout(ApiConfig.receiveTimeout);
+      final response = await http.get(uri, headers: headers).timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -182,10 +182,10 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/stats'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/stats'),
             headers: headers,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -204,10 +204,10 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}/cash-sessions/all-active'),
+            Uri.parse('${AppConfig.currentBaseUrl}/cash-sessions/all-active'),
             headers: headers,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -225,11 +225,11 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/cleanup-orphans'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/cleanup-orphans'),
             headers: headers,
             body: json.encode({}),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -242,11 +242,11 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}/cash-sessions/admin-close/$sessionId'),
+            Uri.parse('${AppConfig.currentBaseUrl}/cash-sessions/admin-close/$sessionId'),
             headers: headers,
             body: json.encode({}),
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -260,10 +260,10 @@ class CashSessionService {
       final headers = await _authHeaders();
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}$_endpoint/check-availability/$cashRegisterId'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/check-availability/$cashRegisterId'),
             headers: headers,
           )
-          .timeout(ApiConfig.receiveTimeout);
+          .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

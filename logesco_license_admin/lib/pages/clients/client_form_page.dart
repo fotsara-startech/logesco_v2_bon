@@ -58,7 +58,7 @@ class _ClientFormPageState extends State<ClientFormPage> {
         setState(() {
           _existingClient = client;
           _nameController.text = client.name;
-          _emailController.text = client.email;
+          _emailController.text = client.email ?? '';
           _companyController.text = client.company;
           _phoneController.text = client.phone ?? '';
           _addressController.text = client.address ?? '';
@@ -89,7 +89,7 @@ class _ClientFormPageState extends State<ClientFormPage> {
       final client = Client(
         id: _existingClient?.id ?? const Uuid().v4(),
         name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         company: _companyController.text.trim(),
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
@@ -178,16 +178,15 @@ class _ClientFormPageState extends State<ClientFormPage> {
                         TextFormField(
                           controller: _emailController,
                           decoration: const InputDecoration(
-                            labelText: 'Email *',
+                            labelText: 'Email',
                             hintText: 'jean.dupont@entreprise.com',
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'L\'email est obligatoire';
-                            }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                              return 'Format d\'email invalide';
+                            if (value != null && value.trim().isNotEmpty) {
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                                return 'Format d\'email invalide';
+                              }
                             }
                             return null;
                           },

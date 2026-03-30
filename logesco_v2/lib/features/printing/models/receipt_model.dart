@@ -1,4 +1,4 @@
-import 'package:json_annotation/json_annotation.dart';
+﻿import 'package:json_annotation/json_annotation.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../sales/models/sale.dart';
 import '../../customers/models/customer.dart';
@@ -30,6 +30,7 @@ class Receipt {
   final int reprintCount;
   final DateTime? lastReprintDate;
   final String? reprintBy;
+  final bool isProforma; // true = facture proforma (titre différent)
 
   const Receipt({
     required this.id,
@@ -53,10 +54,57 @@ class Receipt {
     this.reprintCount = 0,
     this.lastReprintDate,
     this.reprintBy,
+    this.isProforma = false,
   });
 
   factory Receipt.fromJson(Map<String, dynamic> json) => _$ReceiptFromJson(json);
   Map<String, dynamic> toJson() => _$ReceiptToJson(this);
+
+  /// Crée un reçu à partir d'une facture proforma
+  factory Receipt.fromProforma({
+    required dynamic proforma, // ProformaInvoice — dynamic pour éviter import circulaire
+    required CompanyProfile companyInfo,
+    PrintFormat format = PrintFormat.a4,
+  }) {
+    final items = (proforma.items as List).map((detail) {
+      return ReceiptItem(
+        productId: detail.produitId.toString(),
+        productName: detail.produitNom ?? 'Produit ${detail.produitId}',
+        productReference: detail.produitReference ?? '',
+        quantity: detail.quantite as int,
+        unitPrice: detail.prixUnitaire as double,
+        totalPrice: detail.montantLigne as double,
+        displayPrice: detail.prixAffiche as double,
+        discountAmount: detail.remiseAppliquee as double,
+        discountJustification: detail.justificationRemise as String?,
+      );
+    }).toList();
+
+    final language = companyInfo.receiptLanguage ?? 'fr';
+
+    return Receipt(
+      id: 'proforma_${proforma.id}_${DateTime.now().millisecondsSinceEpoch}',
+      saleId: proforma.id.toString(),
+      saleNumber: proforma.numeroProforma as String,
+      companyInfo: companyInfo,
+      items: items,
+      subtotal: proforma.sousTotal as double,
+      discountAmount: proforma.montantRemise as double,
+      tvaRate: (proforma.tauxTva as double?) ?? 0.0,
+      tvaAmount: proforma.montantTva as double,
+      totalAmount: proforma.montantTotal as double,
+      paidAmount: 0.0,
+      remainingAmount: proforma.montantTotal as double,
+      paymentMethod: proforma.modePaiement as String,
+      saleDate: proforma.dateCreation as DateTime,
+      customer: proforma.client,
+      format: format,
+      language: language,
+      isReprint: false,
+      reprintCount: 0,
+      isProforma: true,
+    );
+  }
 
   /// Crée un reçu à partir d'une vente
   factory Receipt.fromSale({
@@ -114,7 +162,7 @@ class Receipt {
     print('  FINAL - subtotal: $correctSubtotal, discount: $finalDiscountAmount');
 
     final receiptLanguage = language ?? companyInfo.receiptLanguage ?? 'fr';
-    print('🌐 LANGUE DU REÇU:');
+    print(' LANGUE DU REU:');
     print('  language param: $language');
     print('  companyInfo.receiptLanguage: ${companyInfo.receiptLanguage}');
     print('  receiptLanguage FINAL: $receiptLanguage');
@@ -220,6 +268,7 @@ class Receipt {
     int? reprintCount,
     DateTime? lastReprintDate,
     String? reprintBy,
+    bool? isProforma,
   }) {
     return Receipt(
       id: id ?? this.id,
@@ -243,11 +292,12 @@ class Receipt {
       reprintCount: reprintCount ?? this.reprintCount,
       lastReprintDate: lastReprintDate ?? this.lastReprintDate,
       reprintBy: reprintBy ?? this.reprintBy,
+      isProforma: isProforma ?? this.isProforma,
     );
   }
 }
 
-/// Élément d'un reçu
+/// lément d'un reçu
 @JsonSerializable()
 class ReceiptItem {
   final String productId;
@@ -311,7 +361,7 @@ class ReceiptItem {
   /// Vérifie si cet article a une remise
   bool get hasDiscount => discountAmount > 0;
 
-  /// Calcule le total de la remise pour cet article (remise unitaire × quantité)
+  /// Calcule le total de la remise pour cet article (remise unitaire - quantité)
   double get totalDiscountAmount => discountAmount * quantity;
 }
 

@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../services/inventory_service.dart';
 import '../../products/controllers/product_getx_controller.dart';
@@ -9,7 +9,7 @@ import '../../products/services/category_service.dart';
 class InventoryBinding extends Bindings {
   @override
   void dependencies() {
-    print('🔧 Configuration InventoryBinding');
+    print('');
 
     // Services
     if (!Get.isRegistered<InventoryService>()) {

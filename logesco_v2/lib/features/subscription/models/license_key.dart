@@ -216,6 +216,7 @@ class LicenseKeyUtils {
   }
 
   /// Vérifie si une clé courte correspond à l'empreinte d'appareil actuelle
+  /// Retourne true si la clé est universelle (valeur magique 999999) OU si le hash correspond
   static bool verifyShortFormatDevice(String licenseKey, String deviceFingerprint) {
     try {
       // Utiliser le même alphabet que le générateur (sans caractères ambigus)
@@ -226,6 +227,12 @@ class LicenseKeyUtils {
 
       // Décoder le hash d'appareil de la clé
       final licenseDeviceHash = _decodeSegment(segments[3], alphabet);
+
+      // Vérifier si c'est une clé universelle (valeur magique = 999999)
+      if (licenseDeviceHash == 999999) {
+        print('🌐 [LicenseKeyUtils] Clé universelle détectée - accès autorisé sur tout appareil');
+        return true;
+      }
 
       // Calculer le hash de l'empreinte actuelle
       final currentDeviceHash = _hashDeviceFingerprint(deviceFingerprint);

@@ -1,8 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../../../core/utils/retry_policy.dart';
@@ -82,7 +82,7 @@ class FinancialMovementService {
     if (!forceRefresh) {
       final cachedMovements = _cacheService.getCachedMovements(cacheKey: cacheKey);
       if (cachedMovements != null) {
-        print('📦 Mouvements récupérés depuis le cache');
+        print('');
         return ApiResponse.success(cachedMovements);
       }
     }
@@ -121,9 +121,9 @@ class FinancialMovementService {
       queryParams['maxAmount'] = maxAmount.toString();
     }
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}$_endpoint').replace(queryParameters: queryParams);
+    final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint').replace(queryParameters: queryParams);
 
-    print('🔄 Récupération des mouvements financiers depuis: $uri');
+    print('');
 
     try {
       final response = await http.get(
@@ -134,11 +134,11 @@ class FinancialMovementService {
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse API mouvements financiers: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        print('📦 Données JSON mouvements financiers reçues');
+        print('');
 
         final movements = <FinancialMovement>[];
         final dataList = jsonData['data'] as List;
@@ -155,7 +155,7 @@ class FinancialMovementService {
         // Met en cache les résultats
         await _cacheService.cacheMovements(movements, cacheKey: cacheKey);
 
-        print('✅ ${movements.length} mouvements financiers récupérés avec succès');
+        print(' ${movements.length} mouvements financiers récupérés avec succès');
         return ApiResponse.success(
           movements,
           pagination: jsonData['pagination'] != null ? Pagination.fromJson(jsonData['pagination']) : null,
@@ -170,7 +170,7 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedMovements = _cacheService.getCachedMovements(cacheKey: cacheKey);
         if (cachedMovements != null) {
-          print('📦 Récupération depuis le cache en mode dégradé');
+          print('');
           return ApiResponse.success(cachedMovements);
         }
       }
@@ -194,7 +194,7 @@ class FinancialMovementService {
     if (!forceRefresh) {
       final cachedMovement = _cacheService.getCachedMovementDetail(id);
       if (cachedMovement != null) {
-        print('📦 Mouvement $id récupéré depuis le cache');
+        print('');
         return cachedMovement;
       }
     }
@@ -211,14 +211,14 @@ class FinancialMovementService {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}$_endpoint/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse API mouvement financier $id: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -238,7 +238,7 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedMovement = _cacheService.getCachedMovementDetail(id);
         if (cachedMovement != null) {
-          print('📦 Récupération du mouvement $id depuis le cache après timeout');
+          print('');
           return cachedMovement;
         }
       }
@@ -248,7 +248,7 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedMovement = _cacheService.getCachedMovementDetail(id);
         if (cachedMovement != null) {
-          print('📦 Récupération du mouvement $id depuis le cache en mode dégradé');
+          print('');
           return cachedMovement;
         }
       }
@@ -294,7 +294,7 @@ class FinancialMovementService {
     try {
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}$_endpoint'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -303,7 +303,7 @@ class FinancialMovementService {
           )
           .timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse création mouvement financier: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 201) {
         final jsonData = json.decode(response.body);
@@ -313,7 +313,7 @@ class FinancialMovementService {
         await _cacheService.invalidateMovementsCache();
         await _cacheService.invalidateStatisticsCache();
 
-        print('✅ Mouvement financier créé avec succès: ${movement.reference}');
+        print(' Mouvement financier créé avec succès: ${movement.reference}');
         return movement;
       } else {
         throw _createApiExceptionFromResponse(response);
@@ -358,12 +358,12 @@ class FinancialMovementService {
       );
     }
 
-    print('🔄 Mise à jour du mouvement financier $id');
+    print('');
 
     try {
       final response = await http
           .put(
-            Uri.parse('${ApiConfig.baseUrl}$_endpoint/$id'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -372,7 +372,7 @@ class FinancialMovementService {
           )
           .timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse mise à jour mouvement financier: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -383,7 +383,7 @@ class FinancialMovementService {
         await _cacheService.invalidateMovementsCache();
         await _cacheService.invalidateStatisticsCache();
 
-        print('✅ Mouvement financier mis à jour avec succès: ${movement.reference}');
+        print(' Mouvement financier mis à jour avec succès: ${movement.reference}');
         return movement;
       } else {
         throw _createApiExceptionFromResponse(response);
@@ -417,18 +417,18 @@ class FinancialMovementService {
       );
     }
 
-    print('🔄 Suppression du mouvement financier $id');
+    print('');
 
     try {
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}$_endpoint/$id'),
+        Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse suppression mouvement financier: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         // Invalide le cache pour ce mouvement et les listes
@@ -436,7 +436,7 @@ class FinancialMovementService {
         await _cacheService.invalidateMovementsCache();
         await _cacheService.invalidateStatisticsCache();
 
-        print('✅ Mouvement financier supprimé avec succès');
+        print(' Mouvement financier supprimé avec succès');
       } else {
         throw _createApiExceptionFromResponse(response);
       }
@@ -463,7 +463,7 @@ class FinancialMovementService {
     if (!forceRefresh) {
       final cachedCategories = _cacheService.getCachedCategories();
       if (cachedCategories != null) {
-        print('📦 Catégories récupérées depuis le cache');
+        print('');
         return cachedCategories;
       }
     }
@@ -478,18 +478,18 @@ class FinancialMovementService {
       );
     }
 
-    print('🔄 Récupération des catégories de mouvements');
+    print('');
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/movement-categories'),
+        Uri.parse('${AppConfig.currentBaseUrl}/movement-categories'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse API catégories: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -508,7 +508,7 @@ class FinancialMovementService {
         // Met en cache les catégories
         await _cacheService.cacheCategories(categories);
 
-        print('✅ ${categories.length} catégories récupérées avec succès');
+        print(' ${categories.length} catégories récupérées avec succès');
         return categories;
       } else {
         throw _createApiExceptionFromResponse(response);
@@ -518,26 +518,26 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedCategories = _cacheService.getCachedCategories();
         if (cachedCategories != null) {
-          print('📦 Récupération des catégories depuis le cache après timeout');
+          print('');
           return cachedCategories;
         }
       }
 
       // En dernier recours, retourner les catégories par défaut
-      print('📦 Utilisation des catégories par défaut après timeout');
+      print('');
       return MovementCategory.defaultCategories;
     } on SocketException {
       // En cas d'erreur réseau, essaie de récupérer depuis le cache
       if (!forceRefresh) {
         final cachedCategories = _cacheService.getCachedCategories();
         if (cachedCategories != null) {
-          print('📦 Récupération des catégories depuis le cache en mode dégradé');
+          print('');
           return cachedCategories;
         }
       }
 
       // En dernier recours, retourner les catégories par défaut
-      print('📦 Utilisation des catégories par défaut après erreur réseau');
+      print('');
       return MovementCategory.defaultCategories;
     }
   }
@@ -576,7 +576,7 @@ class FinancialMovementService {
     if (!forceRefresh) {
       final cachedStats = _cacheService.getCachedStatistics(period: period);
       if (cachedStats != null) {
-        print('📦 Statistiques récupérées depuis le cache');
+        print('');
         return MovementStatistics.fromJson(cachedStats);
       }
     }
@@ -599,9 +599,9 @@ class FinancialMovementService {
       queryParams['endDate'] = endDate.toIso8601String();
     }
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}$_endpoint/statistics').replace(queryParameters: queryParams);
+    final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/statistics').replace(queryParameters: queryParams);
 
-    print('🔄 Récupération des statistiques depuis: $uri');
+    print('');
 
     try {
       final response = await http.get(
@@ -612,7 +612,7 @@ class FinancialMovementService {
         },
       ).timeout(const Duration(seconds: 30));
 
-      print('📡 Réponse API statistiques: ${response.statusCode}');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -621,7 +621,7 @@ class FinancialMovementService {
         // Met en cache les statistiques
         await _cacheService.cacheStatistics(jsonData['data'], period: period);
 
-        print('✅ Statistiques récupérées avec succès');
+        print(' Statistiques récupérées avec succès');
         return statistics;
       } else {
         throw _createApiExceptionFromResponse(response);
@@ -631,7 +631,7 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedStats = _cacheService.getCachedStatistics(period: period);
         if (cachedStats != null) {
-          print('📦 Récupération des statistiques depuis le cache après timeout');
+          print('');
           return MovementStatistics.fromJson(cachedStats);
         }
       }
@@ -641,7 +641,7 @@ class FinancialMovementService {
       if (!forceRefresh) {
         final cachedStats = _cacheService.getCachedStatistics(period: period);
         if (cachedStats != null) {
-          print('📦 Récupération des statistiques depuis le cache en mode dégradé');
+          print('');
           return MovementStatistics.fromJson(cachedStats);
         }
       }
@@ -685,7 +685,7 @@ class FinancialMovementService {
       );
       return true;
     } catch (e) {
-      print('❌ Test de connectivité échoué: $e');
+      print(' Test de connectivité échoué: $e');
       return false;
     }
   }
@@ -703,7 +703,7 @@ class FinancialMovementService {
     }
 
     final response = await http.head(
-      Uri.parse('${ApiConfig.baseUrl}/health'),
+      Uri.parse('${AppConfig.currentBaseUrl}/health'),
       headers: {
         'Authorization': 'Bearer $token',
       },
@@ -735,7 +735,7 @@ class FinancialMovementService {
 
   /// Force la récupération du service en cas de problème
   Future<void> forceRecovery() async {
-    print('🔄 Tentative de récupération forcée du service...');
+    print('');
 
     // Réinitialise les circuit breakers
     RetryPolicies.resetCircuitBreakers();
@@ -747,9 +747,9 @@ class FinancialMovementService {
     final isHealthy = await testConnectivity();
 
     if (isHealthy) {
-      print('✅ Service récupéré avec succès');
+      print(' Service récupéré avec succès');
     } else {
-      print('❌ Échec de la récupération du service');
+      print(' Échec de la récupération du service');
       throw FinancialMovementException(
         message: 'Impossible de récupérer le service',
         code: 'RECOVERY_FAILED',

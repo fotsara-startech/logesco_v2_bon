@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../../accounts/services/account_service.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../utils/currency_formatter.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/activity_report.dart';
@@ -16,7 +16,7 @@ import 'package:intl/intl.dart';
 /// Service pour générer les bilans comptables d'activités
 class ActivityReportService {
   final AuthService _authService;
-  final String _baseUrl = ApiConfig.baseUrl;
+  final String _baseUrl = AppConfig.currentBaseUrl;
 
   ActivityReportService(this._authService);
 
@@ -26,7 +26,7 @@ class ActivityReportService {
     required DateTime endDate,
   }) async {
     try {
-      print('📊 [DEBUG] ===== DÉBUT GÉNÉRATION BILAN COMPTABLE =====');
+      print('📊 [DEBUG] ===== DEBUT GÉNÉRATION BILAN COMPTABLE =====');
       print('📊 [DEBUG] Période: ${_formatDate(startDate)} - ${_formatDate(endDate)}');
       print('📊 [DEBUG] AuthService disponible: ${_authService != null}');
 
@@ -147,7 +147,7 @@ class ActivityReportService {
 
         // Si c'est une erreur d'authentification, utilisons l'endpoint public
         if (response.statusCode == 401) {
-          print('🔄 [INFO] Erreur d\'authentification, utilisation de l\'endpoint public...');
+          print('ℹ️ [INFO] Erreur d\'authentification, utilisation de l\'endpoint public...');
           return await _getCompanyInfoFromPublicEndpoint();
         }
 
@@ -331,7 +331,7 @@ class ActivityReportService {
   /// Récupère les données des dettes clients (CORRIGÉ - filtrage strict par période)
   Future<CustomerDebtsData> _getCustomerDebtsData(DateTime startDate, DateTime endDate) async {
     try {
-      print('📊 [DEBUG] ===== DÉBUT RÉCUPÉRATION DETTES CLIENTS (FILTRAGE STRICT PÉRIODE) =====');
+      print('📊 [DEBUG] ===== DEBUT RÉCUPÉRATION DETTES CLIENTS (FILTRAGE STRICT PÉRIODE) =====');
       print('📊 [DEBUG] Période analysée: ${_formatDate(startDate)} - ${_formatDate(endDate)}');
       print('📊 [DEBUG] Date d\'aujourd\'hui: ${_formatDate(DateTime.now())}');
 
@@ -475,7 +475,7 @@ class ActivityReportService {
     DateTime endDate,
   ) async {
     try {
-      print('💰 Calcul des bénéfices selon méthode comptabilité...');
+      print('💾 Calcul des bénéfices selon méthode comptabilité...');
 
       // CORRECTION: Calculer le coût réel des marchandises vendues
       final costOfGoodsSold = await _calculateRealCostOfGoodsSold(startDate, endDate);
@@ -546,7 +546,7 @@ class ActivityReportService {
   /// Calcule le coût réel des marchandises vendues (CORRIGÉ selon module comptabilité)
   Future<double> _calculateRealCostOfGoodsSold(DateTime startDate, DateTime endDate) async {
     try {
-      print('🔍 Calcul du coût réel des marchandises vendues (méthode accounting)...');
+      print('📦 Calcul du coût réel des marchandises vendues (méthode accounting)...');
 
       // Récupérer toutes les ventes de la période
       final sales = await _getSalesForPeriod(startDate, endDate);

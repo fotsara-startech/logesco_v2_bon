@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/stock_model.dart';
@@ -107,7 +107,7 @@ class InventoryGetxController extends GetxController {
     // Vérifier si un token d'authentification est disponible
     final token = await _authService.getToken();
     if (token == null) {
-      print('❌ Pas de token disponible');
+      print(' Pas de token disponible');
       return;
     }
 
@@ -121,7 +121,7 @@ class InventoryGetxController extends GetxController {
   /// Charge tous les stocks en chargeant toutes les pages
   Future<void> _loadAllStocks() async {
     try {
-      print('📚 Début du chargement complet de tous les stocks...');
+      print('');
       currentPage.value = 1;
       hasMoreStocks.value = true;
       stocks.clear();
@@ -145,7 +145,7 @@ class InventoryGetxController extends GetxController {
         final stockList = result.data;
         final pagination = result.pagination;
 
-        print('📄 Page ${pagination.page}: ${stockList.length} stocks chargés');
+        print('');
 
         stocks.addAll(stockList);
 
@@ -157,11 +157,11 @@ class InventoryGetxController extends GetxController {
         }
       }
 
-      print('✅ TOUS LES STOCKS CHARGÉS: ${stocks.length} stocks au total');
+      print(' TOUS LES STOCKS CHARGS: ${stocks.length} stocks au total');
       currentPage.value = 1; // Réinitialiser pour la pagination après
       hasMoreStocks.value = false;
     } catch (e) {
-      print('❌ Erreur lors du chargement complet: $e');
+      print(' Erreur lors du chargement complet: $e');
       stocksError.value = e.toString();
       Get.snackbar(
         'Erreur',
@@ -209,7 +209,7 @@ class InventoryGetxController extends GetxController {
   /// Charge les alertes de stock (toutes les pages)
   Future<void> loadStockAlerts({bool refresh = false}) async {
     try {
-      print('📚 Début du chargement complet de toutes les alertes...');
+      print('');
       alertsPage.value = 1;
       hasMoreAlerts.value = true;
       stockAlerts.clear();
@@ -230,7 +230,7 @@ class InventoryGetxController extends GetxController {
         final alertsList = result.data;
         final pagination = result.pagination;
 
-        print('📄 Page ${pagination.page}: ${alertsList.length} alertes chargées');
+        print('');
 
         stockAlerts.addAll(alertsList);
 
@@ -242,11 +242,11 @@ class InventoryGetxController extends GetxController {
         }
       }
 
-      print('✅ TOUTES LES ALERTES CHARGÉES: ${stockAlerts.length} alertes au total');
+      print(' TOUTES LES ALERTES CHARGES: ${stockAlerts.length} alertes au total');
       alertsPage.value = 1; // Réinitialiser
       hasMoreAlerts.value = false;
     } catch (e) {
-      print('❌ Erreur lors du chargement complet des alertes: $e');
+      print(' Erreur lors du chargement complet des alertes: $e');
       alertsError.value = e.toString();
       Get.snackbar(
         'Erreur',
@@ -373,13 +373,13 @@ class InventoryGetxController extends GetxController {
 
   /// Navigue vers la création d'un mouvement de stock
   void goToStockMovement([Stock? stock]) {
-    print('🚀 Navigation vers /inventory/movement');
+    print(' Navigation vers /inventory/movement');
     print('   Stock passé: ${stock?.produitId}');
     try {
       Get.toNamed('/inventory/movement', arguments: stock);
-      print('✅ Navigation réussie');
+      print(' Navigation réussie');
     } catch (e) {
-      print('❌ Erreur navigation: $e');
+      print(' Erreur navigation: $e');
       Get.snackbar(
         'Erreur',
         'Impossible d\'ouvrir le formulaire de mouvement: $e',
@@ -516,7 +516,7 @@ class InventoryGetxController extends GetxController {
   /// Charge les catégories disponibles depuis la base de données
   Future<void> loadCategories() async {
     try {
-      print('🔄 Chargement des catégories depuis la base de données (inventory module)...');
+      print('');
 
       // TOUJOURS utiliser le service de catégories pour avoir les vraies données
       final realCategories = await _categoryService.getCategories();
@@ -525,18 +525,18 @@ class InventoryGetxController extends GetxController {
       final categoryNames = realCategories.map((category) => category.nom).toList();
 
       categories.assignAll(categoryNames);
-      print('✅ ${categories.length} catégories réelles chargées depuis la base de données');
+      print(' ${categories.length} catégories réelles chargées depuis la base de données');
 
       // Afficher les catégories pour debug
       for (final cat in categoryNames) {
         print('   - "${cat}"');
       }
     } catch (e) {
-      print('❌ Erreur lors du chargement des catégories: $e');
+      print(' Erreur lors du chargement des catégories: $e');
 
       // En cas d'erreur, laisser vide plutôt que d'utiliser des données par défaut
       categories.clear();
-      print('❌ Aucune catégorie disponible');
+      print(' Aucune catégorie disponible');
 
       Get.snackbar(
         'Attention',
@@ -552,7 +552,7 @@ class InventoryGetxController extends GetxController {
   void updateSearchQuery(String query) {
     // Log uniquement pour diagnostiquer les problèmes de recherche
     if (query.isNotEmpty) {
-      print('🔍 RECHERCHE: "$query"');
+      print('');
     }
     searchQuery.value = query;
     // Recharger toutes les données (stocks, alertes, mouvements)
@@ -712,8 +712,8 @@ class InventoryGetxController extends GetxController {
 
   /// Test pour forcer la mise à jour de l'interface
   void testUpdateInterface() {
-    print('🔍 TEST: Forçage mise à jour interface');
-    print('🔍 TEST: stocks.length = ${stocks.length}');
+    print('');
+    print('');
     stocks.refresh();
     update();
   }

@@ -119,4 +119,7 @@ class AppRoutes {
   // Routes de mouvements de stock
   static const String stockMovement = '/inventory/movement';
   static const String stockMovementCreate = '/inventory/movement/create';
+
+  // Routes proforma
+  static const String proforma = '/proforma';
 }

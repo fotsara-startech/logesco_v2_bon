@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/product.dart';
@@ -108,12 +108,12 @@ class ProductFormController extends GetxController {
   /// Charge les catégories disponibles depuis la base de données
   Future<void> _loadCategories() async {
     try {
-      print('🔍 Chargement des catégories pour le formulaire produit...');
+      print('');
       final categoriesList = await _categoryService.getCategories();
       categories.assignAll(categoriesList);
-      print('✅ ${categoriesList.length} catégories chargées pour le formulaire');
+      print(' ${categoriesList.length} catégories chargées pour le formulaire');
     } catch (e) {
-      print('❌ Erreur chargement catégories pour formulaire: $e');
+      print(' Erreur chargement catégories pour formulaire: $e');
       // En cas d'erreur, on continue avec une liste vide
       categories.clear();
     }
@@ -352,14 +352,14 @@ class ProductFormController extends GetxController {
         final newReference = await _productService.generateProductReference();
         referenceController.text = newReference;
         referenceError.value = '';
-        print('✅ Référence générée par l\'API: $newReference');
+        print(' Référence générée par l\'API: $newReference');
       } catch (apiError) {
-        print('❌ Erreur API génération référence: $apiError');
+        print(' Erreur API génération référence: $apiError');
         // En cas d'échec de l'API, générer localement
         final localReference = _generateLocalReference();
         referenceController.text = localReference;
         referenceError.value = '';
-        print('✅ Référence générée localement: $localReference');
+        print(' Référence générée localement: $localReference');
 
         // Afficher un message informatif (avec délai pour éviter les conflits)
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -376,7 +376,7 @@ class ProductFormController extends GetxController {
         });
       }
     } catch (e) {
-      print('❌ Erreur génération référence: $e');
+      print(' Erreur génération référence: $e');
       referenceError.value = 'Erreur lors de la génération de la référence';
     } finally {
       isGeneratingReference.value = false;
@@ -486,7 +486,7 @@ class ProductFormController extends GetxController {
       );
 
       // Debug: Afficher les données qui vont être envoyées
-      print('=== DONNÉES PRODUIT À ENVOYER ===');
+      print('=== DONNES PRODUIT À ENVOYER ===');
       print('Reference: ${productForm.reference}');
       print('Nom: ${productForm.nom}');
       print('Prix unitaire: ${productForm.prixUnitaire}');
@@ -533,7 +533,7 @@ class ProductFormController extends GetxController {
         message = e.message;
       }
 
-      print('❌ Erreur sauvegarde produit: $e');
+      print(' Erreur sauvegarde produit: $e');
 
       // Afficher l'erreur avec un délai pour éviter les conflits
       Future.delayed(const Duration(milliseconds: 100), () {

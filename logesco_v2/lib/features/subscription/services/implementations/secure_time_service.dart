@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -229,7 +229,7 @@ class SecureTimeService {
     if (!forceRefresh && _cachedNtpTime != null && _cachedNtpTimestamp != null) {
       final cacheAge = DateTime.now().difference(_cachedNtpTimestamp!);
       if (cacheAge < _ntpCacheDuration) {
-        print('✅ [SecureTimeService] Utilisation du cache NTP (âge: ${cacheAge.inHours}h)');
+        print(' [SecureTimeService] Utilisation du cache NTP (âge: ${cacheAge.inHours}h)');
         return _cachedNtpTime;
       }
     }
@@ -238,14 +238,14 @@ class SecureTimeService {
     for (final server in _ntpServers) {
       for (int retry = 0; retry < _maxNtpRetries; retry++) {
         try {
-          print('🌐 [SecureTimeService] Requête NTP vers $server (tentative ${retry + 1})');
+          print(' [SecureTimeService] Requête NTP vers $server (tentative ${retry + 1})');
 
           final ntpTime = await NTP.now(
             lookUpAddress: server,
             timeout: const Duration(seconds: 5),
           );
 
-          print('✅ [SecureTimeService] Heure NTP obtenue: $ntpTime');
+          print(' [SecureTimeService] Heure NTP obtenue: $ntpTime');
 
           // Mettre en cache
           _cachedNtpTime = ntpTime;
@@ -254,7 +254,7 @@ class SecureTimeService {
 
           return ntpTime;
         } catch (e) {
-          print('❌ [SecureTimeService] Échec NTP $server (tentative ${retry + 1}): $e');
+          print(' [SecureTimeService] Échec NTP $server (tentative ${retry + 1}): $e');
 
           if (retry < _maxNtpRetries - 1) {
             await Future.delayed(Duration(seconds: retry + 1));
@@ -312,7 +312,7 @@ class SecureTimeService {
         await _prefs!.setInt(_keySessionCounter, _sessionCounter!);
       }
 
-      print('📊 [SecureTimeService] Session #$_sessionCounter');
+      print('');
     } catch (e) {
       print('⚠️  [SecureTimeService] Erreur compteur sessions: $e');
     }
@@ -325,7 +325,7 @@ class SecureTimeService {
       final lastCheckStr = await _secureStorage.read(key: _keyLastCheckTime);
       if (lastCheckStr != null) {
         _lastCheckTime = DateTime.parse(lastCheckStr);
-        print('📅 [SecureTimeService] Dernière vérification: $_lastCheckTime');
+        print('');
       }
 
       // Charger lastNtpTime
@@ -333,14 +333,14 @@ class SecureTimeService {
       if (lastNtpStr != null) {
         _cachedNtpTime = DateTime.parse(lastNtpStr);
         _cachedNtpTimestamp = _lastCheckTime; // Approximation
-        print('🌐 [SecureTimeService] Dernier NTP: $_cachedNtpTime');
+        print(' [SecureTimeService] Dernier NTP: $_cachedNtpTime');
       }
 
       // Charger sessionCounter
       final sessionCounterStr = await _secureStorage.read(key: _keySessionCounter);
       if (sessionCounterStr != null) {
         _sessionCounter = int.tryParse(sessionCounterStr);
-        print('📊 [SecureTimeService] Compteur sessions: $_sessionCounter');
+        print('');
       }
 
       // Vérifier la cohérence avec SharedPreferences
@@ -374,7 +374,7 @@ class SecureTimeService {
         await _prefs!.setString(_keyFirstActivation, activationTime.toIso8601String());
       }
 
-      print('🎯 [SecureTimeService] Première activation enregistrée: $activationTime');
+      print(' [SecureTimeService] Première activation enregistrée: $activationTime');
     } catch (e) {
       print('⚠️  [SecureTimeService] Erreur enregistrement activation: $e');
     }
@@ -435,7 +435,7 @@ class SecureTimeService {
       _lastCheckTime = null;
       _sessionCounter = null;
 
-      print('🧹 [SecureTimeService] Toutes les données nettoyées');
+      print('Y [SecureTimeService] Toutes les données nettoyées');
     } catch (e) {
       print('⚠️  [SecureTimeService] Erreur nettoyage: $e');
     }

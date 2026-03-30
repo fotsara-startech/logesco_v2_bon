@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
 /// Widget d'explication du calcul de la marge
@@ -39,11 +39,11 @@ class MarginExplanationWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Étapes du calcul
+            // tapes du calcul
             _buildCalculationStep(
               '1. Revenus des Ventes',
               balance.totalRevenueFormatted,
-              'Prix de vente × Quantités vendues',
+              'Prix de vente  Quantités vendues',
               Colors.green.shade600,
               Icons.attach_money,
             ),
@@ -52,7 +52,7 @@ class MarginExplanationWidget extends StatelessWidget {
             _buildCalculationStep(
               '2. Coût des Marchandises',
               '- ${balance.totalCostOfGoodsFormatted}',
-              'Prix d\'achat × Quantités vendues',
+              'Prix d\'achat  Quantités vendues',
               Colors.orange.shade600,
               Icons.shopping_basket,
             ),
@@ -193,7 +193,7 @@ class MarginExplanationWidget extends StatelessWidget {
               _buildExplanationSection(
                 'Marge en %',
                 'La marge en pourcentage permet de comparer la rentabilité sur différentes périodes.',
-                'Formule: (Bénéfice / Chiffre d\'Affaires) × 100',
+                'Formule: (Bénéfice / Chiffre d\'Affaires)  100',
                 Colors.purple.shade600,
               ),
             ],

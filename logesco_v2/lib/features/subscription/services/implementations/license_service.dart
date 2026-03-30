@@ -1,4 +1,4 @@
-import '../interfaces/i_license_service.dart';
+﻿import '../interfaces/i_license_service.dart';
 import '../interfaces/i_device_service.dart';
 import '../../models/license_data.dart';
 import '../../models/license_key.dart';
@@ -308,15 +308,15 @@ class LicenseService implements ILicenseService {
       // Format: userId-type-issued-expires-device
       final dataToSign = '${payload.userId}-${payload.subscriptionType}-${payload.issued}-${payload.expires}-${payload.device}';
 
-      print('🔐 [LicenseService] Validation de signature');
+      print('');
       print('   Données à signer: $dataToSign');
       print('   Longueur signature: ${payload.signature.length} caractères');
 
-      // MODE DÉVELOPPEMENT : Essayer d'abord la vérification sans clé publique
+      // MODE DVELOPPEMENT : Essayer d'abord la vérification sans clé publique
       // Cela permet de valider les signatures de développement directement
       final devModeValid = await _cryptoService.verifySignatureWithActiveKey(dataToSign, payload.signature);
       if (devModeValid) {
-        print('✅ [LicenseService] Signature validée (mode développement)');
+        print(' [LicenseService] Signature validée (mode développement)');
         return true;
       }
 
@@ -330,18 +330,18 @@ class LicenseService implements ILicenseService {
         return _cryptoService.verifySignature(dataToSign, payload.signature, '');
       }
 
-      print('🔑 [LicenseService] Utilisation de la clé publique active');
+      print('✅ [LicenseService] Utilisation de la clé publique active');
       final isValid = _cryptoService.verifySignature(dataToSign, payload.signature, publicKey);
 
       if (isValid) {
-        print('✅ [LicenseService] Signature validée (mode production)');
+        print(' [LicenseService] Signature validée (mode production)');
       } else {
-        print('❌ [LicenseService] Signature invalide');
+        print(' [LicenseService] Signature invalide');
       }
 
       return isValid;
     } catch (e) {
-      print('❌ [LicenseService] Erreur validation signature: $e');
+      print(' [LicenseService] Erreur validation signature: $e');
       return false;
     }
   }
@@ -366,7 +366,7 @@ class LicenseService implements ILicenseService {
       final secureTime = timeResult.trustedTime;
       final expirationDate = DateTime.parse(payload.expires);
 
-      print('🕐 [LicenseService] Validation expiration:');
+      print('Y. [LicenseService] Validation expiration:');
       print('   Heure sécurisée: $secureTime');
       print('   Date expiration: $expirationDate');
       print('   NTP disponible: ${timeResult.ntpAvailable}');
@@ -413,7 +413,7 @@ class LicenseService implements ILicenseService {
         warnings,
       );
     } on TimeValidationException catch (e) {
-      print('❌ [LicenseService] Erreur validation temps: $e');
+      print(' [LicenseService] Erreur validation temps: $e');
       return LicenseValidationResult.failure(
         LicenseException(
           LicenseError.expiredLicense,
@@ -421,7 +421,7 @@ class LicenseService implements ILicenseService {
         ),
       );
     } catch (e) {
-      print('❌ [LicenseService] Erreur validation expiration: $e');
+      print(' [LicenseService] Erreur validation expiration: $e');
       return LicenseValidationResult.failure(
         LicenseException(
           LicenseError.invalidKey,
@@ -540,11 +540,11 @@ class LicenseService implements ILicenseService {
       _consecutiveErrors++;
       _lastErrorTime = DateTime.now();
 
-      print('❌ [LicenseService] Erreur $operationName (tentative $_consecutiveErrors): $e');
+      print(' [LicenseService] Erreur $operationName (tentative $_consecutiveErrors): $e');
 
       // Si on a atteint le maximum d'erreurs consécutives, ne pas réessayer
       if (_consecutiveErrors >= _maxConsecutiveErrors) {
-        print('🚫 [LicenseService] Nombre maximum d\'erreurs atteint pour $operationName');
+        print(' [LicenseService] Nombre maximum d\'erreurs atteint pour $operationName');
 
         // Créer une réponse d'erreur appropriée selon le type de retour
         if (T == LicenseValidationResult) {
@@ -561,7 +561,7 @@ class LicenseService implements ILicenseService {
 
       // Tentative de récupération automatique
       try {
-        print('🔄 [LicenseService] Tentative de récupération pour $operationName...');
+        print('');
 
         // Attendre un délai progressif avant de réessayer
         final delay = Duration(milliseconds: 500 * _consecutiveErrors);
@@ -577,11 +577,11 @@ class LicenseService implements ILicenseService {
         // Succès de la récupération
         _consecutiveErrors = 0;
         _lastErrorTime = null;
-        print('✅ [LicenseService] Récupération réussie pour $operationName');
+        print(' [LicenseService] Récupération réussie pour $operationName');
 
         return result;
       } catch (recoveryError) {
-        print('❌ [LicenseService] Échec de récupération pour $operationName: $recoveryError');
+        print(' [LicenseService] Échec de récupération pour $operationName: $recoveryError');
 
         // Si c'est une LicenseValidationResult, retourner un échec
         if (T == LicenseValidationResult) {

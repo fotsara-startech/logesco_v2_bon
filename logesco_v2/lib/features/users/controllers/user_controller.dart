@@ -42,7 +42,7 @@ class UserController extends GetxController with PermissionMixin {
         return;
       }
 
-      print('🚀 [UserController] Début loadUsers()');
+      print('👥 [UserController] Début loadUsers()');
 
       isLoading.value = true;
 
@@ -72,9 +72,9 @@ class UserController extends GetxController with PermissionMixin {
   /// Charger tous les rôles disponibles
   Future<void> loadRoles() async {
     try {
-      print('🔐 [UserController] Début loadRoles()');
+      print('🔑 [UserController] Début loadRoles()');
       final roleList = await _userService.getAllRoles();
-      print('🔐 [UserController] Rôles récupérés: ${roleList.length}');
+      print('🔑 [UserController] Rôles récupérés: ${roleList.length}');
 
       if (roleList.isEmpty) {
         print('⚠️ [UserController] Aucun rôle trouvé en base de données');
@@ -122,7 +122,7 @@ class UserController extends GetxController with PermissionMixin {
       // Vérifier les permissions
       requirePermission('users.create');
 
-      print('👤 [UserController] Début createUser pour: ${user.nomUtilisateur}');
+      print('➕ [UserController] Début createUser pour: ${user.nomUtilisateur}');
       isLoading.value = true;
 
       final newUser = await _userService.createUser(user, motDePasse ?? 'password123');

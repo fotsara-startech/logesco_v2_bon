@@ -29,7 +29,7 @@ class SupplierFormController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    print('🔧 Initialisation SupplierFormController');
+    print('📝 Initialisation SupplierFormController');
     _initializeForm();
   }
 
@@ -114,7 +114,7 @@ class SupplierFormController extends GetxController {
 
     try {
       isLoading.value = true;
-      print('🔄 Début de la sauvegarde...');
+      print('📝 Début de la sauvegarde...');
 
       final supplierForm = SupplierForm(
         nom: nomController.text.trim(),
@@ -124,7 +124,7 @@ class SupplierFormController extends GetxController {
         adresse: adresseController.text.trim().isEmpty ? null : adresseController.text.trim(),
       );
 
-      print('📋 Données du formulaire: ${supplierForm.toJson()}');
+      print('📦 Données du formulaire: ${supplierForm.toJson()}');
 
       Supplier savedSupplier;
 
@@ -163,13 +163,13 @@ class SupplierFormController extends GetxController {
       try {
         final supplierController = Get.find<SupplierController>();
         supplierController.onSupplierSaved(savedSupplier, isEdit: isEditing.value);
-        print('📞 Contrôleur principal notifié avec succès');
+        print('✅ Contrôleur principal notifié avec succès');
       } catch (e) {
         print('⚠️ Impossible de notifier le contrôleur principal: $e');
       }
 
       // Retourner à la liste avec le fournisseur créé/modifié
-      print('🔙 Retour vers la liste avec le fournisseur: ${savedSupplier.nom}');
+      print('📄 Retour vers la liste avec le fournisseur: ${savedSupplier.nom}');
 
       // Attendre un peu pour que le snackbar s'affiche
       await Future.delayed(const Duration(milliseconds: 800));
@@ -181,11 +181,11 @@ class SupplierFormController extends GetxController {
       } catch (e) {
         print('❌ Erreur lors du retour avec Get.back(): $e');
         try {
-          print('🔄 Tentative avec Get.offNamed vers /suppliers');
+          print('📝 Tentative avec Get.offNamed vers /suppliers');
           Get.offNamed('/suppliers');
         } catch (e2) {
           print('❌ Erreur avec Get.offNamed: $e2');
-          print('🔄 Tentative finale avec Get.offAllNamed');
+          print('📝 Tentative finale avec Get.offAllNamed');
           Get.offAllNamed('/suppliers');
         }
       }

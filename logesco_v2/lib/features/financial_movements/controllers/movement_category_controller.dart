@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/movement_category.dart';
 import '../models/loading_state.dart';
 import '../services/financial_movement_service.dart';
@@ -74,7 +74,7 @@ class MovementCategoryController extends GetxController with LoadingStateMixin {
 
       // En cas d'erreur, utilise les catégories par défaut
       categories.value = MovementCategory.defaultCategories;
-      print('📦 Utilisation des catégories par défaut suite à une erreur');
+      print('');
     });
   }
 

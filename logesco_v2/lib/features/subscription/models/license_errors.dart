@@ -1,4 +1,4 @@
-/// Types d'erreurs liées aux licences
+﻿/// Types d'erreurs liées aux licences
 enum LicenseError {
   /// Clé d'activation invalide ou malformée
   invalidKey,

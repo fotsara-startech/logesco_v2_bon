@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
@@ -475,9 +475,9 @@ class _UserFormViewState extends State<UserFormView> {
         Expanded(
           child: OutlinedButton(
             onPressed: () {
-              print('🔙 [UserFormView] Bouton Annuler pressé');
+              print('?? [UserFormView] Bouton Annuler pressé');
               Get.back();
-              print('🔙 [UserFormView] Navigation arrière Annuler terminée');
+              print('?? [UserFormView] Navigation arrière Annuler terminée');
             },
             child: Text('common_cancel'.tr),
           ),
@@ -502,15 +502,15 @@ class _UserFormViewState extends State<UserFormView> {
   }
 
   void _saveUser() async {
-    print('💾 [UserFormView] Début _saveUser()');
+    print('?? [UserFormView] Début _saveUser()');
 
     if (!_formKey.currentState!.validate()) {
-      print('❌ [UserFormView] Validation du formulaire échouée');
+      print('? [UserFormView] Validation du formulaire échouée');
       return;
     }
 
     if (_selectedRoleNom == null || controller.availableRoles.isEmpty) {
-      print('❌ [UserFormView] Aucun rôle sélectionné ou disponible');
+      print('? [UserFormView] Aucun rôle sélectionné ou disponible');
       return;
     }
 
@@ -520,7 +520,7 @@ class _UserFormViewState extends State<UserFormView> {
       orElse: () => controller.availableRoles.first,
     );
 
-    print('👤 [UserFormView] Rôle sélectionné: ${selectedRole.displayName}');
+    print('?? [UserFormView] Rôle sélectionné: ${selectedRole.displayName}');
 
     final user = User(
       id: controller.selectedUser.value?.id,
@@ -533,7 +533,7 @@ class _UserFormViewState extends State<UserFormView> {
     final password = _passwordController.text.isNotEmpty ? _passwordController.text : null;
     final isEditing = controller.selectedUser.value != null;
 
-    print('💾 [UserFormView] ${isEditing ? 'Modification' : 'Création'} utilisateur: ${user.nomUtilisateur}');
+    print('?? [UserFormView] ${isEditing ? 'Modification' : 'Création'} utilisateur: ${user.nomUtilisateur}');
 
     bool success;
     if (isEditing) {
@@ -542,14 +542,14 @@ class _UserFormViewState extends State<UserFormView> {
       success = await controller.createUser(user, motDePasse: password);
     }
 
-    print('📊 [UserFormView] Résultat de sauvegarde: $success');
+    print('?? [UserFormView] Résultat de sauvegarde: $success');
 
     if (success) {
-      print('✅ [UserFormView] Navigation arrière...');
+      print('? [UserFormView] Navigation arrière...');
       Get.back();
-      print('✅ [UserFormView] Navigation arrière terminée');
+      print('? [UserFormView] Navigation arrière terminée');
     } else {
-      print('❌ [UserFormView] Échec de sauvegarde, pas de navigation');
+      print('? [UserFormView] Échec de sauvegarde, pas de navigation');
     }
   }
 

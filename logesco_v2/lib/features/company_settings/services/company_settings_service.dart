@@ -1,7 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/config/api_config.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/company_profile.dart';
@@ -42,24 +42,24 @@ class CompanySettingsService {
       }
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/company-settings'),
+        Uri.parse('${AppConfig.currentBaseUrl}/company-settings'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
       );
 
-      print('📊 Company Profile API Response Status: ${response.statusCode}');
-      print('📊 Company Profile API Response Body: ${response.body}');
+      print('');
+      print('');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        print('📊 Parsing company profile from API response...');
+        print('');
 
         // Le backend retourne maintenant les données dans 'data'
         final companyData = jsonData['data'];
@@ -81,16 +81,16 @@ class CompanySettingsService {
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
 
-        print('✅ === PROFIL D\'ENTREPRISE RÉCUPÉRÉ DEPUIS L\'API ===');
-        print('✅ Nom: ${profile.name}');
-        print('✅ Adresse: ${profile.address}');
-        print('✅ Localisation: ${profile.location ?? 'Non définie'}');
-        print('✅ Téléphone: ${profile.phone ?? 'Non défini'}');
-        print('✅ Email: ${profile.email ?? 'Non défini'}');
-        print('✅ NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
-        print('✅ Logo: ${profile.logo ?? 'Non défini'}');
-        print('✅ Slogan: ${profile.slogan ?? 'Non défini'}');
-        print('✅ ================================================');
+        print(' === PROFIL D\'ENTREPRISE RCUPRÀ DEPUIS L\'API ===');
+        print(' Nom: ${profile.name}');
+        print(' Adresse: ${profile.address}');
+        print(' Localisation: ${profile.location ?? 'Non définie'}');
+        print(' Téléphone: ${profile.phone ?? 'Non défini'}');
+        print(' Email: ${profile.email ?? 'Non défini'}');
+        print(' NUI/RCCM: ${profile.nuiRccm ?? 'Non défini'}');
+        print(' Logo: ${profile.logo ?? 'Non défini'}');
+        print(' Slogan: ${profile.slogan ?? 'Non défini'}');
+        print(' ================================================');
 
         // Mettre en cache le profil
         await _cacheProfile(profile);
@@ -107,7 +107,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du profil');
       }
     } catch (e) {
-      print('❌ Error getting company profile: $e');
+      print(' Error getting company profile: $e');
       if (e.toString().contains('Timeout')) {
         return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
@@ -120,21 +120,21 @@ class CompanySettingsService {
   /// Récupère le profil depuis l'endpoint public (sans authentification)
   Future<ApiResponse<CompanyProfile>> _getCompanyProfileFromPublicEndpoint() async {
     try {
-      print('🌐 [DEBUG] Récupération depuis l\'endpoint public...');
+      print(' [DEBUG] Récupération depuis l\'endpoint public...');
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/company-settings/public'),
+        Uri.parse('${AppConfig.currentBaseUrl}/company-settings/public'),
         headers: {
           'Content-Type': 'application/json',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
       );
 
-      print('🌐 [DEBUG] Réponse endpoint public: ${response.statusCode}');
+      print(' [DEBUG] Réponse endpoint public: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -157,7 +157,7 @@ class CompanySettingsService {
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
         );
 
-        print('✅ [DEBUG] CompanyProfile créé depuis endpoint public: ${profile.name}');
+        print(' [DEBUG] CompanyProfile créé depuis endpoint public: ${profile.name}');
 
         // Mettre en cache le profil
         await _cacheProfile(profile);
@@ -169,7 +169,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: 'Erreur lors de la récupération du profil depuis l\'endpoint public');
       }
     } catch (e) {
-      print('❌ [ERROR] Erreur endpoint public: $e');
+      print(' [ERROR] Erreur endpoint public: $e');
       if (e.toString().contains('Timeout')) {
         return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
@@ -272,11 +272,11 @@ class CompanySettingsService {
       }
 
       print('Creating company profile with data: ${json.encode(request.toJson())}');
-      print('API URL: ${ApiConfig.baseUrl}/company-settings');
+      print('API URL: ${AppConfig.currentBaseUrl}/company-settings');
 
       final response = await http
           .put(
-        Uri.parse('${ApiConfig.baseUrl}/company-settings'),
+        Uri.parse('${AppConfig.currentBaseUrl}/company-settings'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -284,7 +284,7 @@ class CompanySettingsService {
         body: json.encode(request.toJson()),
       )
           .timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -324,7 +324,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la création du profil');
       }
     } catch (e) {
-      print('❌ Error creating company profile: $e');
+      print(' Error creating company profile: $e');
       if (e.toString().contains('Timeout')) {
         return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
@@ -371,7 +371,7 @@ class CompanySettingsService {
 
       final response = await http
           .put(
-        Uri.parse('${ApiConfig.baseUrl}/company-settings'),
+        Uri.parse('${AppConfig.currentBaseUrl}/company-settings'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -379,7 +379,7 @@ class CompanySettingsService {
         body: json.encode(request.toJson()),
       )
           .timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -419,7 +419,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la mise à jour du profil');
       }
     } catch (e) {
-      print('❌ Error updating company profile: $e');
+      print(' Error updating company profile: $e');
       if (e.toString().contains('Timeout')) {
         return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
@@ -438,13 +438,13 @@ class CompanySettingsService {
       }
 
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/company-settings'),
+        Uri.parse('${AppConfig.currentBaseUrl}/company-settings'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-        ApiConfig.connectTimeout,
+        AppConfig.connectTimeout,
         onTimeout: () {
           throw Exception('Timeout: Le serveur ne répond pas');
         },
@@ -462,7 +462,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la suppression du profil');
       }
     } catch (e) {
-      print('❌ Error deleting company profile: $e');
+      print(' Error deleting company profile: $e');
       if (e.toString().contains('Timeout')) {
         return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
@@ -508,7 +508,7 @@ class CompanySettingsService {
         }
       }
     } catch (e) {
-      print('❌ Error reading cached profile: $e');
+      print(' Error reading cached profile: $e');
       await _clearCache(); // Supprimer le cache corrompu
     }
     return null;
@@ -524,9 +524,9 @@ class CompanySettingsService {
       await prefs.setString(_cacheKey, jsonData);
       await prefs.setInt(_cacheTimestampKey, timestamp);
 
-      print('✅ Company profile cached successfully');
+      print(' Company profile cached successfully');
     } catch (e) {
-      print('❌ Error caching profile: $e');
+      print(' Error caching profile: $e');
     }
   }
 
@@ -536,9 +536,9 @@ class CompanySettingsService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
       await prefs.remove(_cacheTimestampKey);
-      print('✅ Company profile cache cleared');
+      print(' Company profile cache cleared');
     } catch (e) {
-      print('❌ Error clearing cache: $e');
+      print(' Error clearing cache: $e');
     }
   }
 
@@ -560,7 +560,7 @@ class CompanySettingsService {
         return now.difference(cacheTime).inMinutes;
       }
     } catch (e) {
-      print('❌ Error getting cache age: $e');
+      print(' Error getting cache age: $e');
     }
     return null;
   }

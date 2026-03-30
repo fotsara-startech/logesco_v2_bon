@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:get/get.dart';
 import '../models/stock_model.dart';
 import '../services/inventory_service.dart';

@@ -11,7 +11,7 @@ class UserService extends GetxService {
   /// Récupérer tous les utilisateurs
   Future<List<User>> getAllUsers() async {
     try {
-      print('🔍 [UserService] Début getAllUsers()');
+      print('👥 [UserService] Début getAllUsers()');
       print('🔑 [UserService] Token présent: ${_apiClient.hasAuthToken}');
 
       final response = await _apiClient.get<Map<String, dynamic>>(_endpoint);
@@ -22,7 +22,7 @@ class UserService extends GetxService {
       if (response.isSuccess && response.data != null) {
         final dynamic dataField = response.data!['data'];
         print('📋 [UserService] Data Field: $dataField');
-        print('� [UserSvervice] Data Field Type: ${dataField.runtimeType}');
+        print('ℹ️ [UserService] Data Field Type: ${dataField.runtimeType}');
 
         if (dataField is List) {
           final List<dynamic> data = dataField;

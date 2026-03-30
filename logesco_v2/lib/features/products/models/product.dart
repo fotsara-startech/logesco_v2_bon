@@ -1,4 +1,4 @@
-/// Modèle de données pour un produit
+﻿/// Modèle de données pour un produit
 class Product {
   final int id;
   final String reference;
@@ -39,7 +39,7 @@ class Product {
   /// Crée un produit à partir d'un JSON
   factory Product.fromJson(Map<String, dynamic> json) {
     // Debug: Afficher les données reçues pour les catégories
-    print('🔍 Product.fromJson - Données catégorie:');
+    print('');
     print('  - categorie: ${json['categorie']}');
     print('  - categorieId: ${json['categorieId']}');
     print('  - JSON complet: $json');
