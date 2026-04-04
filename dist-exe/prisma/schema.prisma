@@ -25,6 +25,7 @@ model Utilisateur {
   inventaires           StockInventory[]
   role                  UserRole?           @relation(fields: [roleId], references: [id])
   ventesVendeur         Vente[]
+  proformasVendeur      VenteProforma[]
 
   @@index([email], map: "idx_utilisateurs_email")
   @@index([nomUtilisateur], map: "idx_utilisateurs_nom")
@@ -60,6 +61,7 @@ model Client {
   dateModification DateTime      @updatedAt @map("date_modification")
   compte           CompteClient?
   ventes           Vente[]
+  proformas        VenteProforma[]
 
   @@index([nom, prenom], map: "idx_clients_nom_prenom")
   @@index([email], map: "idx_clients_email")
@@ -121,6 +123,7 @@ model Produit {
   datesPeremption    DatePeremption[]
   detailsCommandes   DetailCommandeApprovisionnement[]
   detailsVentes      DetailVente[]
+  detailsProformas   DetailVenteProforma[]
   inventoryItems     InventoryItem[]
   mouvementsStock    MouvementStock[]
   categorie          Category?                         @relation(fields: [categorieId], references: [id])
@@ -514,6 +517,49 @@ model DatePeremption {
   @@index([estEpuise], map: "idx_dates_peremption_epuise")
   @@index([produitId, datePeremption], map: "idx_dates_peremption_produit_date")
   @@map("dates_peremption")
+}
+
+model VenteProforma {
+  id               Int                    @id @default(autoincrement())
+  numeroProforma   String                 @unique @map("numero_proforma")
+  clientId         Int?                   @map("client_id")
+  vendeurId        Int?                   @map("vendeur_id")
+  dateVente        DateTime?              @map("date_vente")
+  sousTotal        Float                  @map("sous_total")
+  montantRemise    Float                  @default(0) @map("montant_remise")
+  montantTva       Float                  @default(0) @map("montant_tva")
+  tauxTva          Float?                 @map("taux_tva")
+  montantTotal     Float                  @map("montant_total")
+  statut           String                 @default("brouillon")
+  modePaiement     String                 @default("comptant") @map("mode_paiement")
+  dateCreation     DateTime               @default(now()) @map("date_creation")
+  dateModification DateTime               @updatedAt @map("date_modification")
+  client           Client?                @relation(fields: [clientId], references: [id])
+  vendeur          Utilisateur?           @relation(fields: [vendeurId], references: [id])
+  details          DetailVenteProforma[]
+
+  @@index([statut], map: "idx_proformas_statut")
+  @@index([clientId], map: "idx_proformas_client")
+  @@index([vendeurId], map: "idx_proformas_vendeur")
+  @@index([dateCreation], map: "idx_proformas_date")
+  @@map("ventes_proforma")
+}
+
+model DetailVenteProforma {
+  id                  Int           @id @default(autoincrement())
+  proformaId          Int           @map("proforma_id")
+  produitId           Int           @map("produit_id")
+  quantite            Int
+  prixUnitaire        Float         @map("prix_unitaire")
+  prixAffiche         Float         @map("prix_affiche")
+  remiseAppliquee     Float         @default(0) @map("remise_appliquee")
+  justificationRemise String?       @map("justification_remise")
+  prixTotal           Float         @map("prix_total")
+  proforma            VenteProforma @relation(fields: [proformaId], references: [id], onDelete: Cascade)
+  produit             Produit       @relation(fields: [produitId], references: [id])
+
+  @@index([proformaId], map: "idx_details_proforma_proforma")
+  @@map("details_ventes_proforma")
 }
 
 model License {

@@ -46,7 +46,7 @@ class AppTheme {
       ),
 
       // Configuration des cartes
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 2,
         shape: RoundedRectangleBorder(

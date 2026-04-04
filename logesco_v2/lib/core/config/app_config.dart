@@ -5,7 +5,8 @@ class AppConfig {
   // ============================================================================
 
   /// Mode client (true) ou serveur (false)
-  static const bool isClientMode = true;
+  // static const bool isClientMode = true;
+  static const bool isClientMode = false;
 
   // ============================================================================
   // 2. CONFIGURATION DU SERVEUR
@@ -30,6 +31,9 @@ class AppConfig {
     _customBaseUrl = url;
   }
 
+  /// Contrôle des licences activé (true = validation licence requise)
+  static const bool enableLicenseControl = true;
+
   /// Réinitialise l'URL à la valeur par défaut
   static void resetBaseUrl() {
     _customBaseUrl = baseUrl;
@@ -53,9 +57,6 @@ class AppConfig {
 
   /// Utilisation de données de test
   static const bool useTestData = false;
-
-  /// Contrôle des licences activé (true = validation licence requise)
-  static const bool enableLicenseControl = true;
 
   // ============================================================================
   // 4. TIMEOUTS

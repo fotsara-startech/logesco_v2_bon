@@ -245,19 +245,25 @@ class _ClientsPageState extends ConsumerState<ClientsPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.key),
+                            icon: const Icon(Icons.key, size: 18),
                             onPressed: () => context.go('/licenses/new?clientId=${client.id}'),
                             tooltip: 'Générer une licence',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.edit),
+                            icon: const Icon(Icons.edit, size: 18),
                             onPressed: () => context.go('/clients/edit/${client.id}'),
                             tooltip: 'Modifier',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete),
+                            icon: const Icon(Icons.delete, size: 18),
                             onPressed: () => _deleteClient(client),
                             tooltip: 'Supprimer',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                           ),
                         ],
                       ),

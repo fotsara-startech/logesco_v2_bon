@@ -58,6 +58,7 @@ const { createCashRegistersRouter } = require('./routes/cash-registers');
 const { createCashSessionsRouter } = require('./routes/cash-sessions');
 const licensesRouter = require('./routes/licenses');
 const { createExpirationDatesRouter } = require('./routes/expiration-dates');
+const { createProformaRouter } = require('./routes/proformas');
 
 /**
  * Serveur principal LOGESCO API
@@ -377,6 +378,10 @@ class LogescoServer {
       authService: this.authService,
       prisma: this.models.prisma 
     }));
+    this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
+      prisma: this.models.prisma,
+      authService: this.authService,
+    }));
     this.app.use(`/api/${apiVersion}/discount-reports`, createDiscountReportsRouter({ 
       ...this.models, 
       authService: this.authService,
@@ -503,12 +508,13 @@ class LogescoServer {
    * Démarre l'écoute du serveur
    */
   async listen() {
+    const host = process.env.HOST || '0.0.0.0';
     return new Promise((resolve, reject) => {
-      this.server = this.app.listen(environment.port, (err) => {
+      this.server = this.app.listen(environment.port, host, (err) => {
         if (err) {
           reject(err);
         } else {
-          console.log(`🌐 Serveur en écoute sur le port ${environment.port}`);
+          console.log(`🌐 Serveur en écoute sur ${host}:${environment.port}`);
           console.log(`📡 API disponible sur: http://localhost:${environment.port}/api/${environment.apiVersion}`);
           console.log(`🏥 Health check: http://localhost:${environment.port}/health`);
           resolve();
