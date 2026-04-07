@@ -1844,6 +1844,8 @@ const Map<String, String> esTranslations = {
   'procurement_filter_apply': 'Aplicar',
   'procurement_confirm_reception': 'Confirmar recepción',
   'procurement_confirm_reception_message': '¿Está seguro de que desea registrar esta recepción?',
+  'procurement_products_will_be_received': '@count producto(s) serán recibidos.',
+  'procurement_stock_auto_update': 'Esta acción actualizará automáticamente el stock.',
   'procurement_receive_action': 'Recibir',
   'procurement_qty_received': 'Cant. recibida',
   'procurement_order': 'Pedido',
@@ -2731,6 +2733,16 @@ const Map<String, String> esTranslations = {
   'stock_thousand': 'K F',
 
   // Missing stock detail keys
+  'stock_detail_product_info': 'Detalle del producto',
+  'stock_status_active': 'Activo',
+  'stock_status_inactive': 'Inactivo',
+  'stock_no_movements': 'No se encontraron movimientos',
+  'time_today': 'Hoy',
+  'time_yesterday': 'Ayer',
+  'time_just_now': 'Ahora mismo',
+  'time_ago_days': 'hace @count d',
+  'time_ago_hours': 'hace @count h',
+  'time_ago_minutes': 'hace @count min',
   'stock_product_name': 'Nombre del producto',
   'stock_product_reference': 'Referencia',
   'stock_product_min_threshold': 'Umbral mínimo',
@@ -2795,6 +2807,7 @@ const Map<String, String> esTranslations = {
   'common_apply': 'Aplicar',
   // 'common_close': 'Cerrar',
   // 'common_cancel': 'Cancelar',
+  'common_confirm': 'Confirmar',
   // 'common_save': 'Guardar',
 
   // ============================================================================

@@ -4,6 +4,7 @@ import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
 import '../../../core/widgets/permission_widget.dart';
 import 'user_form_view.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Vue de la liste des utilisateurs
 class UserListView extends StatelessWidget {
@@ -355,11 +356,11 @@ class UserListView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               if (passwordController.text.isEmpty) {
-                Get.snackbar('common_error'.tr, 'users_password_empty'.tr);
+                SnackbarHelper.error('users_password_empty'.tr);
                 return;
               }
               if (passwordController.text != confirmPasswordController.text) {
-                Get.snackbar('common_error'.tr, 'users_passwords_not_match'.tr);
+                SnackbarHelper.error('users_passwords_not_match'.tr);
                 return;
               }
               Get.back();

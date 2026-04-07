@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
-import '../widgets/stock_movements_view.dart';
+import '../services/inventory_service.dart';
+import '../../../core/services/auth_service.dart';
 import 'stock_adjustment_page.dart';
 
 class StockDetailPage extends StatefulWidget {
@@ -22,15 +24,23 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
   Stock? _currentStock;
   bool _isLoading = false;
 
+  // Mouvements locaux — chargés indépendamment du controller partagé
+  final List<StockMovement> _movements = [];
+  bool _isLoadingMovements = false;
+  String? _movementsError;
+
+  late final InventoryService _inventoryService;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _currentStock = widget.stock;
+    _inventoryService = InventoryService(Get.find<AuthService>());
 
-    // Utiliser addPostFrameCallback pour éviter l'erreur d'inherited widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshStockData();
+      _loadMovements();
     });
   }
 
@@ -38,6 +48,33 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadMovements() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingMovements = true;
+      _movementsError = null;
+    });
+    try {
+      final result = await _inventoryService.getStockMovements(
+        produitId: widget.stock.produitId,
+        limit: 100,
+      );
+      if (mounted) {
+        setState(() {
+          _movements
+            ..clear()
+            ..addAll(result.data);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _movementsError = e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingMovements = false);
+    }
   }
 
   Future<void> _refreshStockData() async {
@@ -63,13 +100,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
       }
     } catch (e) {
       if (mounted) {
-        Get.snackbar(
-          'error'.tr,
-          'stock_refresh_error'.trParams({'error': e.toString()}),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red[100],
-          colorText: Colors.red[800],
-        );
+        SnackbarHelper.error('stock_refresh_error'.trParams({'error': e.toString()}));
       }
     } finally {
       if (mounted) {
@@ -312,13 +343,177 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
   }
 
   Widget _buildMovementsTab(Stock stock) {
-    // Filtrer les mouvements pour ce produit spécifique
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = Get.find<InventoryGetxController>();
-      controller.applyMovementFilters(produitId: stock.produitId);
-    });
+    if (_isLoadingMovements) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_movementsError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(_movementsError!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadMovements,
+              child: Text('common_retry'.tr),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_movements.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.history, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text('stock_no_movements'.tr, style: const TextStyle(fontSize: 18)),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadMovements,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(8),
+        itemCount: _movements.length,
+        itemBuilder: (context, index) {
+          final movement = _movements[index];
+          final isPositive = movement.changementQuantite > 0;
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: _movementColor(movement.typeMouvement),
+                child: Icon(_movementIcon(movement.typeMouvement), color: Colors.white, size: 20),
+              ),
+              title: Text(
+                stock.produit?.nom ?? 'Produit inconnu',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (stock.produit?.reference != null) Text('Réf: ${stock.produit!.reference}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(_formatDate(movement.dateMouvement), style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    const SizedBox(width: 12),
+                    Icon(Icons.category, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(_movementLabel(movement.typeMouvement), style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  ]),
+                  if (movement.notes != null && movement.notes!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Icon(Icons.note, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(movement.notes!.tr, style: TextStyle(color: Colors.grey[600], fontSize: 12, fontStyle: FontStyle.italic), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
+                  ],
+                ],
+              ),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isPositive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isPositive ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      '${isPositive ? '+' : ''}${movement.changementQuantite}',
+                      style: TextStyle(color: isPositive ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(_timeAgo(movement.dateMouvement), style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-    return const StockMovementsView();
+  Color _movementColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'achat':
+      case 'approvisionnement':
+        return Colors.green;
+      case 'vente':
+        return Colors.blue;
+      case 'ajustement':
+        return Colors.orange;
+      case 'retour':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _movementIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'achat':
+      case 'approvisionnement':
+        return Icons.add_shopping_cart;
+      case 'vente':
+        return Icons.shopping_bag;
+      case 'ajustement':
+        return Icons.tune;
+      case 'retour':
+        return Icons.undo;
+      default:
+        return Icons.swap_horiz;
+    }
+  }
+
+  String _movementLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'achat':
+        return 'Achat';
+      case 'vente':
+        return 'Vente';
+      case 'ajustement':
+        return 'Ajustement';
+      case 'retour':
+        return 'Retour';
+      case 'approvisionnement':
+        return 'Approvisionnement';
+      default:
+        return type;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final d = DateTime(date.year, date.month, date.day);
+    final time = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    if (d == today) return '${'time_today'.tr} $time';
+    if (d == yesterday) return '${'time_yesterday'.tr} $time';
+    return '${date.day}/${date.month}/${date.year} $time';
+  }
+
+  String _timeAgo(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 0) return 'time_ago_days'.trParams({'count': diff.inDays.toString()});
+    if (diff.inHours > 0) return 'time_ago_hours'.trParams({'count': diff.inHours.toString()});
+    if (diff.inMinutes > 0) return 'time_ago_minutes'.trParams({'count': diff.inMinutes.toString()});
+    return 'time_just_now'.tr;
   }
 
   Widget _buildInfoRow(String label, String value) {

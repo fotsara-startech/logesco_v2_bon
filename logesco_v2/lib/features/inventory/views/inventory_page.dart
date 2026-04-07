@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import 'package:logesco_v2/features/inventory/views/stock_movement_page.dart';
 import '../controllers/inventory_controller.dart';
 import '../services/export_service.dart';
@@ -146,12 +147,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
     controller.loadStockAlerts(refresh: true);
     controller.loadMovements(refresh: true);
 
-    Get.snackbar(
-      'success'.tr,
-      'stock_data_refreshed'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
+    SnackbarHelper.success('stock_data_refreshed'.tr, duration: const Duration(seconds: 2));
   }
 
   void _showFilters() {
@@ -181,13 +177,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
     try {
       // Afficher un indicateur de chargement
-      Get.snackbar(
-        'stock_export_in_progress'.tr,
-        'stock_export_fetching'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.info('stock_export_fetching'.tr, title: 'stock_export_in_progress'.tr, duration: const Duration(seconds: 2));
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
@@ -213,22 +203,10 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'stock_export_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        SnackbarHelper.error('stock_export_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'stock_export_error_message'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
     }
   }
 
@@ -237,13 +215,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
     try {
       // Afficher un indicateur de chargement
-      Get.snackbar(
-        'stock_export_in_progress'.tr,
-        'stock_export_movements_in_progress'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.info('stock_export_movements_in_progress'.tr, title: 'stock_export_in_progress'.tr, duration: const Duration(seconds: 2));
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
@@ -269,22 +241,10 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'stock_export_movements_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        SnackbarHelper.error('stock_export_movements_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'stock_export_error_message'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
     }
   }
 

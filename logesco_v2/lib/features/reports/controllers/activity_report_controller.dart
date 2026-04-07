@@ -1,6 +1,7 @@
 ﻿import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/activity_report.dart';
 import '../services/activity_report_service.dart';
 import '../services/pdf_export_service.dart';
@@ -141,24 +142,12 @@ class ActivityReportController extends GetxController {
   /// Génère le bilan comptable
   Future<void> generateReport() async {
     if (_selectedStartDate.value == null || _selectedEndDate.value == null) {
-      Get.snackbar(
-        'Erreur',
-        'Veuillez sélectionner une période valide',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Veuillez sélectionner une période valide');
       return;
     }
 
     if (_selectedStartDate.value!.isAfter(_selectedEndDate.value!)) {
-      Get.snackbar(
-        'Erreur',
-        'La date de début doit être antérieure à la date de fin',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('La date de début doit être antérieure à la date de fin');
       return;
     }
 
@@ -172,22 +161,10 @@ class ActivityReportController extends GetxController {
 
       _currentReport.value = report;
 
-      Get.snackbar(
-        'Succès',
-        'Bilan comptable généré avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Bilan comptable généré avec succès');
     } catch (e) {
       print(' Erreur lors de la génération du bilan: $e');
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de la génération du bilan: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de la génération du bilan: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -196,13 +173,7 @@ class ActivityReportController extends GetxController {
   /// Exporte le bilan en PDF
   Future<void> exportToPdf() async {
     if (_currentReport.value == null) {
-      Get.snackbar(
-        'Erreur',
-        'Aucun bilan à exporter. Veuillez d\'abord générer un bilan.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Aucun bilan à exporter. Veuillez d\'abord générer un bilan.');
       return;
     }
 
@@ -211,26 +182,13 @@ class ActivityReportController extends GetxController {
 
       final pdfFile = await _pdfService.generateActivityReportPdf(_currentReport.value!);
 
-      Get.snackbar(
-        'Succès',
-        'PDF généré avec succès: ${pdfFile.path}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-        duration: const Duration(seconds: 4),
-      );
+      SnackbarHelper.success('PDF généré avec succès: ${pdfFile.path}', duration: const Duration(seconds: 4));
 
       // Proposer d'ouvrir le fichier
       _showPdfActions(pdfFile);
     } catch (e) {
       print(' Erreur lors de l\'export PDF: $e');
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export PDF: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de l\'export PDF: $e');
     } finally {
       _isGeneratingPdf.value = false;
     }
@@ -306,24 +264,11 @@ class ActivityReportController extends GetxController {
     try {
       final result = await OpenFile.open(pdfFile.path);
       if (result.type != ResultType.done) {
-        Get.snackbar(
-          'Information',
-          'Impossible d\'ouvrir le PDF automatiquement. Fichier sauvegardé dans: ${pdfFile.path}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.blue.shade100,
-          colorText: Colors.blue.shade800,
-          duration: const Duration(seconds: 5),
-        );
+        SnackbarHelper.info('Impossible d\'ouvrir le PDF automatiquement. Fichier sauvegardé dans: ${pdfFile.path}', title: 'Information', duration: const Duration(seconds: 5));
       }
     } catch (e) {
       print(' Erreur lors de l\'ouverture du PDF: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le PDF: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le PDF: $e');
     }
   }
 
@@ -337,13 +282,7 @@ class ActivityReportController extends GetxController {
       );
     } catch (e) {
       print(' Erreur lors du partage du PDF: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de partager le PDF: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de partager le PDF: $e');
     }
   }
 

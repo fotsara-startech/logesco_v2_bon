@@ -1,4 +1,5 @@
 ﻿import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/expiration_date.dart';
 import '../services/expiration_date_service.dart';
 
@@ -33,11 +34,7 @@ class ExpirationDateController extends GetxController {
 
       expirationDates.value = result['data'] as List<ExpirationDate>;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les dates de péremption: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de charger les dates de péremption: $e');
     } finally {
       isLoading.value = false;
     }
@@ -58,11 +55,7 @@ class ExpirationDateController extends GetxController {
         alertStats.value = result['stats'] as ExpirationAlertStats;
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les alertes: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de charger les alertes: $e');
     } finally {
       isLoading.value = false;
     }
@@ -87,20 +80,12 @@ class ExpirationDateController extends GetxController {
         notes: notes,
       );
 
-      Get.snackbar(
-        'Succès',
-        'Date de péremption ajoutée',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Date de péremption ajoutée');
 
       await loadExpirationDates(produitId: produitId);
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ajouter la date: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'ajouter la date: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -126,20 +111,12 @@ class ExpirationDateController extends GetxController {
         notes: notes,
       );
 
-      Get.snackbar(
-        'Succès',
-        'Date de péremption mise à jour',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Date de péremption mise à jour');
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de mettre à jour: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -153,20 +130,12 @@ class ExpirationDateController extends GetxController {
 
       await _service.deleteExpirationDate(id);
 
-      Get.snackbar(
-        'Succès',
-        'Date de péremption supprimée',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Date de péremption supprimée');
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de supprimer: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -180,20 +149,12 @@ class ExpirationDateController extends GetxController {
 
       await _service.markAsExhausted(id);
 
-      Get.snackbar(
-        'Succès',
-        'Marqué comme épuisé',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Marqué comme épuisé');
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de marquer comme épuisé: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de marquer comme épuisé: $e');
       return false;
     } finally {
       isLoading.value = false;

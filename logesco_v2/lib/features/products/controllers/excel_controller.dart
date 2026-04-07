@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/product.dart';
 import '../services/excel_service.dart';
 import '../services/api_product_service.dart';
@@ -56,11 +57,7 @@ class ExcelController extends GetxController {
 
       if (products.isEmpty) {
         exportStatus.value = 'Aucun produit à exporter';
-        Get.snackbar(
-          'Information',
-          'Aucun produit trouvé pour l\'export',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.info('Aucun produit trouvé pour l\'export', title: 'Information');
         return;
       }
 
@@ -94,19 +91,11 @@ class ExcelController extends GetxController {
         );
       } else {
         exportStatus.value = 'Erreur lors de l\'export';
-        Get.snackbar(
-          'Erreur',
-          'Impossible d\'exporter les produits',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.error('Impossible d\'exporter les produits');
       }
     } catch (e) {
       exportStatus.value = 'Erreur: $e';
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Erreur lors de l\'export: $e');
     } finally {
       isExporting.value = false;
     }
@@ -128,11 +117,7 @@ class ExcelController extends GetxController {
 
       if (importResult.products.isEmpty) {
         importStatus.value = 'Aucun produit valide trouvé';
-        Get.snackbar(
-          'Information',
-          'Aucun produit valide trouvé dans le fichier',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.info('Aucun produit valide trouvé dans le fichier', title: 'Information');
         return;
       }
 
@@ -148,11 +133,7 @@ class ExcelController extends GetxController {
       importStatus.value = statusMessage;
     } catch (e) {
       importStatus.value = 'Erreur: $e';
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'import: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Erreur lors de l\'import: $e');
     } finally {
       isImporting.value = false;
     }
@@ -196,13 +177,7 @@ class ExcelController extends GetxController {
         successMessage += ' avec $stocksCreated stocks initiaux';
       }
 
-      Get.snackbar(
-        'Succès',
-        successMessage,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      SnackbarHelper.success(successMessage);
 
       // Rafraîchir la liste des produits si nécessaire
       if (Get.isRegistered<GetxController>(tag: 'ProductController')) {
@@ -210,13 +185,7 @@ class ExcelController extends GetxController {
       }
     } catch (e) {
       importStatus.value = 'Erreur: $e';
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'import: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      SnackbarHelper.error('Erreur lors de l\'import: $e');
     } finally {
       isImporting.value = false;
     }
@@ -241,24 +210,12 @@ class ExcelController extends GetxController {
         exportStatus.value = 'Template généré';
         await _excelService.shareExcelFile(filePath);
 
-        Get.snackbar(
-          'Succès',
-          'Template d\'import généré et partagé',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.success('Template d\'import généré et partagé');
       } else {
-        Get.snackbar(
-          'Erreur',
-          'Impossible de générer le template',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.error('Impossible de générer le template');
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de la génération du template: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Erreur lors de la génération du template: $e');
     }
   }
 

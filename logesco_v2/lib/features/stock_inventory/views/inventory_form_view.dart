@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/inventory_model.dart';
 import '../controllers/stock_inventory_controller.dart';
 
@@ -346,13 +347,7 @@ class _InventoryFormViewState extends State<InventoryFormView> {
       // Si échec, le message d'erreur est déjà affiché par le contrôleur
       // L'utilisateur peut toujours utiliser le bouton retour de l'AppBar
     } catch (e) {
-      Get.snackbar(
-        'common_error'.tr,
-        'inventory_form_error'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('inventory_form_error'.trParams({'error': e.toString()}), title: 'common_error'.tr);
     } finally {
       setState(() {
         _isLoading = false;

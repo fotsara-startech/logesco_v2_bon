@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/inventory_model.dart';
 import '../services/stock_inventory_service.dart';
 import '../services/mock_inventory_service.dart';
@@ -52,13 +53,7 @@ class StockInventoryController extends GetxController {
       final inventoryList = AppConfig.useTestData ? await MockInventoryService.getAllInventories() : await StockInventoryService.getAllInventories();
       inventories.assignAll(inventoryList);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les inventaires: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les inventaires: $e');
     } finally {
       isLoading.value = false;
     }
@@ -117,13 +112,7 @@ class StockInventoryController extends GetxController {
             categories.clear();
             print(' Aucune catégorie disponible');
 
-            Get.snackbar(
-              'Attention',
-              'Impossible de charger les catégories. Veuillez vérifier votre connexion.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.orange.shade100,
-              colorText: Colors.orange.shade800,
-            );
+            SnackbarHelper.warning('Impossible de charger les catégories. Veuillez vérifier votre connexion.');
           }
         }
       }
@@ -150,22 +139,10 @@ class StockInventoryController extends GetxController {
       final newInventory = AppConfig.useTestData ? await MockInventoryService.createInventory(inventory) : await StockInventoryService.createInventory(inventory);
       inventories.add(newInventory);
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire créé avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire créé avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de créer l\'inventaire: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -183,22 +160,10 @@ class StockInventoryController extends GetxController {
         inventories[index] = updatedInventory;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire mis à jour avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire mis à jour avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de mettre à jour l\'inventaire: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -211,22 +176,10 @@ class StockInventoryController extends GetxController {
       AppConfig.useTestData ? await MockInventoryService.deleteInventory(inventoryId) : await StockInventoryService.deleteInventory(inventoryId);
       inventories.removeWhere((inventory) => inventory.id == inventoryId);
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire supprimé avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire supprimé avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de supprimer l\'inventaire: $e');
       return false;
     }
   }
@@ -238,13 +191,7 @@ class StockInventoryController extends GetxController {
       final items = AppConfig.useTestData ? await MockInventoryService.getInventoryItems(inventoryId) : await StockInventoryService.getInventoryItems(inventoryId);
       currentInventoryItems.assignAll(items);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les articles: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les articles: $e');
     } finally {
       isLoading.value = false;
     }
@@ -262,22 +209,10 @@ class StockInventoryController extends GetxController {
         currentInventoryItems[index] = updatedItem;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Article mis à jour avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Article mis à jour avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour l\'article: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de mettre à jour l\'article: $e');
       return false;
     }
   }
@@ -296,22 +231,10 @@ class StockInventoryController extends GetxController {
         selectedInventory.value = updatedInventory;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire démarré avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire démarré avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de démarrer l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de démarrer l\'inventaire: $e');
       return false;
     }
   }
@@ -330,22 +253,10 @@ class StockInventoryController extends GetxController {
         selectedInventory.value = updatedInventory;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire terminé avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire terminé avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de terminer l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de terminer l\'inventaire: $e');
       return false;
     }
   }
@@ -364,22 +275,10 @@ class StockInventoryController extends GetxController {
         selectedInventory.value = updatedInventory;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Inventaire clôturé avec succès - Stock équilibré',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Inventaire clôturé avec succès - Stock équilibré');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de clôturer l\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de clôturer l\'inventaire: $e');
       return false;
     }
   }
@@ -403,21 +302,9 @@ class StockInventoryController extends GetxController {
       // Générer et imprimer le PDF
       await InventoryPrintService.printCountingSheet(inventory, currentInventoryItems);
 
-      Get.snackbar(
-        'Succès',
-        'Feuille de comptage générée et envoyée à l\'imprimante',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Feuille de comptage générée et envoyée à l\'imprimante');
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de générer la feuille de comptage: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de générer la feuille de comptage: $e');
     }
   }
 
@@ -440,21 +327,9 @@ class StockInventoryController extends GetxController {
       // Générer et imprimer le rapport PDF
       await InventoryPrintService.printInventoryReport(inventory, currentInventoryItems);
 
-      Get.snackbar(
-        'Succès',
-        'Rapport d\'inventaire généré et envoyé à l\'imprimante',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Rapport d\'inventaire généré et envoyé à l\'imprimante');
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de générer le rapport d\'inventaire: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de générer le rapport d\'inventaire: $e');
     }
   }
 

@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import 'package:http/http.dart' as http;
 import '../controllers/printing_controller.dart';
 import '../models/models.dart';
@@ -229,23 +230,9 @@ class ReceiptPreviewPage extends StatelessWidget {
         name: 'Reçu_${receipt.saleNumber}.pdf',
       );
 
-      Get.snackbar(
-        'preview_print_success_title'.tr,
-        'preview_print_success_msg'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('preview_print_success_msg'.tr, title: 'preview_print_success_title'.tr, duration: const Duration(seconds: 2));
     } catch (e) {
-      Get.snackbar(
-        'preview_print_error_title'.tr,
-        '${'preview_print_error_msg'.tr}: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('${'preview_print_error_msg'.tr}: $e', duration: const Duration(seconds: 4));
     }
   }
 

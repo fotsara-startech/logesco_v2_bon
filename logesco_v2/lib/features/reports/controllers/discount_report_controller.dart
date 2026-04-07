@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/discount_report.dart';
 import '../services/discount_report_service.dart';
 
@@ -197,14 +198,7 @@ class DiscountReportController extends GetxController {
 
   /// Affiche un message d'erreur
   void _showError(String title, String? message) {
-    Get.snackbar(
-      title,
-      message ?? 'Une erreur est survenue',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.shade100,
-      colorText: Colors.red.shade800,
-      duration: const Duration(seconds: 4),
-    );
+    SnackbarHelper.error(message ?? 'Une erreur est survenue', duration: const Duration(seconds: 4));
   }
 
   /// Calcule les statistiques dérivées

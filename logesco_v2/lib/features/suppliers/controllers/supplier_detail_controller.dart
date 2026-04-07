@@ -5,6 +5,7 @@ import '../../../core/utils/exceptions.dart';
 import '../models/supplier.dart';
 import '../services/supplier_service.dart';
 import 'supplier_controller.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour la vue de détail d'un fournisseur
 class SupplierDetailController extends GetxController {
@@ -109,23 +110,11 @@ class SupplierDetailController extends GetxController {
     try {
       final canDelete = await _supplierService.canDeleteSupplier(supplier.value!.id);
       if (!canDelete) {
-        Get.snackbar(
-          'Suppression impossible',
-          'Ce fournisseur ne peut pas être supprimé car il a des commandes associées.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
+        SnackbarHelper.warning('Ce fournisseur ne peut pas être supprimé car il a des commandes associées.', title: 'Suppression impossible');
         return;
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de vérifier les dépendances du fournisseur',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de vérifier les dépendances du fournisseur');
       return;
     }
 
@@ -166,13 +155,7 @@ class SupplierDetailController extends GetxController {
             // Le contrôleur de liste n'existe pas, pas grave
           }
 
-          Get.snackbar(
-            'Succès',
-            'Fournisseur supprimé avec succès',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green.shade100,
-            colorText: Colors.green.shade800,
-          );
+          SnackbarHelper.success('Fournisseur supprimé avec succès');
 
           // Retourner à la liste
           Get.back();
@@ -185,13 +168,7 @@ class SupplierDetailController extends GetxController {
           message = e.message;
         }
 
-        Get.snackbar(
-          'Erreur',
-          message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error(message);
       } finally {
         isLoading.value = false;
       }
@@ -204,11 +181,7 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir l\'application téléphone',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir l\'application téléphone');
     }
   }
 
@@ -218,11 +191,7 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir l\'application email',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir l\'application email');
     }
   }
 
@@ -234,20 +203,12 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir l\'application cartes',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir l\'application cartes');
     }
   }
 
   /// Affiche les commandes du fournisseur
   void viewOrders() {
-    Get.snackbar(
-      'Fonctionnalité',
-      'Affichage des commandes à implémenter',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    SnackbarHelper.info('Affichage des commandes à implémenter', title: 'Fonctionnalité');
   }
 }

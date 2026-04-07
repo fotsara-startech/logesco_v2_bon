@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../models/role_model.dart' as role_model;
 import '../services/user_service.dart';
 import '../../../core/widgets/permission_widget.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour la gestion des utilisateurs
 class UserController extends GetxController with PermissionMixin {
@@ -32,13 +33,7 @@ class UserController extends GetxController with PermissionMixin {
     try {
       // Vérifier les permissions
       if (!hasPermission('users.view')) {
-        Get.snackbar(
-          'Accès refusé',
-          'Vous n\'avez pas les permissions pour voir les utilisateurs',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.info('Vous n\'avez pas les permissions pour voir les utilisateurs', title: 'Accès refusé');
         return;
       }
 
@@ -56,13 +51,7 @@ class UserController extends GetxController with PermissionMixin {
       print('❌ [UserController] Type d\'erreur: ${e.runtimeType}');
       print('❌ [UserController] Stack trace: ${StackTrace.current}');
 
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors du chargement de la liste des users: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors du chargement de la liste des users: $e');
     } finally {
       isLoading.value = false;
       print('🏁 [UserController] Fin loadUsers()');
@@ -78,13 +67,7 @@ class UserController extends GetxController with PermissionMixin {
 
       if (roleList.isEmpty) {
         print('⚠️ [UserController] Aucun rôle trouvé en base de données');
-        Get.snackbar(
-          'Attention',
-          'Aucun rôle trouvé. Veuillez créer des rôles via l\'interface de gestion des rôles.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
+        SnackbarHelper.warning('Aucun rôle trouvé. Veuillez créer des rôles via l\'interface de gestion des rôles.');
       } else {
         roleList.forEach((role) => print('   - ${role.displayName} (${role.nom})'));
       }
@@ -93,13 +76,7 @@ class UserController extends GetxController with PermissionMixin {
       print('✅ [UserController] Rôles assignés avec succès');
     } catch (e) {
       print('❌ [UserController] Erreur loadRoles: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les rôles: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les rôles: $e');
       availableRoles.clear();
     }
   }
@@ -130,13 +107,7 @@ class UserController extends GetxController with PermissionMixin {
       print('✅ [UserController] Utilisateur créé: ${newUser.nomUtilisateur}');
       users.add(newUser);
 
-      Get.snackbar(
-        'Succès',
-        'Utilisateur créé avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Utilisateur créé avec succès');
 
       print('✅ [UserController] createUser terminé avec succès');
       return true;
@@ -144,13 +115,7 @@ class UserController extends GetxController with PermissionMixin {
       print('❌ [UserController] Erreur createUser: $e');
       print('❌ [UserController] Type d\'erreur: ${e.runtimeType}');
 
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer l\'utilisateur: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de créer l\'utilisateur: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -172,22 +137,10 @@ class UserController extends GetxController with PermissionMixin {
         users[index] = updatedUser;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Utilisateur mis à jour avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Utilisateur mis à jour avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour l\'utilisateur: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de mettre à jour l\'utilisateur: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -203,22 +156,10 @@ class UserController extends GetxController with PermissionMixin {
       await _userService.deleteUser(userId);
       users.removeWhere((user) => user.id == userId);
 
-      Get.snackbar(
-        'Succès',
-        'Utilisateur supprimé avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Utilisateur supprimé avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer l\'utilisateur: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de supprimer l\'utilisateur: $e');
       return false;
     }
   }
@@ -233,21 +174,9 @@ class UserController extends GetxController with PermissionMixin {
         users[index] = updatedUser;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Statut de l\'utilisateur modifié avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Statut de l\'utilisateur modifié avec succès');
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de modifier le statut: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de modifier le statut: $e');
     }
   }
 
@@ -256,22 +185,10 @@ class UserController extends GetxController with PermissionMixin {
     try {
       await _userService.changePassword(userId, newPassword);
 
-      Get.snackbar(
-        'Succès',
-        'Mot de passe modifié avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Mot de passe modifié avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de changer le mot de passe: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de changer le mot de passe: $e');
       return false;
     }
   }

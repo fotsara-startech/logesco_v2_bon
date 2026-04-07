@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/product.dart';
 import '../services/api_product_service.dart';
@@ -104,13 +105,7 @@ class ProductController extends GetxController {
         errorMessage.value = 'Erreur lors du chargement des produits';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(errorMessage.value);
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -295,13 +290,7 @@ class ProductController extends GetxController {
           print(' Produit supprimé de la liste locale');
 
           Future.delayed(const Duration(milliseconds: 100), () {
-            Get.snackbar(
-              'Succès',
-              'Produit supprimé avec succès',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.green.shade100,
-              colorText: Colors.green.shade800,
-            );
+            SnackbarHelper.success('Produit supprimé avec succès');
           });
         } else {
           throw Exception('Échec de la suppression');
@@ -309,17 +298,13 @@ class ProductController extends GetxController {
       } catch (e) {
         print(' Erreur suppression: $e');
         String message = 'Erreur lors de la suppression du produit';
-        String title = 'Erreur';
-        Color backgroundColor = Colors.red.shade100;
-        Color textColor = Colors.red.shade800;
+        bool isInfo = false;
 
         if (e is ApiException) {
           // Vérifier si c'est une erreur de contrainte de clé étrangère
           if (e.message.contains('Foreign key constraint') || e.message.contains('utilisé dans') || e.message.contains('désactivé')) {
-            title = 'Information';
+            isInfo = true;
             message = 'Ce produit ne peut pas être supprimé car il est utilisé dans des transactions. Il a été désactivé à la place.';
-            backgroundColor = Colors.orange.shade100;
-            textColor = Colors.orange.shade800;
 
             // Rafraîchir la liste pour voir le produit désactivé
             await loadProducts();
@@ -329,14 +314,11 @@ class ProductController extends GetxController {
         }
 
         Future.delayed(const Duration(milliseconds: 100), () {
-          Get.snackbar(
-            title,
-            message,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: backgroundColor,
-            colorText: textColor,
-            duration: const Duration(seconds: 4),
-          );
+          if (isInfo) {
+            SnackbarHelper.info(message, duration: const Duration(seconds: 4));
+          } else {
+            SnackbarHelper.error(message, duration: const Duration(seconds: 4));
+          }
         });
       } finally {
         isLoading.value = false;
@@ -361,26 +343,14 @@ class ProductController extends GetxController {
         products[index] = updatedProduct;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Statut du produit mis à jour',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Statut du produit mis à jour');
     } catch (e) {
       String message = 'Erreur lors de la mise à jour du statut';
       if (e is ApiException) {
         message = e.message;
       }
 
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(message);
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/role_controller.dart';
 import '../models/role_model.dart';
 import 'role_form_page.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Page de gestion des rôles utilisateur
 class RolesPage extends GetView<RoleController> {
@@ -469,21 +470,9 @@ class RolesPage extends GetView<RoleController> {
                         final success = await controller.deleteRole(role);
                         if (success) {
                           Get.back();
-                          Get.snackbar(
-                            'common_success'.tr,
-                            'roles_deleted_success'.tr,
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: Colors.green[100],
-                            colorText: Colors.green[800],
-                          );
+                          SnackbarHelper.success('roles_deleted_success'.tr);
                         } else {
-                          Get.snackbar(
-                            'common_error'.tr,
-                            controller.error.value.isNotEmpty ? controller.error.value : 'roles_delete_error'.tr,
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: Colors.red[100],
-                            colorText: Colors.red[800],
-                          );
+                          SnackbarHelper.error(controller.error.value.isNotEmpty ? controller.error.value : 'roles_delete_error'.tr);
                         }
                       },
                 style: ElevatedButton.styleFrom(

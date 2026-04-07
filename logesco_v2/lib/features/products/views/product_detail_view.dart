@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/product.dart';
 import '../controllers/product_detail_controller.dart';
 import '../widgets/expiration_dates_list_widget.dart';
@@ -303,11 +304,7 @@ class ProductDetailView extends StatelessWidget {
             onPressed: () {
               Get.back();
               // TODO: Implémenter la suppression
-              Get.snackbar(
-                'product_detail_delete'.tr,
-                'Fonctionnalité à implémenter',
-                snackPosition: SnackPosition.BOTTOM,
-              );
+              SnackbarHelper.info('Fonctionnalité à implémenter', title: 'product_detail_delete'.tr);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

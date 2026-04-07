@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/procurement_models.dart';
 import '../controllers/procurement_controller.dart';
 
@@ -278,11 +279,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
     }
 
     if (details.isEmpty) {
-      Get.snackbar(
-        'Attention',
-        'Aucune quantité à réceptionner',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.warning('Aucune quantité à réceptionner');
       return;
     }
 
@@ -297,13 +294,13 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
             Text('procurement_confirm_reception_message'.tr),
             const SizedBox(height: 8),
             Text(
-              '${details.length} produit(s) seront réceptionnés.',
+              'procurement_products_will_be_received'.trParams({'count': details.length.toString()}),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Cette action mettra à jour automatiquement les stocks.',
-              style: TextStyle(
+            Text(
+              'procurement_stock_auto_update'.tr,
+              style: const TextStyle(
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
               ),

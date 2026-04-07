@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/stock_inventory_controller.dart';
 import '../models/inventory_model.dart';
 
@@ -355,10 +356,6 @@ class InventoryDetailView extends StatelessWidget {
 
   void _editInventory(StockInventory inventory) {
     // TODO: Implémenter l'édition d'inventaire
-    Get.snackbar(
-      'common_info'.tr,
-      'inventory_detail_edit_dev'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    SnackbarHelper.info('inventory_detail_edit_dev'.tr, title: 'common_info'.tr);
   }
 }

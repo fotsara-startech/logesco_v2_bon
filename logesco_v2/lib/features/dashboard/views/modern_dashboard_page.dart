@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../subscription/controllers/subscription_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/modern_stat_card.dart';
 import '../widgets/recent_activities_widget.dart';
@@ -13,14 +14,38 @@ import '../../subscription/widgets/subscription_status_widget.dart';
 import '../../subscription/views/subscription_status_page.dart';
 import '../../cash_registers/widgets/cash_session_indicator.dart';
 
-class ModernDashboardPage extends StatelessWidget {
+class ModernDashboardPage extends StatefulWidget {
   const ModernDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final AuthController authController = Get.find<AuthController>();
-    final DashboardController dashboardController = Get.put(DashboardController());
+  State<ModernDashboardPage> createState() => _ModernDashboardPageState();
+}
 
+class _ModernDashboardPageState extends State<ModernDashboardPage> {
+  late final AuthController authController;
+  late final DashboardController dashboardController;
+
+  @override
+  void initState() {
+    super.initState();
+    authController = Get.find<AuthController>();
+    dashboardController = Get.put(DashboardController());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkSubscriptionNotifications();
+    });
+  }
+
+  Future<void> _checkSubscriptionNotifications() async {
+    try {
+      final subscriptionController = Get.find<SubscriptionController>();
+      if (subscriptionController.shouldShowCriticalNotifications()) {
+        await subscriptionController.checkAndShowNotifications(context);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('app_name'.tr),
@@ -715,12 +740,12 @@ class ModernDashboardPage extends StatelessWidget {
         content: Text('auth_logout_confirm'.tr),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(context).pop(),
             child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
-              Get.back(); // Fermer le dialog
+              Navigator.of(context).pop(); // Fermer le dialog
               await authController.logout(); // Nettoyer les données et rediriger automatiquement
             },
             style: ElevatedButton.styleFrom(

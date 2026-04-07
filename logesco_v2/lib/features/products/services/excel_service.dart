@@ -23,6 +23,21 @@ class ExcelService {
   /// Exporte la liste des produits vers un fichier Excel
   Future<String?> exportProductsToExcel(List<Product> products) async {
     try {
+      // Récupérer les stocks pour tous les produits
+      Map<int, int> stockMap = {};
+      if (_inventoryService != null) {
+        try {
+          final stockResponse = await _inventoryService!.getStock(limit: 10000);
+          if (stockResponse.success && stockResponse.data != null) {
+            for (final stock in stockResponse.data!) {
+              stockMap[stock.produitId] = stock.quantiteDisponible;
+            }
+          }
+        } catch (e) {
+          // Continuer sans les stocks si l'API échoue
+        }
+      }
+
       // Créer un nouveau fichier Excel
       var excel = Excel.createExcel();
       Sheet sheet = excel['Produits'];
@@ -45,7 +60,7 @@ class ExcelService {
         'Remise Max Autorisée',
         'Est Actif',
         'Est Service',
-        'Quantité Initiale',
+        'Quantité en stock',
       ];
 
       // Ajouter les en-têtes
@@ -62,6 +77,8 @@ class ExcelService {
       for (int i = 0; i < products.length; i++) {
         final product = products[i];
         final rowIndex = i + 1;
+        // Quantité en stock : 0 si aucun mouvement/stock enregistré
+        final quantite = product.estService ? 0 : (stockMap[product.id] ?? 0);
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = TextCellValue(product.reference);
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = TextCellValue(product.nom);
@@ -74,7 +91,7 @@ class ExcelService {
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex)).value = DoubleCellValue(product.remiseMaxAutorisee);
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex)).value = TextCellValue(product.estActif ? 'Oui' : 'Non');
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: rowIndex)).value = TextCellValue(product.estService ? 'Oui' : 'Non');
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: rowIndex)).value = TextCellValue(''); // Quantité initiale vide pour l'export
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: rowIndex)).value = IntCellValue(quantite);
       }
 
       // Ajuster la largeur des colonnes

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
 
@@ -128,11 +129,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
               icon: const Icon(Icons.add_shopping_cart),
               onPressed: () {
                 // TODO: Naviguer vers commande d'approvisionnement
-                Get.snackbar(
-                  'Info',
-                  'Fonction d\'approvisionnement à venir',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                SnackbarHelper.info('Fonction d\'approvisionnement à venir');
               },
               tooltip: 'Commander',
             ),

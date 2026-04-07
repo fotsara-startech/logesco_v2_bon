@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/inventory_model.dart';
 import '../controllers/stock_inventory_controller.dart';
 
@@ -637,7 +638,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
 
     final count = double.tryParse(countText);
     if (count == null) {
-      Get.snackbar('common_error'.tr, 'inventory_count_save_error'.tr);
+      SnackbarHelper.error('inventory_count_save_error'.tr, title: 'common_error'.tr);
       return;
     }
 
@@ -693,13 +694,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
     if (_inventoryId != null) {
       _controller.printCountingSheet(_inventoryId!);
     } else {
-      Get.snackbar(
-        'common_error'.tr,
-        'inventory_error_id'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('inventory_error_id'.tr, title: 'common_error'.tr);
     }
   }
 
@@ -770,7 +765,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
   void _handleMenuAction(String action) {
     switch (action) {
       case 'export':
-        Get.snackbar('inventory_count_export'.tr, 'common_in_progress'.tr);
+        SnackbarHelper.info('common_in_progress'.tr, title: 'inventory_count_export'.tr);
         break;
       case 'close_inventory':
         _finalizeInventory();

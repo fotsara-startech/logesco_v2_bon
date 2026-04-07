@@ -123,39 +123,63 @@ mixin SubscriptionVerificationMixin {
   int? get remainingDays => currentSubscriptionStatus?.remainingDays;
 
   void _showSubscriptionError(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.errorContainer,
-      colorText: Get.theme.colorScheme.onErrorContainer,
-      icon: Icon(Icons.error, color: Get.theme.colorScheme.error),
-      duration: const Duration(seconds: 6),
-      mainButton: TextButton(
-        onPressed: () {
-          Get.back();
-          Get.to(() => const LicenseActivationPage());
-        },
-        child: Text('Activer', style: TextStyle(color: Get.theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+    final context = Get.context;
+    if (context == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error, color: Get.theme.colorScheme.error),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(message),
+              ],
+            )),
+          ],
+        ),
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'Activer',
+          textColor: Get.theme.colorScheme.primary,
+          onPressed: () => Get.to(() => const LicenseActivationPage()),
+        ),
       ),
     );
   }
 
   void _showSubscriptionWarning(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.secondaryContainer,
-      colorText: Get.theme.colorScheme.onSecondaryContainer,
-      icon: Icon(Icons.warning, color: Get.theme.colorScheme.secondary),
-      duration: const Duration(seconds: 5),
-      mainButton: TextButton(
-        onPressed: () {
-          Get.back();
-          Get.to(() => const LicenseActivationPage());
-        },
-        child: Text('Renouveler', style: TextStyle(color: Get.theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+    final context = Get.context;
+    if (context == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Get.theme.colorScheme.secondary),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(message),
+              ],
+            )),
+          ],
+        ),
+        backgroundColor: Get.theme.colorScheme.secondaryContainer,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Renouveler',
+          textColor: Get.theme.colorScheme.primary,
+          onPressed: () => Get.to(() => const LicenseActivationPage()),
+        ),
       ),
     );
   }

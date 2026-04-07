@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/category_model.dart';
 import '../services/category_management_service.dart';
 
@@ -76,22 +77,9 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
       _textController.text = newCategory.nom;
       widget.onChanged(newCategory.nom);
 
-      Get.snackbar(
-        'Succès',
-        'Catégorie "${newCategory.nom}" créée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.success('Catégorie "${newCategory.nom}" créée avec succès', duration: const Duration(seconds: 2));
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer la catégorie: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de créer la catégorie: $e');
     } finally {
       setState(() {
         _isCreatingCategory = false;
@@ -290,22 +278,9 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
         _filteredCategories = categories;
       });
 
-      Get.snackbar(
-        'Succès',
-        '${categories.length} catégories rechargées',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue.shade100,
-        colorText: Colors.blue.shade800,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.success('${categories.length} catégories rechargées', duration: const Duration(seconds: 2));
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de recharger les catégories: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de recharger les catégories: $e');
     }
   }
 }

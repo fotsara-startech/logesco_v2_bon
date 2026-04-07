@@ -6,6 +6,7 @@ import '../controllers/supplier_controller.dart';
 import '../widgets/unpaid_procurements_selector_dialog.dart';
 import '../services/supplier_statement_pdf_service.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Vue du compte fournisseur
 ///
@@ -548,13 +549,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
 
     if (amount == null || amount <= 0) {
       print('❌ [_processPayment] Montant invalide');
-      Get.snackbar(
-        'suppliers_error'.tr,
-        'suppliers_invalid_amount'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('suppliers_invalid_amount'.tr);
       return;
     }
 
@@ -630,13 +625,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
 
       if (statementData == null) {
         Get.back(); // Fermer le dialogue de chargement
-        Get.snackbar(
-          'suppliers_error'.tr,
-          'suppliers_statement_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('suppliers_statement_error'.tr);
         return;
       }
 
@@ -656,24 +645,12 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
       // Ouvrir le PDF
       await OpenFile.open(filePath);
 
-      Get.snackbar(
-        'common_success'.tr,
-        'suppliers_statement_success'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('suppliers_statement_success'.tr);
     } catch (e) {
       print('❌ Erreur impression relevé: $e');
       Get.back(); // Fermer le dialogue de chargement si ouvert
 
-      Get.snackbar(
-        'suppliers_error'.tr,
-        'suppliers_statement_generation_error'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('suppliers_statement_generation_error'.trParams({'error': e.toString()}));
     }
   }
 }

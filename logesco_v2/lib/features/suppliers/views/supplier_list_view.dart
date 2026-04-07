@@ -7,6 +7,7 @@ import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/error_widget.dart';
 import '../../../core/widgets/permission_widget.dart';
 import '../../../core/services/permission_service.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Vue de la liste des fournisseurs avec contrôle des permissions
 class SupplierListView extends StatelessWidget {
@@ -299,11 +300,7 @@ class SupplierListView extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      Get.snackbar(
-        'suppliers_error'.tr,
-        'suppliers_call_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('suppliers_call_error'.tr);
     }
   }
 
@@ -313,11 +310,7 @@ class SupplierListView extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      Get.snackbar(
-        'suppliers_error'.tr,
-        'suppliers_email_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('suppliers_email_error'.tr);
     }
   }
 

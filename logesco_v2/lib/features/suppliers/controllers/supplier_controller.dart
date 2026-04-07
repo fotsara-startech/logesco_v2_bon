@@ -5,6 +5,7 @@ import '../../../core/utils/exceptions.dart';
 import '../models/supplier.dart';
 import '../services/supplier_service.dart';
 import '../services/supplier_excel_service.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour la gestion des fournisseurs avec GetX
 class SupplierController extends GetxController {
@@ -85,13 +86,7 @@ class SupplierController extends GetxController {
         errorMessage.value = 'Erreur lors du chargement des fournisseurs';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(errorMessage.value);
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -151,24 +146,11 @@ class SupplierController extends GetxController {
       // Si un fournisseur a été créé, afficher un message
       if (result != null && result is Supplier) {
         print('🎉 Nouveau fournisseur créé: ${result.nom}');
-        Get.snackbar(
-          'Succès',
-          'Fournisseur "${result.nom}" ajouté à la liste',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          duration: const Duration(seconds: 2),
-        );
+        SnackbarHelper.success('Fournisseur "${result.nom}" ajouté à la liste', duration: const Duration(seconds: 2));
       }
     } catch (e) {
       print('❌ Erreur navigation: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le formulaire de création',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de création');
     }
   }
 
@@ -195,13 +177,7 @@ class SupplierController extends GetxController {
       }
     } catch (e) {
       print('❌ Erreur navigation édition: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le formulaire d\'édition',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le formulaire d\'édition');
     }
   }
 
@@ -262,24 +238,10 @@ class SupplierController extends GetxController {
           suppliers.removeWhere((s) => s.id == supplier.id);
           print('✅ Fournisseur retiré de la liste locale');
 
-          Get.snackbar(
-            'Succès',
-            'Fournisseur "${supplier.nom}" supprimé avec succès',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green.shade100,
-            colorText: Colors.green.shade800,
-            duration: const Duration(seconds: 3),
-          );
+          SnackbarHelper.success('Fournisseur "${supplier.nom}" supprimé avec succès', duration: const Duration(seconds: 3));
         } else {
           print('❌ Suppression échouée - service retourné false');
-          Get.snackbar(
-            'Erreur',
-            'La suppression du fournisseur a échoué. Veuillez réessayer.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade100,
-            colorText: Colors.red.shade800,
-            duration: const Duration(seconds: 4),
-          );
+          SnackbarHelper.error('La suppression du fournisseur a échoué. Veuillez réessayer.', duration: const Duration(seconds: 4));
         }
       } catch (e) {
         print('❌ Exception lors de la suppression: $e');
@@ -304,14 +266,7 @@ class SupplierController extends GetxController {
           }
         }
 
-        Get.snackbar(
-          'Erreur',
-          message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-          duration: const Duration(seconds: 5),
-        );
+        SnackbarHelper.error(message, duration: const Duration(seconds: 5));
       } finally {
         isLoading.value = false;
       }
@@ -323,13 +278,7 @@ class SupplierController extends GetxController {
     try {
       return await _supplierService.getSupplierById(id);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de récupérer les détails du fournisseur',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de récupérer les détails du fournisseur');
       return null;
     }
   }
@@ -357,13 +306,7 @@ class SupplierController extends GetxController {
 
       print('❌ Erreur chargement transactions: $e');
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -385,22 +328,10 @@ class SupplierController extends GetxController {
       );
 
       if (success) {
-        Get.snackbar(
-          'Succès',
-          'Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
         return true;
       } else {
-        Get.snackbar(
-          'Erreur',
-          'Le paiement a échoué',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('Le paiement a échoué');
         return false;
       }
     } catch (e) {
@@ -411,13 +342,7 @@ class SupplierController extends GetxController {
         message = e.message;
       }
 
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(message);
       return false;
     }
   }
@@ -443,22 +368,10 @@ class SupplierController extends GetxController {
       );
 
       if (success) {
-        Get.snackbar(
-          'Succès',
-          'Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré pour la commande',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré pour la commande');
         return true;
       } else {
-        Get.snackbar(
-          'Erreur',
-          'Le paiement a échoué',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('Le paiement a échoué');
         return false;
       }
     } catch (e) {
@@ -469,13 +382,7 @@ class SupplierController extends GetxController {
         message = e.message;
       }
 
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(message);
       return false;
     }
   }
@@ -487,13 +394,7 @@ class SupplierController extends GetxController {
       return await _supplierService.getSupplierStatement(supplierId);
     } catch (e) {
       print('❌ Erreur récupération relevé: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de récupérer le relevé de compte',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de récupérer le relevé de compte');
       return null;
     }
   }
@@ -525,13 +426,7 @@ class SupplierController extends GetxController {
   /// Exporte tous les fournisseurs vers Excel
   Future<void> exportToExcel() async {
     try {
-      Get.snackbar(
-        'Export en cours',
-        'Récupération des fournisseurs...',
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
-      );
+      SnackbarHelper.info('Récupération des fournisseurs...', title: 'Export en cours');
 
       // Récupérer tous les fournisseurs par pagination
       List<Supplier> allSuppliers = [];
@@ -569,13 +464,7 @@ class SupplierController extends GetxController {
           // Ignorer l'erreur de fermeture
         }
 
-        Get.snackbar(
-          'Aucune donnée',
-          'Aucun fournisseur à exporter',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
+        SnackbarHelper.info('Aucun fournisseur à exporter', title: 'Aucune donnée');
         return;
       }
 
@@ -589,13 +478,7 @@ class SupplierController extends GetxController {
       }
 
       // Afficher la progression de génération
-      Get.snackbar(
-        'Export en cours',
-        'Génération du fichier Excel...',
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
-      );
+      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
 
       final filePath = await _excelService.exportSuppliersToExcel(allSuppliers);
 
@@ -629,13 +512,7 @@ class SupplierController extends GetxController {
           ),
         );
       } else {
-        Get.snackbar(
-          'Erreur',
-          'Erreur lors de l\'export des fournisseurs',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('Erreur lors de l\'export des fournisseurs');
       }
     } catch (e) {
       // Fermer le snackbar de progression en cas d'erreur
@@ -647,13 +524,7 @@ class SupplierController extends GetxController {
         // Ignorer l'erreur de fermeture
       }
 
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'export: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de l\'export: $e');
     }
   }
 
@@ -662,13 +533,7 @@ class SupplierController extends GetxController {
     try {
       print('📝 Début de l\'import Excel des fournisseurs...');
 
-      Get.snackbar(
-        'Import en cours',
-        'Sélection du fichier...',
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.info('Sélection du fichier...', title: 'Import en cours', duration: const Duration(seconds: 2));
 
       final importData = await _excelService.importSuppliersFromExcel();
 
@@ -676,11 +541,7 @@ class SupplierController extends GetxController {
 
       if (importData == null || importData.isEmpty) {
         print('⚠️  Aucune donnée à importer');
-        Get.snackbar(
-          'Annulé',
-          'Aucun fichier sélectionné ou fichier vide',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.info('Aucun fichier sélectionné ou fichier vide', title: 'Annulé');
         return;
       }
 
@@ -759,13 +620,7 @@ class SupplierController extends GetxController {
         ),
       );
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'import: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de l\'import: $e');
     }
   }
 
@@ -791,22 +646,10 @@ class SupplierController extends GetxController {
           ),
         );
       } else {
-        Get.snackbar(
-          'Erreur',
-          'Erreur lors de la génération du template',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('Erreur lors de la génération du template');
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur: $e');
     }
   }
 }

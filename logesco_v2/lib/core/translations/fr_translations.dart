@@ -1997,7 +1997,9 @@ const Map<String, String> frTranslations = {
   'procurement_filter_reset': 'Réinitialiser',
   'procurement_filter_apply': 'Appliquer',
   'procurement_confirm_reception': 'Confirmer la réception',
-  'procurement_confirm_reception_message': 'Êtestes-vous sûr de vouloir enregistrer cette réception ?',
+  'procurement_confirm_reception_message': 'Êtes-vous sûr de vouloir enregistrer cette réception ?',
+  'procurement_products_will_be_received': '@count produit(s) seront réceptionnés.',
+  'procurement_stock_auto_update': 'Cette action mettra à jour automatiquement les stocks.',
   'procurement_receive_action': 'Réceptionner',
   'procurement_qty_received': 'Qté reçue',
   'procurement_order': 'Commande',
@@ -2920,8 +2922,16 @@ const Map<String, String> frTranslations = {
   'stock_thousand': 'K F',
 
   // Missing stock detail keys
-  'stock_detail_product_info': 'Detail produit',
-  'stock_status_active': '',
+  'stock_detail_product_info': 'Détail produit',
+  'stock_status_active': 'Actif',
+  'stock_status_inactive': 'Inactif',
+  'stock_no_movements': 'Aucun mouvement trouvé',
+  'time_today': 'Aujourd\'hui',
+  'time_yesterday': 'Hier',
+  'time_just_now': 'À l\'instant',
+  'time_ago_days': 'il y a @count j',
+  'time_ago_hours': 'il y a @count h',
+  'time_ago_minutes': 'il y a @count min',
   'stock_product_name': 'Nom du produit',
   'stock_product_reference': 'Référence',
   'stock_product_min_threshold': 'Seuil minimum',
@@ -2984,9 +2994,10 @@ const Map<String, String> frTranslations = {
   'common_delete': 'Supprimer',
   'common_select': 'Sélectionner',
   'common_apply': 'Appliquer',
-  // 'common_close': 'Fermer',
-  // 'common_cancel': 'Annuler',
-  // 'common_save': 'Enregistrer',
+  'common_close': 'Fermer',
+  'common_cancel': 'Annuler',
+  'common_confirm': 'Confirmer',
+  'common_save': 'Enregistrer',
 
   // ============================================================================
   // FINANCIAL MOVEMENTS

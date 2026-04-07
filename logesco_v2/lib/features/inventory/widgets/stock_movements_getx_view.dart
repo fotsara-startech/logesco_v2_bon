@@ -201,7 +201,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
             if (movement.notes != null && movement.notes!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('Notes: ${movement.notes}'),
+                child: Text('Notes: ${movement.notes!.tr}'),
               ),
           ],
         ),

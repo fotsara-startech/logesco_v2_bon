@@ -115,16 +115,23 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('subscription_activation_title'.tr),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: LoadingOverlay(
-          isLoading: _isValidating,
-          loadingMessage: 'subscription_validating'.tr,
-          child: _buildActivationForm(context),
+    final status = _subscriptionController.currentStatus;
+    final canGoBack = status == null || status.isActive || status.isInGracePeriod;
+
+    return PopScope(
+      canPop: canGoBack,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('subscription_activation_title'.tr),
+          centerTitle: true,
+          automaticallyImplyLeading: canGoBack,
+        ),
+        body: SafeArea(
+          child: LoadingOverlay(
+            isLoading: _isValidating,
+            loadingMessage: 'subscription_validating'.tr,
+            child: _buildActivationForm(context),
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../products/controllers/product_controller.dart';
 import '../../products/models/product.dart';
 import '../controllers/sales_controller.dart';
@@ -319,30 +320,21 @@ class ProductSelector extends StatelessWidget {
           await onProductSelected(product, 1);
         }
 
-        Get.snackbar(
-          'sales_product_found'.tr,
+        SnackbarHelper.info(
           'sales_product_found_detail'.trParams({'product': product.nom, 'barcode': barcode}),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
+          title: 'sales_product_found'.tr,
         );
       } else {
         // Aucun produit trouvé
-        Get.snackbar(
-          'sales_no_product_found'.tr,
+        SnackbarHelper.warning(
           'sales_no_product_barcode'.trParams({'barcode': barcode}),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
+          title: 'sales_no_product_found'.tr,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
+      SnackbarHelper.error(
         'sales_barcode_search_error'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
+        title: 'error'.tr,
       );
     }
   }
@@ -560,12 +552,9 @@ class _ProductItem extends StatelessWidget {
               if (quantity != null && quantity > 0) {
                 // Vérifier le stock pour les produits physiques
                 if (!product.estService && quantity > availableQuantity) {
-                  Get.snackbar(
-                    'sales_stock_insufficient'.tr,
+                  SnackbarHelper.error(
                     'sales_stock_insufficient_detail'.trParams({'requested': quantity.toString(), 'available': availableQuantity.toString()}),
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red.withOpacity(0.8),
-                    colorText: Colors.white,
+                    title: 'sales_stock_insufficient'.tr,
                   );
                   return;
                 }
@@ -573,11 +562,7 @@ class _ProductItem extends StatelessWidget {
                 Navigator.of(context).pop();
                 await onSelected(product, quantity);
               } else {
-                Get.snackbar(
-                  'error'.tr,
-                  'sales_invalid_quantity'.tr,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                SnackbarHelper.error('sales_invalid_quantity'.tr, title: 'error'.tr);
               }
             },
             child: Text('add'.tr),

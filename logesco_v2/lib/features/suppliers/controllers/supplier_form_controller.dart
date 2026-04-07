@@ -4,6 +4,7 @@ import '../../../core/utils/exceptions.dart';
 import '../models/supplier.dart';
 import '../services/supplier_service.dart';
 import 'supplier_controller.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour le formulaire de création/modification des fournisseurs
 class SupplierFormController extends GetxController {
@@ -136,25 +137,13 @@ class SupplierFormController extends GetxController {
           supplierForm,
         );
 
-        Get.snackbar(
-          'Succès',
-          'Fournisseur modifié avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Fournisseur modifié avec succès');
       } else {
         // Création
         print('➕ Création d\'un nouveau fournisseur');
         savedSupplier = await _supplierService.createSupplier(supplierForm);
 
-        Get.snackbar(
-          'Succès',
-          'Fournisseur créé avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Fournisseur créé avec succès');
       }
 
       print('✅ Sauvegarde réussie - ID: ${savedSupplier.id}');
@@ -205,14 +194,7 @@ class SupplierFormController extends GetxController {
         }
       }
 
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-        duration: const Duration(seconds: 5),
-      );
+      SnackbarHelper.error(message, duration: const Duration(seconds: 5));
     } finally {
       isLoading.value = false;
     }

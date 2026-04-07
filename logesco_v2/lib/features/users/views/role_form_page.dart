@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/role_controller.dart';
 import '../models/role_model.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 /// Page de formulaire pour créer/modifier un rôle
 class RoleFormPage extends GetView<RoleController> {
@@ -424,13 +425,7 @@ class _RoleFormViewState extends State<RoleFormView> {
     );
 
     if (!isNameAvailable) {
-      Get.snackbar(
-        'common_error'.tr,
-        'roles_name_exists'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[800],
-      );
+      SnackbarHelper.error('roles_name_exists'.tr);
       return;
     }
 
@@ -451,21 +446,9 @@ class _RoleFormViewState extends State<RoleFormView> {
 
     if (success) {
       Get.back();
-      Get.snackbar(
-        'common_success'.tr,
-        existingRole == null ? 'roles_created_success'.tr : 'roles_updated_success'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[800],
-      );
+      SnackbarHelper.success(existingRole == null ? 'roles_created_success'.tr : 'roles_updated_success'.tr);
     } else {
-      Get.snackbar(
-        'common_error'.tr,
-        controller.error.value.isNotEmpty ? controller.error.value : 'roles_error_occurred'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[800],
-      );
+      SnackbarHelper.error(controller.error.value.isNotEmpty ? controller.error.value : 'roles_error_occurred'.tr);
     }
   }
 }

@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../subscription/mixins/subscription_verification_mixin.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../printing/models/print_format.dart';
@@ -930,28 +930,12 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         print('✅ Reçu généré automatiquement pour la vente ${sale.numeroVente}');
 
         // Afficher une notification de succès
-        Get.snackbar(
-          'Reçu généré',
-          'Le reçu de la vente ${sale.numeroVente} a été créé avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          icon: const Icon(Icons.receipt, color: Colors.green),
-        );
+        SnackbarHelper.success('Le reçu de la vente ${sale.numeroVente} a été créé avec succès', title: 'Reçu généré', duration: const Duration(seconds: 3));
       } else {
         print('⚠️ Échec de génération du reçu: ${receiptResponse.message}');
 
         // Afficher une notification d'erreur
-        Get.snackbar(
-          'Erreur de génération',
-          'Impossible de générer le reçu: ${receiptResponse.message}',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 4),
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-          icon: const Icon(Icons.warning, color: Colors.orange),
-        );
+        SnackbarHelper.warning('Impossible de générer le reçu: ${receiptResponse.message}', title: 'Erreur de génération', duration: const Duration(seconds: 4));
       }
     } catch (e) {
       print('❌ Erreur lors de la génération automatique du reçu: $e');

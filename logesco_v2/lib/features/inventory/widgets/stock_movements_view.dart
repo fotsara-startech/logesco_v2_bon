@@ -205,7 +205,7 @@ class StockMovementItem extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      movement.notes!,
+                      movement.notes!.tr,
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -311,14 +311,10 @@ class StockMovementItem extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final movementDate = DateTime(date.year, date.month, date.day);
-
-    if (movementDate == today) {
-      return 'Aujourd\'hui ${_formatTime(date)}';
-    } else if (movementDate == yesterday) {
-      return 'Hier ${_formatTime(date)}';
-    } else {
-      return '${date.day}/${date.month}/${date.year} ${_formatTime(date)}';
-    }
+    final time = _formatTime(date);
+    if (movementDate == today) return '${'time_today'.tr} $time';
+    if (movementDate == yesterday) return '${'time_yesterday'.tr} $time';
+    return '${date.day}/${date.month}/${date.year} $time';
   }
 
   String _formatTime(DateTime date) {
@@ -326,17 +322,10 @@ class StockMovementItem extends StatelessWidget {
   }
 
   String _getTimeAgo(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 0) {
-      return 'il y a ${difference.inDays}j';
-    } else if (difference.inHours > 0) {
-      return 'il y a ${difference.inHours}h';
-    } else if (difference.inMinutes > 0) {
-      return 'il y a ${difference.inMinutes}min';
-    } else {
-      return 'À l\'instant';
-    }
+    final difference = DateTime.now().difference(date);
+    if (difference.inDays > 0) return 'time_ago_days'.trParams({'count': difference.inDays.toString()});
+    if (difference.inHours > 0) return 'time_ago_hours'.trParams({'count': difference.inHours.toString()});
+    if (difference.inMinutes > 0) return 'time_ago_minutes'.trParams({'count': difference.inMinutes.toString()});
+    return 'time_just_now'.tr;
   }
 }

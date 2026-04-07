@@ -32,7 +32,7 @@ class AppConfig {
   }
 
   /// Contrôle des licences activé (true = validation licence requise)
-  static const bool enableLicenseControl = true;
+  static const bool enableLicenseControl = false;
 
   /// Réinitialise l'URL à la valeur par défaut
   static void resetBaseUrl() {

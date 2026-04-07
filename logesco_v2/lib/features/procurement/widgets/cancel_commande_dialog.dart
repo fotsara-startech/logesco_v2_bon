@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/procurement_models.dart';
 import '../controllers/procurement_controller.dart';
 
@@ -197,22 +198,12 @@ class CancelCommandeDialog extends StatelessWidget {
   Future<void> _handleCancel() async {
     // Vérifier si la commande peut être annulée
     if (commande.statut == CommandeStatut.terminee) {
-      Get.snackbar(
-        'Erreur',
-        'Une commande terminée ne peut pas être annulée',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[800],
-      );
+      SnackbarHelper.error('Une commande terminée ne peut pas être annulée');
       return;
     }
 
     if (commande.statut == CommandeStatut.annulee) {
-      Get.snackbar(
-        'Information',
-        'Cette commande est déjà annulée',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.info('Cette commande est déjà annulée', title: 'Information');
       return;
     }
 

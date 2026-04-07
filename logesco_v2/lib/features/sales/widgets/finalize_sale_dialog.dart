@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/sales_controller.dart';
 import '../../printing/controllers/printing_controller.dart';
 import '../../printing/views/receipt_preview_page.dart';
@@ -571,14 +572,10 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
     // Validation : paiement partiel nécessite un client
     if (remaining > 0 && customer == null) {
-      Get.snackbar(
-        'sales_customer_required'.tr,
+      SnackbarHelper.warning(
         'sales_customer_required_partial'.tr,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange[100],
-        colorText: Colors.orange[900],
+        title: 'sales_customer_required'.tr,
         duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
@@ -677,15 +674,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       _showPrintReceiptDialog();
       Get.back(); // Retour à la page précédente
     } else {
-      Get.snackbar(
-        'error'.tr,
-        'sales_cannot_create_sale'.tr,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
-        duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.all(16),
-      );
+      SnackbarHelper.error('sales_cannot_create_sale'.tr, title: 'error'.tr, duration: const Duration(seconds: 3));
     }
   }
 
@@ -720,11 +709,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
       if (salesController.lastCreatedSale == null) {
         Get.back();
-        Get.snackbar(
-          'error'.tr,
-          'sales_no_sale_for_print'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.error('sales_no_sale_for_print'.tr, title: 'error'.tr);
         return;
       }
 
@@ -763,19 +748,11 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
         // );
       } else {
         Get.back();
-        Get.snackbar(
-          'error'.tr,
-          'sales_cannot_generate_receipt'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.error('sales_cannot_generate_receipt'.tr, title: 'error'.tr);
       }
     } catch (e) {
       Get.back();
-      Get.snackbar(
-        'error'.tr,
-        '${'error'.tr}: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('${'error'.tr}: $e', title: 'error'.tr);
     }
   }
 }

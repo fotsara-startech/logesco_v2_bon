@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/product.dart';
 import '../models/category_model.dart';
@@ -302,13 +303,7 @@ class ProductFormController extends GetxController {
   void toggleGestionPeremption() {
     // Un service ne peut pas avoir de gestion de péremption
     if (estService.value) {
-      Get.snackbar(
-        'Information',
-        'Un service ne peut pas avoir de gestion de péremption',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade800,
-      );
+      SnackbarHelper.info('Un service ne peut pas avoir de gestion de péremption');
       return;
     }
     gestionPeremption.value = !gestionPeremption.value;
@@ -320,13 +315,7 @@ class ProductFormController extends GetxController {
     if (isEditing.value) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.isRegistered<ProductFormController>()) {
-          Get.snackbar(
-            'Information',
-            'La référence ne peut pas être modifiée en mode édition',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.orange.shade100,
-            colorText: Colors.orange.shade800,
-          );
+          SnackbarHelper.info('La référence ne peut pas être modifiée en mode édition');
         }
       });
       return;
@@ -364,14 +353,7 @@ class ProductFormController extends GetxController {
         // Afficher un message informatif (avec délai pour éviter les conflits)
         Future.delayed(const Duration(milliseconds: 100), () {
           if (Get.isRegistered<ProductFormController>()) {
-            Get.snackbar(
-              'Information',
-              'Référence générée localement (serveur indisponible)',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.orange.shade100,
-              colorText: Colors.orange.shade800,
-              duration: const Duration(seconds: 3),
-            );
+            SnackbarHelper.info('Référence générée localement (serveur indisponible)', duration: const Duration(seconds: 3));
           }
         });
       }
@@ -435,13 +417,7 @@ class ProductFormController extends GetxController {
     if (!isFormValid) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.isRegistered<ProductFormController>()) {
-          Get.snackbar(
-            'Erreur',
-            'Veuillez corriger les erreurs dans le formulaire',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade100,
-            colorText: Colors.red.shade800,
-          );
+          SnackbarHelper.error('Veuillez corriger les erreurs dans le formulaire');
         }
       });
       return;
@@ -457,13 +433,7 @@ class ProductFormController extends GetxController {
           referenceError.value = 'La référence ne peut pas être modifiée en mode édition';
           Future.delayed(const Duration(milliseconds: 100), () {
             if (Get.isRegistered<ProductFormController>()) {
-              Get.snackbar(
-                'Erreur',
-                'La référence ne peut pas être modifiée lors de l\'édition',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.red.shade100,
-                colorText: Colors.red.shade800,
-              );
+              SnackbarHelper.error('La référence ne peut pas être modifiée lors de l\'édition');
             }
           });
           return;
@@ -518,14 +488,7 @@ class ProductFormController extends GetxController {
 
       // Afficher le message de succès avec un délai
       Future.delayed(const Duration(milliseconds: 300), () {
-        Get.snackbar(
-          'Succès',
-          successMessage,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          duration: const Duration(seconds: 2),
-        );
+        SnackbarHelper.success(successMessage, duration: const Duration(seconds: 2));
       });
     } catch (e) {
       String message = 'Erreur lors de la sauvegarde du produit';
@@ -538,14 +501,7 @@ class ProductFormController extends GetxController {
       // Afficher l'erreur avec un délai pour éviter les conflits
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.isRegistered<ProductFormController>()) {
-          Get.snackbar(
-            'Erreur',
-            message,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade100,
-            colorText: Colors.red.shade800,
-            duration: const Duration(seconds: 4),
-          );
+          SnackbarHelper.error(message, duration: const Duration(seconds: 4));
         }
       });
     } finally {

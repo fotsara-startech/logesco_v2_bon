@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/product_controller.dart';
 
 /// Barre de recherche pour les produits
@@ -300,41 +301,19 @@ class ProductSearchBar extends StatelessWidget {
       if (product != null) {
         // Produit trouvé, l'afficher dans la liste
         controller.setSearchResults([product]);
-        Get.snackbar(
-          'product_search_barcode_found'.tr,
-          'product_search_barcode_found_message'.tr.replaceAll('@name', product.nom).replaceAll('@barcode', barcode),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('product_search_barcode_found_message'.tr.replaceAll('@name', product.nom).replaceAll('@barcode', barcode), title: 'product_search_barcode_found'.tr);
       } else {
         // Aucun produit trouvé
         controller.setSearchResults([]);
-        Get.snackbar(
-          'product_search_barcode_not_found'.tr,
-          'product_search_barcode_not_found_message'.tr.replaceAll('@barcode', barcode),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
+        SnackbarHelper.warning('product_search_barcode_not_found_message'.tr.replaceAll('@barcode', barcode), title: 'product_search_barcode_not_found'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'product_search_barcode_error'.tr,
-        'product_search_barcode_error_message'.tr.replaceAll('@error', e.toString()),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('product_search_barcode_error_message'.tr.replaceAll('@error', e.toString()), title: 'product_search_barcode_error'.tr);
     }
   }
 
   /// Affiche le filtre par prix
   void _showPriceFilter() {
-    Get.snackbar(
-      'product_search_price_feature'.tr,
-      'product_search_price_feature_message'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    SnackbarHelper.info('product_search_price_feature_message'.tr, title: 'product_search_price_feature'.tr);
   }
 }

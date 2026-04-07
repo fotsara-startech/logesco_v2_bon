@@ -1,6 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_getx_controller.dart';
+import '../services/export_service.dart';
+import '../services/inventory_pdf_service.dart';
 import '../widgets/inventory_search_bar.dart';
 import '../widgets/inventory_filter_bar.dart';
 import '../widgets/stock_list_getx_view.dart';
@@ -80,10 +83,26 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 ),
               ),
               PopupMenuItem(
+                value: 'export_stock_pdf',
+                child: ListTile(
+                  leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                  title: Text('${'stock_export_stock'.tr} (PDF)'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
                 value: 'export_movements',
                 child: ListTile(
                   leading: const Icon(Icons.history),
                   title: Text('stock_export_movements'.tr),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'export_movements_pdf',
+                child: ListTile(
+                  leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                  title: Text('${'stock_export_movements'.tr} (PDF)'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -268,8 +287,14 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       case 'export_stock':
         _exportStock();
         break;
+      case 'export_stock_pdf':
+        _exportStockPdf();
+        break;
       case 'export_movements':
         _exportMovements();
+        break;
+      case 'export_movements_pdf':
+        _exportMovementsPdf();
         break;
       case 'bulk_adjust':
         _showBulkAdjustment();
@@ -282,13 +307,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
     try {
       // Afficher un indicateur de chargement
-      Get.snackbar(
-        'stock_export_in_progress'.tr,
-        'stock_export_fetching'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.info('stock_export_fetching'.tr, title: 'stock_export_in_progress'.tr, duration: const Duration(seconds: 2));
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
@@ -308,11 +327,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 onPressed: () {
                   Get.back();
                   // TODO: Implémenter le partage de fichier
-                  Get.snackbar(
-                    'stock_export_share'.tr,
-                    'feature_coming_soon'.tr,
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
+                  SnackbarHelper.info('feature_coming_soon'.tr, title: 'stock_export_share'.tr);
                 },
                 child: Text('stock_export_share'.tr),
               ),
@@ -320,22 +335,10 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'stock_export_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('stock_export_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'stock_export_error_message'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
     }
   }
 
@@ -344,13 +347,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
     try {
       // Afficher un indicateur de chargement
-      Get.snackbar(
-        'stock_export_in_progress'.tr,
-        'stock_export_movements_in_progress'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.info('stock_export_movements_in_progress'.tr, title: 'stock_export_in_progress'.tr, duration: const Duration(seconds: 2));
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
@@ -370,11 +367,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 onPressed: () {
                   Get.back();
                   // TODO: Implémenter le partage de fichier
-                  Get.snackbar(
-                    'stock_export_share'.tr,
-                    'feature_coming_soon'.tr,
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
+                  SnackbarHelper.info('feature_coming_soon'.tr, title: 'stock_export_share'.tr);
                 },
                 child: Text('stock_export_share'.tr),
               ),
@@ -382,27 +375,72 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'stock_export_movements_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('stock_export_movements_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'stock_export_error_message'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
     }
   }
 
   void _showBulkAdjustment() {
     Get.toNamed('/inventory/bulk-adjustment');
+  }
+
+  void _exportStockPdf() async {
+    final controller = Get.find<InventoryGetxController>();
+    try {
+      SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
+      final filePath = await controller.exportStockToPdf();
+      if (filePath != null) {
+        _showExportSuccessDialog(filePath, isPdf: true);
+      } else {
+        SnackbarHelper.error('stock_export_error'.tr);
+      }
+    } catch (e) {
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+    }
+  }
+
+  void _exportMovementsPdf() async {
+    final controller = Get.find<InventoryGetxController>();
+    try {
+      SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
+      final filePath = await controller.exportMovementsToPdf();
+      if (filePath != null) {
+        _showExportSuccessDialog(filePath, isPdf: true);
+      } else {
+        SnackbarHelper.error('stock_export_movements_error'.tr);
+      }
+    } catch (e) {
+      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+    }
+  }
+
+  void _showExportSuccessDialog(String filePath, {bool isPdf = false}) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('stock_export_success'.tr),
+        content: Text('Fichier: ${filePath.split('/').last}'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('close'.tr),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Get.back();
+              if (isPdf) {
+                InventoryPdfService.sharePdf(filePath);
+              } else {
+                ExportService.shareExcelFile(filePath);
+              }
+            },
+            icon: const Icon(Icons.share),
+            label: Text('stock_export_share'.tr),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildVerticalSummary(InventoryGetxController controller) {

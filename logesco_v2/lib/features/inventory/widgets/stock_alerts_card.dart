@@ -245,18 +245,11 @@ class StockAlertItem extends StatelessWidget {
   }
 
   String _getTimeAgo(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 0) {
-      return 'il y a ${difference.inDays}j';
-    } else if (difference.inHours > 0) {
-      return 'il y a ${difference.inHours}h';
-    } else if (difference.inMinutes > 0) {
-      return 'il y a ${difference.inMinutes}min';
-    } else {
-      return 'À l\'instant';
-    }
+    final difference = DateTime.now().difference(date);
+    if (difference.inDays > 0) return 'time_ago_days'.trParams({'count': difference.inDays.toString()});
+    if (difference.inHours > 0) return 'time_ago_hours'.trParams({'count': difference.inHours.toString()});
+    if (difference.inMinutes > 0) return 'time_ago_minutes'.trParams({'count': difference.inMinutes.toString()});
+    return 'time_just_now'.tr;
   }
 
   void _showStockActions(BuildContext context) {

@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:logesco_v2/features/suppliers/models/supplier.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 // import '../../../core/models/product_model.dart';
 // import '../../../core/models/supplier_model.dart';
 import '../../products/models/product.dart';
@@ -101,11 +102,7 @@ class ProcurementController extends GetxController {
       currentPage.value++;
     } catch (e) {
       print(' ERREUR CHARGEMENT: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les commandes: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de charger les commandes: $e');
     } finally {
       isLoading.value = false;
     }
@@ -119,11 +116,7 @@ class ProcurementController extends GetxController {
       final commande = await _procurementService.getCommande(id);
       commandeSelectionnee.value = commande;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger la commande: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de charger la commande: $e');
     } finally {
       isLoading.value = false;
     }
@@ -132,11 +125,7 @@ class ProcurementController extends GetxController {
   /// Crée une nouvelle commande
   Future<bool> createCommande() async {
     if (fournisseurSelectionne.value == null || detailsCommande.isEmpty) {
-      Get.snackbar(
-        'Erreur',
-        'Veuillez sélectionner un fournisseur et ajouter des produits',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Veuillez sélectionner un fournisseur et ajouter des produits');
       return false;
     }
 
@@ -162,19 +151,11 @@ class ProcurementController extends GetxController {
       commandes.insert(0, commande);
       resetNouvelleCommande();
 
-      Get.snackbar(
-        'Succès',
-        'Commande créée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Commande créée avec succès');
 
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer la commande: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de créer la commande: $e');
       return false;
     } finally {
       isCreating.value = false;
@@ -200,22 +181,14 @@ class ProcurementController extends GetxController {
         commandeSelectionnee.value = commande;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Réception enregistrée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Réception enregistrée avec succès');
 
       // Recharger les alertes car le stock a changé
       loadAlertes();
 
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'enregistrer la réception: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'enregistrer la réception: $e');
       return false;
     } finally {
       isUpdating.value = false;
@@ -235,19 +208,11 @@ class ProcurementController extends GetxController {
         commandes[index] = commande;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Commande annulée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Commande annulée avec succès');
 
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'annuler la commande: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'annuler la commande: $e');
       return false;
     } finally {
       isUpdating.value = false;
@@ -340,19 +305,11 @@ class ProcurementController extends GetxController {
     try {
       final filePath = await ProcurementPdfExportService.exportCommandeToPdf(commande);
 
-      Get.snackbar(
-        'Succès',
-        'Commande exportée en PDF',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Commande exportée en PDF');
 
       return filePath;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'exporter la commande: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'exporter la commande: $e');
       return null;
     }
   }
@@ -369,11 +326,7 @@ class ProcurementController extends GetxController {
 
       suggestions.assignAll(result);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les suggestions: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de charger les suggestions: $e');
     } finally {
       isLoadingSuggestions.value = false;
     }
@@ -404,22 +357,14 @@ class ProcurementController extends GetxController {
         commandes.insert(0, nouvelleCommande);
       }
 
-      Get.snackbar(
-        'Succès',
-        'Commande générée automatiquement avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.success('Commande générée automatiquement avec succès');
 
       // Recharger les suggestions pour mettre à jour les données
       loadSuggestions(fournisseurId: fournisseurId);
 
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de générer la commande: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible de générer la commande: $e');
       return false;
     } finally {
       isCreating.value = false;

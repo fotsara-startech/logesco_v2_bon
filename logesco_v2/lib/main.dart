@@ -11,6 +11,7 @@ import 'core/utils/app_logger.dart';
 import 'core/utils/error_handler.dart';
 import 'core/translations/app_translations.dart';
 import 'shared/themes/app_theme.dart';
+import 'core/utils/snackbar_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,6 +90,7 @@ class LogescoApp extends StatelessWidget {
       title: 'LOGESCO v2',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       translations: AppTranslations(),
       locale: locale,
       fallbackLocale: AppTranslations.fallbackLocale,

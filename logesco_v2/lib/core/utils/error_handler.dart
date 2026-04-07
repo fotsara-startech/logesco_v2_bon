@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/api_response.dart';
 import 'exceptions.dart';
 
@@ -79,59 +78,22 @@ class ErrorHandler {
   /// Affiche un message d'erreur à l'utilisateur
   static void showError(dynamic error, {String? context, String? title}) {
     final message = handleError(error, context: context);
-
-    Get.snackbar(
-      title ?? 'Erreur',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.error,
-      colorText: Get.theme.colorScheme.onError,
-      duration: const Duration(seconds: 4),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-    );
+    SnackbarHelper.error(message, title: title, duration: const Duration(seconds: 4));
   }
 
   /// Affiche un message de succès
   static void showSuccess(String message, {String? title}) {
-    Get.snackbar(
-      title ?? 'Succès',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.primary,
-      colorText: Get.theme.colorScheme.onPrimary,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-    );
+    SnackbarHelper.success(message, title: title, duration: const Duration(seconds: 3));
   }
 
   /// Affiche un message d'information
   static void showInfo(String message, {String? title}) {
-    Get.snackbar(
-      title ?? 'Information',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.surface,
-      colorText: Get.theme.colorScheme.onSurface,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-    );
+    SnackbarHelper.info(message, title: title ?? 'Information', duration: const Duration(seconds: 3));
   }
 
   /// Affiche un message d'avertissement
   static void showWarning(String message, {String? title}) {
-    Get.snackbar(
-      title ?? 'Attention',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.secondary,
-      colorText: Get.theme.colorScheme.onSecondary,
-      duration: const Duration(seconds: 4),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-    );
+    SnackbarHelper.warning(message, title: title, duration: const Duration(seconds: 4));
   }
 
   /// Gère les erreurs de validation de formulaire

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
 import '../controllers/sales_controller.dart';
 import '../../customers/controllers/customer_controller.dart';
@@ -716,15 +717,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
     try {
       // Vérifier que le panier n'est pas vide
       if (_salesController.cartItems.isEmpty) {
-        Get.snackbar(
-          'sales_cart_empty_action'.tr,
-          'sales_add_products_to_continue'.tr,
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.orange[100],
-          colorText: Colors.orange[900],
-          duration: const Duration(seconds: 2),
-          margin: const EdgeInsets.all(16),
-        );
+        SnackbarHelper.warning('sales_add_products_to_continue'.tr, duration: const Duration(seconds: 2));
         return;
       }
 
@@ -734,15 +727,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
         barrierDismissible: false,
       );
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur: $e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-      );
+      SnackbarHelper.error('Erreur: $e');
     }
   }
 }

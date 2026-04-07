@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../products/models/product.dart';
 import '../../suppliers/models/supplier.dart';
 import '../../suppliers/controllers/supplier_controller.dart';
@@ -458,11 +459,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
       }
 
       if (supplierController.suppliers.isEmpty) {
-        Get.snackbar(
-          'procurement_no_supplier'.tr,
-          'procurement_create_suppliers_first'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.info('procurement_create_suppliers_first'.tr, title: 'procurement_no_supplier'.tr);
         return;
       }
 
@@ -492,11 +489,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
         widget.controller.fournisseurSelectionne.value = selectedSupplier;
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        '${'error_load_failed'.tr}: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('${'error_load_failed'.tr}: $e');
     }
   }
 
@@ -528,11 +521,7 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
         widget.controller.ajouterProduit(product, quantity, unitCost);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        '${'error_load_failed'.tr}: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('${'error_load_failed'.tr}: $e');
     }
   }
 

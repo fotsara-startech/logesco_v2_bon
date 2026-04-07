@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/procurement_controller.dart';
 
 class AlertesApprovisionnementWidget extends StatelessWidget {
@@ -266,10 +267,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         ),
         onTap: () {
           // TODO: Naviguer vers la création d'une commande pour ce produit
-          Get.snackbar(
-            'Info',
-            'Création de commande pour ${produit['nom']} à implémenter',
-          );
+          SnackbarHelper.info('Création de commande pour ${produit['nom']} à implémenter');
         },
       ),
     );

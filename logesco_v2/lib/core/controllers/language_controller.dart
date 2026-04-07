@@ -48,22 +48,26 @@ class LanguageController extends GetxController {
           message = 'Language changed';
       }
 
-      Get.snackbar(
-        'language_change_success'.tr,
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.green.withOpacity(0.8),
-        colorText: Colors.white,
-      );
+      final context = Get.context;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'error_unknown'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
+      final context = Get.context;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('error_unknown'.tr),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

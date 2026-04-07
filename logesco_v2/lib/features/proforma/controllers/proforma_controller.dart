@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -249,15 +249,7 @@ class ProformaController extends GetxController {
           await salesCtrl.loadStocks();
         } catch (_) {}
 
-        Get.snackbar(
-          'Proforma validée',
-          'Vente ${sale.numeroVente} créée avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          icon: const Icon(Icons.check_circle, color: Colors.green),
-          duration: const Duration(seconds: 4),
-        );
+        SnackbarHelper.success('Vente ${sale.numeroVente} créée avec succès', duration: const Duration(seconds: 4));
 
         return sale;
       } else {

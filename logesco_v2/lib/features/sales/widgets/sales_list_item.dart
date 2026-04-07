@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/sale.dart';
 import '../../printing/controllers/printing_controller.dart';
 import '../../printing/models/models.dart';
@@ -154,14 +155,7 @@ class SalesListItem extends StatelessWidget {
       }
 
       if (companyController.companyProfile == null) {
-        Get.snackbar(
-          'sales_error'.tr,
-          'sales_company_not_configured'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 4),
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('sales_company_not_configured'.tr, title: 'sales_error'.tr, duration: const Duration(seconds: 4));
         return;
       }
 
@@ -179,22 +173,10 @@ class SalesListItem extends StatelessWidget {
           arguments: printingController.currentReceipt,
         );
       } else {
-        Get.snackbar(
-          'sales_error'.tr,
-          'sales_cannot_generate_receipt'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('sales_cannot_generate_receipt'.tr, title: 'sales_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'sales_error'.tr,
-        'sales_receipt_generation_error'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('sales_receipt_generation_error'.trParams({'error': e.toString()}), title: 'sales_error'.tr);
     }
   }
 }

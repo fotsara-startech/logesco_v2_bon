@@ -1,12 +1,13 @@
 ﻿import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/stock_model.dart';
 import '../services/inventory_service.dart';
 import '../services/export_service.dart';
+import '../services/inventory_pdf_service.dart';
 import '../../products/services/category_service.dart';
+import '../../products/services/api_product_service.dart';
 import '../../../core/services/auth_service.dart';
-import '../../auth/controllers/auth_controller.dart';
 
 /// Contrôleur GetX pour la gestion de l'inventaire
 class InventoryGetxController extends GetxController {
@@ -163,13 +164,7 @@ class InventoryGetxController extends GetxController {
     } catch (e) {
       print(' Erreur lors du chargement complet: $e');
       stocksError.value = e.toString();
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les stocks: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les stocks: $e');
     } finally {
       isLoading.value = false;
     }
@@ -185,13 +180,7 @@ class InventoryGetxController extends GetxController {
       summary.value = result;
     } catch (e) {
       summaryError.value = e.toString();
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger le résumé des stocks',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger le résumé des stocks');
     } finally {
       isLoadingSummary.value = false;
     }
@@ -206,17 +195,17 @@ class InventoryGetxController extends GetxController {
     // Si pas de refresh, tous les stocks sont déjà chargés
   }
 
-  /// Charge les alertes de stock (toutes les pages)
+  /// Charge les alertes de stock (toutes les pages) + produits sans entrée stock
   Future<void> loadStockAlerts({bool refresh = false}) async {
     try {
-      print('');
       alertsPage.value = 1;
       hasMoreAlerts.value = true;
       stockAlerts.clear();
       isLoadingAlerts.value = true;
       alertsError.value = '';
 
-      // Charger toutes les pages d'alertes
+      // 1. Charger les alertes depuis l'API (produits avec stock enregistré en alerte)
+      final List<Stock> apiAlerts = [];
       while (hasMoreAlerts.value) {
         final searchParam = searchQuery.value.isNotEmpty ? searchQuery.value : null;
         final categoryParam = selectedCategory.value.isNotEmpty ? selectedCategory.value : null;
@@ -227,34 +216,54 @@ class InventoryGetxController extends GetxController {
           category: categoryParam,
         );
 
-        final alertsList = result.data;
-        final pagination = result.pagination;
-
-        print('');
-
-        stockAlerts.addAll(alertsList);
-
-        // Vérifier s'il y a plus de pages
-        hasMoreAlerts.value = pagination.hasNext;
-
-        if (hasMoreAlerts.value) {
-          alertsPage.value++;
-        }
+        apiAlerts.addAll(result.data);
+        hasMoreAlerts.value = result.pagination.hasNext;
+        if (hasMoreAlerts.value) alertsPage.value++;
       }
 
-      print(' TOUTES LES ALERTES CHARGES: ${stockAlerts.length} alertes au total');
-      alertsPage.value = 1; // Réinitialiser
+      // 2. Récupérer tous les produits physiques (non-services)
+      // pour trouver ceux sans aucune entrée stock (quantité implicitement = 0)
+      try {
+        final productService = Get.find<ApiProductService>();
+        final allProducts = await productService.getAllProducts();
+
+        // IDs des produits déjà présents dans les alertes API
+        final alertProductIds = apiAlerts.map((s) => s.produitId).toSet();
+        // IDs de tous les stocks connus (chargés dans la liste principale)
+        final knownStockProductIds = stocks.map((s) => s.produitId).toSet();
+
+        for (final p in allProducts) {
+          if (p.estService) continue;
+          if (!knownStockProductIds.contains(p.id) && !alertProductIds.contains(p.id) && p.seuilStockMinimum > 0) {
+            // Construire un Product du type stock_model pour le Stock virtuel
+            final stockProduct = Product(
+              id: p.id,
+              reference: p.reference,
+              nom: p.nom,
+              seuilStockMinimum: p.seuilStockMinimum,
+              estActif: p.estActif,
+            );
+            apiAlerts.add(Stock(
+              id: 0,
+              produitId: p.id,
+              quantiteDisponible: 0,
+              quantiteReservee: 0,
+              derniereMaj: DateTime.now(),
+              produit: stockProduct,
+              stockFaible: true,
+            ));
+          }
+        }
+      } catch (_) {
+        // Si on ne peut pas récupérer les produits, on garde juste les alertes API
+      }
+
+      stockAlerts.assignAll(apiAlerts);
+      alertsPage.value = 1;
       hasMoreAlerts.value = false;
     } catch (e) {
-      print(' Erreur lors du chargement complet des alertes: $e');
       alertsError.value = e.toString();
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les alertes: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les alertes: $e');
     } finally {
       isLoadingAlerts.value = false;
     }
@@ -380,11 +389,7 @@ class InventoryGetxController extends GetxController {
       print(' Navigation réussie');
     } catch (e) {
       print(' Erreur navigation: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le formulaire de mouvement: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de mouvement: $e');
     }
   }
 
@@ -417,7 +422,6 @@ class InventoryGetxController extends GetxController {
   /// Exporte les mouvements en Excel
   Future<String?> exportMovementsToExcel() async {
     try {
-      // Récupérer les données CSV du backend
       final csvData = await _inventoryService.exportMovementsToCsv(
         produitId: productFilter.value,
         typeMouvement: movementTypeFilter.value,
@@ -426,11 +430,30 @@ class InventoryGetxController extends GetxController {
       );
 
       if (csvData != null) {
-        // Convertir en Excel
         return await ExportService.exportMovementsFromCsv(csvData);
       }
 
       return null;
+    } catch (e) {
+      movementsError.value = e.toString();
+      rethrow;
+    }
+  }
+
+  /// Exporte les stocks en PDF
+  Future<String?> exportStockToPdf() async {
+    try {
+      return await InventoryPdfService.exportStocksToPdf(stocks.toList());
+    } catch (e) {
+      stocksError.value = e.toString();
+      rethrow;
+    }
+  }
+
+  /// Exporte les mouvements en PDF
+  Future<String?> exportMovementsToPdf() async {
+    try {
+      return await InventoryPdfService.exportMovementsToPdf(movements.toList());
     } catch (e) {
       movementsError.value = e.toString();
       rethrow;
@@ -500,13 +523,7 @@ class InventoryGetxController extends GetxController {
 
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer le mouvement: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de créer le mouvement: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -538,13 +555,7 @@ class InventoryGetxController extends GetxController {
       categories.clear();
       print(' Aucune catégorie disponible');
 
-      Get.snackbar(
-        'Attention',
-        'Impossible de charger les catégories. Veuillez vérifier votre connexion.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade800,
-      );
+      SnackbarHelper.warning('Impossible de charger les catégories. Veuillez vérifier votre connexion.');
     }
   }
 

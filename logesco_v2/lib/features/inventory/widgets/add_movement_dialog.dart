@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../products/models/product.dart';
 import '../../products/controllers/product_controller.dart';
 import '../controllers/inventory_getx_controller.dart';
@@ -178,13 +179,7 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
 
     if (success) {
       Navigator.of(context).pop();
-      Get.snackbar(
-        'Succès',
-        'Mouvement de stock ajouté avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[800],
-      );
+      SnackbarHelper.success('Mouvement de stock ajouté avec succès');
     }
   }
 }

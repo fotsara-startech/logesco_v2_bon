@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/expiration_date_controller.dart';
 import '../models/expiration_date.dart';
 
@@ -71,7 +72,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
-      Get.snackbar('Erreur', 'Veuillez sélectionner une date',backgroundColor: Colors.red);
+      SnackbarHelper.error('Veuillez sélectionner une date');
       return;
     }
 

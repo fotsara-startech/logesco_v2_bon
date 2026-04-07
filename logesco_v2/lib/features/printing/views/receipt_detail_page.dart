@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/printing_controller.dart';
 import '../models/models.dart';
 import 'receipt_preview_page.dart';
@@ -704,13 +705,7 @@ class ReceiptDetailPage extends StatelessWidget {
         arguments: controller.currentReceipt,
       );
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de la réimpression: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de la réimpression: $e');
     }
   }
 }

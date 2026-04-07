@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 // import 'package:logesco_client_ultimate/core/models/print_format.dart';
 // import 'package:logesco_client_ultimate/features/sales/controllers/sales_controller.dart';
 import 'package:logesco_v2/features/printing/models/print_format.dart';
@@ -183,12 +184,9 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
       // Persister la sélection dans le controller
       _salesController.setSelectedReceiptFormat(format);
 
-      Get.snackbar(
-        'Paramètre sauvegardé',
+      SnackbarHelper.success(
         'Format d\'impression changé en ${format.displayName}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        title: 'Paramètre sauvegardé',
         duration: const Duration(seconds: 2),
       );
     }

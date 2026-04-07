@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/subscription_controller.dart';
 import '../models/subscription_status.dart';
 import '../models/license_data.dart';
 import 'license_activation_page.dart';
@@ -112,13 +113,21 @@ class ExpirationNotificationDialog extends StatelessWidget {
 
         // Bouton "Activer une licence"
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             Navigator.of(context).pop();
-            Navigator.of(context).push(
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const LicenseActivationPage(),
               ),
             );
+            // Si urgent et toujours pas activé, réafficher le dialog
+            if (isUrgent && context.mounted) {
+              final ctrl = Get.find<SubscriptionController>();
+              final s = ctrl.currentStatus;
+              if (s == null || (!s.isActive && !s.isInGracePeriod)) {
+                ExpirationNotificationDialog.show(context, status, isUrgent: isUrgent);
+              }
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: isExpiringSoon ? Colors.red : Colors.orange,

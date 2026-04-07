@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_controller.dart';
 import '../models/stock_model.dart';
 
@@ -376,12 +377,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
   void _selectProduct() {
     // TODO: Implémenter la sélection de produit
     // Pour l'instant, on affiche un message
-    Get.snackbar(
-      'info'.tr,
-      'Sélection de produit - À implémenter',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
+    SnackbarHelper.info('Sélection de produit - À implémenter', duration: const Duration(seconds: 2));
   }
 
   void _submitAdjustment() async {
@@ -405,34 +401,13 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
       );
 
       if (success) {
-        Get.snackbar(
-          'success'.tr,
-          'stock_adjustment_success'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
+        SnackbarHelper.success('stock_adjustment_success'.tr, duration: const Duration(seconds: 2));
         Get.back();
       } else {
-        Get.snackbar(
-          'error'.tr,
-          controller.error ?? 'Erreur lors de l\'ajustement',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        SnackbarHelper.error(controller.error ?? 'Erreur lors de l\'ajustement', duration: const Duration(seconds: 3));
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'Erreur: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      SnackbarHelper.error('Erreur: $e', duration: const Duration(seconds: 3));
     } finally {
       if (mounted) {
         setState(() {
