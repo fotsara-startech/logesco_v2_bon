@@ -126,26 +126,33 @@ class _MovementFormPageState extends State<MovementFormPage> {
       _controller.loadCategories();
     }
 
-    // Charger le solde de caisse actuel
-    _loadCashBalance();
+    // Charger le solde de caisse actuel (async, mais on attend pas pour ne pas bloquer l'UI)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadCashBalance();
+    });
   }
 
   /// Charge le solde actuel de la caisse
   Future<void> _loadCashBalance() async {
     try {
-      // Importer le contrôleur de session de caisse
       final cashSessionController = Get.find<CashSessionController>();
 
-      // Récupérer le solde attendu de la session active
+      // Si pas de session chargée, tenter de la charger d'abord
+      if (!cashSessionController.hasActiveSession) {
+        await cashSessionController.loadActiveSession();
+      }
+
       if (cashSessionController.hasActiveSession && cashSessionController.canViewBalance) {
-        setState(() {
-          _currentCashBalance = cashSessionController.currentCashBalance;
-        });
+        final balance = cashSessionController.currentCashBalance;
+        if (mounted) {
+          setState(() {
+            _currentCashBalance = balance;
+          });
+        }
         print('✅ Solde caisse chargé: ${_currentCashBalance?.toStringAsFixed(0)} FCFA');
       }
     } catch (e) {
       print('⚠️ Impossible de charger le solde de caisse: $e');
-      // Ne pas bloquer si le contrôleur n'est pas disponible
     }
   }
 
@@ -164,7 +171,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
         } else if (amount <= 0) {
           _montantError = 'financial_movements_form_amount_positive'.tr;
         } else if (amount > 999999999) {
-          _montantError = 'Le montant est trop élevé (max: 999,999,999)';
+          _montantError = 'financial_movements_form_amount_too_high'.tr;
         } else {
           _montantError = null;
         }
@@ -183,7 +190,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
       } else if (value.length < 3) {
         _descriptionError = 'financial_movements_form_description_min_length'.tr;
       } else if (value.length > 500) {
-        _descriptionError = 'La description ne peut pas dépasser 500 caractères';
+        _descriptionError = 'financial_movements_form_desc_too_long'.tr;
       } else {
         _descriptionError = null;
       }
@@ -213,11 +220,11 @@ class _MovementFormPageState extends State<MovementFormPage> {
       final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
 
       if (selectedDay.isAfter(today)) {
-        _dateError = 'La date ne peut pas être dans le futur';
+        _dateError = 'financial_movements_form_date_future'.tr;
       } else {
         final oldestAllowed = DateTime(2020, 1, 1);
         if (_selectedDate.isBefore(oldestAllowed)) {
-          _dateError = 'La date ne peut pas être antérieure à 2020';
+          _dateError = 'financial_movements_form_date_too_old'.tr;
         } else {
           _dateError = null;
         }
@@ -379,7 +386,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
                 if (isNegative) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '⚠️ Solde négatif',
+                    '⚠️ ${'financial_movements_form_negative_balance'.tr}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.red.shade600,
@@ -426,7 +433,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                isValid ? 'Formulaire valide' : 'Erreurs de validation',
+                isValid ? 'financial_movements_form_valid'.tr : 'financial_movements_form_errors'.tr,
                 style: TextStyle(
                   color: isValid ? Colors.green.shade700 : Colors.red.shade700,
                   fontWeight: FontWeight.w600,
@@ -451,7 +458,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
             Padding(
               padding: const EdgeInsets.only(left: 28),
               child: Text(
-                'Tous les champs sont correctement remplis',
+                'financial_movements_form_all_valid'.tr,
                 style: TextStyle(
                   color: Colors.green.shade600,
                   fontSize: 14,
@@ -474,7 +481,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations de base',
+              'financial_movements_form_basic_info'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -484,8 +491,8 @@ class _MovementFormPageState extends State<MovementFormPage> {
             // Champ montant
             AmountInput(
               controller: _montantController,
-              labelText: 'Montant',
-              hintText: 'Entrez le montant',
+              labelText: 'financial_movements_form_amount_label_short'.tr,
+              hintText: 'financial_movements_form_amount_hint'.tr,
               isRequired: true,
               validator: (_) => _montantError,
               onChanged: (value) {
@@ -499,21 +506,21 @@ class _MovementFormPageState extends State<MovementFormPage> {
             // Champ description
             RealTimeValidatedTextField(
               controller: _descriptionController,
-              labelText: 'Description',
-              hintText: 'Décrivez la nature de cette dépense',
+              labelText: 'financial_movements_form_description_label_short'.tr,
+              hintText: 'financial_movements_form_description_hint_long'.tr,
               prefixIcon: Icons.description,
               maxLines: 3,
               maxLength: 500,
               isRequired: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'La description est obligatoire';
+                  return 'financial_movements_form_description_required'.tr;
                 }
                 if (value.trim().length < 3) {
-                  return 'La description doit contenir au moins 3 caractères';
+                  return 'financial_movements_form_description_min_length'.tr;
                 }
                 if (value.length > 500) {
-                  return 'La description ne peut pas dépasser 500 caractères';
+                  return 'financial_movements_form_desc_too_long'.tr;
                 }
                 return null;
               },
@@ -538,7 +545,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Catégorie *',
+              'financial_movements_form_category_title'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -580,7 +587,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Date *',
+              'financial_movements_form_date_title'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -614,7 +621,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Date du mouvement',
+                              'financial_movements_form_date_movement'.tr,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: _dateError != null ? Colors.red : Colors.grey.shade600,
@@ -657,7 +664,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Notes (optionnel)',
+              'financial_movements_form_notes_title'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -667,7 +674,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
               controller: _notesController,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Ajoutez des notes ou commentaires supplémentaires...',
+                hintText: 'financial_movements_form_notes_hint_long'.tr,
                 prefixIcon: const Icon(Icons.note),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -692,33 +699,33 @@ class _MovementFormPageState extends State<MovementFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations',
+              'financial_movements_form_info_title'.tr,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
-              'Référence',
+              'financial_movements_form_reference'.tr,
               widget.movement!.reference,
               Icons.tag,
             ),
             const SizedBox(height: 8),
             _buildInfoRow(
-              'Créé le',
+              'financial_movements_form_created_at'.tr,
               _formatDateTime(widget.movement!.dateCreation),
               Icons.access_time,
             ),
             const SizedBox(height: 8),
             _buildInfoRow(
-              'Modifié le',
+              'financial_movements_form_updated_at'.tr,
               _formatDateTime(widget.movement!.dateModification),
               Icons.update,
             ),
             if (widget.movement!.utilisateurNom != null) ...[
               const SizedBox(height: 8),
               _buildInfoRow(
-                'Créé par',
+                'financial_movements_form_created_by'.tr,
                 widget.movement!.utilisateurNom!,
                 Icons.person,
               ),
@@ -831,14 +838,12 @@ class _MovementFormPageState extends State<MovementFormPage> {
 
     // Vérifier si le formulaire est valide
     if (!_isFormValid) {
-      // Afficher un message d'erreur global
-      Get.snackbar(
-        'Formulaire invalide',
-        'Veuillez corriger les erreurs avant de continuer',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade800,
-        duration: const Duration(seconds: 3),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('financial_movements_form_invalid_msg'.tr),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -883,30 +888,31 @@ class _MovementFormPageState extends State<MovementFormPage> {
 
         // Fermer le formulaire seulement si l'opération a réussi
         Get.back();
-        Get.snackbar(
-          'success'.tr,
-          _isEditing ? 'financial_movements_form_success_update'.tr : 'financial_movements_form_success_create'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            SnackBar(
+              content: Text(_isEditing ? 'financial_movements_form_success_update'.tr : 'financial_movements_form_success_create'.tr),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
       } else {
-        // Afficher un message d'erreur mais garder le formulaire ouvert
-        Get.snackbar(
-          'error'.tr,
-          'financial_movements_form_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('financial_movements_form_error'.tr),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'financial_movements_form_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('financial_movements_form_error'.tr),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       setState(() {
@@ -926,16 +932,16 @@ class _MovementFormPageState extends State<MovementFormPage> {
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.orange[700], size: 28),
             const SizedBox(width: 12),
-            const Expanded(child: Text('Avertissement')),
+            Expanded(child: Text('financial_movements_form_warning_title'.tr)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'La dépense que vous souhaitez enregistrer dépasse le solde disponible en caisse.',
-              style: TextStyle(fontSize: 15),
+            Text(
+              'financial_movements_form_warning_msg'.tr,
+              style: const TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 16),
             Container(
@@ -947,13 +953,13 @@ class _MovementFormPageState extends State<MovementFormPage> {
               ),
               child: Column(
                 children: [
-                  _buildWarningRow('Solde actuel', '${soldeActuel.toStringAsFixed(0)} FCFA', Colors.blue),
+                  _buildWarningRow('financial_movements_form_warning_current'.tr, '${soldeActuel.toStringAsFixed(0)} FCFA', Colors.blue),
                   const SizedBox(height: 8),
-                  _buildWarningRow('Montant dépense', '${montant.toStringAsFixed(0)} FCFA', Colors.orange),
+                  _buildWarningRow('financial_movements_form_warning_amount'.tr, '${montant.toStringAsFixed(0)} FCFA', Colors.orange),
                   const Divider(height: 24),
-                  _buildWarningRow('Déficit', '${deficit.toStringAsFixed(0)} FCFA', Colors.red),
+                  _buildWarningRow('financial_movements_form_warning_deficit'.tr, '${deficit.toStringAsFixed(0)} FCFA', Colors.red),
                   const SizedBox(height: 8),
-                  _buildWarningRow('Nouveau solde', '${nouveauSolde.toStringAsFixed(0)} FCFA', Colors.red, isBold: true),
+                  _buildWarningRow('financial_movements_form_warning_new_balance'.tr, '${nouveauSolde.toStringAsFixed(0)} FCFA', Colors.red, isBold: true),
                 ],
               ),
             ),
@@ -970,7 +976,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Le solde de la caisse deviendra négatif. Vous pouvez continuer si nécessaire.',
+                      'financial_movements_form_warning_info'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue[700],
@@ -985,14 +991,14 @@ class _MovementFormPageState extends State<MovementFormPage> {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange[700],
             ),
-            child: const Text('Continuer quand même'),
+            child: Text('financial_movements_form_warning_continue'.tr),
           ),
         ],
       ),
@@ -1064,9 +1070,9 @@ class _MovementFormPageState extends State<MovementFormPage> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Cette action est irréversible.',
-              style: TextStyle(
+            Text(
+              'financial_movements_form_irreversible'.tr,
+              style: const TextStyle(
                 color: Colors.red,
                 fontSize: 12,
               ),
@@ -1086,7 +1092,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
                 Get.back(); // Retourne à la liste
                 Get.snackbar(
                   'success'.tr,
-                  'Mouvement supprimé avec succès',
+                  'financial_movements_form_delete_success'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.green.shade100,
                   colorText: Colors.green.shade800,

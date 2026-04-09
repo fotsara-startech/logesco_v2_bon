@@ -4,6 +4,7 @@ import '../models/cash_session_model.dart';
 import '../services/cash_session_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../financial_movements/services/financial_movement_service.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 /// Contrôleur pour la gestion des sessions de caisse
 class CashSessionController extends GetxController {
@@ -65,13 +66,7 @@ class CashSessionController extends GetxController {
       availableCashRegisters.assignAll(cashRegisters);
     } catch (e) {
       print('Erreur lors du chargement des caisses disponibles: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les caisses disponibles: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarUtils.showError('Impossible de charger les caisses disponibles: $e');
     }
   }
 
@@ -83,14 +78,9 @@ class CashSessionController extends GetxController {
       activeSession.value = session;
 
       final isResumed = (session as dynamic).toJson()['resumed'] == true;
-      Get.snackbar(
-        'Succès',
-        isResumed ? 'Session de caisse reprise' : 'Connexion à la caisse réussie',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-        duration: const Duration(seconds: 2),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SnackbarUtils.showSuccess(isResumed ? 'Session de caisse reprise' : 'Connexion à la caisse réussie');
+      });
       return true;
     } catch (e) {
       final errorStr = e.toString();
@@ -98,25 +88,15 @@ class CashSessionController extends GetxController {
       if (errorStr.contains('USER_HAS_ACTIVE_SESSION')) {
         await loadActiveSession();
         if (activeSession.value != null) {
-          Get.snackbar(
-            'Session reprise',
-            'Votre session sur "${activeSession.value!.nomCaisse}" a été rechargée',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.blue.shade100,
-            colorText: Colors.blue.shade800,
-            duration: const Duration(seconds: 3),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            SnackbarUtils.showSuccess('Votre session sur "${activeSession.value!.nomCaisse}" a été rechargée');
+          });
           return true;
         }
       }
-      Get.snackbar(
-        'Erreur',
-        'Impossible de se connecter à la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-        duration: const Duration(seconds: 3),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SnackbarUtils.showError('Impossible de se connecter à la caisse: $e');
+      });
       return false;
     } finally {
       isConnecting.value = false;
@@ -156,14 +136,7 @@ class CashSessionController extends GetxController {
       return true;
     } catch (e) {
       print('❌ ERREUR Flutter: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de clôturer la session: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-        duration: const Duration(seconds: 3),
-      );
+      SnackbarUtils.showError('cash_session_close_error'.tr);
       return false;
     } finally {
       isDisconnecting.value = false;
@@ -332,13 +305,7 @@ class CashSessionController extends GetxController {
       await _calculateFinancialMovementsTotal(startDate, endDate);
     } catch (e) {
       print('❌ Erreur chargement historique: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger l\'historique: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarUtils.showError('Impossible de charger l\'historique: $e');
     } finally {
       isLoading.value = false;
     }
@@ -390,11 +357,13 @@ class CashSessionController extends GetxController {
   /// Obtenir le solde actuel de la caisse (pour admin uniquement)
   double? get currentCashBalance {
     try {
+      if (activeSession.value == null) return null;
       final authController = Get.find<AuthController>();
       final currentUser = authController.currentUser.value;
 
-      if (currentUser != null && currentUser.role.isAdmin && activeSession.value != null) {
-        return activeSession.value!.soldeAttendu;
+      if (currentUser != null && currentUser.role.isAdmin) {
+        // Utiliser soldeAttendu si disponible, sinon soldeOuverture comme fallback
+        return activeSession.value!.soldeAttendu ?? activeSession.value!.soldeOuverture;
       }
       return null;
     } catch (e) {
@@ -435,33 +404,26 @@ class CashSessionController extends GetxController {
   /// Afficher le dialog de confirmation avant de clôturer la session
   Future<void> confirmDisconnectFromCashRegister() async {
     if (activeSession.value == null) {
-      Get.snackbar(
-        'Erreur',
-        'Aucune session active',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarUtils.showError('cash_session_no_active_error'.tr);
       return;
     }
 
-    // Importer le dialog de clôture
     final confirmed = await Get.dialog<bool>(
           AlertDialog(
             title: Row(
               children: [
                 Icon(Icons.warning_amber_rounded, color: Colors.orange[700]),
                 const SizedBox(width: 12),
-                const Text('Clôturer la session'),
+                Text('cash_session_confirm_disconnect_title'.tr),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Êtes-vous sûr de vouloir clôturer cette session de caisse ?',
-                  style: TextStyle(fontSize: 16),
+                Text(
+                  'cash_session_confirm_disconnect_msg'.tr,
+                  style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -478,18 +440,16 @@ class CashSessionController extends GetxController {
                         children: [
                           Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
                           const SizedBox(width: 8),
-                          const Text(
-                            'Informations importantes',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Text(
+                            'cash_session_important_info'.tr,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '• Vous devrez compter l\'argent dans la caisse\n'
-                        '• L\'écart sera calculé automatiquement\n'
-                        '• Cette action est irréversible',
-                        style: TextStyle(fontSize: 12),
+                      Text(
+                        'cash_session_count_instructions'.tr,
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ],
                   ),
@@ -499,14 +459,14 @@ class CashSessionController extends GetxController {
             actions: [
               TextButton(
                 onPressed: () => Get.back(result: false),
-                child: const Text('Annuler'),
+                child: Text('cancel'.tr),
               ),
               ElevatedButton(
                 onPressed: () => Get.back(result: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange[700],
                 ),
-                child: const Text('Continuer'),
+                child: Text('cash_session_continue'.tr),
               ),
             ],
           ),
@@ -553,9 +513,9 @@ class CashSessionController extends GetxController {
                       children: [
                         Icon(Icons.lock_clock, size: 28, color: Colors.orange[700]),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Clôture de caisse',
-                          style: TextStyle(
+                        Text(
+                          'cash_session_close_dialog_title'.tr,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -592,8 +552,8 @@ class CashSessionController extends GetxController {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      Text('Ouverture: ${activeSession.value!.soldeOuverture.toStringAsFixed(0)} FCFA'),
-                                      Text('Durée: ${activeSession.value!.formattedDuration}'),
+                                      Text('${'cash_session_opening_label'.tr}: ${activeSession.value!.soldeOuverture.toStringAsFixed(0)} FCFA'),
+                                      Text('${'cash_session_duration_label'.tr}: ${activeSession.value!.formattedDuration}'),
                                     ],
                                   ),
                                 ),
@@ -602,9 +562,9 @@ class CashSessionController extends GetxController {
                             ],
 
                             // Saisie montant
-                            const Text(
-                              'Montant en caisse',
-                              style: TextStyle(
+                            Text(
+                              'cash_session_amount_label'.tr,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -613,8 +573,8 @@ class CashSessionController extends GetxController {
                             TextFormField(
                               controller: amountController,
                               decoration: InputDecoration(
-                                labelText: 'Montant total',
-                                hintText: 'Entrez le montant compté',
+                                labelText: 'cash_session_amount_total_label'.tr,
+                                hintText: 'cash_session_amount_hint'.tr,
                                 suffixText: 'FCFA',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -628,7 +588,7 @@ class CashSessionController extends GetxController {
                               },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Veuillez saisir le montant';
+                                  return 'cash_session_amount_required_msg'.tr;
                                 }
                                 return null;
                               },
@@ -646,7 +606,7 @@ class CashSessionController extends GetxController {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Annuler'),
+                            child: Text('cancel'.tr),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -675,7 +635,7 @@ class CashSessionController extends GetxController {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text('Clôturer'),
+                                    : Text('cash_session_close_btn'.tr),
                               )),
                         ),
                       ],
@@ -695,7 +655,7 @@ class CashSessionController extends GetxController {
     final sessions = await CashSessionService.getAllActiveSessions();
 
     if (sessions.isEmpty) {
-      Get.snackbar('Info', 'Aucune session active en ce moment', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showInfo('Aucune session active en ce moment');
       return;
     }
 
@@ -727,10 +687,10 @@ class CashSessionController extends GetxController {
                           Get.back();
                           final ok = await CashSessionService.adminCloseSession(s['id'] as int);
                           if (ok) {
-                            Get.snackbar('Succès', 'Session fermée — la caisse est maintenant disponible', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green.shade100);
+                            SnackbarUtils.showSuccess('Session fermée — la caisse est maintenant disponible');
                             await loadAvailableCashRegisters();
                           } else {
-                            Get.snackbar('Erreur', 'Impossible de fermer la session', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red.shade100);
+                            SnackbarUtils.showError('Impossible de fermer la session');
                           }
                         },
                       ),
@@ -745,7 +705,7 @@ class CashSessionController extends GetxController {
               Get.back();
               final ok = await CashSessionService.cleanupOrphanSessions();
               if (ok) {
-                Get.snackbar('Nettoyage effectué', 'Sessions orphelines fermées', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green.shade100);
+                SnackbarUtils.showSuccess('Sessions orphelines fermées');
                 await loadAvailableCashRegisters();
               }
             },
@@ -763,13 +723,7 @@ class CashSessionController extends GetxController {
     await loadAvailableCashRegisters();
 
     if (availableCashRegisters.isEmpty) {
-      Get.snackbar(
-        'Information',
-        'Aucune caisse disponible pour le moment',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade800,
-      );
+      SnackbarUtils.showWarning('Aucune caisse disponible pour le moment');
       return;
     }
 

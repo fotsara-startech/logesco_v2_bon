@@ -322,53 +322,67 @@ class UserListView extends StatelessWidget {
   void _showChangePasswordDialog(User user, UserController controller) {
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
+    bool showPassword = false;
+    bool showConfirmPassword = false;
 
     Get.dialog(
-      AlertDialog(
-        title: Text('users_change_password_title'.trParams({'username': user.nomUtilisateur})),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'users_new_password'.tr,
-                border: const OutlineInputBorder(),
+      StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('users_change_password_title'.trParams({'username': user.nomUtilisateur})),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: passwordController,
+                obscureText: !showPassword,
+                decoration: InputDecoration(
+                  labelText: 'users_new_password'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => showPassword = !showPassword),
+                  ),
+                ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: !showConfirmPassword,
+                decoration: InputDecoration(
+                  labelText: 'users_confirm_password'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(showConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => showConfirmPassword = !showConfirmPassword),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text('common_cancel'.tr),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'users_confirm_password'.tr,
-                border: const OutlineInputBorder(),
-              ),
+            ElevatedButton(
+              onPressed: () {
+                if (passwordController.text.isEmpty) {
+                  SnackbarHelper.error('users_password_empty'.tr);
+                  return;
+                }
+                if (passwordController.text != confirmPasswordController.text) {
+                  SnackbarHelper.error('users_passwords_not_match'.tr);
+                  return;
+                }
+                Get.back();
+                controller.changePassword(user.id!, passwordController.text);
+              },
+              child: Text('users_change_password_action'.tr),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('common_cancel'.tr),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (passwordController.text.isEmpty) {
-                SnackbarHelper.error('users_password_empty'.tr);
-                return;
-              }
-              if (passwordController.text != confirmPasswordController.text) {
-                SnackbarHelper.error('users_passwords_not_match'.tr);
-                return;
-              }
-              Get.back();
-              controller.changePassword(user.id!, passwordController.text);
-            },
-            child: Text('users_change_password_action'.tr),
-          ),
-        ],
       ),
     );
   }

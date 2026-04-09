@@ -26,7 +26,7 @@ class CashSessionHistoryView extends StatelessWidget {
           Obx(() => IconButton(
                 icon: Icon(showStatistics.value ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => showStatistics.value = !showStatistics.value,
-                tooltip: showStatistics.value ? 'cash_session_hide_stats'.tr : 'cash_session_show_stats'.tr,
+                tooltip: showStatistics.value ? 'cash_session_history_hide_stats'.tr : 'cash_session_history_show_stats'.tr,
               )),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -94,9 +94,9 @@ class CashSessionHistoryView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'Période',
-                style: TextStyle(
+              Text(
+                'cash_session_history_period'.tr,
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -106,7 +106,7 @@ class CashSessionHistoryView extends StatelessWidget {
               TextButton.icon(
                 onPressed: () => _showDateRangePicker(controller),
                 icon: const Icon(Icons.date_range, size: 18),
-                label: const Text('Dates personnalisées'),
+                label: Text('cash_session_history_custom_dates'.tr),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
@@ -181,7 +181,7 @@ class CashSessionHistoryView extends StatelessWidget {
 
     await Get.dialog(
       AlertDialog(
-        title: const Text('Sélectionner une période'),
+        title: Text('cash_session_history_select_period'.tr),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
@@ -214,7 +214,7 @@ class CashSessionHistoryView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Date de début',
+                              'cash_session_history_start_date'.tr,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -222,7 +222,7 @@ class CashSessionHistoryView extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              startDate != null ? DateFormat('dd/MM/yyyy').format(startDate!) : 'Non définie',
+                              startDate != null ? DateFormat('dd/MM/yyyy').format(startDate!) : 'cash_session_history_not_defined'.tr,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -262,7 +262,7 @@ class CashSessionHistoryView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Date de fin',
+                              'cash_session_history_end_date'.tr,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -270,7 +270,7 @@ class CashSessionHistoryView extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              endDate != null ? DateFormat('dd/MM/yyyy').format(endDate!) : 'Non définie',
+                              endDate != null ? DateFormat('dd/MM/yyyy').format(endDate!) : 'cash_session_history_not_defined'.tr,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -289,7 +289,7 @@ class CashSessionHistoryView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -306,7 +306,7 @@ class CashSessionHistoryView extends StatelessWidget {
                 );
               }
             },
-            child: const Text('Appliquer'),
+            child: Text('cash_session_history_apply'.tr),
           ),
         ],
       ),
@@ -352,9 +352,9 @@ class CashSessionHistoryView extends StatelessWidget {
             children: [
               Icon(Icons.analytics, color: Colors.blue[700], size: 20),
               const SizedBox(width: 8),
-              const Text(
-                'Statistiques',
-                style: TextStyle(
+              Text(
+                'cash_session_history_statistics'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -374,7 +374,7 @@ class CashSessionHistoryView extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Total Ouverture',
+                  'cash_session_history_total_opening'.tr,
                   '${totalSoldeOuverture.toStringAsFixed(0)} F',
                   Icons.login,
                   Colors.blue,
@@ -383,7 +383,7 @@ class CashSessionHistoryView extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Total Fermeture',
+                  'cash_session_history_total_closing'.tr,
                   '${totalSoldeFermeture.toStringAsFixed(0)} F',
                   Icons.logout,
                   Colors.orange,
@@ -396,7 +396,7 @@ class CashSessionHistoryView extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'carts Positifs',
+                  'cash_session_history_positive_variances'.tr,
                   '${totalEcartPositif > 0 ? '+' : ''}${totalEcartPositif.toStringAsFixed(0)} F',
                   Icons.trending_up,
                   Colors.green,
@@ -406,7 +406,7 @@ class CashSessionHistoryView extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'carts Négatifs',
+                  'cash_session_history_negative_variances'.tr,
                   '${totalEcartNegatif.toStringAsFixed(0)} F',
                   Icons.trending_down,
                   Colors.red,
@@ -417,11 +417,11 @@ class CashSessionHistoryView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Obx(() => _buildStatCard(
-                'Mouvements Financiers',
+                'cash_session_history_cash_movements'.tr,
                 '${controller.totalMovementsAmount.value.toStringAsFixed(0)} F',
                 Icons.account_balance_wallet,
                 Colors.purple,
-                subtitle: 'Dépenses de la période',
+                subtitle: 'cash_session_history_period_expenses'.tr,
                 fullWidth: true,
               )),
         ],
@@ -547,7 +547,7 @@ class CashSessionHistoryView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isClosed ? 'Fermée' : 'Active',
+                      isClosed ? 'cash_session_history_closed'.tr : 'cash_session_history_active'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -565,7 +565,7 @@ class CashSessionHistoryView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildInfoColumn(
-                      'Ouverture',
+                      'cash_session_history_opening'.tr,
                       '${session.soldeOuverture.toStringAsFixed(0)} F',
                       Icons.login,
                     ),
@@ -573,14 +573,14 @@ class CashSessionHistoryView extends StatelessWidget {
                   if (isClosed) ...[
                     Expanded(
                       child: _buildInfoColumn(
-                        'Fermeture',
+                        'cash_session_history_closing'.tr,
                         '${session.soldeFermeture?.toStringAsFixed(0) ?? '0'} F',
                         Icons.logout,
                       ),
                     ),
                     Expanded(
                       child: _buildInfoColumn(
-                        'cart',
+                        'cash_session_history_variance'.tr,
                         '${isPositive ? '+' : ''}${ecart.toStringAsFixed(0)} F',
                         isPositive ? Icons.trending_up : Icons.trending_down,
                         color: isPositive ? Colors.green : Colors.red,
@@ -665,7 +665,7 @@ class CashSessionHistoryView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucune session trouvée',
+            'cash_session_history_empty'.tr,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -674,7 +674,7 @@ class CashSessionHistoryView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Essayez de changer la période',
+            'cash_session_history_empty_hint'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -692,7 +692,7 @@ class CashSessionHistoryView extends StatelessWidget {
           children: [
             Icon(Icons.info_outline, color: Colors.blue[700]),
             const SizedBox(width: 12),
-            const Text('Détails de la session'),
+            Text('cash_session_history_details_title'.tr),
           ],
         ),
         content: SingleChildScrollView(
@@ -700,16 +700,16 @@ class CashSessionHistoryView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetailRow('Caisse', session.nomCaisse),
-              _buildDetailRow('Utilisateur', session.nomUtilisateur),
+              _buildDetailRow('cash_session_register'.tr, session.nomCaisse),
+              _buildDetailRow('cash_session_user'.tr, session.nomUtilisateur),
               const Divider(height: 24),
-              _buildDetailRow('Ouverture', DateFormat('dd/MM/yyyy HH:mm').format(session.dateOuverture)),
-              if (session.dateFermeture != null) _buildDetailRow('Fermeture', DateFormat('dd/MM/yyyy HH:mm').format(session.dateFermeture!)),
-              _buildDetailRow('Durée', session.formattedDuration),
+              _buildDetailRow('cash_session_history_opening'.tr, DateFormat('dd/MM/yyyy HH:mm').format(session.dateOuverture)),
+              if (session.dateFermeture != null) _buildDetailRow('cash_session_history_closing'.tr, DateFormat('dd/MM/yyyy HH:mm').format(session.dateFermeture!)),
+              _buildDetailRow('cash_session_duration'.tr, session.formattedDuration),
               const Divider(height: 24),
-              _buildDetailRow('Solde ouverture', '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
-              if (session.soldeAttendu != null) _buildDetailRow('Solde attendu', '${session.soldeAttendu!.toStringAsFixed(0)} FCFA'),
-              if (session.soldeFermeture != null) _buildDetailRow('Solde déclaré', '${session.soldeFermeture!.toStringAsFixed(0)} FCFA'),
+              _buildDetailRow('cash_session_opening_balance'.tr, '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
+              if (session.soldeAttendu != null) _buildDetailRow('cash_session_expected_balance'.tr, '${session.soldeAttendu!.clamp(0, double.infinity).toStringAsFixed(0)} FCFA'),
+              if (session.soldeFermeture != null) _buildDetailRow('cash_session_declared_amount'.tr, '${session.soldeFermeture!.toStringAsFixed(0)} FCFA'),
               const Divider(height: 24),
               // Afficher les totaux d'entrées et de sorties
               Container(
@@ -727,7 +727,7 @@ class CashSessionHistoryView extends StatelessWidget {
                         Icon(Icons.arrow_downward, color: Colors.green.shade700, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Total entrées:',
+                          'cash_session_history_total_entries'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.green.shade700,
@@ -762,7 +762,7 @@ class CashSessionHistoryView extends StatelessWidget {
                         Icon(Icons.arrow_upward, color: Colors.red.shade700, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Total dépenses:',
+                          'cash_session_history_total_expenses'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.red.shade700,
@@ -796,7 +796,7 @@ class CashSessionHistoryView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'cart:',
+                        'cash_session_history_ecart'.tr,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: (session.ecart! >= 0) ? Colors.green.shade700 : Colors.red.shade700,
@@ -820,7 +820,7 @@ class CashSessionHistoryView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('cash_session_history_close'.tr),
           ),
         ],
       ),

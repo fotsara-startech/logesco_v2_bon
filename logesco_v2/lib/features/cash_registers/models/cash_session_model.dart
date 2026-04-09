@@ -1,4 +1,6 @@
-﻿/// Modèle pour les sessions de caisse
+﻿import 'package:get/get.dart';
+
+/// Modèle pour les sessions de caisse
 class CashSession {
   final int? id;
   final int caisseId;
@@ -165,21 +167,21 @@ enum SessionPeriodFilter {
   String get label {
     switch (this) {
       case SessionPeriodFilter.today:
-        return 'Aujourd\'hui';
+        return 'cash_session_filter_today'.tr;
       case SessionPeriodFilter.yesterday:
-        return 'Hier';
+        return 'cash_session_filter_yesterday'.tr;
       case SessionPeriodFilter.thisWeek:
-        return 'Cette semaine';
+        return 'cash_session_filter_this_week'.tr;
       case SessionPeriodFilter.lastWeek:
-        return 'Semaine dernière';
+        return 'cash_session_filter_last_week'.tr;
       case SessionPeriodFilter.thisMonth:
-        return 'Ce mois';
+        return 'cash_session_filter_this_month'.tr;
       case SessionPeriodFilter.lastMonth:
-        return 'Mois dernier';
+        return 'cash_session_filter_last_month'.tr;
       case SessionPeriodFilter.custom:
-        return 'Période personnalisée';
+        return 'cash_session_filter_custom'.tr;
       case SessionPeriodFilter.all:
-        return 'Toutes les sessions';
+        return 'cash_session_filter_all'.tr;
     }
   }
 

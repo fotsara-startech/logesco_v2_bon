@@ -70,6 +70,7 @@ class ReceiptTemplateFactory {
             reprintCount: receipt.reprintCount,
             lastReprintDate: receipt.lastReprintDate,
             reprintBy: receipt.reprintBy,
+            isProforma: receipt.isProforma,
           )
         : receipt;
 
