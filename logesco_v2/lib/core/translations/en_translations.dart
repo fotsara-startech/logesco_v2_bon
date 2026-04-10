@@ -2220,6 +2220,8 @@ const Map<String, String> enTranslations = {
   'procurement_delivery_date': 'Expected delivery date',
   'procurement_select_date': 'Select a date',
   'procurement_payment_method': 'Payment method',
+  'procurement_payment_cash': 'Cash',
+  'procurement_payment_credit': 'On credit',
   'procurement_notes': 'Notes',
   'procurement_notes_optional': 'Optional notes...',
   'procurement_products': 'Products',

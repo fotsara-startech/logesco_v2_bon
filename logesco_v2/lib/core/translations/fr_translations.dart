@@ -1,4 +1,4 @@
-﻿/// Traductions françaises de l'application LOGESCO v2
+/// Traductions françaises de l'application LOGESCO v2
 const Map<String, String> frTranslations = {
   // ============================================================================
   // COMPTABILITÉ

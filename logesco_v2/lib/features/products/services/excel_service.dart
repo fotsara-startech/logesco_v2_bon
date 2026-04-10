@@ -221,8 +221,18 @@ class ExcelService {
           String? nom = _getCellValue(row, columnMap['nom']);
           String? prixUnitaireStr = _getCellValue(row, columnMap['prixUnitaire']);
 
-          if (reference == null || reference.isEmpty || nom == null || nom.isEmpty || prixUnitaireStr == null || prixUnitaireStr.isEmpty) {
-            continue; // Ignorer les lignes incomplètes
+          // Générer une référence automatique si absente (logique PRD{YY}{timestamp})
+          if (reference == null || reference.isEmpty) {
+            final now = DateTime.now();
+            final yearSuffix = now.year.toString().substring(2);
+            final uniquePart = (now.millisecondsSinceEpoch % 100000).toString().padLeft(5, '0');
+            reference = 'PRD$yearSuffix$uniquePart';
+            // Petit délai pour garantir l'unicité entre lignes consécutives
+            await Future.delayed(const Duration(milliseconds: 1));
+          }
+
+          if (nom == null || nom.isEmpty || prixUnitaireStr == null || prixUnitaireStr.isEmpty) {
+            continue; // Ignorer les lignes sans nom ou prix
           }
 
           double prixUnitaire = double.tryParse(prixUnitaireStr) ?? 0.0;

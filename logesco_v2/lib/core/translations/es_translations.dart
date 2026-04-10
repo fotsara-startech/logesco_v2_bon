@@ -2059,6 +2059,8 @@ const Map<String, String> esTranslations = {
   'procurement_delivery_date': 'Fecha de entrega prevista',
   'procurement_select_date': 'Seleccionar fecha',
   'procurement_payment_method': 'Método de pago',
+  'procurement_payment_cash': 'Contado',
+  'procurement_payment_credit': 'A crédito',
   'procurement_notes': 'Notas',
   'procurement_notes_optional': 'Notas opcionales...',
   'procurement_products': 'Productos',

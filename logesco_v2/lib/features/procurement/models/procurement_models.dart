@@ -4,8 +4,7 @@
 
 import 'package:logesco_v2/features/inventory/models/stock_model.dart';
 import 'package:logesco_v2/features/suppliers/models/supplier.dart';
-
-
+import 'package:get/get.dart';
 
 /// Statuts possibles d'une commande d'approvisionnement
 enum CommandeStatut {
@@ -28,12 +27,14 @@ enum CommandeStatut {
 
 /// Modes de paiement pour les commandes
 enum ModePaiement {
-  comptant('comptant', 'Comptant'),
-  credit('credit', 'À crédit');
+  comptant('comptant', 'procurement_payment_cash'),
+  credit('credit', 'procurement_payment_credit');
 
-  const ModePaiement(this.value, this.label);
+  const ModePaiement(this.value, this.translationKey);
   final String value;
-  final String label;
+  final String translationKey;
+
+  String get label => translationKey.tr;
 
   static ModePaiement fromString(String value) {
     return ModePaiement.values.firstWhere(

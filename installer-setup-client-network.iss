@@ -39,7 +39,11 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 ; Sortie
 OutputDir=release
+#ifdef SetupName
+OutputBaseFilename={#SetupName}
+#else
 OutputBaseFilename=LOGESCO-v2-Client-Network-Setup
+#endif
 Compression=lzma2/ultra64
 SolidCompression=yes
 

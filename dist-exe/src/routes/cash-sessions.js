@@ -352,12 +352,15 @@ function createCashSessionsRouter({ prisma, authService }) {
       
       const soldeAttendu = activeSession.soldeAttendu ? parseFloat(activeSession.soldeAttendu) : parseFloat(activeSession.soldeOuverture);
       const soldeFermetureFloat = parseFloat(soldeFermeture);
-      const ecart = soldeFermetureFloat - soldeAttendu;
+      // L'écart est calculé par rapport au solde physique attendu (min 0, car on ne peut pas avoir moins que 0 en caisse)
+      const soldeAttenduPhysique = Math.max(0, soldeAttendu);
+      const ecart = soldeFermetureFloat - soldeAttenduPhysique;
       
       console.log('📊 CALCULS:');
       console.log(`   soldeAttendu (calculé) = ${soldeAttendu} FCFA`);
+      console.log(`   soldeAttenduPhysique = max(0, ${soldeAttendu}) = ${soldeAttenduPhysique} FCFA`);
       console.log(`   soldeFermetureFloat = ${soldeFermetureFloat} FCFA`);
-      console.log(`   ecart = ${soldeFermetureFloat} - ${soldeAttendu} = ${ecart} FCFA`);
+      console.log(`   ecart = ${soldeFermetureFloat} - ${soldeAttenduPhysique} = ${ecart} FCFA`);
       console.log('');
       
       console.log(`📊 RÉSUMÉ CLÔTURE caisse ${activeSession.caisse.nom}:`);

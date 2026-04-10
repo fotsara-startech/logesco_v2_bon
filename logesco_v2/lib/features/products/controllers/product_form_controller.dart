@@ -170,8 +170,6 @@ class ProductFormController extends GetxController {
     final reference = referenceController.text.trim();
     if (reference.isEmpty) {
       referenceError.value = 'La référence est obligatoire';
-    } else if (reference.length < 2) {
-      referenceError.value = 'La référence doit contenir au moins 2 caractères';
     } else {
       referenceError.value = '';
     }

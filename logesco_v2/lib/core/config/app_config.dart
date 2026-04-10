@@ -1,27 +1,29 @@
 ﻿/// Configuration centralisée de l'application LOGESCO
+/// Les paramètres de déploiement sont injectés via --dart-define au moment du build.
+/// Utiliser le script build.ps1 pour construire l'application.
 class AppConfig {
   // ============================================================================
   // 1. MODE DE DÉPLOIEMENT
   // ============================================================================
 
-  /// Mode client (true) ou serveur (false)
-  // static const bool isClientMode = true;
-  static const bool isClientMode = false;
+  /// Mode client (true) ou serveur local (false)
+  /// Injecté via --dart-define=IS_CLIENT_MODE=true
+  static const bool isClientMode = bool.fromEnvironment('IS_CLIENT_MODE', defaultValue: false);
 
   // ============================================================================
   // 2. CONFIGURATION DU SERVEUR
   // ============================================================================
 
   static const String _localhostUrl = 'http://localhost:8080/api/v1';
-  static const String _productionUrl = 'http://192.168.100.101:8080/api/v1';
 
-  /// URL de base par défaut — décommenter _localhostUrl pour le dev local
-  // static const String baseUrl = _productionUrl;
-  static const String baseUrl = _localhostUrl;
+  /// URL de base injectée via --dart-define=BASE_URL=http://192.168.x.x:8080/api/v1
+  static const String _definedBaseUrl = String.fromEnvironment('BASE_URL', defaultValue: _localhostUrl);
+
+  /// Alias statique pour compatibilité avec les services existants
+  static String get baseUrl => _customBaseUrl;
 
   /// URL de base dynamique (modifiable au runtime via setBaseUrl)
-  // static String _customBaseUrl = _productionUrl;
-  static String _customBaseUrl = _localhostUrl;
+  static String _customBaseUrl = _definedBaseUrl;
 
   /// Retourne l'URL de base actuelle
   static String get currentBaseUrl => _customBaseUrl;
@@ -31,44 +33,31 @@ class AppConfig {
     _customBaseUrl = url;
   }
 
-  /// Contrôle des licences activé (true = validation licence requise)
-  static const bool enableLicenseControl = false;
-
-  /// Réinitialise l'URL à la valeur par défaut
+  /// Réinitialise l'URL à la valeur définie au build
   static void resetBaseUrl() {
-    _customBaseUrl = baseUrl;
+    _customBaseUrl = _definedBaseUrl;
   }
+
+  /// Contrôle des licences activé
+  /// Injecté via --dart-define=ENABLE_LICENSE_CONTROL=true
+  static const bool enableLicenseControl = bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: false);
 
   // ============================================================================
   // 3. CONFIGURATION DE DÉVELOPPEMENT
   // ============================================================================
 
-  /// Mode développement
-  static const bool isDevelopmentMode = false;
-
-  /// Bypass de l'authentification en mode développement
-  static const bool bypassAuth = false;
-
-  /// Utilisation des services simulés
+  static const bool isDevelopmentMode = bool.fromEnvironment('DEV_MODE', defaultValue: false);
+  static const bool bypassAuth = bool.fromEnvironment('BYPASS_AUTH', defaultValue: false);
   static const bool useMockServices = false;
-
-  /// Activation des logs
   static const bool enableLogging = true;
-
-  /// Utilisation de données de test
   static const bool useTestData = false;
 
   // ============================================================================
   // 4. TIMEOUTS
   // ============================================================================
 
-  /// Timeout de connexion
   static const Duration connectTimeout = Duration(seconds: 30);
-
-  /// Timeout de réception
   static const Duration receiveTimeout = Duration(seconds: 30);
-
-  /// Timeout général des requêtes
   static const Duration requestTimeout = Duration(seconds: 30);
 
   // ============================================================================
@@ -92,34 +81,26 @@ class AppConfig {
   // 6. PAGINATION
   // ============================================================================
 
-  /// Taille de page par défaut
   static const int defaultPageSize = 20;
-
-  /// Taille de page maximale
   static const int maxPageSize = 100;
 
   // ============================================================================
   // 7. RECHERCHE
   // ============================================================================
 
-  /// Délai de debounce pour la recherche
   static const Duration searchDebounceDelay = Duration(milliseconds: 500);
 
   // ============================================================================
   // 8. MESSAGES
   // ============================================================================
 
-  /// Message d'erreur par défaut
   static const String defaultErrorMessage = 'Une erreur inattendue s\'est produite';
-
-  /// Message de connexion internet
   static const String noInternetMessage = 'Pas de connexion internet';
 
   // ============================================================================
   // 9. HEADERS HTTP
   // ============================================================================
 
-  /// Headers par défaut pour les requêtes HTTP
   static Map<String, String> get defaultHeaders => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -130,14 +111,12 @@ class AppConfig {
   // 10. LOGGING
   // ============================================================================
 
-  /// Mode développement pour le logging
-  static const bool isDevelopment = true;
+  static const bool isDevelopment = bool.fromEnvironment('DEV_MODE', defaultValue: false);
 
   // ============================================================================
   // 11. ROUTES
   // ============================================================================
 
-  /// Retourne la route initiale selon la configuration
   static String get initialRoute {
     if (isDevelopmentMode && bypassAuth) {
       return '/dashboard';
