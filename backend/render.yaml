@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: logesco-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npx prisma generate --schema=prisma/schema.postgresql.prisma && npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PROVIDER
+        value: postgresql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: logesco-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 365d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 365d
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: LOG_LEVEL
+        value: info
+      - key: PORT
+        value: 8080
+
+databases:
+  - name: logesco-db
+    databaseName: logesco
+    user: logesco_user
+    plan: free
