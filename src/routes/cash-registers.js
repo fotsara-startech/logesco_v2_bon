@@ -11,7 +11,12 @@ function createCashRegistersRouter({ prisma, authService }) {
   // GET /api/v1/cash-registers - Récupérer toutes les caisses
   router.get('/', async (req, res) => {
     try {
+      // Filtrer par boutique si fourni
+      const boutiqueId = req.query.boutiqueId || req.headers['x-boutique-id'];
+      const where = boutiqueId ? { boutiqueId: parseInt(boutiqueId) } : {};
+
       const cashRegisters = await prisma.cashRegister.findMany({
+        where,
         include: {
           utilisateur: true
         },
@@ -54,7 +59,7 @@ function createCashRegistersRouter({ prisma, authService }) {
   // POST /api/v1/cash-registers - Créer une nouvelle caisse
   router.post('/', async (req, res) => {
     try {
-      const { nom, description, soldeInitial = 0, isActive = true } = req.body;
+      const { nom, description, soldeInitial = 0, isActive = true, boutiqueId } = req.body;
       
       // Validation
       if (!nom) {
@@ -88,7 +93,8 @@ function createCashRegistersRouter({ prisma, authService }) {
           description: description || '',
           soldeInitial: parseFloat(soldeInitial),
           soldeActuel: parseFloat(soldeInitial),
-          isActive
+          isActive,
+          ...(boutiqueId ? { boutiqueId: parseInt(boutiqueId) } : {})
         },
         include: {
           utilisateur: true

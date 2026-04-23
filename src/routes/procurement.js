@@ -46,6 +46,10 @@ function createProcurementRouter(services) {
           if (dateFin) where.dateCommande.lte = new Date(dateFin);
         }
 
+        // Filtrer par boutique si fourni
+        const boutiqueId = req.query.boutiqueId || req.headers['x-boutique-id'];
+        if (boutiqueId) where.boutiqueId = parseInt(boutiqueId);
+
         // Pagination
         const skip = (page - 1) * limit;
         const take = parseInt(limit);
@@ -104,6 +108,12 @@ function createProcurementRouter(services) {
       try {
         const { fournisseurId, dateLivraisonPrevue, modePaiement, notes, details } = req.body;
 
+        // Extraire boutiqueId
+        const boutiqueId = req.body.boutiqueId ||
+          req.headers['x-boutique-id'] ||
+          req.query.boutiqueId;
+        const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
+
         // Vérifier que le fournisseur existe
         const fournisseur = await prisma.fournisseur.findUnique({
           where: { id: fournisseurId }
@@ -148,6 +158,7 @@ function createProcurementRouter(services) {
           data: {
             numeroCommande,
             fournisseurId,
+            boutiqueId: boutiqueIdInt,
             dateLivraisonPrevue: dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null,
             modePaiement: modePaiement || 'credit',
             notes,
@@ -601,24 +612,44 @@ function createProcurementRouter(services) {
 
             // Mettre à jour le stock si quantité reçue > 0
             if (quantiteRecue > 0) {
-              // Créer ou mettre à jour le stock
-              await tx.stock.upsert({
-                where: { produitId: detailCommande.produitId },
-                create: {
-                  produitId: detailCommande.produitId,
-                  quantiteDisponible: quantiteRecue,
-                  quantiteReservee: 0
-                },
-                update: {
-                  quantiteDisponible: {
-                    increment: quantiteRecue
+              if (commande.boutiqueId) {
+                // ── Mode multi-boutique : mettre à jour StockBoutique ──────────
+                await tx.stockBoutique.upsert({
+                  where: {
+                    boutiqueId_produitId: {
+                      boutiqueId: commande.boutiqueId,
+                      produitId: detailCommande.produitId
+                    }
+                  },
+                  create: {
+                    boutiqueId: commande.boutiqueId,
+                    produitId: detailCommande.produitId,
+                    quantiteDisponible: quantiteRecue,
+                    quantiteReservee: 0
+                  },
+                  update: {
+                    quantiteDisponible: { increment: quantiteRecue }
                   }
-                }
-              });
+                });
+              } else {
+                // ── Mode classique : mettre à jour Stock global ────────────────
+                await tx.stock.upsert({
+                  where: { produitId: detailCommande.produitId },
+                  create: {
+                    produitId: detailCommande.produitId,
+                    quantiteDisponible: quantiteRecue,
+                    quantiteReservee: 0
+                  },
+                  update: {
+                    quantiteDisponible: { increment: quantiteRecue }
+                  }
+                });
+              }
 
-              // Enregistrer le mouvement de stock
+              // Enregistrer le mouvement de stock avec boutiqueId
               mouvementsStock.push({
                 produitId: detailCommande.produitId,
+                boutiqueId: commande.boutiqueId || null,
                 typeMouvement: 'achat',
                 changementQuantite: quantiteRecue,
                 referenceId: parseInt(id),

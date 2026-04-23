@@ -324,23 +324,38 @@ function createAccountRouter({ prisma, authService, ...models }) {
       try {
         const fournisseurId = parseInt(req.params.id);
 
-        const compte = await prisma.compteFournisseur.findUnique({
+        // Vérifier que le fournisseur existe
+        const fournisseur = await prisma.fournisseur.findUnique({
+          where: { id: fournisseurId },
+          select: { id: true, nom: true }
+        });
+
+        if (!fournisseur) {
+          return res.status(404).json(
+            BaseResponseDTO.error('Fournisseur non trouvé')
+          );
+        }
+
+        // Créer le compte fournisseur s'il n'existe pas (comme pour les clients)
+        let compte = await prisma.compteFournisseur.findUnique({
           where: { fournisseurId },
           include: {
             fournisseur: {
-              select: {
-                id: true,
-                nom: true,
-                personneContact: true
-              }
+              select: { id: true, nom: true, personneContact: true }
             }
           }
         });
 
         if (!compte) {
-          return res.status(404).json(
-            BaseResponseDTO.error('Compte fournisseur non trouvé')
-          );
+          console.log(`📝 Création automatique du compte pour le fournisseur ${fournisseurId}`);
+          compte = await prisma.compteFournisseur.create({
+            data: { fournisseurId, soldeActuel: 0, limiteCredit: 0 },
+            include: {
+              fournisseur: {
+                select: { id: true, nom: true, personneContact: true }
+              }
+            }
+          });
         }
 
         const compteFormatted = {
@@ -636,23 +651,28 @@ function createAccountRouter({ prisma, authService, ...models }) {
         // Si création de mouvement financier demandée, vérifier la session de caisse
         let sessionCaisse = null;
         if (createFinancialMovement && (typeTransaction === 'paiement' || typeTransaction === 'credit')) {
-          // Vérifier que l'utilisateur est authentifié
           if (!req.user || !req.user.id) {
-            console.error('❌ Utilisateur non authentifié pour créer un mouvement financier');
             return res.status(401).json(
               BaseResponseDTO.error('Authentification requise pour créer un mouvement financier')
             );
           }
 
-          // Récupérer la session de caisse active de l'utilisateur
+          // Extraire boutiqueId depuis body, header ou query pour trouver la bonne session
+          const boutiqueIdPaiement = req.body.boutiqueId ||
+            req.headers['x-boutique-id'] ||
+            req.query.boutiqueId;
+          const boutiqueIdPaiementInt = boutiqueIdPaiement ? parseInt(boutiqueIdPaiement) : null;
+
+          const sessionWhere = {
+            utilisateurId: req.user.id,
+            isActive: true,
+            dateFermeture: null
+          };
+          if (boutiqueIdPaiementInt) sessionWhere.boutiqueId = boutiqueIdPaiementInt;
+
           sessionCaisse = await prisma.cashSession.findFirst({
-            where: {
-              utilisateurId: req.user.id,
-              isActive: true
-            },
-            include: {
-              caisse: true
-            }
+            where: sessionWhere,
+            include: { caisse: true }
           });
 
           if (!sessionCaisse) {
@@ -774,12 +794,13 @@ function createAccountRouter({ prisma, authService, ...models }) {
 
           // Créer le mouvement financier si demandé
           if (createFinancialMovement && sessionCaisse) {
-            console.log('💸 Création du mouvement de caisse...');
-
-            // Créer le mouvement de caisse
+            console.log('💸 [accounts] Création mouvement de caisse - sessionId:', sessionCaisse.id, 'caisseId:', sessionCaisse.caisseId);
+            // Créer le mouvement de caisse (sortie)
             mouvementFinancier = await prisma.cashMovement.create({
               data: {
                 caisseId: sessionCaisse.caisseId,
+                sessionId: sessionCaisse.id,
+                boutiqueId: sessionCaisse.boutiqueId || null,
                 type: 'sortie',
                 montant: parseFloat(montant),
                 description: description || `Paiement fournisseur ${fournisseur.nom}${referenceId ? ` - Commande #${referenceId}` : ''}`,
@@ -795,55 +816,40 @@ function createAccountRouter({ prisma, authService, ...models }) {
               }
             });
 
-            console.log('✅ Mouvement de caisse créé:', {
-              mouvementId: mouvementFinancier.id,
-              type: 'sortie',
-              montant: parseFloat(montant),
-              caisseId: sessionCaisse.caisseId
-            });
-
-            // Mettre à jour le solde attendu de la session de caisse
-            const currentSoldeAttendu = sessionCaisse.soldeAttendu ? parseFloat(sessionCaisse.soldeAttendu) : parseFloat(sessionCaisse.soldeOuverture);
+            // Mettre à jour le solde attendu de la session ET le solde réel de la caisse
+            const currentSoldeAttendu = sessionCaisse.soldeAttendu
+              ? parseFloat(sessionCaisse.soldeAttendu)
+              : parseFloat(sessionCaisse.soldeOuverture);
             const newSoldeAttendu = currentSoldeAttendu - parseFloat(montant);
 
             await prisma.cashSession.update({
               where: { id: sessionCaisse.id },
-              data: {
-                soldeAttendu: newSoldeAttendu
-              }
+              data: { soldeAttendu: newSoldeAttendu }
             });
 
-            console.log('💰 Solde de la session de caisse mis à jour:', {
-              sessionId: sessionCaisse.id,
-              soldeAvant: currentSoldeAttendu,
-              montantSortie: parseFloat(montant),
-              soldeApres: newSoldeAttendu
+            // Décrémenter aussi le solde réel de la caisse
+            await prisma.cashRegister.update({
+              where: { id: sessionCaisse.caisseId },
+              data: { soldeActuel: { decrement: parseFloat(montant) } }
             });
 
-            // Créer aussi un mouvement financier pour la traçabilité
-            console.log('💰 Création du mouvement financier...');
-            
-            // Générer une référence unique
+            // Créer le mouvement financier pour la traçabilité
             const timestamp = Date.now();
-            const random = Math.floor(Math.random() * 1000);
-            const reference = `MF-${timestamp}-${random}`;
+            const random = Math.floor(Math.random() * 100000);
+            const reference = `PAY-FOUR-${timestamp}-${random}`;
 
             mouvementFinancierRecord = await prisma.financialMovement.create({
               data: {
                 reference,
+                sessionId: sessionCaisse.id,
+                boutiqueId: sessionCaisse.boutiqueId || null,
                 montant: parseFloat(montant),
-                categorieId: 11, // Catégorie "approvisionnement"
+                categorieId: 11,
                 description: description || `Paiement fournisseur ${fournisseur.nom}${referenceId ? ` - Commande #${referenceId}` : ''}`,
                 date: new Date(),
                 utilisateurId: req.user.id,
                 notes: `Paiement fournisseur ${fournisseur.nom} - Transaction compte ID: ${transaction.id}`
               }
-            });
-
-            console.log('✅ Mouvement financier créé:', {
-              mouvementId: mouvementFinancierRecord.id,
-              reference: mouvementFinancierRecord.reference,
-              montant: parseFloat(montant)
             });
           }
 
@@ -984,15 +990,17 @@ function createAccountRouter({ prisma, authService, ...models }) {
         const fournisseurId = parseInt(req.params.id);
         const { page, limit } = req.query;
 
-        // Vérifier que le compte fournisseur existe
+        // Vérifier que le compte fournisseur existe, sinon retourner liste vide
         const compte = await prisma.compteFournisseur.findUnique({
           where: { fournisseurId }
         });
 
         if (!compte) {
-          return res.status(404).json(
-            BaseResponseDTO.error('Compte fournisseur non trouvé')
-          );
+          return res.json(new PaginatedResponseDTO(
+            [],
+            { page: parseInt(page) || 1, limit: parseInt(limit) || 20, total: 0 },
+            'Aucune transaction trouvée'
+          ));
         }
 
         const options = buildPrismaQuery({ page, limit });

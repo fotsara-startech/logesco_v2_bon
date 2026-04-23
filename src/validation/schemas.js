@@ -144,7 +144,8 @@ const compteSchemas = {
     description: Joi.string().max(500).allow('', null),
     referenceType: Joi.string().max(50).allow(null).optional(),
     referenceId: Joi.number().integer().positive().allow(null).optional(),
-    createFinancialMovement: Joi.boolean().optional()
+    createFinancialMovement: Joi.boolean().optional(),
+    boutiqueId: Joi.number().integer().positive().allow(null).optional()
   }),
 
   updateLimite: Joi.object({
@@ -165,6 +166,7 @@ const compteSchemas = {
 const stockSchemas = {
   create: Joi.object({
     produitId: baseSchemas.id.required(),
+    boutiqueId: baseSchemas.id, // Ajout du boutiqueId
     quantiteInitiale: Joi.number().integer().min(0).default(0)
   }),
 
@@ -177,6 +179,7 @@ const stockSchemas = {
   search: Joi.object({
     alerteStock: Joi.boolean(),
     produitId: baseSchemas.id,
+    boutiqueId: baseSchemas.id, // Ajout du boutiqueId
     search: Joi.string().max(100).allow('', null),
     category: Joi.string().max(50).allow('', null),
     page: Joi.number().integer().min(1).default(1),
@@ -186,6 +189,7 @@ const stockSchemas = {
   mouvements: Joi.object({
     q: Joi.string().max(100).allow(''),
     produitId: baseSchemas.id,
+    boutiqueId: baseSchemas.id,
     typeMouvement: Joi.string().valid('achat', 'vente', 'ajustement', 'retour'),
     dateDebut: baseSchemas.date,
     dateFin: baseSchemas.date,
@@ -206,6 +210,7 @@ const stockSchemas = {
 
   createMouvement: Joi.object({
     produitId: baseSchemas.id.required(),
+    boutiqueId: baseSchemas.id,
     typeMouvement: Joi.string().valid('achat', 'vente', 'ajustement', 'retour', 'transfert', 'perte', 'correction').required(),
     changementQuantite: Joi.number().integer().required(),
     notes: Joi.string().max(500).allow('', null),
@@ -218,6 +223,7 @@ const stockSchemas = {
 const commandeApprovisionnementSchemas = {
   create: Joi.object({
     fournisseurId: baseSchemas.id.required(),
+    boutiqueId: baseSchemas.id.allow(null),
     dateLivraisonPrevue: baseSchemas.date.allow(null),
     modePaiement: baseSchemas.modePaiement.default('credit'),
     notes: Joi.string().max(500).allow('', null),
@@ -248,6 +254,7 @@ const commandeApprovisionnementSchemas = {
 
   search: Joi.object({
     fournisseurId: baseSchemas.id,
+    boutiqueId: baseSchemas.id,
     statut: baseSchemas.statut,
     dateDebut: baseSchemas.date,
     dateFin: baseSchemas.date,
@@ -261,12 +268,13 @@ const venteSchemas = {
   create: Joi.object({
     clientId: baseSchemas.id.allow(null),
     vendeurId: baseSchemas.id.allow(null),
+    boutiqueId: baseSchemas.id.allow(null),
     modePaiement: baseSchemas.modePaiement.default('comptant'),
     montantRemise: baseSchemas.montant.default(0),
     montantPaye: baseSchemas.montant.default(0),
-    montantTva: baseSchemas.montant.default(0), // Montant TVA
-    tauxTva: Joi.number().min(0).max(100).allow(null).default(null), // Taux TVA en %
-    dateVente: baseSchemas.date.allow(null), // Date personnalisée pour l'antidatage
+    montantTva: baseSchemas.montant.default(0),
+    tauxTva: Joi.number().min(0).max(100).allow(null).default(null),
+    dateVente: baseSchemas.date.allow(null),
     details: Joi.array().items(
       Joi.object({
         produitId: baseSchemas.id.required(),
@@ -302,6 +310,7 @@ const venteSchemas = {
   search: Joi.object({
     clientId: baseSchemas.id,
     vendeurId: baseSchemas.id,
+    boutiqueId: baseSchemas.id,
     statut: Joi.string().valid('terminee', 'annulee'),
     modePaiement: baseSchemas.modePaiement,
     dateDebut: baseSchemas.date,
@@ -395,7 +404,8 @@ const datePeremptionSchemas = {
     datePeremption: baseSchemas.date.required(),
     quantite: Joi.number().integer().min(0).required(),
     numeroLot: Joi.string().max(50).allow('', null),
-    notes: Joi.string().max(500).allow('', null)
+    notes: Joi.string().max(500).allow('', null),
+    boutiqueId: baseSchemas.id
   }),
 
   update: Joi.object({
@@ -411,6 +421,7 @@ const datePeremptionSchemas = {
     estPerime: Joi.boolean(),
     joursRestants: Joi.number().integer(),
     estEpuise: Joi.boolean(),
+    boutiqueId: baseSchemas.id,
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20)
   }),
@@ -418,6 +429,7 @@ const datePeremptionSchemas = {
   alertes: Joi.object({
     niveauAlerte: Joi.string().valid('perime', 'critique', 'avertissement', 'attention', 'normal'),
     joursMax: Joi.number().integer().min(0).max(365).default(30),
+    boutiqueId: baseSchemas.id,
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20)
   })

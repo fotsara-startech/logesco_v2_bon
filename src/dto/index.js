@@ -135,6 +135,7 @@ class StockDTO {
   constructor(stock) {
     this.id = stock.id;
     this.produitId = stock.produitId;
+    this.boutiqueId = stock.boutiqueId; // Ajout du boutiqueId
     this.quantiteDisponible = stock.quantiteDisponible;
     this.quantiteReservee = stock.quantiteReservee;
     this.quantiteTotale = stock.quantiteDisponible + stock.quantiteReservee;
@@ -148,7 +149,17 @@ class StockDTO {
         nom: stock.produit.nom,
         seuilStockMinimum: stock.produit.seuilStockMinimum
       };
-      this.stockFaible = stock.quantiteDisponible <= stock.produit.seuilStockMinimum;
+      const seuil = stock.produit.seuilStockMinimum ?? 0;
+      this.stockFaible = seuil > 0 && stock.quantiteDisponible <= seuil;
+    }
+
+    // Inclure les informations de la boutique si disponibles
+    if (stock.boutique) {
+      this.boutique = {
+        id: stock.boutique.id,
+        nom: stock.boutique.nom,
+        adresse: stock.boutique.adresse
+      };
     }
   }
 
@@ -521,6 +532,7 @@ class MouvementStockDTO {
   constructor(mouvement) {
     this.id = mouvement.id;
     this.produitId = mouvement.produitId;
+    this.boutiqueId = mouvement.boutiqueId;
     this.typeMouvement = mouvement.typeMouvement;
     this.changementQuantite = mouvement.changementQuantite;
     this.referenceId = mouvement.referenceId;
@@ -530,12 +542,25 @@ class MouvementStockDTO {
 
     // Inclure les informations du produit si disponibles
     if (mouvement.produit) {
+      // Utiliser le stock boutique si disponible, sinon le stock global
+      const stockBoutique = mouvement.produit.stocksBoutiques?.[0];
+      const stockActuel = stockBoutique
+        ? stockBoutique.quantiteDisponible
+        : mouvement.produit.stock?.quantiteDisponible;
+
       this.produit = {
         id: mouvement.produit.id,
         reference: mouvement.produit.reference,
         nom: mouvement.produit.nom,
-        // Inclure le stock actuel pour calculer le stock initial
-        stockActuel: mouvement.produit.stock?.quantiteDisponible
+        stockActuel
+      };
+    }
+
+    // Inclure les informations de la boutique si disponibles
+    if (mouvement.boutique) {
+      this.boutique = {
+        id: mouvement.boutique.id,
+        nom: mouvement.boutique.nom
       };
     }
   }
@@ -618,6 +643,7 @@ class FinancialMovementDTO {
   constructor(movement) {
     this.id = movement.id;
     this.reference = movement.reference;
+    this.boutiqueId = movement.boutiqueId;
     this.montant = parseFloat(movement.montant);
     this.categorieId = movement.categorieId;
     this.description = movement.description;
@@ -630,6 +656,15 @@ class FinancialMovementDTO {
     // Inclure les informations de la catégorie si disponibles
     if (movement.categorie) {
       this.categorie = new MovementCategoryDTO(movement.categorie);
+    }
+
+    // Inclure les informations de la boutique si disponibles
+    if (movement.boutique) {
+      this.boutique = {
+        id: movement.boutique.id,
+        nom: movement.boutique.nom,
+        adresse: movement.boutique.adresse
+      };
     }
 
     // Inclure les informations de l'utilisateur si disponibles
@@ -763,6 +798,7 @@ class DatePeremptionDTO {
   constructor(datePeremption) {
     this.id = datePeremption.id;
     this.produitId = datePeremption.produitId;
+    this.boutiqueId = datePeremption.boutiqueId;
     this.datePeremption = datePeremption.datePeremption;
     this.quantite = datePeremption.quantite;
     this.numeroLot = datePeremption.numeroLot;
@@ -787,7 +823,17 @@ class DatePeremptionDTO {
       this.produit = {
         id: datePeremption.produit.id,
         reference: datePeremption.produit.reference,
-        nom: datePeremption.produit.nom
+        nom: datePeremption.produit.nom,
+        prixUnitaire: datePeremption.produit.prixUnitaire,
+        prixAchat: datePeremption.produit.prixAchat
+      };
+    }
+
+    // Inclure les informations de la boutique si disponibles
+    if (datePeremption.boutique) {
+      this.boutique = {
+        id: datePeremption.boutique.id,
+        nom: datePeremption.boutique.nom
       };
     }
   }
@@ -798,6 +844,52 @@ class DatePeremptionDTO {
     if (joursRestants <= 30) return 'avertissement'; // Orange
     if (joursRestants <= 90) return 'attention'; // Jaune
     return 'normal'; // Vert
+  }
+
+  getAlertColor() {
+    switch (this.niveauAlerte) {
+      case 'perime':
+        return '#EF4444'; // Rouge
+      case 'critique':
+        return '#F97316'; // Orange foncé
+      case 'avertissement':
+        return '#F59E0B'; // Orange
+      case 'attention':
+        return '#EAB308'; // Jaune
+      default:
+        return '#10B981'; // Vert
+    }
+  }
+
+  getAlertLabel() {
+    switch (this.niveauAlerte) {
+      case 'perime':
+        return 'Périmé';
+      case 'critique':
+        return 'Critique';
+      case 'avertissement':
+        return 'Avertissement';
+      case 'attention':
+        return 'Attention';
+      default:
+        return 'Normal';
+    }
+  }
+
+  getStatusDescription() {
+    if (this.estEpuise) {
+      return 'Épuisé';
+    }
+    if (this.estPerime) {
+      return `Périmé depuis ${Math.abs(this.joursRestants)} jour(s)`;
+    }
+    if (this.joursRestants === 0) {
+      return 'Expire aujourd\'hui';
+    }
+    if (this.joursRestants === 1) {
+      return 'Expire demain';
+    }
+    return `Expire dans ${this.joursRestants} jour(s)`;
   }
 
   static fromEntity(datePeremption) {
