@@ -80,97 +80,173 @@ class LogescoServer {
   async _runAutoSeed(prisma) {
     try {
       const userCount = await prisma.utilisateur.count();
-      if (userCount > 0) {
-        console.log('✅ Base de données déjà initialisée, seed ignoré');
-        return;
-      }
-
-      console.log('🌱 Première installation détectée - Initialisation des données...');
       const bcrypt = require('bcryptjs');
 
-      // Rôle admin
-      const adminRole = await prisma.userRole.create({
-        data: {
-          nom: 'ADMIN',
-          displayName: 'Administrateur',
-          isAdmin: true,
-          privileges: JSON.stringify({
-            dashboard: { view: true },
-            sales: { view: true, create: true, edit: true, delete: true },
-            products: { view: true, create: true, edit: true, delete: true },
-            inventory: { view: true, create: true, edit: true, delete: true },
-            customers: { view: true, create: true, edit: true, delete: true },
-            suppliers: { view: true, create: true, edit: true, delete: true },
-            procurement: { view: true, create: true, edit: true, delete: true },
-            expenses: { view: true, create: true, edit: true, delete: true },
-            reports: { view: true, create: true, edit: true, delete: true },
-            users: { view: true, create: true, edit: true, delete: true },
-            roles: { view: true, create: true, edit: true, delete: true },
-            settings: { view: true, create: true, edit: true, delete: true },
-            cashRegister: { view: true, create: true, edit: true, delete: true },
-            financialMovements: { view: true, create: true, edit: true, delete: true }
-          })
-        }
-      });
+      if (userCount === 0) {
+        console.log('🌱 Première installation détectée - Initialisation des données...');
 
-      // Utilisateur admin
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await prisma.utilisateur.create({
-        data: {
-          nomUtilisateur: 'admin',
-          motDePasseHash: hashedPassword,
-          email: 'admin@logesco.local',
-          roleId: adminRole.id,
-          isActive: true
-        }
-      });
+        // Rôle admin
+        const adminRole = await prisma.userRole.create({
+          data: {
+            nom: 'ADMIN',
+            displayName: 'Administrateur',
+            isAdmin: true,
+            privileges: JSON.stringify({
+              dashboard: { view: true },
+              sales: { view: true, create: true, edit: true, delete: true },
+              products: { view: true, create: true, edit: true, delete: true },
+              inventory: { view: true, create: true, edit: true, delete: true },
+              customers: { view: true, create: true, edit: true, delete: true },
+              suppliers: { view: true, create: true, edit: true, delete: true },
+              procurement: { view: true, create: true, edit: true, delete: true },
+              expenses: { view: true, create: true, edit: true, delete: true },
+              reports: { view: true, create: true, edit: true, delete: true },
+              users: { view: true, create: true, edit: true, delete: true },
+              roles: { view: true, create: true, edit: true, delete: true },
+              settings: { view: true, create: true, edit: true, delete: true },
+              cashRegister: { view: true, create: true, edit: true, delete: true },
+              financialMovements: { view: true, create: true, edit: true, delete: true }
+            })
+          }
+        });
 
-      // Caisse principale
-      await prisma.cashRegister.create({
-        data: {
-          nom: 'Caisse Principale',
-          description: 'Caisse principale du système',
-          isActive: true,
-          soldeActuel: 0,
-          soldeInitial: 0
-        }
-      });
+        // Utilisateur admin
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await prisma.utilisateur.create({
+          data: {
+            nomUtilisateur: 'admin',
+            motDePasseHash: hashedPassword,
+            email: 'admin@logesco.local',
+            roleId: adminRole.id,
+            isActive: true
+          }
+        });
 
-      // Boutique principale
-      const boutiquePrincipale = await prisma.boutique.create({
-        data: {
-          nom: 'Boutique Principale',
-          description: 'Boutique principale créée automatiquement',
-          estPrincipale: true,
-          isActive: true
-        }
-      });
+        // Paramètres entreprise
+        await prisma.parametresEntreprise.create({
+          data: {
+            nomEntreprise: 'Mon Entreprise',
+            adresse: '',
+            telephone: '',
+            email: 'contact@entreprise.com',
+            nuiRccm: '',
+            localisation: ''
+          }
+        });
 
-      // Assigner l'admin à la boutique principale avec son rôle admin
-      await prisma.userBoutiqueAssignment.create({
-        data: {
-          utilisateurId: (await prisma.utilisateur.findFirst({ where: { nomUtilisateur: 'admin' } })).id,
-          boutiqueId: boutiquePrincipale.id,
-          roleId: adminRole.id,
-          isActive: true
-        }
-      });
+        console.log('✅ Données initiales créées (admin / admin123)');
+      } else {
+        console.log('✅ Base de données déjà initialisée');
+      }
 
-      // Paramètres entreprise
-      await prisma.parametresEntreprise.create({
-        data: {
-          nomEntreprise: 'Mon Entreprise',
-          adresse: '',
-          telephone: '',
-          email: 'contact@entreprise.com',
-          nuiRccm: '',
-          localisation: ''
-        }
-      });
+      // ── Toujours vérifier/créer la boutique principale ──────────────────
+      let boutiquePrincipale = await prisma.boutique.findFirst({ where: { estPrincipale: true } });
+      if (!boutiquePrincipale) {
+        console.log('🏪 Création de la boutique principale manquante...');
+        boutiquePrincipale = await prisma.boutique.create({
+          data: {
+            nom: 'Boutique Principale',
+            description: 'Boutique principale du système',
+            estPrincipale: true,
+            isActive: true
+          }
+        });
+        console.log(`✅ Boutique principale créée (ID: ${boutiquePrincipale.id})`);
+      } else {
+        console.log(`✅ Boutique principale existante (ID: ${boutiquePrincipale.id})`);
+      }
 
-      console.log('✅ Données initiales créées (admin / admin123)');
+      // ── Toujours vérifier/créer la caisse principale ────────────────────
+      let caissePrincipale = await prisma.cashRegister.findFirst({ where: { nom: 'Caisse Principale' } });
+      if (!caissePrincipale) {
+        console.log('💰 Création de la caisse principale manquante...');
+        caissePrincipale = await prisma.cashRegister.create({
+          data: {
+            nom: 'Caisse Principale',
+            description: 'Caisse principale du système',
+            isActive: true,
+            soldeActuel: 0,
+            soldeInitial: 0,
+            boutiqueId: boutiquePrincipale.id
+          }
+        });
+        console.log(`✅ Caisse principale créée (ID: ${caissePrincipale.id})`);
+      } else if (!caissePrincipale.boutiqueId) {
+        // Lier la caisse existante à la boutique principale si pas encore fait
+        await prisma.cashRegister.update({
+          where: { id: caissePrincipale.id },
+          data: { boutiqueId: boutiquePrincipale.id }
+        });
+        console.log(`✅ Caisse principale liée à la boutique principale`);
+      }
+
+      // ── Assigner l'admin à la boutique principale si pas encore fait ────
+      const adminUser = await prisma.utilisateur.findFirst({ where: { nomUtilisateur: 'admin' } });
+      if (adminUser) {
+        const existingAssignment = await prisma.userBoutiqueAssignment.findFirst({
+          where: { utilisateurId: adminUser.id, boutiqueId: boutiquePrincipale.id }
+        });
+        if (!existingAssignment) {
+          const adminRole = await prisma.userRole.findFirst({ where: { isAdmin: true } });
+          await prisma.userBoutiqueAssignment.create({
+            data: {
+              utilisateurId: adminUser.id,
+              boutiqueId: boutiquePrincipale.id,
+              roleId: adminRole?.id || null,
+              isActive: true
+            }
+          });
+          console.log('✅ Admin assigné à la boutique principale');
+        }
+      }
+
+      // ── Migration des données existantes sans boutiqueId ────────────────
+      await this._migrateExistingDataToBoutique(prisma, boutiquePrincipale.id);
+
     } catch (err) {
       console.warn('⚠️  Auto-seed échoué (non bloquant):', err.message);
+    }
+  }
+
+  /**
+   * Migre les données existantes sans boutiqueId vers la boutique principale.
+   * S'exécute à chaque démarrage mais ne touche que les lignes sans boutiqueId.
+   */
+  async _migrateExistingDataToBoutique(prisma, boutiquePrincipaleId) {
+    try {
+      console.log(`🔄 Migration des données existantes vers boutique principale (ID: ${boutiquePrincipaleId})...`);
+
+      const tables = [
+        { name: 'vente',              model: prisma.vente },
+        { name: 'cashRegister',       model: prisma.cashRegister },
+        { name: 'cashSession',        model: prisma.cashSession },
+        { name: 'cashMovement',       model: prisma.cashMovement },
+        { name: 'mouvementStock',     model: prisma.mouvementStock },
+        { name: 'financialMovement',  model: prisma.financialMovement },
+        { name: 'commandeApprovisionnement', model: prisma.commandeApprovisionnement },
+        { name: 'stockInventory',     model: prisma.stockInventory },
+        { name: 'transactionCompte',  model: prisma.transactionCompte },
+        { name: 'venteProforma',      model: prisma.venteProforma },
+        { name: 'datePeremption',     model: prisma.datePeremption },
+      ];
+
+      for (const { name, model } of tables) {
+        try {
+          const result = await model.updateMany({
+            where: { boutiqueId: null },
+            data: { boutiqueId: boutiquePrincipaleId }
+          });
+          if (result.count > 0) {
+            console.log(`  ✅ ${name}: ${result.count} ligne(s) migrée(s)`);
+          }
+        } catch (e) {
+          // Certaines tables peuvent ne pas avoir boutiqueId, on ignore
+        }
+      }
+
+      console.log('✅ Migration des données existantes terminée');
+    } catch (err) {
+      console.warn('⚠️  Migration données existantes échouée (non bloquant):', err.message);
     }
   }
 
