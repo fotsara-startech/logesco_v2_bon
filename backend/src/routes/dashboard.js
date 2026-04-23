@@ -15,79 +15,29 @@ function createDashboardRouter(dependencies) {
   router.get('/stats', async (req, res) => {
     try {
       console.log('📊 [DashboardRouter] Récupération des statistiques générales...');
+      const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+      const venteWhere = { statut: { not: 'annulee' }, ...(boutiqueId ? { boutiqueId } : {}) };
 
-      // Compter les produits
       const totalProducts = await prisma.produit.count();
-
-      // Compter les utilisateurs
       const totalUsers = await prisma.utilisateur.count();
-      const activeUsers = await prisma.utilisateur.count({
-        where: { isActive: true }
-      });
+      const activeUsers = await prisma.utilisateur.count({ where: { isActive: true } });
 
-      // Compter les ventes (si la table existe)
-      let totalSales = 0;
-      let totalRevenue = 0.0;
+      let totalSales = 0, totalRevenue = 0.0;
       try {
-        // Adapter selon votre schéma de ventes - CORRECTION: Exclure les ventes annulées
-        totalSales = await prisma.vente.count({
-          where: { statut: { not: 'annulee' } }
-        });
-        const salesSum = await prisma.vente.aggregate({
-          where: { statut: { not: 'annulee' } },
-          _sum: { montantTotal: true }
-        });
+        totalSales = await prisma.vente.count({ where: venteWhere });
+        const salesSum = await prisma.vente.aggregate({ where: venteWhere, _sum: { montantTotal: true } });
         totalRevenue = salesSum._sum.montantTotal || 0.0;
-      } catch (e) {
-        console.log('⚠️ Table ventes non disponible, utilisation de valeurs par défaut');
-      }
+      } catch (e) {}
 
-      // Compter les commandes en attente
       let pendingOrders = 0;
-      try {
-        pendingOrders = await prisma.commandeApprovisionnement.count({
-          where: { statut: 'EN_ATTENTE' }
-        });
-      } catch (e) {
-        console.log('⚠️ Table commandes non disponible');
-      }
+      try { pendingOrders = await prisma.commandeApprovisionnement.count({ where: { statut: 'EN_ATTENTE' } }); } catch (e) {}
 
-      // Produits en stock faible (exemple)
-      let lowStockProducts = 0;
-      try {
-        lowStockProducts = await prisma.produit.count({
-          where: { quantiteStock: { lt: 10 } }
-        });
-      } catch (e) {
-        console.log('⚠️ Champ quantiteStock non disponible');
-      }
-
-      const stats = {
-        totalProducts,
-        totalUsers,
-        activeUsers,
-        totalSales,
-        totalRevenue,
-        pendingOrders,
-        lowStockProducts,
-        monthlyGrowth: 0.0, // À calculer selon vos besoins
-      };
-
+      const stats = { totalProducts, totalUsers, activeUsers, totalSales, totalRevenue, pendingOrders, lowStockProducts: 0, monthlyGrowth: 0.0 };
       console.log('✅ [DashboardRouter] Statistiques calculées:', stats);
-
-      res.json({
-        success: true,
-        data: stats
-      });
+      res.json({ success: true, data: stats });
     } catch (error) {
       console.error('❌ [DashboardRouter] Erreur statistiques générales:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          message: 'Erreur lors de la récupération des statistiques',
-          code: 'STATS_FETCH_ERROR'
-        }
-      });
+      res.status(500).json({ success: false, error: { message: 'Erreur lors de la récupération des statistiques', code: 'STATS_FETCH_ERROR' } });
     }
   });
 
@@ -95,82 +45,35 @@ function createDashboardRouter(dependencies) {
   router.get('/sales-stats', async (req, res) => {
     try {
       console.log('💰 [DashboardRouter] Récupération des statistiques de ventes...');
+      const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+      const baseWhere = { statut: { not: 'annulee' }, ...(boutiqueId ? { boutiqueId } : {}) };
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
+      const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      let salesStats = {
-        todaySales: 0,
-        todayRevenue: 0.0,
-        weekSales: 0,
-        weekRevenue: 0.0,
-        monthSales: 0,
-        monthRevenue: 0.0,
-        topProducts: []
-      };
+      let salesStats = { todaySales: 0, todayRevenue: 0.0, weekSales: 0, weekRevenue: 0.0, monthSales: 0, monthRevenue: 0.0, topProducts: [] };
 
       try {
-        // Ventes d'aujourd'hui
-        const todayStats = await prisma.vente.aggregate({
-          where: {
-            dateVente: { gte: today },
-            statut: { not: 'annulee' }
-          },
-          _count: { id: true },
-          _sum: { montantTotal: true }
-        });
-
-        // Ventes de la semaine
-        const weekStats = await prisma.vente.aggregate({
-          where: {
-            dateVente: { gte: weekStart },
-            statut: { not: 'annulee' }
-          },
-          _count: { id: true },
-          _sum: { montantTotal: true }
-        });
-
-        // Ventes du mois
-        const monthStats = await prisma.vente.aggregate({
-          where: {
-            dateVente: { gte: monthStart },
-            statut: { not: 'annulee' }
-          },
-          _count: { id: true },
-          _sum: { montantTotal: true }
-        });
-
+        const [todayStats, weekStats, monthStats] = await Promise.all([
+          prisma.vente.aggregate({ where: { ...baseWhere, dateVente: { gte: today } }, _count: { id: true }, _sum: { montantTotal: true } }),
+          prisma.vente.aggregate({ where: { ...baseWhere, dateVente: { gte: weekStart } }, _count: { id: true }, _sum: { montantTotal: true } }),
+          prisma.vente.aggregate({ where: { ...baseWhere, dateVente: { gte: monthStart } }, _count: { id: true }, _sum: { montantTotal: true } }),
+        ]);
         salesStats = {
-          todaySales: todayStats._count.id || 0,
-          todayRevenue: todayStats._sum.montantTotal || 0.0,
-          weekSales: weekStats._count.id || 0,
-          weekRevenue: weekStats._sum.montantTotal || 0.0,
-          monthSales: monthStats._count.id || 0,
-          monthRevenue: monthStats._sum.montantTotal || 0.0,
-          topProducts: [] // À implémenter selon vos besoins
+          todaySales: todayStats._count.id || 0, todayRevenue: todayStats._sum.montantTotal || 0.0,
+          weekSales: weekStats._count.id || 0, weekRevenue: weekStats._sum.montantTotal || 0.0,
+          monthSales: monthStats._count.id || 0, monthRevenue: monthStats._sum.montantTotal || 0.0,
+          topProducts: []
         };
-      } catch (e) {
-        console.log('⚠️ Table ventes non disponible, utilisation de valeurs par défaut');
-      }
+      } catch (e) {}
 
       console.log('✅ [DashboardRouter] Statistiques de ventes calculées:', salesStats);
-
-      res.json({
-        success: true,
-        data: salesStats
-      });
+      res.json({ success: true, data: salesStats });
     } catch (error) {
       console.error('❌ [DashboardRouter] Erreur statistiques de ventes:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          message: 'Erreur lors de la récupération des statistiques de ventes',
-          code: 'SALES_STATS_FETCH_ERROR'
-        }
-      });
+      res.status(500).json({ success: false, error: { message: 'Erreur lors de la récupération des statistiques de ventes', code: 'SALES_STATS_FETCH_ERROR' } });
     }
   });
 
@@ -254,62 +157,36 @@ function createDashboardRouter(dependencies) {
   router.get('/sales-chart', async (req, res) => {
     try {
       console.log('📈 [DashboardRouter] Récupération des données du graphique...');
+      const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+      const baseWhere = { statut: { not: 'annulee' }, ...(boutiqueId ? { boutiqueId } : {}) };
 
       const chartData = [];
       const now = new Date();
 
-      // Générer les données pour les 7 derniers jours
       for (let i = 6; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(now.getDate() - i);
         const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const dayEnd = new Date(dayStart);
-        dayEnd.setDate(dayStart.getDate() + 1);
+        const dayEnd = new Date(dayStart); dayEnd.setDate(dayStart.getDate() + 1);
 
-        let sales = 0;
-        let revenue = 0.0;
-
+        let sales = 0, revenue = 0.0;
         try {
           const dayStats = await prisma.vente.aggregate({
-            where: {
-              dateVente: {
-                gte: dayStart,
-                lt: dayEnd
-              },
-              statut: { not: 'annulee' }
-            },
-            _count: { id: true },
-            _sum: { montantTotal: true }
+            where: { ...baseWhere, dateVente: { gte: dayStart, lt: dayEnd } },
+            _count: { id: true }, _sum: { montantTotal: true }
           });
-
           sales = dayStats._count.id || 0;
           revenue = dayStats._sum.montantTotal || 0.0;
-        } catch (e) {
-          // Garder les valeurs par défaut (0)
-        }
+        } catch (e) {}
 
-        chartData.push({
-          date: dayStart.toISOString().split('T')[0],
-          sales,
-          revenue
-        });
+        chartData.push({ date: dayStart.toISOString().split('T')[0], sales, revenue });
       }
 
       console.log(`✅ [DashboardRouter] Données graphique générées pour ${chartData.length} jours`);
-
-      res.json({
-        success: true,
-        data: chartData
-      });
+      res.json({ success: true, data: chartData });
     } catch (error) {
       console.error('❌ [DashboardRouter] Erreur données graphique:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          message: 'Erreur lors de la récupération des données du graphique',
-          code: 'CHART_DATA_FETCH_ERROR'
-        }
-      });
+      res.status(500).json({ success: false, error: { message: 'Erreur lors de la récupération des données du graphique', code: 'CHART_DATA_FETCH_ERROR' } });
     }
   });
 

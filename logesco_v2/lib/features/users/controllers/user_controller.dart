@@ -88,7 +88,7 @@ class UserController extends GetxController with PermissionMixin {
     }
     return users.where((user) {
       return user.nomUtilisateur.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-          user.email.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
+          (user.email?.toLowerCase().contains(searchQuery.value.toLowerCase()) ?? false) ||
           user.role.displayName.toLowerCase().contains(searchQuery.value.toLowerCase());
     }).toList();
   }
@@ -189,6 +189,23 @@ class UserController extends GetxController with PermissionMixin {
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de changer le mot de passe: $e');
+      return false;
+    }
+  }
+
+  /// Récupérer les boutiques assignées à un utilisateur
+  Future<List<Map<String, dynamic>>> getUserBoutiques(int userId) async {
+    return _userService.getUserBoutiques(userId);
+  }
+
+  /// Mettre à jour les boutiques assignées à un utilisateur
+  Future<bool> updateUserBoutiques(int userId, List<int> boutiqueIds) async {
+    try {
+      final success = await _userService.updateUserBoutiques(userId, boutiqueIds);
+      if (success) SnackbarHelper.success('Boutiques assignées mises à jour');
+      return success;
+    } catch (e) {
+      SnackbarHelper.error('Impossible de mettre à jour les boutiques: $e');
       return false;
     }
   }

@@ -721,66 +721,49 @@ function createCustomerRouter(models) {
             }
           });
 
-          // CORRECTION: Mettre à jour le solde de la caisse active
-          // Trouver la caisse active (ouverte)
-          console.log('🔍 [Payment] Recherche de la caisse active...');
-          
-          const caisseActive = await tx.cashRegister.findFirst({
-            where: {
-              isActive: true,
-              dateOuverture: { not: null },
-              dateFermeture: null
-            },
-            orderBy: { dateOuverture: 'desc' }
+          // Trouver la session active de l'utilisateur connecté (source de vérité)
+          console.log('🔍 [Payment] Recherche de la session active...');
+
+          const boutiqueIdPaiement = req.body.boutiqueId ||
+            req.headers['x-boutique-id'] ||
+            req.query.boutiqueId;
+          const sessionWherePaiement = {
+            utilisateurId: req.user?.id,
+            isActive: true,
+            dateFermeture: null
+          };
+          if (boutiqueIdPaiement) sessionWherePaiement.boutiqueId = parseInt(boutiqueIdPaiement);
+
+          const sessionActive = await tx.cashSession.findFirst({
+            where: sessionWherePaiement,
+            include: { caisse: true }
           });
 
+          const caisseActive = sessionActive ? sessionActive.caisse : null;
+
           if (caisseActive) {
-            console.log(`✅ [Payment] Caisse active trouvée: ${caisseActive.nom} (ID: ${caisseActive.id})`);
-            console.log(`💰 [Payment] Mise à jour atomique de la caisse active: ${caisseActive.nom}`);
+            console.log(`✅ [Payment] Session/Caisse active trouvée: ${caisseActive.nom} (ID: ${caisseActive.id})`);
             console.log(`  - Solde actuel caisse: ${caisseActive.soldeActuel} FCFA`);
             console.log(`  - Montant à ajouter: ${montant} FCFA`);
             
             // Mise à jour atomique: UPDATE SET solde = solde + montant
-            // Cela garantit que le calcul se fait avec la valeur la plus récente
+            // Mettre à jour le solde de la caisse
             const caisseUpdated = await tx.cashRegister.update({
               where: { id: caisseActive.id },
-              data: { 
-                soldeActuel: {
-                  increment: parseFloat(montant)
-                }
-              }
+              data: { soldeActuel: { increment: parseFloat(montant) } }
             });
-            
-            console.log(`✅ [Payment] Caisse mise à jour avec succès (mise à jour atomique)`);
-            console.log(`  - Nouveau solde confirmé: ${caisseUpdated.soldeActuel} FCFA`);
+            console.log(`✅ [Payment] Caisse mise à jour: ${caisseUpdated.soldeActuel} FCFA`);
 
-            // CORRECTION: Mettre à jour aussi la session de caisse active
-            const sessionActive = await tx.cashSession.findFirst({
-              where: {
-                caisseId: caisseActive.id,
-                isActive: true,
-                dateFermeture: null
-              },
-              orderBy: { dateOuverture: 'desc' }
-            });
-
+            // Mettre à jour le solde attendu de la session
             if (sessionActive) {
-              const currentSoldeAttendu = sessionActive.soldeAttendu ? parseFloat(sessionActive.soldeAttendu) : parseFloat(sessionActive.soldeOuverture);
+              const currentSoldeAttendu = sessionActive.soldeAttendu
+                ? parseFloat(sessionActive.soldeAttendu)
+                : parseFloat(sessionActive.soldeOuverture);
               const newSoldeAttendu = currentSoldeAttendu + parseFloat(montant);
-
               await tx.cashSession.update({
                 where: { id: sessionActive.id },
-                data: {
-                  soldeAttendu: newSoldeAttendu
-                }
+                data: { soldeAttendu: newSoldeAttendu }
               });
-
-              console.log(`✅ [Payment] Session de caisse mise à jour:`);
-              console.log(`  - Solde attendu avant: ${currentSoldeAttendu} FCFA`);
-              console.log(`  - Montant paiement: +${montant} FCFA`);
-              console.log(`  - Solde attendu après: ${newSoldeAttendu} FCFA`);
-            } else {
-              console.log('⚠️ [Payment] Aucune session active trouvée pour cette caisse');
             }
 
             // Créer un mouvement de caisse pour traçabilité
@@ -788,6 +771,7 @@ function createCustomerRouter(models) {
               data: {
                 caisseId: caisseActive.id,
                 sessionId: sessionActive ? sessionActive.id : null,
+                boutiqueId: sessionActive?.boutiqueId || null,
                 type: 'entree',
                 montant: montant,
                 description: `Paiement dette client: ${client.nom} ${client.prenom || ''}${venteReference ? ` (Vente ${venteReference})` : ''}`,

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../controllers/expiration_date_controller.dart';
 import '../models/expiration_date.dart';
 import '../services/expiration_date_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 import 'expiration_date_dialog.dart';
 
 /// Widget pour afficher la liste des dates de péremption d'un produit
@@ -24,29 +25,40 @@ class ExpirationDatesListWidget extends StatefulWidget {
 class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
   final ExpirationDateService _service = ExpirationDateService();
   Map<String, dynamic>? _stats;
-  bool _loadingStats = false;
+  late ExpirationDateController controller;
 
   @override
   void initState() {
     super.initState();
+    controller = Get.put(ExpirationDateController());
+
     if (widget.gestionPeremption) {
       _loadStats();
+    }
+
+    // Écouter les changements de boutique active
+    if (Get.isRegistered<BoutiqueController>()) {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        // Recharger les données quand la boutique change
+        if (widget.gestionPeremption && mounted) {
+          final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+          controller.loadExpirationDates(produitId: widget.produitId, boutiqueId: activeBoutiqueId);
+          _loadStats();
+        }
+      });
     }
   }
 
   Future<void> _loadStats() async {
     if (!mounted) return;
-    setState(() => _loadingStats = true);
     try {
-      final stats = await _service.getProductStats(widget.produitId);
+      final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+      final stats = await _service.getProductStats(widget.produitId, boutiqueId: activeBoutiqueId);
       if (!mounted) return;
       setState(() => _stats = stats);
     } catch (e) {
       print('Erreur chargement stats: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _loadingStats = false);
-      }
     }
   }
 
@@ -74,12 +86,13 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
       );
     }
 
-    final controller = Get.put(ExpirationDateController());
+    final controller = this.controller;
 
-    // Charger les dates pour ce produit une seule fois
+    // Charger les dates pour ce produit avec isolation par boutique
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.expirationDates.isEmpty || !controller.expirationDates.any((d) => d.produitId == widget.produitId)) {
-        controller.loadExpirationDates(produitId: widget.produitId);
+      final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+      if (controller.expirationDates.isEmpty || !controller.expirationDates.any((d) => d.produitId == widget.produitId && d.boutiqueId == activeBoutiqueId)) {
+        controller.loadExpirationDates(produitId: widget.produitId, boutiqueId: activeBoutiqueId);
       }
     });
 
@@ -121,7 +134,8 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
             );
           }
 
-          final dates = controller.expirationDates.where((d) => d.produitId == widget.produitId && !d.estEpuise).toList();
+          final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+          final dates = controller.expirationDates.where((d) => d.produitId == widget.produitId && !d.estEpuise && d.boutiqueId == activeBoutiqueId).toList();
 
           if (dates.isEmpty) {
             return Container(

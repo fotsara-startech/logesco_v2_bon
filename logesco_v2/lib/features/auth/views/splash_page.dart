@@ -4,6 +4,7 @@ import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/backend_service.dart';
 import '../../../core/config/app_config.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Page de démarrage — attend le backend (mode serveur) ou va directement au login (mode client)
 class SplashPage extends StatefulWidget {
@@ -31,6 +32,7 @@ class _SplashPageState extends State<SplashPage> {
       try {
         final isAuthenticated = await _authController.checkAuthentication();
         if (isAuthenticated) {
+          _loadBoutiquesAfterAuth();
           Get.offAllNamed(AppRoutes.dashboard);
         } else {
           Get.offAllNamed(AppRoutes.login);
@@ -73,6 +75,7 @@ class _SplashPageState extends State<SplashPage> {
     try {
       final isAuthenticated = await _authController.checkAuthentication();
       if (isAuthenticated) {
+        _loadBoutiquesAfterAuth();
         Get.offAllNamed(AppRoutes.dashboard);
       } else {
         Get.offAllNamed(AppRoutes.login);
@@ -80,6 +83,13 @@ class _SplashPageState extends State<SplashPage> {
     } catch (_) {
       Get.offAllNamed(AppRoutes.login);
     }
+  }
+
+  /// Charge les boutiques après authentification réussie
+  void _loadBoutiquesAfterAuth() {
+    try {
+      Get.find<BoutiqueController>().loadBoutiques();
+    } catch (_) {}
   }
 
   void _setStatus(String msg) {

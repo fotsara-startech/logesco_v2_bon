@@ -137,6 +137,7 @@ class SaleDetail {
 @JsonSerializable()
 class CreateSaleRequest {
   final int? clientId;
+  final int? boutiqueId;
   final String modePaiement;
   final double montantRemise;
   final double montantPaye;
@@ -147,6 +148,7 @@ class CreateSaleRequest {
 
   const CreateSaleRequest({
     this.clientId,
+    this.boutiqueId,
     required this.modePaiement,
     required this.montantRemise,
     required this.montantPaye,

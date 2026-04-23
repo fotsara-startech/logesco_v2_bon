@@ -11,6 +11,7 @@ import '../../printing/models/models.dart';
 import '../../printing/controllers/printing_controller.dart';
 import '../../printing/views/receipt_preview_page.dart';
 import '../../company_settings/controllers/company_settings_controller.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 import '../models/proforma_invoice.dart';
 import '../services/proforma_service.dart';
 
@@ -31,6 +32,15 @@ class ProformaController extends GetxController {
   void onInit() {
     super.onInit();
     loadProformas(refresh: true);
+
+    // Écouter les changements de boutique active
+    if (Get.isRegistered<BoutiqueController>()) {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        // Recharger les proformas quand la boutique change
+        loadProformas(refresh: true);
+      });
+    }
   }
 
   Future<void> loadProformas({bool refresh = false}) async {

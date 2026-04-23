@@ -122,4 +122,9 @@ class AppRoutes {
 
   // Routes proforma
   static const String proforma = '/proforma';
+
+  // Routes multi-boutique
+  static const String boutiques = '/boutiques';
+  static const String stockTransfert = '/boutiques/transferts';
+  static const String boutiqueDashboard = '/boutiques/dashboard';
 }

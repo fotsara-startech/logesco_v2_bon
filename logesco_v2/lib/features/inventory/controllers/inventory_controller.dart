@@ -363,6 +363,12 @@ class InventoryController extends GetxController with SubscriptionVerificationMi
     loadMovements(refresh: true);
   }
 
+  /// Recharge le stock pour la boutique active (appelé lors du switch de boutique)
+  void refreshStock() {
+    loadStocks(refresh: true);
+    loadSummary(); // Recharger aussi le résumé avec le bon boutiqueId
+  }
+
   /// Exporte les stocks en Excel
   Future<String?> exportStockToExcel() async {
     // Vérifier l'abonnement pour les fonctionnalités d'export (premium)

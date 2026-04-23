@@ -59,6 +59,7 @@ class CartWidget extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = controller.cartItems[index];
                 return _CartItem(
+                  key: ValueKey('${item.productId}_${item.quantity}'), // Clé unique basée sur l'ID et la quantité
                   item: item,
                   onQuantityChanged: onQuantityChanged,
                   onPriceChanged: onPriceChanged,
@@ -164,13 +165,14 @@ class CartWidget extends StatelessWidget {
   }
 }
 
-class _CartItem extends StatelessWidget {
+class _CartItem extends StatefulWidget {
   final dynamic item;
   final Function(int productId, int quantity) onQuantityChanged;
   final Function(int productId, double price) onPriceChanged;
   final Function(int productId) onRemove;
 
   const _CartItem({
+    super.key,
     required this.item,
     required this.onQuantityChanged,
     required this.onPriceChanged,
@@ -178,7 +180,31 @@ class _CartItem extends StatelessWidget {
   });
 
   @override
+  State<_CartItem> createState() => _CartItemState();
+}
+
+class _CartItemState extends State<_CartItem> {
+  late TextEditingController _quantityController;
+  bool _isUserTyping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: widget.item.quantity.toString());
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Ne synchroniser que si l'utilisateur n'est pas en train de taper
+    if (!_isUserTyping && _quantityController.text != widget.item.quantity.toString()) {
+      _quantityController.text = widget.item.quantity.toString();
+    }
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
@@ -191,12 +217,12 @@ class _CartItem extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    item.productName,
+                    widget.item.productName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 IconButton(
-                  onPressed: () => onRemove(item.productId),
+                  onPressed: () => widget.onRemove(widget.item.productId),
                   icon: const Icon(Icons.delete, color: Colors.red),
                   iconSize: 20,
                 ),
@@ -205,7 +231,7 @@ class _CartItem extends StatelessWidget {
 
             // Référence
             Text(
-              'sales_cart_reference'.trParams({'ref': item.productReference}),
+              'sales_cart_reference'.trParams({'ref': widget.item.productReference}),
               style: Theme.of(context).textTheme.bodySmall,
             ),
 
@@ -218,24 +244,68 @@ class _CartItem extends StatelessWidget {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: item.quantity > 1 ? () => onQuantityChanged(item.productId, item.quantity - 1) : null,
+                      onPressed: widget.item.quantity > 1
+                          ? () {
+                              _isUserTyping = false;
+                              widget.onQuantityChanged(widget.item.productId, widget.item.quantity - 1);
+                            }
+                          : null,
                       icon: const Icon(Icons.remove),
                       iconSize: 20,
                     ),
-                    Container(
-                      width: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.quantity.toString(),
+                    SizedBox(
+                      width: 60,
+                      child: TextFormField(
+                        controller: _quantityController,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: BorderSide(color: Colors.grey[400]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: BorderSide(color: Colors.grey[400]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                          ),
+                          isDense: true,
+                        ),
                         textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        onChanged: (value) {
+                          _isUserTyping = true;
+                          final quantity = int.tryParse(value);
+                          if (quantity != null && quantity > 0) {
+                            widget.onQuantityChanged(widget.item.productId, quantity);
+                          }
+                        },
+                        onFieldSubmitted: (value) {
+                          _isUserTyping = false;
+                          final quantity = int.tryParse(value);
+                          if (quantity != null && quantity > 0) {
+                            widget.onQuantityChanged(widget.item.productId, quantity);
+                          } else {
+                            // Si la valeur n'est pas valide, remettre la quantité actuelle
+                            _quantityController.text = widget.item.quantity.toString();
+                          }
+                        },
+                        onTap: () {
+                          _isUserTyping = true;
+                        },
+                        onEditingComplete: () {
+                          _isUserTyping = false;
+                        },
                       ),
                     ),
                     IconButton(
-                      onPressed: () => onQuantityChanged(item.productId, item.quantity + 1),
+                      onPressed: () {
+                        _isUserTyping = false;
+                        widget.onQuantityChanged(widget.item.productId, widget.item.quantity + 1);
+                      },
                       icon: const Icon(Icons.add),
                       iconSize: 20,
                     ),
@@ -247,17 +317,22 @@ class _CartItem extends StatelessWidget {
                 // Prix unitaire
                 Expanded(
                   child: TextFormField(
-                    initialValue: item.unitPrice.toStringAsFixed(2),
+                    initialValue: widget.item.unitPrice.toStringAsFixed(2),
                     decoration: InputDecoration(
                       labelText: 'sales_cart_unit_price'.tr,
                       suffixText: 'FCFA',
                       isDense: true,
+                      helperText: widget.item.maxDiscountAllowed > 0 ? 'Min: ${(widget.item.originalPrice - widget.item.maxDiscountAllowed).toStringAsFixed(0)} FCFA' : null,
+                      helperStyle: TextStyle(fontSize: 10, color: Colors.grey[600]),
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       final price = double.tryParse(value);
                       if (price != null && price >= 0) {
-                        onPriceChanged(item.productId, price);
+                        // Vérifier que le prix ne descend pas en dessous du minimum autorisé
+                        final minPrice = widget.item.originalPrice - widget.item.maxDiscountAllowed;
+                        final validatedPrice = price < minPrice ? minPrice : price;
+                        widget.onPriceChanged(widget.item.productId, validatedPrice);
                       }
                     },
                   ),
@@ -273,7 +348,7 @@ class _CartItem extends StatelessWidget {
               children: [
                 Text('sales_cart_line_total'.tr),
                 Text(
-                  '${item.totalPrice.toStringAsFixed(0)} FCFA',
+                  '${widget.item.totalPrice.toStringAsFixed(0)} FCFA',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.blue,

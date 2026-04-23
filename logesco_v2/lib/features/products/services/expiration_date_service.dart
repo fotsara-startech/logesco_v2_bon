@@ -3,8 +3,12 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/expiration_date.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour gérer les dates de péremption via l'API
+///
+/// MISE À JOUR : L'isolation par boutique est maintenant implémentée
+/// avec le champ boutiqueId dans la table DatePeremption.
 class ExpirationDateService {
   final String baseUrl = '${AppConfig.currentBaseUrl}/expiration-dates';
   final AuthService _authService = AuthService();
@@ -18,26 +22,38 @@ class ExpirationDateService {
     };
   }
 
-  /// Crée une nouvelle date de péremption
+  /// Crée une nouvelle date de péremption avec isolation par boutique
   Future<ExpirationDate> createExpirationDate({
     required int produitId,
     required DateTime datePeremption,
     required int quantite,
     String? numeroLot,
     String? notes,
+    int? boutiqueId,
   }) async {
     try {
       final headers = await _getHeaders();
+
+      // Utiliser la boutique active si non spécifiée
+      final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();
+
+      final body = {
+        'produitId': produitId,
+        'datePeremption': datePeremption.toIso8601String(),
+        'quantite': quantite,
+        'numeroLot': numeroLot,
+        'notes': notes,
+      };
+
+      // Ajouter boutiqueId pour l'isolation par boutique
+      if (activeBoutiqueId != null) {
+        body['boutiqueId'] = activeBoutiqueId;
+      }
+
       final response = await http.post(
         Uri.parse(baseUrl),
         headers: headers,
-        body: jsonEncode({
-          'produitId': produitId,
-          'datePeremption': datePeremption.toIso8601String(),
-          'quantite': quantite,
-          'numeroLot': numeroLot,
-          'notes': notes,
-        }),
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 201) {
@@ -52,12 +68,13 @@ class ExpirationDateService {
     }
   }
 
-  /// Récupère toutes les dates de péremption avec filtres
+  /// Récupère toutes les dates de péremption avec filtres et isolation par boutique
   Future<Map<String, dynamic>> getExpirationDates({
     int? produitId,
     bool? estPerime,
     int? joursRestants,
     bool? estEpuise,
+    int? boutiqueId,
     int page = 1,
     int limit = 20,
   }) async {
@@ -68,17 +85,38 @@ class ExpirationDateService {
         'limit': limit.toString(),
       };
 
+      // Utiliser la boutique active si non spécifiée
+      final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();
+
+      // DEBUG: Afficher l'ID de boutique utilisé
+      print('🏪 [ExpirationDateService] Boutique ID utilisé: $activeBoutiqueId');
+
+      // Ajouter boutiqueId pour l'isolation par boutique
+      if (activeBoutiqueId != null) {
+        queryParams['boutiqueId'] = activeBoutiqueId.toString();
+        print('🔍 [ExpirationDateService] Paramètre boutiqueId ajouté: ${activeBoutiqueId.toString()}');
+      } else {
+        print('⚠️ [ExpirationDateService] Aucun ID de boutique trouvé - pas de filtrage');
+      }
+
       if (produitId != null) queryParams['produitId'] = produitId.toString();
       if (estPerime != null) queryParams['estPerime'] = estPerime.toString();
       if (joursRestants != null) queryParams['joursRestants'] = joursRestants.toString();
       if (estEpuise != null) queryParams['estEpuise'] = estEpuise.toString();
 
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+      print('📡 [ExpirationDateService] URL finale: $uri');
+
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final dates = (data['data'] as List).map((json) => ExpirationDate.fromJson(json)).toList();
+
+        print('📊 [ExpirationDateService] ${dates.length} dates récupérées');
+        if (dates.isNotEmpty) {
+          print('🏪 [ExpirationDateService] Boutiques des dates: ${dates.map((d) => d.boutiqueId).toSet()}');
+        }
 
         return {
           'data': dates,
@@ -93,10 +131,11 @@ class ExpirationDateService {
     }
   }
 
-  /// Récupère les alertes de péremption
+  /// Récupère les alertes de péremption avec isolation par boutique
   Future<Map<String, dynamic>> getExpirationAlerts({
     String? niveauAlerte,
     int joursMax = 30,
+    int? boutiqueId,
     int page = 1,
     int limit = 20,
   }) async {
@@ -108,14 +147,35 @@ class ExpirationDateService {
         'limit': limit.toString(),
       };
 
+      // Utiliser la boutique active si non spécifiée
+      final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();
+
+      // DEBUG: Afficher l'ID de boutique utilisé
+      print('🏪 [ExpirationDateService] Alertes - Boutique ID utilisé: $activeBoutiqueId');
+
+      // Ajouter boutiqueId pour l'isolation par boutique
+      if (activeBoutiqueId != null) {
+        queryParams['boutiqueId'] = activeBoutiqueId.toString();
+        print('🔍 [ExpirationDateService] Alertes - Paramètre boutiqueId ajouté: ${activeBoutiqueId.toString()}');
+      } else {
+        print('⚠️ [ExpirationDateService] Alertes - Aucun ID de boutique trouvé - pas de filtrage');
+      }
+
       if (niveauAlerte != null) queryParams['niveauAlerte'] = niveauAlerte;
 
       final uri = Uri.parse('$baseUrl/alertes').replace(queryParameters: queryParams);
+      print('📡 [ExpirationDateService] Alertes - URL finale: $uri');
+
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final dates = (data['data'] as List).map((json) => ExpirationDate.fromJson(json)).toList();
+
+        print('📊 [ExpirationDateService] Alertes - ${dates.length} alertes récupérées');
+        if (dates.isNotEmpty) {
+          print('🏪 [ExpirationDateService] Alertes - Boutiques des dates: ${dates.map((d) => d.boutiqueId).toSet()}');
+        }
 
         return {
           'data': dates,
@@ -228,12 +288,21 @@ class ExpirationDateService {
     }
   }
 
-  /// Récupère les statistiques de péremption pour un produit
-  Future<Map<String, dynamic>> getProductStats(int produitId) async {
+  /// Récupère les statistiques de péremption pour un produit avec isolation par boutique
+  Future<Map<String, dynamic>> getProductStats(int produitId, {int? boutiqueId}) async {
     try {
       final headers = await _getHeaders();
+
+      // Utiliser la boutique active si non spécifiée
+      final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();
+
+      String url = '$baseUrl/product/$produitId/stats';
+      if (activeBoutiqueId != null) {
+        url += '?boutiqueId=$activeBoutiqueId';
+      }
+
       final response = await http.get(
-        Uri.parse('$baseUrl/product/$produitId/stats'),
+        Uri.parse(url),
         headers: headers,
       );
 

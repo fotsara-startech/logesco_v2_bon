@@ -654,12 +654,12 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     }
 
     // Configurer les paramètres de vente
-    print('=== DEBUG FINALIZE DIALOG ===');
-    print('Montant payé dans dialog: $_amountPaid');
-    print('Total avec dette: $totalWithDebt');
-    print('Reste à payer: $remaining');
-    print('Mode paiement: ${remaining > 0 ? 'credit' : 'comptant'}');
-    print('============================');
+    // print('=== DEBUG FINALIZE DIALOG ===');
+    // print('Montant payé dans dialog: $_amountPaid');
+    // print('Total avec dette: $totalWithDebt');
+    // print('Reste à payer: $remaining');
+    // print('Mode paiement: ${remaining > 0 ? 'credit' : 'comptant'}');
+    // print('============================');
 
     // Définir le montant payé EN PREMIER pour éviter qu'il soit écrasé
     salesController.setAmountPaid(_amountPaid);
@@ -672,7 +672,6 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
     if (success) {
       Navigator.of(context).pop(); // Fermer le dialog
       _showPrintReceiptDialog();
-      Get.back(); // Retour à la page précédente
     } else {
       SnackbarHelper.error('sales_cannot_create_sale'.tr, title: 'error'.tr, duration: const Duration(seconds: 3));
     }

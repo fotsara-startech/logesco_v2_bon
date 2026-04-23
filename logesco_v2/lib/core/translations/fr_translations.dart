@@ -2089,6 +2089,11 @@ const Map<String, String> frTranslations = {
   'procurement_threshold': 'Seuil',
   'procurement_priority': 'Priorité',
   'procurement_refresh': 'Actualiser',
+  'procurement_select_date': 'Sélectionner une date',
+  'procurement_payment_method': 'Mode de paiement',
+  'procurement_payment_cash': 'Comptant',
+  'procurement_payment_credit': 'À crédit',
+  'procurement_notes': 'Notes',
 
   // PDF Export
   'pdf_procurement_order_title': 'COMMANDE D\'APPROVISIONNEMENT',
@@ -2218,9 +2223,6 @@ const Map<String, String> frTranslations = {
   'procurement_no_supplier': 'Aucun fournisseur',
   'procurement_create_suppliers_first': 'Veuillez d\'abord créer des fournisseurs',
   'procurement_delivery_date': 'Date de livraison prévue',
-  'procurement_select_date': 'Sélectionner une date',
-  'procurement_payment_method': 'Mode de paiement',
-  'procurement_notes': 'Notes',
   'procurement_notes_optional': 'Notes optionnelles...',
   'procurement_products': 'Produits',
   'procurement_products_required': 'Produits *',

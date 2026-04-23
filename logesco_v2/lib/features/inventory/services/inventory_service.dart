@@ -5,15 +5,20 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/test_data_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/stock_model.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 class InventoryService {
   final AuthService _authService;
 
   InventoryService(this._authService);
 
+  /// Retourne l'ID de la boutique active depuis BoutiqueController
+  int? _getActiveBoutiqueId() => BoutiqueController.getActiveBoutiqueId();
+
   Future<ApiResponse<List<Stock>>> getStock({
     int page = 1,
     int limit = 100,
+    int? boutiqueId,
   }) async {
     try {
       final token = await _authService.getToken();
@@ -26,6 +31,12 @@ class InventoryService {
         'page': page.toString(),
         'limit': limit.toString(),
       };
+
+      // Injecter boutiqueId si fourni, sinon essayer depuis BoutiqueController
+      final effectiveBoutiqueId = boutiqueId ?? _getActiveBoutiqueId();
+      if (effectiveBoutiqueId != null) {
+        queryParams['boutiqueId'] = effectiveBoutiqueId.toString();
+      }
 
       final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
 
@@ -180,9 +191,12 @@ class InventoryService {
         return ApiResponse.error(message: 'Token d\'authentification manquant');
       }
 
-      // L'endpoint correct est /inventory/:id où :id est le produitId
+      // Injecter boutiqueId si disponible
+      final boutiqueId = _getActiveBoutiqueId();
+      final queryParams = boutiqueId != null ? '?boutiqueId=$boutiqueId' : '';
+
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/$productId'),
+        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/$productId$queryParams'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -226,6 +240,7 @@ class InventoryService {
     int? produitId,
     String? searchQuery,
     String? category,
+    int? boutiqueId,
   }) async {
     try {
       final token = await _authService.getToken();
@@ -242,6 +257,12 @@ class InventoryService {
       if (produitId != null) queryParams['produitId'] = produitId.toString();
       if (searchQuery != null && searchQuery.isNotEmpty) queryParams['search'] = searchQuery;
       if (category != null && category.isNotEmpty) queryParams['category'] = category;
+
+      // Injecter boutiqueId si fourni, sinon essayer depuis BoutiqueController
+      final effectiveBoutiqueId = boutiqueId ?? _getActiveBoutiqueId();
+      if (effectiveBoutiqueId != null) {
+        queryParams['boutiqueId'] = effectiveBoutiqueId.toString();
+      }
 
       final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}').replace(queryParameters: queryParams);
 
@@ -329,6 +350,10 @@ class InventoryService {
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
 
+      // Injecter boutiqueId
+      final boutiqueId = _getActiveBoutiqueId();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
+
       final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/movements').replace(queryParameters: queryParams);
 
       final response = await http.get(
@@ -364,8 +389,17 @@ class InventoryService {
         throw Exception('Token d\'authentification manquant');
       }
 
+      // Injecter boutiqueId si une boutique est active
+      final boutiqueId = _getActiveBoutiqueId();
+      final queryParams = <String, String>{};
+      if (boutiqueId != null) {
+        queryParams['boutiqueId'] = boutiqueId.toString();
+      }
+
+      final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/summary').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/summary'),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -604,14 +638,19 @@ class InventoryService {
         throw Exception('Token d\'authentification manquant');
       }
 
+      // Injecter boutiqueId
+      final boutiqueId = _getActiveBoutiqueId();
+
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/movements'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          if (boutiqueId != null) 'X-Boutique-Id': boutiqueId.toString(),
         },
         body: json.encode({
           'produitId': produitId,
+          'boutiqueId': boutiqueId,
           'typeMouvement': typeMouvement,
           'changementQuantite': changementQuantite,
           'notes': notes,

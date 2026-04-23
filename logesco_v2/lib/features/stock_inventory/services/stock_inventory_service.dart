@@ -2,18 +2,31 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../models/inventory_model.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour la gestion de l'inventaire de stock via API
 class StockInventoryService {
   static const String _endpoint = '/stock-inventory';
 
-  /// Récupérer tous les inventaires
+  static Map<String, String> get _headers {
+    return {
+      'Content-Type': 'application/json',
+      ...AppConfig.defaultHeaders,
+    };
+  }
+
+  static int? get _activeBoutiqueId => BoutiqueController.getActiveBoutiqueId();
+
+  /// Récupérer tous les inventaires filtrés par boutique active
   static Future<List<StockInventory>> getAllInventories() async {
     try {
+      final boutiqueId = _activeBoutiqueId;
+      final queryParams = boutiqueId != null ? '?boutiqueId=$boutiqueId' : '';
+
       final response = await http
           .get(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
-            headers: AppConfig.defaultHeaders,
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint$queryParams'),
+            headers: _headers,
           )
           .timeout(AppConfig.receiveTimeout);
 
@@ -55,12 +68,14 @@ class StockInventoryService {
   /// Créer un nouvel inventaire
   static Future<StockInventory> createInventory(StockInventory inventory) async {
     try {
+      final boutiqueId = _activeBoutiqueId;
       final body = {
         'nom': inventory.nom,
         'description': inventory.description ?? '',
         'type': inventory.type.toString().split('.').last,
         'categorieId': inventory.categorieId,
         'utilisateurId': inventory.utilisateurId,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       final response = await http
@@ -238,16 +253,14 @@ class StockInventoryService {
     }
   }
 
-  /// Clôturer un inventaire (changer le statut en CLOTURE et équilibrer le stock)
+  /// Clôturer un inventaire (changer le statut en CLOTURE et équilibrer le stock boutique)
   static Future<StockInventory> closeInventory(int id) async {
     try {
-      final body = {'status': 'CLOTURE'};
-
       final response = await http
-          .patch(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id/status'),
-            headers: AppConfig.defaultHeaders,
-            body: json.encode(body),
+          .post(
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id/close'),
+            headers: _headers,
+            body: json.encode({}),
           )
           .timeout(AppConfig.receiveTimeout);
 

@@ -382,37 +382,53 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
           ),
           const Divider(height: 20),
 
-          // Remise globale
+          // Résumé des montants
           Obx(() {
             final subtotal = _salesCtrl.cartSubtotal;
+            final discount = _salesCtrl.discount; // Calculé automatiquement
+            final total = _salesCtrl.cartTotal;
+
             return Column(
               children: [
-                // Sous-total
+                // Sous-total (prix originaux)
                 _summaryRow('proforma_subtotal'.tr, '${subtotal.toStringAsFixed(0)} FCFA'),
-                const SizedBox(height: 8),
-                // Champ remise
-                Row(
-                  children: [
-                    Text('proforma_discount'.tr, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 120,
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: '0',
-                          suffixText: 'FCFA',
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.orange[400]!)),
-                        ),
-                        controller: TextEditingController(text: _salesCtrl.discount > 0 ? _salesCtrl.discount.toStringAsFixed(0) : ''),
-                        onChanged: (v) => _salesCtrl.setDiscount(double.tryParse(v) ?? 0),
-                      ),
+
+                // Remise totale (si applicable)
+                if (discount > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.green[200]!),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.discount, size: 16, color: Colors.green[700]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Remise appliquée sur les produits',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '-${discount.toStringAsFixed(0)} FCFA',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             );
           }),
@@ -433,7 +449,31 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
 
           const SizedBox(height: 12),
 
-          // Note informative
+          // Note informative sur les remises
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Les remises sont appliquées directement sur le prix unitaire de chaque produit dans le panier.',
+                    style: TextStyle(fontSize: 11, color: Colors.blue[800]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Note informative sur la proforma
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(

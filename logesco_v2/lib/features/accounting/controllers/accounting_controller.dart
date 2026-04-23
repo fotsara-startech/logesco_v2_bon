@@ -1,7 +1,10 @@
 ﻿import 'package:get/get.dart';
 import '../models/financial_balance.dart';
 import '../services/accounting_service.dart';
+import '../services/accounting_export_service.dart';
 import '../../../core/services/auth_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
+import '../../../core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour la gestion de la comptabilité et des bilans financiers
 class AccountingController extends GetxController {
@@ -27,8 +30,10 @@ class AccountingController extends GetxController {
     _initializeDefaultPeriod();
     loadProductCategories();
     loadQuickSummary();
-    // Charger le bilan pour la période par défaut
     loadFinancialBalance();
+
+    // Réagir aux changements de boutique active
+    ever(Get.find<BoutiqueController>().boutiquesActive, (_) => refreshAllData());
   }
 
   /// Initialise la période par défaut (mois en cours)
@@ -64,14 +69,7 @@ class AccountingController extends GetxController {
       // Charger aussi les KPI
       await loadKPIs();
     } catch (e) {
-      print(' Erreur lors du chargement du bilan: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger le bilan financier: ${e.toString()}',
-        backgroundColor: Get.theme.colorScheme.error.withOpacity(0.1),
-        colorText: Get.theme.colorScheme.error,
-        duration: const Duration(seconds: 5),
-      );
+      SnackbarHelper.error('Impossible de charger le bilan financier: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -180,6 +178,43 @@ class AccountingController extends GetxController {
       loadFinancialBalance(),
       loadQuickSummary(),
     ]);
+  }
+
+  /// Exporte le bilan en PDF
+  Future<void> exportToPdf() async {
+    if (currentBalance.value == null) {
+      SnackbarHelper.warning('Aucune donnee a exporter. Chargez le bilan d\'abord.');
+      return;
+    }
+    try {
+      final boutiqueName = Get.find<BoutiqueController>().boutiquesActive.value?.nom;
+      await AccountingExportService.exportToPdf(
+        balance: currentBalance.value!,
+        boutiqueName: boutiqueName,
+      );
+    } catch (e) {
+      SnackbarHelper.error('Erreur lors de la generation du PDF: $e');
+    }
+  }
+
+  /// Exporte le bilan en Excel
+  Future<void> exportToExcel() async {
+    if (currentBalance.value == null) {
+      SnackbarHelper.warning('Aucune donnee a exporter. Chargez le bilan d\'abord.');
+      return;
+    }
+    try {
+      final boutiqueName = Get.find<BoutiqueController>().boutiquesActive.value?.nom;
+      final path = await AccountingExportService.exportToExcel(
+        balance: currentBalance.value!,
+        boutiqueName: boutiqueName,
+      );
+      if (path != null) {
+        SnackbarHelper.success('Fichier Excel genere avec succes');
+      }
+    } catch (e) {
+      SnackbarHelper.error('Erreur lors de la generation du fichier Excel: $e');
+    }
   }
 
   /// Vérifie si une période est sélectionnée

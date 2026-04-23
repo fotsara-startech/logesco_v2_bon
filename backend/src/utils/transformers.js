@@ -139,6 +139,10 @@ function buildSalesSearchConditions(searchParams) {
     conditions.modePaiement = searchParams.modePaiement;
   }
 
+  if (searchParams.boutiqueId) {
+    conditions.boutiqueId = parseInt(searchParams.boutiqueId);
+  }
+
   if (searchParams.dateDebut || searchParams.dateFin) {
     conditions.dateVente = {};
     if (searchParams.dateDebut) {
@@ -604,6 +608,7 @@ function commandeApprovisionnement(commande) {
     id: commande.id,
     numeroCommande: commande.numeroCommande,
     fournisseurId: commande.fournisseurId,
+    boutiqueId: commande.boutiqueId,
     fournisseur: commande.fournisseur ? fournisseur(commande.fournisseur) : null,
     statut: commande.statut,
     dateCommande: commande.dateCommande,

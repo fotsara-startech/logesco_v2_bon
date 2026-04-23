@@ -66,7 +66,7 @@ class _StockListViewState extends State<StockListGetxView> {
         );
       }
 
-      if (controller.stocks.isEmpty) {
+      if (controller.filteredStocks.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -78,7 +78,7 @@ class _StockListViewState extends State<StockListGetxView> {
               ),
               SizedBox(height: 16),
               Text(
-                'stock_no_stocks'.tr,
+                controller.stockStatusFilter.value.isNotEmpty ? 'Aucun produit pour ce filtre' : 'stock_no_stocks'.tr,
                 style: const TextStyle(fontSize: 18),
               ),
               SizedBox(height: 8),
@@ -95,9 +95,9 @@ class _StockListViewState extends State<StockListGetxView> {
         onRefresh: () => controller.loadStocks(refresh: true),
         child: ListView.builder(
           controller: _scrollController,
-          itemCount: controller.stocks.length,
+          itemCount: controller.filteredStocks.length,
           itemBuilder: (context, index) {
-            final stock = controller.stocks[index];
+            final stock = controller.filteredStocks[index];
             return _buildStockItem(stock, controller);
           },
         ),

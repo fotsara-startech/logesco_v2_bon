@@ -311,12 +311,19 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
+        // Afficher un message d'ouverture
+        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+
+        // Ouvrir automatiquement le fichier
+        await ExportService.openExcelFile(filePath);
+
         // Afficher le dialog de confirmation
         Get.dialog(
           AlertDialog(
             title: Text('stock_export_success'.tr),
             content: Text('${'stock_export_success_message'.tr}\n'
                 'Fichier: ${filePath.split('/').last}\n'
+                'Le fichier a été ouvert automatiquement.\n'
                 '${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
@@ -324,10 +331,9 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 child: Text('close'.tr),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Get.back();
-                  // TODO: Implémenter le partage de fichier
-                  SnackbarHelper.info('feature_coming_soon'.tr, title: 'stock_export_share'.tr);
+                  await ExportService.shareExcelFile(filePath);
                 },
                 child: Text('stock_export_share'.tr),
               ),
@@ -351,6 +357,9 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
+        // Ouvrir automatiquement le fichier
+        await ExportService.openExcelFile(filePath);
+
         // Afficher le dialog de confirmation
         Get.dialog(
           AlertDialog(
@@ -364,10 +373,9 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                 child: Text('close'.tr),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Get.back();
-                  // TODO: Implémenter le partage de fichier
-                  SnackbarHelper.info('feature_coming_soon'.tr, title: 'stock_export_share'.tr);
+                  await ExportService.shareExcelFile(filePath);
                 },
                 child: Text('stock_export_share'.tr),
               ),
@@ -392,6 +400,11 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
       final filePath = await controller.exportStockToPdf();
       if (filePath != null) {
+        // Afficher un message d'ouverture
+        SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+
+        // Ouvrir automatiquement le fichier PDF
+        await InventoryPdfService.openPdf(filePath);
         _showExportSuccessDialog(filePath, isPdf: true);
       } else {
         SnackbarHelper.error('stock_export_error'.tr);
@@ -404,9 +417,14 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
   void _exportMovementsPdf() async {
     final controller = Get.find<InventoryGetxController>();
     try {
-      SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
+      SnackbarHelper.info('Génération du PDF des mouvements...', duration: const Duration(seconds: 2));
       final filePath = await controller.exportMovementsToPdf();
       if (filePath != null) {
+        // Afficher un message d'ouverture
+        SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+
+        // Ouvrir automatiquement le fichier PDF
+        await InventoryPdfService.openPdf(filePath);
         _showExportSuccessDialog(filePath, isPdf: true);
       } else {
         SnackbarHelper.error('stock_export_movements_error'.tr);

@@ -63,7 +63,7 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
   }
 }
 
-/// Application principale LOGESCO v2
+/// Application principale LOGESCO v2  
 class LogescoApp extends StatelessWidget {
   const LogescoApp({super.key});
 

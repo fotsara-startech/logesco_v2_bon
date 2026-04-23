@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/features/financial_movements/models/financial_movement_form.dart';
 import '../controllers/financial_movement_controller.dart';
 import '../models/financial_movement.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
@@ -861,6 +862,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
 
     // Création de l'objet formulaire
     final form = FinancialMovementForm(
+      reference: _isEditing ? widget.movement!.reference : _generateReference(),
       montant: double.parse(_montantController.text.trim()),
       categorieId: _selectedCategoryId!,
       description: _descriptionController.text.trim(),
@@ -1116,5 +1118,13 @@ class _MovementFormPageState extends State<MovementFormPage> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${_formatDate(dateTime)} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Génère une référence unique pour le mouvement financier
+  String _generateReference() {
+    final now = DateTime.now();
+    final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final timeStr = '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+    return 'MVT-$dateStr-$timeStr';
   }
 }

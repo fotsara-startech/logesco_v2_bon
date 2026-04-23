@@ -13,6 +13,7 @@ import '../models/procurement_models.dart';
 import '../services/procurement_service.dart';
 import '../services/pdf_export_service.dart';
 import '../services/suggestion_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 class ProcurementController extends GetxController {
   final ProcurementService _procurementService;
@@ -74,6 +75,7 @@ class ProcurementController extends GetxController {
 
       final result = await _procurementService.getCommandes(
         fournisseurId: fournisseurFiltre.value?.id,
+        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
         statut: statutFiltre.value?.value,
         dateDebut: dateDebutFiltre.value,
         dateFin: dateFinFiltre.value,
@@ -142,6 +144,7 @@ class ProcurementController extends GetxController {
 
       final commande = await _procurementService.createCommande(
         fournisseurId: fournisseurSelectionne.value!.id,
+        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
         dateLivraisonPrevue: dateLivraisonPrevue.value,
         modePaiement: modePaiement.value.value,
         notes: notes.value.isNotEmpty ? notes.value : null,

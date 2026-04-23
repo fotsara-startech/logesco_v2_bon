@@ -5,6 +5,8 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/authorization_service.dart';
 import '../services/permission_service.dart';
+import '../services/boutique_context_service.dart';
+import '../services/http_boutique_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/products/services/api_product_service.dart';
 import '../../features/accounts/services/account_service.dart';
@@ -32,6 +34,9 @@ import '../../features/subscription/services/implementations/crypto_service.dart
 import '../../features/subscription/controllers/subscription_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import '../../features/boutiques/services/boutique_service.dart';
+import '../../features/boutiques/controllers/boutique_controller.dart';
+import '../../features/dashboard/controllers/dashboard_controller.dart';
 
 /// Bindings initiaux pour l'injection de dépendances avec GetX
 class InitialBindings extends Bindings {
@@ -45,6 +50,12 @@ class InitialBindings extends Bindings {
     // Services de base
     Get.put<ApiClient>(ApiClient(), permanent: true);
     Get.put<ApiService>(ApiService(baseUrl: baseUrl), permanent: true);
+
+    // Service de contexte boutique (TRÈS IMPORTANT - avant les autres services)
+    Get.put<BoutiqueContextService>(BoutiqueContextService(), permanent: true);
+
+    // Service HTTP avec injection automatique du boutiqueId
+    Get.put<HttpBoutiqueService>(HttpBoutiqueService(), permanent: true);
 
     // Services métier
     Get.put<ApiProductService>(ApiProductService(), permanent: true);
@@ -106,6 +117,13 @@ class InitialBindings extends Bindings {
     Get.put<CashSessionController>(CashSessionController(), permanent: true);
 
     Get.lazyPut(() => Get.find<AuthService>());
+
+    // Services multi-boutique
+    Get.put<BoutiqueService>(BoutiqueService(), permanent: true);
+    Get.put<BoutiqueController>(BoutiqueController(), permanent: true);
+
+    // Dashboard controller permanent (pour le rechargement lors du switch de boutique)
+    Get.put<DashboardController>(DashboardController(), permanent: true);
 
     // Services d'abonnement
     _configureSubscriptionServices();

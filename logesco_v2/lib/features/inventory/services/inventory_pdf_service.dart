@@ -6,12 +6,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:open_file/open_file.dart';
 import 'package:get/get.dart';
 import '../models/stock_model.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/config/app_config.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service d'export PDF pour les stocks et mouvements de stock
 class InventoryPdfService {
@@ -62,18 +64,21 @@ class InventoryPdfService {
 
   // ─── PUBLIC API ───────────────────────────────────────────────────────────
 
-  static Future<String?> exportStocksToPdf(List<Stock> stocks) async {
+  static Future<String?> exportStocksToPdf(List<Stock> stocks, {String? boutiqueName}) async {
     try {
       final company = await _fetchCompany();
       final logo = await _fetchLogo(company);
       final now = DateTime.now();
+
+      // Récupérer le nom de la boutique active si non fourni
+      final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
 
       final pdf = pw.Document();
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(24),
-          header: (_) => _buildCompanyHeader(company, logo, 'Rapport de stock', _shortDate.format(now)),
+          header: (_) => _buildCompanyHeader(company, logo, 'Rapport de stock', _shortDate.format(now), boutiqueName: activeBoutiqueName),
           footer: (ctx) => _buildFooter(ctx),
           build: (_) => [
             pw.SizedBox(height: 12),
@@ -89,18 +94,21 @@ class InventoryPdfService {
     }
   }
 
-  static Future<String?> exportMovementsToPdf(List<StockMovement> movements) async {
+  static Future<String?> exportMovementsToPdf(List<StockMovement> movements, {String? boutiqueName}) async {
     try {
       final company = await _fetchCompany();
       final logo = await _fetchLogo(company);
       final now = DateTime.now();
+
+      // Récupérer le nom de la boutique active si non fourni
+      final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
 
       final pdf = pw.Document();
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(24),
-          header: (_) => _buildCompanyHeader(company, logo, 'Rapport des mouvements de stock', _shortDate.format(now)),
+          header: (_) => _buildCompanyHeader(company, logo, 'Rapport des mouvements de stock', _shortDate.format(now), boutiqueName: activeBoutiqueName),
           footer: (ctx) => _buildFooter(ctx),
           build: (_) => [
             pw.SizedBox(height: 12),
@@ -120,9 +128,43 @@ class InventoryPdfService {
     await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
   }
 
+  /// Ouvre automatiquement le fichier PDF après export
+  static Future<void> openPdf(String filePath) async {
+    try {
+      final result = await OpenFile.open(filePath);
+      if (result.type != ResultType.done) {
+        print('⚠️ Impossible d\'ouvrir le PDF: ${result.message}');
+        // Fallback vers le partage si l'ouverture échoue
+        await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
+      }
+    } catch (e) {
+      print('⚠️ Erreur lors de l\'ouverture du PDF: $e');
+      // Fallback vers le partage en cas d'erreur
+      try {
+        await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
+      } catch (shareError) {
+        print('⚠️ Erreur lors du partage PDF: $shareError');
+      }
+    }
+  }
+
+  /// Récupère le nom de la boutique active
+  static Future<String?> _getActiveBoutiqueName() async {
+    try {
+      if (Get.isRegistered<BoutiqueController>()) {
+        final controller = Get.find<BoutiqueController>();
+        return controller.boutiquesActive.value?.nom;
+      }
+      return null;
+    } catch (e) {
+      print('⚠️ Erreur lors de la récupération du nom de la boutique: $e');
+      return null;
+    }
+  }
+
   // ─── EN-TÊTE ENTREPRISE ───────────────────────────────────────────────────
 
-  static pw.Widget _buildCompanyHeader(CompanyProfile? company, Uint8List? logo, String reportTitle, String date) {
+  static pw.Widget _buildCompanyHeader(CompanyProfile? company, Uint8List? logo, String reportTitle, String date, {String? boutiqueName}) {
     return pw.Column(children: [
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -178,7 +220,7 @@ class InventoryPdfService {
               ],
             ),
           ),
-          // Bloc droit : titre du rapport
+          // Bloc droit : titre du rapport + boutique
           pw.Expanded(
             flex: 1,
             child: pw.Column(
@@ -187,6 +229,22 @@ class InventoryPdfService {
                 pw.Text(reportTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _primary), textAlign: pw.TextAlign.right),
                 pw.SizedBox(height: 4),
                 pw.Text('Date : $date', style: pw.TextStyle(fontSize: 9, color: _grey), textAlign: pw.TextAlign.right),
+                if (boutiqueName != null) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: pw.BoxDecoration(
+                      color: _cardBlueBg,
+                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                      border: pw.Border.all(color: _cardBlue, width: 0.8),
+                    ),
+                    child: pw.Text(
+                      'Boutique : $boutiqueName',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _cardBlue),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/cash_session_model.dart';
 import '../services/cash_session_service.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 import '../../financial_movements/services/financial_movement_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
@@ -38,12 +39,21 @@ class CashSessionController extends GetxController {
       if (user != null) {
         loadActiveSession();
       } else {
-        // Logout : vider la session locale
         activeSession.value = null;
         sessionHistory.clear();
       }
     });
     loadActiveSession();
+
+    // Écouter les changements de boutique active
+    try {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        // Recharger la session active ET l'historique pour la nouvelle boutique
+        loadActiveSession();
+        loadSessionHistory();
+      });
+    } catch (_) {}
   }
 
   /// Charger la session active

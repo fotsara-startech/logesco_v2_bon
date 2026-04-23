@@ -22,6 +22,7 @@ import '../../company_settings/models/company_profile.dart';
 import '../../printing/services/printing_service.dart';
 import '../../printing/models/models.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 class SalesController extends GetxController with SubscriptionVerificationMixin {
   final SalesService _salesService = SalesService(Get.find<AuthService>());
@@ -361,6 +362,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         dateDebut: _startDateFilter.value,
         dateFin: _endDateFilter.value,
         vendeurId: effectiveVendeurId,
+        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
       );
 
       if (response.success && response.data != null) {
@@ -723,6 +725,15 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _tvaEnabled.value = false;
   }
 
+  /// Recharge les données pour la boutique active (appelé lors du switch de boutique)
+  void reloadForBoutique() {
+    clearCart();
+    try {
+      loadSales(refresh: true);
+      loadStocks(); // Recharger le stock de la nouvelle boutique
+    } catch (_) {}
+  }
+
   // Configuration de la vente
   void setSelectedCustomer(Customer? customer) {
     _selectedCustomer.value = customer;
@@ -769,6 +780,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   }
 
   // Création de vente
+
+  /// Retourne l'ID de la boutique active de façon fiable
+  int? _getActiveBoutiqueId() => BoutiqueController.getActiveBoutiqueId();
+
   Future<bool> createSale() async {
     // Vérifier l'abonnement avant de créer une vente
     final canCreateSale = await verifySubscriptionForWrite(actionName: 'Créer une vente');
@@ -822,6 +837,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
       final request = CreateSaleRequest(
         clientId: _selectedCustomer.value?.id,
+        boutiqueId: _getActiveBoutiqueId(),
         modePaiement: _paymentMode.value,
         montantRemise: _discount.value,
         montantPaye: _amountPaid.value,

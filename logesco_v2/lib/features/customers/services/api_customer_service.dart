@@ -4,6 +4,7 @@ import '../../../core/utils/exceptions.dart';
 import '../models/customer.dart';
 import '../models/customer_transaction.dart';
 import 'customer_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour la gestion des clients via l'API
 class ApiCustomerService extends GetxService implements CustomerService {
@@ -202,11 +203,13 @@ class ApiCustomerService extends GetxService implements CustomerService {
     try {
       print('💰 Enregistrement paiement dette pour client $customerId: $montant FCFA');
 
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
       final response = await _apiClient.post<Map<String, dynamic>>(
         '/customers/$customerId/payment',
         {
           'montant': montant,
           'description': description,
+          if (boutiqueId != null) 'boutiqueId': boutiqueId,
         },
       );
 
@@ -227,11 +230,13 @@ class ApiCustomerService extends GetxService implements CustomerService {
       print('💰 [Service] Enregistrement paiement dette pour client $customerId, vente $venteId: $montant FCFA');
       print('  - Description: $description');
 
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
       final requestBody = {
         'montant': montant,
         'description': description,
         'venteId': venteId,
         'typeTransactionDetail': 'paiement_dette',
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       print('📋 [Service] Body de la requête: $requestBody');

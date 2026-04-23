@@ -18,6 +18,11 @@ class SalesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
 
+    // Recharger les ventes avec le boutiqueId actuel à chaque ouverture de la page
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadSales(refresh: true);
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text('sales_title'.tr),

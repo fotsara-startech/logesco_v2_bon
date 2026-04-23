@@ -7,6 +7,7 @@ import '../services/export_service.dart';
 import '../services/inventory_pdf_service.dart';
 import '../../products/services/category_service.dart';
 import '../../products/services/api_product_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 import '../../../core/services/auth_service.dart';
 
 /// Contrôleur GetX pour la gestion de l'inventaire
@@ -81,6 +82,20 @@ class InventoryGetxController extends GetxController {
 
     // Écouter les changements de statut de stock
     ever(stockStatusFilter, (_) => _performSearch());
+
+    // Écouter les changements de boutique active
+    try {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        print('🏪 [INVENTORY] Boutique changée, rechargement des données...');
+        // Recharger toutes les données quand la boutique change
+        Future.delayed(const Duration(milliseconds: 100), () {
+          refreshAll();
+        });
+      });
+    } catch (e) {
+      print('⚠️ [INVENTORY] Impossible d\'écouter les changements de boutique: $e');
+    }
   }
 
   @override
@@ -625,9 +640,21 @@ class InventoryGetxController extends GetxController {
       case 'rupture':
         return null; // Géré différemment
       case 'disponible':
-        return false;
+        return null; // Filtré localement dans filteredStocks
       default:
         return alertFilter.value;
+    }
+  }
+
+  /// Retourne les stocks filtrés selon le statut sélectionné
+  List<Stock> get filteredStocks {
+    switch (stockStatusFilter.value) {
+      case 'disponible':
+        return stocks.where((s) => s.quantiteDisponible > 0).toList();
+      case 'rupture':
+        return stocks.where((s) => s.quantiteDisponible == 0).toList();
+      default:
+        return stocks;
     }
   }
 

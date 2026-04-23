@@ -85,6 +85,9 @@ import '../../features/accounting/views/accounting_dashboard_page.dart';
 import '../../features/accounting/bindings/accounting_binding.dart';
 import '../../features/analytics/views/product_analytics_page.dart';
 import '../../features/analytics/bindings/analytics_binding.dart';
+import '../../features/boutiques/views/boutiques_management_page.dart';
+import '../../features/boutiques/views/stock_transfert_page.dart';
+import '../../features/boutiques/views/boutique_dashboard_page.dart';
 // import '../../features/users/views/role_test_view.dart';
 
 /// Configuration des pages et routes avec GetX
@@ -501,6 +504,23 @@ class AppPages {
     GetPage(
       name: AppRoutes.subscriptionBlocked,
       page: () => const SubscriptionBlockedPage(),
+    ),
+
+    // Routes multi-boutique
+    GetPage(
+      name: AppRoutes.boutiques,
+      page: () => const BoutiquesManagementPage(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.stockTransfert,
+      page: () => const StockTransfertPage(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.boutiqueDashboard,
+      page: () => const BoutiqueDashboardPage(),
+      middlewares: [AuthMiddleware()],
     ),
 
     // Test et développement

@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logesco_v2/features/financial_movements/models/financial_movement_form.dart';
 import '../models/financial_movement.dart';
 import '../models/movement_category.dart';
 import '../models/loading_state.dart';

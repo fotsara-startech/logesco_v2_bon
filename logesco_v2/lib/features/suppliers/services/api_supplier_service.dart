@@ -3,6 +3,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/utils/exceptions.dart';
 import '../models/supplier.dart';
 import 'supplier_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour la gestion des fournisseurs via l'API
 class ApiSupplierService extends GetxService implements SupplierService {
@@ -166,10 +167,12 @@ class ApiSupplierService extends GetxService implements SupplierService {
     print('  - Description: $description');
 
     try {
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
       final body = {
         'montant': montant,
         'typeTransaction': 'paiement',
         if (description != null) 'description': description,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       print('📋 Body: $body');
@@ -264,6 +267,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
     print('  - Créer mouvement financier: $createFinancialMovement');
 
     try {
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
       final body = {
         'montant': montant,
         'typeTransaction': 'paiement',
@@ -271,6 +275,7 @@ class ApiSupplierService extends GetxService implements SupplierService {
         'referenceId': procurementId,
         if (description != null) 'description': description,
         'createFinancialMovement': createFinancialMovement,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       print('📋 Body: $body');

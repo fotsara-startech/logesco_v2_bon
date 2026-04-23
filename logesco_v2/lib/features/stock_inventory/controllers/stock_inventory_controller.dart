@@ -7,6 +7,7 @@ import '../services/mock_inventory_service.dart';
 import '../services/inventory_print_service.dart';
 import '../../../core/config/app_config.dart';
 import '../../products/services/category_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Contrôleur pour la gestion de l'inventaire de stock
 class StockInventoryController extends GetxController {
@@ -33,6 +34,14 @@ class StockInventoryController extends GetxController {
     super.onInit();
     loadInventories();
     loadCategories();
+
+    // Écouter les changements de boutique active
+    try {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        loadInventories();
+      });
+    } catch (_) {}
   }
 
   @override
@@ -263,23 +272,43 @@ class StockInventoryController extends GetxController {
 
   /// Clôturer un inventaire
   Future<bool> closeInventory(int inventoryId) async {
+    // Confirmation avant clôture
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Confirmer la clôture'),
+        content: const Text(
+          'La clôture va ajuster le stock de la boutique selon les écarts constatés. Cette action est irréversible.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+            child: const Text('Clôturer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return false;
+
     try {
+      isLoading.value = true;
       final updatedInventory = AppConfig.useTestData ? await MockInventoryService.closeInventorySimple(inventoryId) : await StockInventoryService.closeInventory(inventoryId);
 
       final index = inventories.indexWhere((i) => i.id == inventoryId);
-      if (index != -1) {
-        inventories[index] = updatedInventory;
-      }
+      if (index != -1) inventories[index] = updatedInventory;
+      if (selectedInventory.value?.id == inventoryId) selectedInventory.value = updatedInventory;
 
-      if (selectedInventory.value?.id == inventoryId) {
-        selectedInventory.value = updatedInventory;
-      }
-
-      SnackbarHelper.success('Inventaire clôturé avec succès - Stock équilibré');
+      SnackbarHelper.success('Inventaire clôturé - Stock boutique équilibré');
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de clôturer l\'inventaire: $e');
       return false;
+    } finally {
+      isLoading.value = false;
+      // Recharger pour s'assurer que l'état est à jour
+      await loadInventories();
     }
   }
 

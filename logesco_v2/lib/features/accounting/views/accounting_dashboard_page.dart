@@ -67,17 +67,17 @@ class AccountingDashboardPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text('settings'.tr),
-                      ],
-                    ),
-                  ),
+                  // const PopupMenuDivider(),
+                  // PopupMenuItem(
+                  //   value: 'settings',
+                  //   child: Row(
+                  //     children: [
+                  //       const Icon(Icons.settings, color: Colors.grey),
+                  //       const SizedBox(width: 8),
+                  //       Text('settings'.tr),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
             ],
@@ -358,24 +358,12 @@ class AccountingDashboardPage extends StatelessWidget {
 
   /// Exporte le bilan en PDF
   void _exportToPdf(AccountingController controller) {
-    // TODO: Implémenter l'export PDF
-    Get.snackbar(
-      'accounting_export_pdf'.tr,
-      'accounting_feature_in_development'.tr,
-      backgroundColor: Colors.blue.shade100,
-      colorText: Colors.blue.shade800,
-    );
+    controller.exportToPdf();
   }
 
   /// Exporte le bilan en Excel
   void _exportToExcel(AccountingController controller) {
-    // TODO: Implémenter l'export Excel
-    Get.snackbar(
-      'accounting_export_excel'.tr,
-      'accounting_feature_in_development'.tr,
-      backgroundColor: Colors.green.shade100,
-      colorText: Colors.green.shade800,
-    );
+    controller.exportToExcel();
   }
 
   /// Affiche les paramètres

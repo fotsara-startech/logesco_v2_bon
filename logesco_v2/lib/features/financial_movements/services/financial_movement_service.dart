@@ -2,11 +2,15 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/boutique_context_service.dart';
+import '../../../core/services/http_boutique_service.dart';
 import '../../../core/models/api_response.dart';
 import '../../../core/utils/retry_policy.dart';
 import '../models/financial_movement.dart';
+import '../models/financial_movement_form.dart';
 import '../models/movement_category.dart';
 import '../utils/financial_error_handler.dart';
 import 'financial_movement_cache_service.dart';
@@ -15,6 +19,8 @@ import 'financial_movement_cache_service.dart';
 class FinancialMovementService {
   final AuthService _authService;
   final FinancialMovementCacheService _cacheService;
+  final BoutiqueContextService _boutiqueContext = Get.find<BoutiqueContextService>();
+  final HttpBoutiqueService _httpService = Get.find<HttpBoutiqueService>();
   static const String _endpoint = '/financial-movements';
 
   // Politiques de retry pour différents types d'opérations
@@ -101,6 +107,12 @@ class FinancialMovementService {
       'page': page.toString(),
       'limit': limit.toString(),
     };
+
+    // Injecter automatiquement le boutiqueId
+    final boutiqueId = _boutiqueContext.activeBoutiqueId;
+    if (boutiqueId != null) {
+      queryParams['boutiqueId'] = boutiqueId.toString();
+    }
 
     if (startDate != null) {
       queryParams['startDate'] = startDate.toIso8601String();
@@ -268,6 +280,9 @@ class FinancialMovementService {
 
   /// Implémentation interne de la création d'un mouvement
   Future<FinancialMovement> _createMovementInternal(FinancialMovementForm form) async {
+    // Vérifier qu'une boutique est active
+    _boutiqueContext.requireActiveBoutique('création de mouvement financier');
+
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
@@ -291,15 +306,39 @@ class FinancialMovementService {
 
     print('🔄 Création d\'un mouvement financier: ${form.description}');
 
+    // Injecter le boutiqueId dans les données du formulaire
+    final formData = _boutiqueContext.injectBoutiqueId(form.toJson());
+
+    // SOLUTION DÉFINITIVE: Injecter aussi dans les headers ET query params
+    final boutiqueId = _boutiqueContext.activeBoutiqueId;
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    // Ajouter boutiqueId dans les headers si disponible
+    if (boutiqueId != null) {
+      headers['X-Boutique-Id'] = boutiqueId.toString();
+      print('🏪 Header X-Boutique-Id ajouté: $boutiqueId');
+    }
+
+    // Construire l'URL avec query params
+    var uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint');
+    if (boutiqueId != null) {
+      uri = uri.replace(queryParameters: {'boutiqueId': boutiqueId.toString()});
+      print('🏪 Query param boutiqueId ajouté: $boutiqueId');
+    }
+
+    print('🌐 URL finale: $uri');
+    print('📦 Headers: $headers');
+    print('📄 Body: ${json.encode(formData)}');
+
     try {
       final response = await http
           .post(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: json.encode(form.toJson()),
+            uri,
+            headers: headers,
+            body: json.encode(formData),
           )
           .timeout(const Duration(seconds: 30));
 
@@ -337,6 +376,9 @@ class FinancialMovementService {
 
   /// Implémentation interne de la mise à jour d'un mouvement
   Future<FinancialMovement> _updateMovementInternal(int id, FinancialMovementForm form) async {
+    // Vérifier qu'une boutique est active
+    _boutiqueContext.requireActiveBoutique('mise à jour de mouvement financier');
+
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
@@ -358,17 +400,41 @@ class FinancialMovementService {
       );
     }
 
-    print('');
+    print('🔄 Mise à jour du mouvement financier $id');
+
+    // Injecter le boutiqueId dans les données du formulaire
+    final formData = _boutiqueContext.injectBoutiqueId(form.toJson());
+
+    // SOLUTION DÉFINITIVE: Injecter aussi dans les headers ET query params
+    final boutiqueId = _boutiqueContext.activeBoutiqueId;
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    // Ajouter boutiqueId dans les headers si disponible
+    if (boutiqueId != null) {
+      headers['X-Boutique-Id'] = boutiqueId.toString();
+      print('🏪 Header X-Boutique-Id ajouté: $boutiqueId');
+    }
+
+    // Construire l'URL avec query params
+    var uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id');
+    if (boutiqueId != null) {
+      uri = uri.replace(queryParameters: {'boutiqueId': boutiqueId.toString()});
+      print('🏪 Query param boutiqueId ajouté: $boutiqueId');
+    }
+
+    print('🌐 URL finale: $uri');
+    print('📦 Headers: $headers');
+    print('📄 Body: ${json.encode(formData)}');
 
     try {
       final response = await http
           .put(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/$id'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: json.encode(form.toJson()),
+            uri,
+            headers: headers,
+            body: json.encode(formData),
           )
           .timeout(const Duration(seconds: 30));
 
@@ -592,6 +658,13 @@ class FinancialMovementService {
     }
 
     final queryParams = <String, String>{};
+
+    // Injecter automatiquement le boutiqueId
+    final boutiqueId = _boutiqueContext.activeBoutiqueId;
+    if (boutiqueId != null) {
+      queryParams['boutiqueId'] = boutiqueId.toString();
+    }
+
     if (startDate != null) {
       queryParams['startDate'] = startDate.toIso8601String();
     }

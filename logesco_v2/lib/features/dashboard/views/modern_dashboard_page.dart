@@ -13,6 +13,11 @@ import '../../../core/services/permission_service.dart';
 import '../../subscription/widgets/subscription_status_widget.dart';
 import '../../subscription/views/subscription_status_page.dart';
 import '../../cash_registers/widgets/cash_session_indicator.dart';
+import '../../boutiques/widgets/boutique_selector_widget.dart';
+import '../../boutiques/widgets/boutique_context_indicator.dart';
+import '../../boutiques/views/boutiques_management_page.dart';
+import '../../../debug_boutique_context.dart';
+import '../../../test_boutique_injection.dart';
 
 class ModernDashboardPage extends StatefulWidget {
   const ModernDashboardPage({super.key});
@@ -29,7 +34,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
   void initState() {
     super.initState();
     authController = Get.find<AuthController>();
-    dashboardController = Get.put(DashboardController());
+    dashboardController = Get.find<DashboardController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSubscriptionNotifications();
     });
@@ -53,8 +58,20 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          const BoutiqueContextIndicator(compact: true),
+          const SizedBox(width: 8),
           const CashSessionIndicator(),
           const SubscriptionAppBarWidget(),
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () => Get.to(() => const DebugBoutiqueContextPage()),
+            tooltip: 'Debug Boutique Context',
+          ),
+          IconButton(
+            icon: const Icon(Icons.science),
+            onPressed: () => Get.to(() => const TestBoutiqueInjectionPage()),
+            tooltip: 'Test Injection BoutiqueId',
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {},
@@ -113,6 +130,8 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
+                  // Sélecteur de boutique active (visible seulement si multi-boutique)
+                  const BoutiqueSelectorWidget(),
                   _buildMenuSection('menu_sales_customers'.tr, [
                     if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.point_of_sale, 'sales_title'.tr, Colors.green, () => Get.toNamed(AppRoutes.sales)),
                     if (_hasPermission('sales', 'READ')) _buildMenuItem(Icons.description_outlined, 'proforma_title'.tr, Colors.orange, () => Get.toNamed(AppRoutes.proforma)),
@@ -148,6 +167,8 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'users_title'.tr, Colors.grey, () => Get.toNamed(AppRoutes.users)),
                     if (_hasPermission('users', 'ROLES')) _buildMenuItem(Icons.admin_panel_settings, 'roles_title'.tr, Colors.indigo, () => Get.toNamed(AppRoutes.roles)),
                     if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'menu_company'.tr, Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
+                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.store, 'Boutiques', Colors.teal, () => Get.to(() => const BoutiquesManagementPage())),
+                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'Dashboard consolidé', Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
                     // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
                     _buildMenuItem(Icons.card_membership, 'menu_subscription'.tr, Colors.deepOrange, () {
                       Get.to(() => const SubscriptionStatusPage());
@@ -248,8 +269,14 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.toNamed(AppRoutes.createSale),
-        icon: const Icon(Icons.add),
-        label: Text('dashboard_new_sale'.tr),
+        icon: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        label: Text(
+          'dashboard_new_sale'.tr,
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF4CAF50),
         elevation: 8,
       ),
@@ -745,8 +772,8 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop(); // Fermer le dialog
-              await authController.logout(); // Nettoyer les données et rediriger automatiquement
+              Get.back(); // Fermer le dialog via GetX
+              await authController.logout();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

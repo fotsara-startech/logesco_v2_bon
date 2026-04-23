@@ -1,15 +1,23 @@
 import 'package:get/get.dart';
 import '../../../core/api/api_client.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour récupérer les statistiques du dashboard
 class DashboardStatsService extends GetxService {
   final ApiClient _apiClient = Get.find<ApiClient>();
 
+  /// Retourne les query params avec boutiqueId si disponible
+  Map<String, dynamic>? _boutiqueParams() {
+    final id = BoutiqueController.getActiveBoutiqueId();
+    if (id != null) return {'boutiqueId': id.toString()};
+    return null;
+  }
+
   /// Récupérer les statistiques générales
   Future<Map<String, dynamic>> getGeneralStats() async {
     try {
       print('📊 [DashboardStatsService] Récupération des statistiques générales...');
-      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/stats');
+      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/stats', queryParameters: _boutiqueParams());
 
       if (response.isSuccess && response.data != null) {
         final raw = response.data!['data'] ?? {};
@@ -39,7 +47,7 @@ class DashboardStatsService extends GetxService {
   Future<Map<String, dynamic>> getSalesStats() async {
     try {
       print('💰 [DashboardStatsService] Récupération des statistiques de ventes...');
-      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-stats');
+      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-stats', queryParameters: _boutiqueParams());
 
       if (response.isSuccess && response.data != null) {
         final raw = response.data!['data'] ?? {};
@@ -67,7 +75,7 @@ class DashboardStatsService extends GetxService {
   /// Récupérer les activités récentes
   Future<List<Map<String, dynamic>>> getRecentActivities() async {
     try {
-      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/recent-activities');
+      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/recent-activities', queryParameters: _boutiqueParams());
 
       if (response.isSuccess && response.data != null) {
         final List<dynamic> rawList = response.data!['data'] ?? [];
@@ -84,7 +92,7 @@ class DashboardStatsService extends GetxService {
   /// Récupérer les données du graphique des ventes
   Future<List<Map<String, dynamic>>> getSalesChartData() async {
     try {
-      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-chart');
+      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/sales-chart', queryParameters: _boutiqueParams());
 
       if (response.isSuccess && response.data != null) {
         final List<dynamic> rawList = response.data!['data'] ?? [];

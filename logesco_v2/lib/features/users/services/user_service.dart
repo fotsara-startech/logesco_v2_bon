@@ -68,7 +68,6 @@ class UserService extends GetxService {
   Future<User> createUser(User user, String motDePasse) async {
     final body = {
       'nomUtilisateur': user.nomUtilisateur,
-      'email': user.email,
       'motDePasse': motDePasse,
       'role': {
         'id': user.role.id,
@@ -76,6 +75,11 @@ class UserService extends GetxService {
       },
       'isActive': user.isActive,
     };
+
+    // N'inclure l'email que s'il n'est pas null et pas vide
+    if (user.email != null && user.email!.isNotEmpty) {
+      body['email'] = user.email!;
+    }
 
     final response = await _apiClient.post<Map<String, dynamic>>(_endpoint, body);
 
@@ -90,13 +94,17 @@ class UserService extends GetxService {
   Future<User> updateUser(int id, User user, {String? motDePasse}) async {
     final body = {
       'nomUtilisateur': user.nomUtilisateur,
-      'email': user.email,
       'role': {
         'id': user.role.id,
         'nom': user.role.nom,
       },
       'isActive': user.isActive,
     };
+
+    // N'inclure l'email que s'il n'est pas null et pas vide
+    if (user.email != null && user.email!.isNotEmpty) {
+      body['email'] = user.email!;
+    }
 
     if (motDePasse != null && motDePasse.isNotEmpty) {
       body['motDePasse'] = motDePasse;
@@ -148,6 +156,25 @@ class UserService extends GetxService {
     }
   }
 
+  /// Récupérer les boutiques assignées à un utilisateur
+  Future<List<Map<String, dynamic>>> getUserBoutiques(int userId) async {
+    final response = await _apiClient.get<Map<String, dynamic>>('$_endpoint/$userId/boutiques');
+    if (response.isSuccess && response.data != null) {
+      final list = response.data!['data'] as List<dynamic>? ?? [];
+      return list.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  /// Mettre à jour les boutiques assignées à un utilisateur
+  Future<bool> updateUserBoutiques(int userId, List<int> boutiqueIds) async {
+    final response = await _apiClient.put<Map<String, dynamic>>(
+      '$_endpoint/$userId/boutiques',
+      {'boutiqueIds': boutiqueIds},
+    );
+    return response.isSuccess;
+  }
+
   /// Récupérer tous les rôles disponibles
   Future<List<role_model.UserRole>> getAllRoles() async {
     try {
@@ -180,7 +207,7 @@ class UserService extends GetxService {
 
       final lowerQuery = query.toLowerCase();
       return users.where((user) {
-        return user.nomUtilisateur.toLowerCase().contains(lowerQuery) || user.email.toLowerCase().contains(lowerQuery) || user.role.displayName.toLowerCase().contains(lowerQuery);
+        return user.nomUtilisateur.toLowerCase().contains(lowerQuery) || (user.email?.toLowerCase().contains(lowerQuery) ?? false) || user.role.displayName.toLowerCase().contains(lowerQuery);
       }).toList();
     } catch (e) {
       throw Exception('Erreur lors de la recherche: $e');

@@ -5,6 +5,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/models/api_response.dart';
 import '../models/proforma_invoice.dart';
 import '../../sales/models/sale.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 class ProformaService {
   final AuthService _authService;
@@ -21,13 +22,14 @@ class ProformaService {
     };
   }
 
-  /// Récupère la liste des proformas
+  /// Récupère la liste des proformas avec isolation par boutique
   Future<ApiResponse<List<ProformaInvoice>>> getProformas({
     int page = 1,
     int limit = 20,
     String? statut,
     int? clientId,
     int? vendeurId,
+    int? boutiqueId,
   }) async {
     try {
       final headers = await _headers();
@@ -38,6 +40,12 @@ class ProformaService {
       if (statut != null) params['statut'] = statut;
       if (clientId != null) params['clientId'] = clientId.toString();
       if (vendeurId != null) params['vendeurId'] = vendeurId.toString();
+
+      // Utiliser la boutique active si non spécifiée
+      final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();
+      if (activeBoutiqueId != null) {
+        params['boutiqueId'] = activeBoutiqueId.toString();
+      }
 
       final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
       final response = await http.get(uri, headers: headers).timeout(AppConfig.connectTimeout);
@@ -87,11 +95,19 @@ class ProformaService {
     }
   }
 
-  /// Crée une nouvelle proforma
+  /// Crée une nouvelle proforma avec isolation par boutique
   Future<ApiResponse<ProformaInvoice>> createProforma(CreateProformaRequest request) async {
     try {
       final headers = await _headers();
-      final body = jsonEncode(request.toJson());
+
+      // Ajouter le boutiqueId de la boutique active
+      final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+      final requestData = request.toJson();
+      if (activeBoutiqueId != null) {
+        requestData['boutiqueId'] = activeBoutiqueId;
+      }
+
+      final body = jsonEncode(requestData);
       print('📋 [PROFORMA] Création: $body');
 
       final response = await http.post(Uri.parse(_baseUrl), headers: headers, body: body).timeout(AppConfig.connectTimeout);
@@ -117,7 +133,15 @@ class ProformaService {
   Future<ApiResponse<ProformaInvoice>> updateProforma(int id, CreateProformaRequest request) async {
     try {
       final headers = await _headers();
-      final body = jsonEncode(request.toJson());
+
+      // Ajouter le boutiqueId de la boutique active
+      final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+      final requestData = request.toJson();
+      if (activeBoutiqueId != null) {
+        requestData['boutiqueId'] = activeBoutiqueId;
+      }
+
+      final body = jsonEncode(requestData);
 
       final response = await http.put(Uri.parse('$_baseUrl/$id'), headers: headers, body: body).timeout(AppConfig.connectTimeout);
 

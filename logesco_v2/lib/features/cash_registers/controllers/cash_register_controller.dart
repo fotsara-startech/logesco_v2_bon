@@ -5,6 +5,8 @@ import '../models/cash_register_model.dart';
 import '../services/cash_register_service.dart';
 import '../services/mock_cash_register_service.dart';
 import '../../../core/config/app_config.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
+import '../../../core/utils/snackbar_helper.dart';
 
 /// Contrôleur pour la gestion des caisses
 class CashRegisterController extends GetxController {
@@ -24,6 +26,14 @@ class CashRegisterController extends GetxController {
     super.onInit();
     loadCashRegisters();
     _startAutoRefresh();
+
+    // Écouter les changements de boutique active
+    try {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        loadCashRegisters();
+      });
+    } catch (_) {}
   }
 
   @override
@@ -108,13 +118,7 @@ class CashRegisterController extends GetxController {
       final cashRegisterList = AppConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
       cashRegisters.assignAll(cashRegisterList);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les caisses: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de charger les caisses: $e');
     } finally {
       isLoading.value = false;
     }
@@ -142,22 +146,10 @@ class CashRegisterController extends GetxController {
       final newCashRegister = AppConfig.useTestData ? await MockCashRegisterService.createCashRegister(cashRegister) : await CashRegisterService.createCashRegister(cashRegister);
       cashRegisters.add(newCashRegister);
 
-      Get.snackbar(
-        'Succès',
-        'Caisse créée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Caisse créée avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de créer la caisse: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -176,22 +168,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Caisse mise à jour avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Caisse mise à jour avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de mettre à jour la caisse: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -204,22 +184,10 @@ class CashRegisterController extends GetxController {
       AppConfig.useTestData ? await MockCashRegisterService.deleteCashRegister(cashRegisterId) : await CashRegisterService.deleteCashRegister(cashRegisterId);
       cashRegisters.removeWhere((cashRegister) => cashRegister.id == cashRegisterId);
 
-      Get.snackbar(
-        'Succès',
-        'Caisse supprimée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Caisse supprimée avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de supprimer la caisse: $e');
       return false;
     }
   }
@@ -236,22 +204,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Caisse ouverte avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Caisse ouverte avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir la caisse: $e');
       return false;
     }
   }
@@ -272,22 +228,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Caisse fermée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      SnackbarHelper.success('Caisse fermée avec succès');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de fermer la caisse: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de fermer la caisse: $e');
       return false;
     }
   }

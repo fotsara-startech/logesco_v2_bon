@@ -3,20 +3,48 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../products/controllers/expiration_date_controller.dart';
 import '../../products/models/expiration_date.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Vue de l'onglet Péremptions dans le module inventaire
-class ExpirationTabView extends StatelessWidget {
+///
+/// MISE À JOUR : L'isolation par boutique est maintenant fonctionnelle
+/// avec le champ boutiqueId dans la table DatePeremption.
+/// Les données sont automatiquement filtrées par boutique active.
+class ExpirationTabView extends StatefulWidget {
   const ExpirationTabView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(ExpirationDateController());
+  State<ExpirationTabView> createState() => _ExpirationTabViewState();
+}
+
+class _ExpirationTabViewState extends State<ExpirationTabView> {
+  late ExpirationDateController controller;
+  late BoutiqueController boutiqueController;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(ExpirationDateController());
+
+    // Obtenir le contrôleur de boutique s'il existe
+    if (Get.isRegistered<BoutiqueController>()) {
+      boutiqueController = Get.find<BoutiqueController>();
+
+      // Écouter les changements de boutique active
+      ever(boutiqueController.boutiquesActive, (_) {
+        // Recharger les données quand la boutique change
+        controller.loadAlerts();
+      });
+    }
 
     // Charger les alertes au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadAlerts();
     });
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         // Statistiques
@@ -183,7 +211,7 @@ class ExpirationTabView extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: alertColor.withOpacity(0.3), width: 2),
+        side: BorderSide(color: alertColor.withValues(alpha: 0.3), width: 2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

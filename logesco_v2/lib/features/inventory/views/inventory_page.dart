@@ -181,12 +181,18 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
+        // Afficher un message d'ouverture
+        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+
+        // Ouvrir automatiquement le fichier
+        await ExportService.openExcelFile(filePath);
+
         // Afficher le dialog de confirmation
         final filename = filePath.split('/').last;
         Get.dialog(
           AlertDialog(
             title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\n${'stock_export_share_question'.tr}'),
+            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
@@ -219,12 +225,18 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
+        // Afficher un message d'ouverture
+        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+
+        // Ouvrir automatiquement le fichier
+        await ExportService.openExcelFile(filePath);
+
         // Afficher le dialog de confirmation
         final filename = filePath.split('/').last;
         Get.dialog(
           AlertDialog(
             title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\n${'stock_export_share_question'.tr}'),
+            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
             actions: [
               TextButton(
                 onPressed: () => Get.back(),

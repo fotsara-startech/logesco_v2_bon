@@ -59,6 +59,7 @@ const { createCashSessionsRouter } = require('./routes/cash-sessions');
 const licensesRouter = require('./routes/licenses');
 const { createExpirationDatesRouter } = require('./routes/expiration-dates');
 const { createProformaRouter } = require('./routes/proformas');
+const { createBoutiquesRouter } = require('./routes/boutiques');
 
 /**
  * Serveur principal LOGESCO API
@@ -132,6 +133,26 @@ class LogescoServer {
           isActive: true,
           soldeActuel: 0,
           soldeInitial: 0
+        }
+      });
+
+      // Boutique principale
+      const boutiquePrincipale = await prisma.boutique.create({
+        data: {
+          nom: 'Boutique Principale',
+          description: 'Boutique principale créée automatiquement',
+          estPrincipale: true,
+          isActive: true
+        }
+      });
+
+      // Assigner l'admin à la boutique principale avec son rôle admin
+      await prisma.userBoutiqueAssignment.create({
+        data: {
+          utilisateurId: (await prisma.utilisateur.findFirst({ where: { nomUtilisateur: 'admin' } })).id,
+          boutiqueId: boutiquePrincipale.id,
+          roleId: adminRole.id,
+          isActive: true
         }
       });
 
@@ -451,6 +472,12 @@ class LogescoServer {
 
     // Routes pour les dates de péremption
     this.app.use(`/api/${apiVersion}/expiration-dates`, createExpirationDatesRouter({
+      prisma: this.models.prisma,
+      authService: this.authService
+    }));
+
+    // Routes multi-boutique
+    this.app.use(`/api/${apiVersion}/boutiques`, createBoutiquesRouter({
       prisma: this.models.prisma,
       authService: this.authService
     }));

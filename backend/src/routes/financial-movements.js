@@ -61,6 +61,7 @@ const querySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
   search: Joi.string().max(100).optional(),
   categorieId: Joi.number().integer().positive().optional(),
+  boutiqueId: Joi.number().integer().positive().optional(),
   startDate: Joi.date().iso().optional(),
   endDate: Joi.date().iso().optional(),
   minAmount: Joi.number().positive().optional(),
@@ -92,7 +93,7 @@ function createFinancialMovementRouter(services) {
     authenticateToken(services.authService),
     async (req, res) => {
       try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, boutiqueId } = req.query;
         
         if (!startDate || !endDate) {
           return res.status(400).json(
@@ -100,7 +101,7 @@ function createFinancialMovementRouter(services) {
           );
         }
 
-        const summary = await movementReportService.getSummary(startDate, endDate);
+        const summary = await movementReportService.getSummary(startDate, endDate, boutiqueId ? parseInt(boutiqueId) : null);
         
         res.json(BaseResponseDTO.success(
           summary,
@@ -124,7 +125,7 @@ function createFinancialMovementRouter(services) {
     authenticateToken(services.authService),
     async (req, res) => {
       try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, boutiqueId } = req.query;
         
         if (!startDate || !endDate) {
           return res.status(400).json(
@@ -132,7 +133,7 @@ function createFinancialMovementRouter(services) {
           );
         }
 
-        const summary = await movementReportService.getCategorySummary(startDate, endDate);
+        const summary = await movementReportService.getCategorySummary(startDate, endDate, boutiqueId ? parseInt(boutiqueId) : null);
         
         res.json(BaseResponseDTO.success(
           summary,
@@ -156,7 +157,7 @@ function createFinancialMovementRouter(services) {
     authenticateToken(services.authService),
     async (req, res) => {
       try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, boutiqueId } = req.query;
         
         if (!startDate || !endDate) {
           return res.status(400).json(
@@ -164,7 +165,7 @@ function createFinancialMovementRouter(services) {
           );
         }
 
-        const summary = await movementReportService.getDailySummary(startDate, endDate);
+        const summary = await movementReportService.getDailySummary(startDate, endDate, boutiqueId ? parseInt(boutiqueId) : null);
         
         res.json(BaseResponseDTO.success(
           summary,
@@ -322,9 +323,22 @@ function createFinancialMovementRouter(services) {
     validate(createMovementSchema),
     async (req, res) => {
       try {
+        // Extraire boutiqueId depuis le body, header ou query params
+        const boutiqueId = req.body.boutiqueId || 
+                          req.headers['x-boutique-id'] || 
+                          req.query.boutiqueId;
+
+        console.log('🏪 [FinancialMovement] boutiqueId reçu:', {
+          body: req.body.boutiqueId,
+          header: req.headers['x-boutique-id'],
+          query: req.query.boutiqueId,
+          final: boutiqueId
+        });
+
         const movementData = {
           ...req.body,
-          utilisateurId: req.user.id
+          utilisateurId: req.user.id,
+          boutiqueId: boutiqueId ? parseInt(boutiqueId) : null
         };
 
         const movement = await financialMovementService.createMovement(movementData);

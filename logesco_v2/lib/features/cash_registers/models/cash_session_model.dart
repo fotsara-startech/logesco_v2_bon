@@ -7,6 +7,7 @@ class CashSession {
   final String nomCaisse;
   final int utilisateurId;
   final String nomUtilisateur;
+  final int? boutiqueId;
   final double soldeOuverture;
   final double? soldeFermeture;
   final double? soldeAttendu;
@@ -24,6 +25,7 @@ class CashSession {
     required this.nomCaisse,
     required this.utilisateurId,
     required this.nomUtilisateur,
+    this.boutiqueId,
     required this.soldeOuverture,
     this.soldeFermeture,
     this.soldeAttendu,
@@ -51,6 +53,7 @@ class CashSession {
       nomCaisse: json['nomCaisse'] ?? '',
       utilisateurId: json['utilisateurId'],
       nomUtilisateur: json['nomUtilisateur'] ?? '',
+      boutiqueId: json['boutiqueId'],
       soldeOuverture: (json['soldeOuverture'] ?? 0.0).toDouble(),
       soldeFermeture: json['soldeFermeture'] != null ? (json['soldeFermeture']).toDouble() : null,
       soldeAttendu: json['soldeAttendu'] != null ? (json['soldeAttendu']).toDouble() : null,
@@ -71,6 +74,7 @@ class CashSession {
       'nomCaisse': nomCaisse,
       'utilisateurId': utilisateurId,
       'nomUtilisateur': nomUtilisateur,
+      if (boutiqueId != null) 'boutiqueId': boutiqueId,
       'soldeOuverture': soldeOuverture,
       'soldeFermeture': soldeFermeture,
       'soldeAttendu': soldeAttendu,

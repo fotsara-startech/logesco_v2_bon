@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service dédié aux rapports et analyses des mouvements financiers
 class MovementReportService {
@@ -24,6 +25,9 @@ class MovementReportService {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
       };
+
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/summary').replace(queryParameters: queryParams);
 
@@ -68,6 +72,9 @@ class MovementReportService {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
       };
+
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/category-summary').replace(queryParameters: queryParams);
 
@@ -123,6 +130,9 @@ class MovementReportService {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
       };
+
+      final boutiqueId = BoutiqueController.getActiveBoutiqueId();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/daily-summary').replace(queryParameters: queryParams);
 

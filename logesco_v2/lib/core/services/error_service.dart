@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_handler.dart';
 import '../utils/exceptions.dart';
+import '../../features/auth/controllers/auth_controller.dart';
 
 /// Service de gestion centralisée des erreurs
 class ErrorService extends GetxService {
@@ -37,9 +38,23 @@ class ErrorService extends GetxService {
         'statusCode': error.statusCode,
       });
 
-      // Rediriger vers la page de connexion
-      Get.offAllNamed('/auth/login');
-      ErrorHandler.showWarning('Session expirée. Veuillez vous reconnecter.');
+      print('🔒 [ErrorService] Erreur auth détectée: ${error.code} (${error.statusCode})');
+
+      // Rediriger vers la page de connexion (sauf si déjà en cours de déconnexion)
+      try {
+        final authController = Get.find<AuthController>();
+        if (!authController.isLoggingOut) {
+          print('🔒 [ErrorService] Navigation vers /login...');
+          Get.offAllNamed('/login');
+          ErrorHandler.showWarning('Session expirée. Veuillez vous reconnecter.');
+        } else {
+          print('🔒 [ErrorService] Déconnexion en cours, navigation ignorée');
+        }
+      } catch (_) {
+        print('🔒 [ErrorService] AuthController non trouvé, navigation directe vers /login');
+        Get.offAllNamed('/login');
+        ErrorHandler.showWarning('Session expirée. Veuillez vous reconnecter.');
+      }
     }
 
     // Log de sécurité pour les erreurs d'accès

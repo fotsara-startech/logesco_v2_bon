@@ -9,6 +9,7 @@ class FinancialMovement {
   final String description;
   final DateTime date;
   final int utilisateurId;
+  final int? boutiqueId;
   final DateTime dateCreation;
   final DateTime dateModification;
   final String? notes;
@@ -23,6 +24,7 @@ class FinancialMovement {
     required this.description,
     required this.date,
     required this.utilisateurId,
+    this.boutiqueId,
     required this.dateCreation,
     required this.dateModification,
     this.notes,
@@ -79,12 +81,11 @@ class FinancialMovement {
         description: json['description']?.toString() ?? '',
         date: parseDate(json['date']),
         utilisateurId: parseInt(json['utilisateurId']),
+        boutiqueId: json['boutiqueId'] != null ? parseInt(json['boutiqueId']) : null,
         dateCreation: parseDate(json['dateCreation']),
         dateModification: parseDate(json['dateModification']),
         notes: json['notes']?.toString(),
-        categorie: json['categorie'] != null 
-            ? MovementCategory.fromJson(json['categorie'] as Map<String, dynamic>) 
-            : null,
+        categorie: json['categorie'] != null ? MovementCategory.fromJson(json['categorie'] as Map<String, dynamic>) : null,
         utilisateurNom: json['utilisateurNom']?.toString(),
       );
     } catch (e) {
@@ -104,6 +105,7 @@ class FinancialMovement {
       'description': description,
       'date': date.toIso8601String(),
       'utilisateurId': utilisateurId,
+      if (boutiqueId != null) 'boutiqueId': boutiqueId,
       'dateCreation': dateCreation.toIso8601String(),
       'dateModification': dateModification.toIso8601String(),
       if (notes != null) 'notes': notes,
@@ -161,69 +163,4 @@ class FinancialMovement {
 
   @override
   int get hashCode => id.hashCode;
-}
-
-/// Modèle pour la création/modification d'un mouvement financier
-class FinancialMovementForm {
-  final double montant;
-  final int categorieId;
-  final String description;
-  final DateTime date;
-  final String? notes;
-
-  FinancialMovementForm({
-    required this.montant,
-    required this.categorieId,
-    required this.description,
-    required this.date,
-    this.notes,
-  });
-
-  /// Convertit le formulaire en JSON pour l'API
-  Map<String, dynamic> toJson() {
-    return {
-      'montant': montant,
-      'categorieId': categorieId,
-      'description': description,
-      'date': date.toIso8601String(),
-      if (notes != null && notes!.isNotEmpty) 'notes': notes,
-    };
-  }
-
-  /// Crée un formulaire à partir d'un mouvement existant
-  factory FinancialMovementForm.fromMovement(FinancialMovement movement) {
-    return FinancialMovementForm(
-      montant: movement.montant,
-      categorieId: movement.categorieId,
-      description: movement.description,
-      date: movement.date,
-      notes: movement.notes,
-    );
-  }
-
-  /// Valide les données du formulaire
-  List<String> validate() {
-    List<String> errors = [];
-
-    if (montant <= 0) {
-      errors.add('Le montant doit être supérieur à 0');
-    }
-
-    if (description.trim().isEmpty) {
-      errors.add('La description est obligatoire');
-    }
-
-    if (description.trim().length < 3) {
-      errors.add('La description doit contenir au moins 3 caractères');
-    }
-
-    if (date.isAfter(DateTime.now().add(const Duration(days: 1)))) {
-      errors.add('La date ne peut pas être dans le futur');
-    }
-
-    return errors;
-  }
-
-  /// Vérifie si le formulaire est valide
-  bool get isValid => validate().isEmpty;
 }

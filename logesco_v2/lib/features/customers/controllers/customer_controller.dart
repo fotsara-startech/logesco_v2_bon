@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
+import '../../../core/utils/snackbar_helper.dart';
 import '../models/customer.dart';
 import '../models/customer_transaction.dart';
 import '../services/customer_service.dart';
@@ -87,13 +88,7 @@ class CustomerController extends GetxController {
         errorMessage.value = 'Erreur lors du chargement des clients';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(errorMessage.value);
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -161,36 +156,16 @@ class CustomerController extends GetxController {
       // Vérifier si un nouveau client a été ajouté
       if (finalCount > initialCount) {
         print('✅ Nouveau client détecté dans la liste');
-        Get.snackbar(
-          'Succès',
-          'Client ajouté avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          duration: const Duration(seconds: 2),
-        );
+        SnackbarHelper.success('Client ajouté avec succès');
       } else if (result != null && result is Customer) {
         print('✅ Client créé selon le résultat: ${result.nomComplet}');
         // Forcer l'ajout si pas détecté dans le rafraîchissement
         customers.insert(0, result);
-        Get.snackbar(
-          'Succès',
-          'Client "${result.nomComplet}" ajouté à la liste',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-          duration: const Duration(seconds: 2),
-        );
+        SnackbarHelper.success('Client "${result.nomComplet}" ajouté à la liste');
       }
     } catch (e) {
       print('❌ Erreur navigation: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le formulaire de création',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de création');
     }
   }
 
@@ -217,13 +192,7 @@ class CustomerController extends GetxController {
       }
     } catch (e) {
       print('❌ Erreur navigation édition: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'ouvrir le formulaire d\'édition',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible d\'ouvrir le formulaire d\'édition');
     }
   }
 
@@ -277,13 +246,7 @@ class CustomerController extends GetxController {
 
         if (success) {
           customers.remove(customer);
-          Get.snackbar(
-            'Succès',
-            'Client supprimé avec succès',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green.shade100,
-            colorText: Colors.green.shade800,
-          );
+          SnackbarHelper.success('Client supprimé avec succès');
         } else {
           throw Exception('Échec de la suppression');
         }
@@ -293,13 +256,7 @@ class CustomerController extends GetxController {
           message = e.message;
         }
 
-        Get.snackbar(
-          'Erreur',
-          message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error(message);
       } finally {
         isLoading.value = false;
       }
@@ -311,13 +268,7 @@ class CustomerController extends GetxController {
     try {
       return await _customerService.getCustomerById(id);
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de récupérer les détails du client',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Impossible de récupérer les détails du client');
       return null;
     }
   }
@@ -366,13 +317,7 @@ class CustomerController extends GetxController {
         errorMessage.value = 'Erreur lors du chargement des transactions';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -394,26 +339,14 @@ class CustomerController extends GetxController {
 
       if (success) {
         print('✅ Paiement enregistré avec succès');
-        Get.snackbar(
-          'Succès',
-          'Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
         return true;
       } else {
         throw Exception('Échec de l\'enregistrement du paiement');
       }
     } catch (e) {
       print('❌ Erreur paiement dette: $e');
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'enregistrement du paiement: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de l\'enregistrement du paiement: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -446,13 +379,7 @@ class CustomerController extends GetxController {
 
       if (success) {
         print('✅ [Controller] Paiement pour vente enregistré avec succès');
-        Get.snackbar(
-          'Succès',
-          'Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
         return true;
       } else {
         print('❌ [Controller] Service a retourné false');
@@ -461,13 +388,7 @@ class CustomerController extends GetxController {
     } catch (e) {
       print('❌ [Controller] Erreur paiement dette pour vente: $e');
       print('  - Stack trace: ${StackTrace.current}');
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de l\'enregistrement du paiement: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('Erreur lors de l\'enregistrement du paiement: $e');
       return false;
     } finally {
       print('🔄 [Controller] isLoading = false');
@@ -503,18 +424,10 @@ class CustomerController extends GetxController {
   /// Exporte tous les clients vers Excel
   Future<void> exportToExcel() async {
     try {
-      Get.snackbar(
-        'customers_export_in_progress'.tr,
-        'customers_export_fetching'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
-      );
-
       // Récupérer tous les clients par pagination
       List<Customer> allCustomers = [];
       int currentPage = 1;
-      const int pageSize = 100; // Limite maximale acceptée par l'API
+      const int pageSize = 100;
       bool hasMore = true;
 
       while (hasMore) {
@@ -522,13 +435,10 @@ class CustomerController extends GetxController {
           page: currentPage,
           limit: pageSize,
         );
-
         if (pageCustomers.isEmpty) {
           hasMore = false;
         } else {
           allCustomers.addAll(pageCustomers);
-
-          // Si on a reçu moins que la limite, c'est la dernière page
           if (pageCustomers.length < pageSize) {
             hasMore = false;
           } else {
@@ -538,57 +448,11 @@ class CustomerController extends GetxController {
       }
 
       if (allCustomers.isEmpty) {
-        // Fermer le snackbar de progression
-        try {
-          if (Get.isSnackbarOpen == true) {
-            Get.closeCurrentSnackbar();
-          }
-        } catch (e) {
-          // Ignorer l'erreur de fermeture
-        }
-
-        Get.snackbar(
-          'common_info'.tr,
-          'customers_export_no_data'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
+        SnackbarHelper.info('customers_export_no_data'.tr);
         return;
       }
 
-      // Fermer le snackbar de progression
-      try {
-        if (Get.isSnackbarOpen == true) {
-          Get.closeCurrentSnackbar();
-        }
-      } catch (e) {
-        // Ignorer l'erreur de fermeture
-      }
-
-      // Afficher la progression de génération
-      Get.snackbar(
-        'customers_export_in_progress'.tr,
-        'customers_export_generating'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(days: 1), // Durée très longue pour éviter la fermeture auto
-      );
-
       final filePath = await _excelService.exportCustomersToExcel(allCustomers);
-
-      // Fermer le snackbar de progression avec un délai
-      await Future.delayed(const Duration(milliseconds: 100));
-      try {
-        if (Get.isSnackbarOpen == true) {
-          Get.closeCurrentSnackbar();
-        }
-      } catch (e) {
-        // Ignorer l'erreur de fermeture
-      }
-
-      // Attendre que le snackbar soit complètement fermé
-      await Future.delayed(const Duration(milliseconds: 200));
 
       if (filePath != null) {
         Get.dialog(
@@ -607,31 +471,10 @@ class CustomerController extends GetxController {
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'customers_export_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('customers_export_error'.tr);
       }
     } catch (e) {
-      // Fermer le snackbar de progression en cas d'erreur
-      try {
-        if (Get.isSnackbarOpen == true) {
-          Get.closeCurrentSnackbar();
-        }
-      } catch (e) {
-        // Ignorer l'erreur de fermeture
-      }
-
-      Get.snackbar(
-        'error'.tr,
-        'customers_export_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('customers_export_error'.tr);
     }
   }
 
@@ -640,25 +483,10 @@ class CustomerController extends GetxController {
     try {
       print('📊 Début de l\'import Excel...');
 
-      Get.snackbar(
-        'customers_import_success'.tr,
-        'customers_import_confirm'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        showProgressIndicator: true,
-        duration: const Duration(seconds: 2),
-      );
-
       final importData = await _excelService.importCustomersFromExcel();
 
-      print('📊 Données importées: ${importData?.length ?? 0} clients');
-
       if (importData == null || importData.isEmpty) {
-        print('⚠️  Aucune donnée à importer');
-        Get.snackbar(
-          'common_cancel'.tr,
-          'customers_import_no_file'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        SnackbarHelper.info('customers_import_no_file'.tr);
         return;
       }
 
@@ -738,13 +566,7 @@ class CustomerController extends GetxController {
         ),
       );
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'customers_import_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('customers_import_error'.tr);
     }
   }
 
@@ -752,39 +574,19 @@ class CustomerController extends GetxController {
   Future<void> downloadTemplate() async {
     try {
       final filePath = await _excelService.generateImportTemplate();
-
       if (filePath != null) {
         Get.dialog(
           AlertDialog(
             title: Text('customers_template_success'.tr),
-            content: Text(
-              'customers_template_generated'.tr.replaceAll('@filename', filePath.split('/').last),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('common_close'.tr),
-              ),
-            ],
+            content: Text('customers_template_generated'.tr.replaceAll('@filename', filePath.split('/').last)),
+            actions: [TextButton(onPressed: () => Get.back(), child: Text('common_close'.tr))],
           ),
         );
       } else {
-        Get.snackbar(
-          'error'.tr,
-          'customers_template_error'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        SnackbarHelper.error('customers_template_error'.tr);
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'customers_template_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('customers_template_error'.tr);
     }
   }
 }

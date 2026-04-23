@@ -2,8 +2,9 @@
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/expiration_date.dart';
 import '../services/expiration_date_service.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
-/// Contrôleur GetX pour gérer les dates de péremption
+/// Contrôleur GetX pour gérer les dates de péremption avec isolation par boutique
 class ExpirationDateController extends GetxController {
   final ExpirationDateService _service = ExpirationDateService();
 
@@ -20,15 +21,25 @@ class ExpirationDateController extends GetxController {
   void onInit() {
     super.onInit();
     loadExpirationDates();
+
+    // Écouter les changements de boutique active
+    if (Get.isRegistered<BoutiqueController>()) {
+      final boutiqueController = Get.find<BoutiqueController>();
+      ever(boutiqueController.boutiquesActive, (_) {
+        // Recharger les données quand la boutique change
+        loadAlerts();
+      });
+    }
   }
 
-  /// Charge les dates de péremption
-  Future<void> loadExpirationDates({int? produitId}) async {
+  /// Charge les dates de péremption avec isolation par boutique
+  Future<void> loadExpirationDates({int? produitId, int? boutiqueId}) async {
     try {
       isLoading.value = true;
 
       final result = await _service.getExpirationDates(
         produitId: produitId,
+        boutiqueId: boutiqueId,
         estEpuise: false,
       );
 
@@ -40,14 +51,15 @@ class ExpirationDateController extends GetxController {
     }
   }
 
-  /// Charge les alertes de péremption
-  Future<void> loadAlerts({String? niveauAlerte, int joursMax = 30}) async {
+  /// Charge les alertes de péremption avec isolation par boutique
+  Future<void> loadAlerts({String? niveauAlerte, int joursMax = 30, int? boutiqueId}) async {
     try {
       isLoading.value = true;
 
       final result = await _service.getExpirationAlerts(
         niveauAlerte: niveauAlerte,
         joursMax: joursMax,
+        boutiqueId: boutiqueId,
       );
 
       expirationDates.value = result['data'] as List<ExpirationDate>;
@@ -55,19 +67,41 @@ class ExpirationDateController extends GetxController {
         alertStats.value = result['stats'] as ExpirationAlertStats;
       }
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les alertes: $e');
+      // Gestion d'erreur améliorée
+      String errorMessage = 'Impossible de charger les alertes';
+
+      if (e.toString().contains('401') || e.toString().contains('Non autorisé')) {
+        errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+      } else if (e.toString().contains('connexion')) {
+        errorMessage = 'Problème de connexion au serveur';
+      } else {
+        errorMessage = 'Impossible de charger les alertes: $e';
+      }
+
+      SnackbarHelper.error(errorMessage);
+
+      // En cas d'erreur, initialiser avec des données vides pour éviter les crashes
+      expirationDates.value = [];
+      alertStats.value = ExpirationAlertStats(
+        totalAlertes: 0,
+        perimes: 0,
+        critiques: 0,
+        avertissements: 0,
+        valeurTotale: 0.0,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Crée une nouvelle date de péremption
+  /// Crée une nouvelle date de péremption avec isolation par boutique
   Future<bool> createExpirationDate({
     required int produitId,
     required DateTime datePeremption,
     required int quantite,
     String? numeroLot,
     String? notes,
+    int? boutiqueId,
   }) async {
     try {
       isLoading.value = true;
@@ -78,11 +112,12 @@ class ExpirationDateController extends GetxController {
         quantite: quantite,
         numeroLot: numeroLot,
         notes: notes,
+        boutiqueId: boutiqueId,
       );
 
       SnackbarHelper.success('Date de péremption ajoutée');
 
-      await loadExpirationDates(produitId: produitId);
+      await loadExpirationDates(produitId: produitId, boutiqueId: boutiqueId);
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible d\'ajouter la date: $e');

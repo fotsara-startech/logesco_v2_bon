@@ -4,7 +4,6 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
@@ -24,6 +23,7 @@ class ProcurementService {
   /// Récupère la liste des commandes d'approvisionnement
   Future<Map<String, dynamic>> getCommandes({
     int? fournisseurId,
+    int? boutiqueId,
     String? statut,
     DateTime? dateDebut,
     DateTime? dateFin,
@@ -37,6 +37,7 @@ class ProcurementService {
       };
 
       if (fournisseurId != null) queryParams['fournisseurId'] = fournisseurId.toString();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
       if (statut != null) queryParams['statut'] = statut;
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
@@ -116,6 +117,7 @@ class ProcurementService {
   /// Crée une nouvelle commande d'approvisionnement
   Future<CommandeApprovisionnement> createCommande({
     required int fournisseurId,
+    int? boutiqueId,
     DateTime? dateLivraisonPrevue,
     String modePaiement = 'credit',
     String? notes,
@@ -126,6 +128,7 @@ class ProcurementService {
 
       final body = {
         'fournisseurId': fournisseurId,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
         'dateLivraisonPrevue': dateLivraisonPrevue?.toIso8601String(),
         'modePaiement': modePaiement,
         'notes': notes,

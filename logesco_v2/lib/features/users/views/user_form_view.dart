@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
 import '../models/role_model.dart' as role_model;
+import '../../boutiques/services/boutique_service.dart';
 
 /// Vue du formulaire utilisateur (création/modification)
 class UserFormView extends StatefulWidget {
@@ -26,6 +27,11 @@ class _UserFormViewState extends State<UserFormView> {
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
+  // Boutiques assignées
+  List<Map<String, dynamic>> _allBoutiques = [];
+  Set<int> _selectedBoutiqueIds = {};
+  bool _loadingBoutiques = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +54,26 @@ class _UserFormViewState extends State<UserFormView> {
       _selectedRoleNom = null;
     }
     _isActive = user?.isActive ?? true;
+
+    // Charger les boutiques disponibles et les assignations existantes
+    _loadBoutiques();
+  }
+
+  Future<void> _loadBoutiques() async {
+    setState(() => _loadingBoutiques = true);
+    try {
+      final boutiqueService = Get.find<BoutiqueService>();
+      final boutiques = await boutiqueService.getBoutiques();
+      _allBoutiques = boutiques.map((b) => {'id': b.id, 'nom': b.nom, 'estPrincipale': b.estPrincipale}).toList();
+
+      // Charger les assignations existantes si édition
+      final user = controller.selectedUser.value;
+      if (user?.id != null) {
+        final assigned = await controller.getUserBoutiques(user!.id!);
+        _selectedBoutiqueIds = assigned.map((a) => a['boutiqueId'] as int).toSet();
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingBoutiques = false);
   }
 
   @override
@@ -86,6 +112,8 @@ class _UserFormViewState extends State<UserFormView> {
               _buildPasswordSection(isEditing),
               const SizedBox(height: 24),
               _buildRoleSection(),
+              const SizedBox(height: 24),
+              _buildBoutiquesSection(),
               const SizedBox(height: 24),
               _buildStatusSection(),
               const SizedBox(height: 32),
@@ -136,16 +164,14 @@ class _UserFormViewState extends State<UserFormView> {
             TextFormField(
               controller: _emailController,
               decoration: InputDecoration(
-                labelText: 'users_email'.tr + ' *',
+                labelText: 'users_email'.tr,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.email),
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'users_email_required'.tr;
-                }
-                if (!GetUtils.isEmail(value)) {
+                // Email optionnel - valider seulement si rempli
+                if (value != null && value.isNotEmpty && !GetUtils.isEmail(value)) {
                   return 'users_email_invalid'.tr;
                 }
                 return null;
@@ -436,6 +462,75 @@ class _UserFormViewState extends State<UserFormView> {
     );
   }
 
+  Widget _buildBoutiquesSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.store, color: Colors.teal.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  'Boutiques assignées',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sélectionnez les boutiques auxquelles cet utilisateur a accès. Les admins ont accès à toutes les boutiques.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            if (_loadingBoutiques)
+              const Center(child: CircularProgressIndicator())
+            else if (_allBoutiques.isEmpty)
+              Text('Aucune boutique disponible', style: TextStyle(color: Colors.grey.shade500))
+            else
+              ..._allBoutiques.map((b) {
+                final id = b['id'] as int;
+                final nom = b['nom'] as String;
+                final estPrincipale = b['estPrincipale'] as bool? ?? false;
+                return CheckboxListTile(
+                  dense: true,
+                  title: Row(
+                    children: [
+                      Text(nom),
+                      if (estPrincipale) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('Principale', style: TextStyle(fontSize: 10, color: Colors.teal.shade800)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  value: _selectedBoutiqueIds.contains(id),
+                  onChanged: (checked) {
+                    setState(() {
+                      if (checked == true) {
+                        _selectedBoutiqueIds.add(id);
+                      } else {
+                        _selectedBoutiqueIds.remove(id);
+                      }
+                    });
+                  },
+                  activeColor: Colors.teal,
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusSection() {
     return Card(
       child: Padding(
@@ -525,7 +620,7 @@ class _UserFormViewState extends State<UserFormView> {
     final user = User(
       id: controller.selectedUser.value?.id,
       nomUtilisateur: _usernameController.text.trim(),
-      email: _emailController.text.trim(),
+      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       role: selectedRole,
       isActive: _isActive,
     );
@@ -545,9 +640,13 @@ class _UserFormViewState extends State<UserFormView> {
     print('?? [UserFormView] Résultat de sauvegarde: $success');
 
     if (success) {
-      print('? [UserFormView] Navigation arrière...');
+      // Sauvegarder les assignations boutiques si l'utilisateur a un ID
+      final savedUser = controller.users.firstWhereOrNull((u) => u.nomUtilisateur == user.nomUtilisateur);
+      final userId = user.id ?? savedUser?.id;
+      if (userId != null) {
+        await controller.updateUserBoutiques(userId, _selectedBoutiqueIds.toList());
+      }
       Get.back();
-      print('? [UserFormView] Navigation arrière terminée');
     } else {
       print('? [UserFormView] Échec de sauvegarde, pas de navigation');
     }

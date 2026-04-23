@@ -4,7 +4,7 @@ import '../models/role_model.dart' as role_model;
 class User {
   final int? id;
   final String nomUtilisateur;
-  final String email;
+  final String? email; // Email optionnel
   final String? motDePasse;
   final role_model.UserRole role;
   final bool isActive;
@@ -14,7 +14,7 @@ class User {
   User({
     this.id,
     required this.nomUtilisateur,
-    required this.email,
+    this.email, // Email optionnel
     this.motDePasse,
     required this.role,
     this.isActive = true,
@@ -30,7 +30,7 @@ class User {
       final user = User(
         id: json['id'],
         nomUtilisateur: json['nomUtilisateur'] ?? '',
-        email: json['email'] ?? '',
+        email: json['email']?.isEmpty == true ? null : json['email'], // null si vide
         role: json['role'] != null ? role_model.UserRole.fromJson(json['role']) : _createDefaultRole(),
         isActive: json['isActive'] ?? true,
         dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,

@@ -17,13 +17,14 @@ class MovementReportService {
   /**
    * Génère un résumé des mouvements pour une période
    */
-  async getSummary(startDate, endDate) {
+  async getSummary(startDate, endDate, boutiqueId = null) {
     try {
       const where = {
         date: {
           gte: new Date(startDate),
           lte: new Date(endDate)
-        }
+        },
+        ...(boutiqueId ? { boutiqueId } : {})
       };
 
       const [movements, aggregates] = await Promise.all([
@@ -67,13 +68,14 @@ class MovementReportService {
   /**
    * Génère un résumé par catégorie
    */
-  async getCategorySummary(startDate, endDate) {
+  async getCategorySummary(startDate, endDate, boutiqueId = null) {
     try {
       const where = {
         date: {
           gte: new Date(startDate),
           lte: new Date(endDate)
-        }
+        },
+        ...(boutiqueId ? { boutiqueId } : {})
       };
 
       // Récupérer le total pour calculer les pourcentages
@@ -124,14 +126,15 @@ class MovementReportService {
   /**
    * Génère un résumé quotidien
    */
-  async getDailySummary(startDate, endDate) {
+  async getDailySummary(startDate, endDate, boutiqueId = null) {
     try {
       const movements = await this.prisma.financialMovement.findMany({
         where: {
           date: {
             gte: new Date(startDate),
             lte: new Date(endDate)
-          }
+          },
+          ...(boutiqueId ? { boutiqueId } : {})
         },
         select: {
           date: true,

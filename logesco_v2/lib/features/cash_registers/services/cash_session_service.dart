@@ -4,10 +4,13 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/cash_session_model.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour la gestion des sessions de caisse via API
 class CashSessionService {
   static const String _endpoint = '/cash-sessions';
+
+  static int? get _activeBoutiqueId => BoutiqueController.getActiveBoutiqueId();
 
   /// Retourne les headers avec le token d'authentification
   static Future<Map<String, String>> _authHeaders() async {
@@ -21,22 +24,22 @@ class CashSessionService {
     };
   }
 
-  /// Récupérer la session active de l'utilisateur
+  /// Récupérer la session active de l'utilisateur pour la boutique active
   static Future<CashSession?> getActiveSession() async {
     try {
       final headers = await _authHeaders();
+      final boutiqueId = _activeBoutiqueId;
+      final queryParams = boutiqueId != null ? '?boutiqueId=$boutiqueId' : '';
       final response = await http
           .get(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/active'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/active$queryParams'),
             headers: headers,
           )
           .timeout(AppConfig.receiveTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['data'] != null) {
-          return CashSession.fromJson(data['data']);
-        }
+        if (data['data'] != null) return CashSession.fromJson(data['data']);
         return null;
       } else if (response.statusCode == 404) {
         return null;
@@ -48,13 +51,15 @@ class CashSessionService {
     }
   }
 
-  /// Récupérer les caisses disponibles
+  /// Récupérer les caisses disponibles (filtrées par boutique active)
   static Future<List<Map<String, dynamic>>> getAvailableCashRegisters() async {
     try {
       final headers = await _authHeaders();
+      final boutiqueId = _activeBoutiqueId;
+      final queryParams = boutiqueId != null ? '?boutiqueId=$boutiqueId' : '';
       final response = await http
           .get(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/available-cash-registers'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/available-cash-registers$queryParams'),
             headers: headers,
           )
           .timeout(AppConfig.receiveTimeout);
@@ -74,9 +79,11 @@ class CashSessionService {
   static Future<CashSession> connectToCashRegister(int cashRegisterId, double soldeOuverture) async {
     try {
       final headers = await _authHeaders();
+      final boutiqueId = _activeBoutiqueId;
       final body = {
         'cashRegisterId': cashRegisterId,
         'soldeInitial': soldeOuverture,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       final response = await http
@@ -104,11 +111,14 @@ class CashSessionService {
   static Future<void> forceCloseSession() async {
     try {
       final headers = await _authHeaders();
+      final boutiqueId = _activeBoutiqueId;
       final response = await http
           .post(
             Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/force-close'),
             headers: headers,
-            body: json.encode({}),
+            body: json.encode({
+              if (boutiqueId != null) 'boutiqueId': boutiqueId,
+            }),
           )
           .timeout(AppConfig.receiveTimeout);
 
@@ -125,7 +135,11 @@ class CashSessionService {
   static Future<CashSession> disconnectFromCashRegister(double soldeFermeture) async {
     try {
       final headers = await _authHeaders();
-      final body = {'soldeFermeture': soldeFermeture};
+      final boutiqueId = _activeBoutiqueId;
+      final body = {
+        'soldeFermeture': soldeFermeture,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
+      };
 
       final response = await http
           .post(
@@ -147,7 +161,7 @@ class CashSessionService {
     }
   }
 
-  /// Récupérer l'historique des sessions
+  /// Récupérer l'historique des sessions (filtré par boutique active)
   static Future<List<CashSession>> getSessionHistory({
     DateTime? startDate,
     DateTime? endDate,
@@ -159,6 +173,8 @@ class CashSessionService {
       if (startDate != null) queryParams['startDate'] = startDate.toIso8601String();
       if (endDate != null) queryParams['endDate'] = endDate.toIso8601String();
       if (userId != null) queryParams['userId'] = userId.toString();
+      final boutiqueId = _activeBoutiqueId;
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}$_endpoint/history').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 

@@ -7,6 +7,7 @@ import '../../accounts/models/account.dart';
 import '../../accounts/widgets/unpaid_sales_selector_dialog.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
 import '../../../core/services/cash_register_refresh_service.dart';
+import '../../../core/utils/snackbar_helper.dart';
 
 /// Vue du compte client - SOLUTION 2: Système centralisé
 ///
@@ -465,13 +466,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     // Vérifier qu'une vente est sélectionnée (obligatoire)
     if (selectedSale == null) {
       print(' [_processPayment] Aucune vente sélectionnée');
-      Get.snackbar(
-        'error'.tr,
-        'customers_select_sale_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('customers_select_sale_error'.tr);
       return;
     }
 
@@ -479,13 +474,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
     if (amount == null || amount <= 0) {
       print(' [_processPayment] Montant invalide');
-      Get.snackbar(
-        'error'.tr,
-        'customers_invalid_amount'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      SnackbarHelper.error('customers_invalid_amount'.tr);
       return;
     }
 
@@ -544,13 +533,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   /// Imprime les transactions du client
   Future<void> _printTransactions() async {
     if (_customer == null || _controller.customerTransactions.isEmpty) {
-      Get.snackbar(
-        'error'.tr,
-        'customers_no_transactions_to_print'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade800,
-      );
+      SnackbarHelper.warning('customers_no_transactions_to_print'.tr);
       return;
     }
 
@@ -669,28 +652,10 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       final filename = 'releve_compte_${_customer!.nom}_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final filePath = await StatementPdfService.saveAndOpenPDF(pdfBytes, filename);
 
-      // Afficher le succès avec le chemin
-      Get.snackbar(
-        'success'.tr,
-        'customers_statement_success'.trParams({'path': filePath}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-        duration: const Duration(seconds: 5),
-      );
+      SnackbarHelper.success('customers_statement_success'.trParams({'path': filePath}));
     } catch (e) {
-      // Fermer le dialogue de chargement si ouvert
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-
-      Get.snackbar(
-        'error'.tr,
-        'customers_statement_generation_error'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (Get.isDialogOpen ?? false) Get.back();
+      SnackbarHelper.error('customers_statement_generation_error'.trParams({'error': e.toString()}));
     }
   }
 }

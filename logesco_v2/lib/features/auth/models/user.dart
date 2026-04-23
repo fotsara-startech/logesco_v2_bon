@@ -4,7 +4,7 @@ import '../../users/models/role_model.dart' as role_model;
 class User {
   final int id;
   final String nomUtilisateur;
-  final String email;
+  final String? email;
   final DateTime dateCreation;
   final DateTime dateModification;
   final role_model.UserRole role;
@@ -12,7 +12,7 @@ class User {
   User({
     required this.id,
     required this.nomUtilisateur,
-    required this.email,
+    this.email,
     required this.dateCreation,
     required this.dateModification,
     required this.role,
@@ -74,7 +74,7 @@ class User {
     return User(
       id: json['id'] as int,
       nomUtilisateur: nomUtilisateur,
-      email: json['email'] as String,
+      email: json['email'] as String?,
       dateCreation: dateCreation,
       dateModification: dateModification,
       role: role,

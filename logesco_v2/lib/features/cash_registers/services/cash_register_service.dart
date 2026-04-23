@@ -2,17 +2,22 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../models/cash_register_model.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour la gestion des caisses via API
 class CashRegisterService {
   static const String _endpoint = '/cash-registers';
 
-  /// Récupérer toutes les caisses
+  static int? get _activeBoutiqueId => BoutiqueController.getActiveBoutiqueId();
+
+  /// Récupérer toutes les caisses (filtrées par boutique active)
   static Future<List<CashRegister>> getAllCashRegisters() async {
     try {
+      final boutiqueId = _activeBoutiqueId;
+      final queryParams = boutiqueId != null ? '?boutiqueId=$boutiqueId' : '';
       final response = await http
           .get(
-            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint'),
+            Uri.parse('${AppConfig.currentBaseUrl}$_endpoint$queryParams'),
             headers: AppConfig.defaultHeaders,
           )
           .timeout(AppConfig.receiveTimeout);
@@ -55,11 +60,13 @@ class CashRegisterService {
   /// Créer une nouvelle caisse
   static Future<CashRegister> createCashRegister(CashRegister cashRegister) async {
     try {
+      final boutiqueId = _activeBoutiqueId;
       final body = {
         'nom': cashRegister.nom,
         'description': cashRegister.description ?? '',
         'soldeInitial': cashRegister.soldeInitial,
         'isActive': cashRegister.isActive,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
       };
 
       final response = await http

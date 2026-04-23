@@ -8,6 +8,7 @@ class CashRegister {
   final bool isActive;
   final int? utilisateurId;
   final String? nomUtilisateur;
+  final int? boutiqueId;
   final DateTime? dateCreation;
   final DateTime? dateModification;
   final DateTime? dateOuverture;
@@ -22,6 +23,7 @@ class CashRegister {
     this.isActive = true,
     this.utilisateurId,
     this.nomUtilisateur,
+    this.boutiqueId,
     this.dateCreation,
     this.dateModification,
     this.dateOuverture,
@@ -38,6 +40,7 @@ class CashRegister {
       isActive: json['isActive'] ?? true,
       utilisateurId: json['utilisateurId'],
       nomUtilisateur: json['nomUtilisateur'],
+      boutiqueId: json['boutiqueId'],
       dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,
       dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']) : null,
       dateOuverture: json['dateOuverture'] != null ? DateTime.parse(json['dateOuverture']) : null,
@@ -55,6 +58,7 @@ class CashRegister {
       'isActive': isActive,
       'utilisateurId': utilisateurId,
       'nomUtilisateur': nomUtilisateur,
+      if (boutiqueId != null) 'boutiqueId': boutiqueId,
       'dateCreation': dateCreation?.toIso8601String(),
       'dateModification': dateModification?.toIso8601String(),
       'dateOuverture': dateOuverture?.toIso8601String(),

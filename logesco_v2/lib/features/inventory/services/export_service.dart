@@ -1,18 +1,21 @@
-﻿import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+﻿import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:open_file/open_file.dart';
 import 'package:excel/excel.dart';
+import 'package:get/get.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour gérer les exports de fichiers Excel
 /// Utilise exactement la même approche que le module produits (ExcelService)
 class ExportService {
   /// Exporte les stocks vers un fichier Excel
   /// Même comportement que ExcelService.exportProductsToExcel()
-  static Future<String?> exportStocksToExcel(List<Map<String, dynamic>> stocks) async {
+  static Future<String?> exportStocksToExcel(List<Map<String, dynamic>> stocks, {String? boutiqueName}) async {
     try {
+      // Récupérer le nom de la boutique active si non fourni
+      final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
+
       // Créer un nouveau fichier Excel
       var excel = Excel.createExcel();
       Sheet sheet = excel['Stocks'];
@@ -20,6 +23,22 @@ class ExportService {
       // Supprimer la feuille par défaut si elle existe
       if (excel.sheets.containsKey('Sheet1')) {
         excel.delete('Sheet1');
+      }
+
+      int currentRow = 0;
+
+      // Ajouter l'en-tête avec le nom de la boutique si disponible
+      if (activeBoutiqueName != null) {
+        var boutiqueCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: currentRow));
+        boutiqueCell.value = TextCellValue('Boutique: $activeBoutiqueName');
+        boutiqueCell.cellStyle = CellStyle(
+          bold: true,
+          backgroundColorHex: ExcelColor.blue300,
+          fontSize: 14,
+        );
+        // Fusionner les cellules pour l'en-tête boutique
+        sheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: currentRow), CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: currentRow));
+        currentRow += 2; // Laisser une ligne vide
       }
 
       // Définir les en-têtes
@@ -39,18 +58,19 @@ class ExportService {
 
       // Ajouter les en-têtes
       for (int i = 0; i < headers.length; i++) {
-        var cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        var cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: currentRow));
         cell.value = TextCellValue(headers[i]);
         cell.cellStyle = CellStyle(
           bold: true,
           backgroundColorHex: ExcelColor.blue200,
         );
       }
+      currentRow++;
 
       // Ajouter les données des stocks
       for (int i = 0; i < stocks.length; i++) {
         final stock = stocks[i];
-        final rowIndex = i + 1;
+        final rowIndex = currentRow + i;
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = TextCellValue(stock['reference'] ?? '');
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = TextCellValue(stock['nom'] ?? '');
@@ -91,8 +111,11 @@ class ExportService {
   }
 
   /// Exporte les mouvements vers un fichier Excel
-  static Future<String?> exportMovementsToExcel(List<Map<String, dynamic>> movements) async {
+  static Future<String?> exportMovementsToExcel(List<Map<String, dynamic>> movements, {String? boutiqueName}) async {
     try {
+      // Récupérer le nom de la boutique active si non fourni
+      final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
+
       // Créer un nouveau fichier Excel
       var excel = Excel.createExcel();
       Sheet sheet = excel['Mouvements'];
@@ -100,6 +123,22 @@ class ExportService {
       // Supprimer la feuille par défaut si elle existe
       if (excel.sheets.containsKey('Sheet1')) {
         excel.delete('Sheet1');
+      }
+
+      int currentRow = 0;
+
+      // Ajouter l'en-tête avec le nom de la boutique si disponible
+      if (activeBoutiqueName != null) {
+        var boutiqueCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: currentRow));
+        boutiqueCell.value = TextCellValue('Boutique: $activeBoutiqueName');
+        boutiqueCell.cellStyle = CellStyle(
+          bold: true,
+          backgroundColorHex: ExcelColor.green300,
+          fontSize: 14,
+        );
+        // Fusionner les cellules pour l'en-tête boutique
+        sheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: currentRow), CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: currentRow));
+        currentRow += 2; // Laisser une ligne vide
       }
 
       // Définir les en-têtes
@@ -116,18 +155,19 @@ class ExportService {
 
       // Ajouter les en-têtes
       for (int i = 0; i < headers.length; i++) {
-        var cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        var cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: currentRow));
         cell.value = TextCellValue(headers[i]);
         cell.cellStyle = CellStyle(
           bold: true,
           backgroundColorHex: ExcelColor.green200,
         );
       }
+      currentRow++;
 
       // Ajouter les données des mouvements
       for (int i = 0; i < movements.length; i++) {
         final movement = movements[i];
-        final rowIndex = i + 1;
+        final rowIndex = currentRow + i;
 
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = TextCellValue(movement['date'] ?? '');
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = TextCellValue(movement['referenceProduit'] ?? '');
@@ -160,7 +200,6 @@ class ExportService {
 
       return null;
     } catch (e) {
-      print(' Erreur lors de l\'export Excel mouvements: $e');
       return null;
     }
   }
@@ -170,23 +209,56 @@ class ExportService {
     try {
       await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
     } catch (e) {
-      print(' Erreur lors du partage: $e');
+      // Erreur silencieuse
+    }
+  }
+
+  /// Ouvre automatiquement le fichier Excel après export
+  static Future<void> openExcelFile(String filePath) async {
+    try {
+      final result = await OpenFile.open(filePath);
+      if (result.type != ResultType.done) {
+        print('⚠️ Impossible d\'ouvrir le fichier Excel: ${result.message}');
+        // Fallback vers le partage si l'ouverture échoue
+        await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
+      }
+    } catch (e) {
+      print('⚠️ Erreur lors de l\'ouverture du fichier Excel: $e');
+      // Fallback vers le partage en cas d'erreur
+      try {
+        await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
+      } catch (shareError) {
+        print('⚠️ Erreur lors du partage Excel: $shareError');
+      }
+    }
+  }
+
+  /// Récupère le nom de la boutique active
+  static Future<String?> _getActiveBoutiqueName() async {
+    try {
+      if (Get.isRegistered<BoutiqueController>()) {
+        final controller = Get.find<BoutiqueController>();
+        return controller.boutiquesActive.value?.nom;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
   /// Parse les données CSV en format pour Excel
   static List<Map<String, dynamic>> _parseCsvToStocks(String csvContent) {
     List<Map<String, dynamic>> stocks = [];
-    
+
     try {
       final lines = csvContent.split('\n');
       if (lines.length < 2) return stocks; // Pas de données
-      
+
       // Ignorer la première ligne (en-têtes)
       for (int i = 1; i < lines.length; i++) {
         final line = lines[i].trim();
         if (line.isEmpty) continue;
-        
+
         // Parser la ligne CSV (format simple)
         final values = line.split(',');
         if (values.length >= 11) {
@@ -205,25 +277,24 @@ class ExportService {
           });
         }
       }
-    } catch (e) {
-    }
-    
+    } catch (e) {}
+
     return stocks;
   }
 
   /// Parse les données CSV des mouvements en format pour Excel
   static List<Map<String, dynamic>> _parseCsvToMovements(String csvContent) {
     List<Map<String, dynamic>> movements = [];
-    
+
     try {
       final lines = csvContent.split('\n');
       if (lines.length < 2) return movements; // Pas de données
-      
+
       // Ignorer la première ligne (en-têtes)
       for (int i = 1; i < lines.length; i++) {
         final line = lines[i].trim();
         if (line.isEmpty) continue;
-        
+
         // Parser la ligne CSV (format simple)
         final values = line.split(',');
         if (values.length >= 8) {
@@ -239,9 +310,8 @@ class ExportService {
           });
         }
       }
-    } catch (e) {
-    }
-    
+    } catch (e) {}
+
     return movements;
   }
 

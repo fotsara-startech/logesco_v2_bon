@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/cash_session_controller.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 import '../../../core/utils/currency_utils.dart';
 
 /// Widget indicateur de session de caisse pour la barre d'application
@@ -14,11 +15,15 @@ class CashSessionIndicator extends StatelessWidget {
     return Obx(() {
       final session = controller.activeSession.value;
 
+      // Observer la boutique active pour que le widget se mette à jour
+      final boutiqueController = Get.find<BoutiqueController>();
+      boutiqueController.boutiquesActive.value; // trigger rebuild on boutique change
+
       if (session == null) {
         return _buildNoSessionIndicator(controller);
       }
 
-      return _buildActiveSessionIndicator(session, controller);
+      return _buildActiveSessionIndicator(session, controller, true);
     });
   }
 
@@ -59,7 +64,7 @@ class CashSessionIndicator extends StatelessWidget {
     );
   }
 
-  Widget _buildActiveSessionIndicator(session, CashSessionController controller) {
+  Widget _buildActiveSessionIndicator(session, CashSessionController controller, bool isMatchingBoutique) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: InkWell(
@@ -75,11 +80,7 @@ class CashSessionIndicator extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.check_circle,
-                size: 16,
-                color: Colors.green.shade700,
-              ),
+              Icon(Icons.check_circle, size: 16, color: Colors.green.shade700),
               const SizedBox(width: 4),
               Column(
                 mainAxisSize: MainAxisSize.min,
@@ -87,20 +88,12 @@ class CashSessionIndicator extends StatelessWidget {
                 children: [
                   Text(
                     session.nomCaisse,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.bold),
                   ),
                   if (controller.canViewBalance)
                     Text(
                       CurrencyUtils.formatAmount(session.soldeAttendu ?? session.soldeOuverture),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.green.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(fontSize: 10, color: Colors.green.shade600, fontWeight: FontWeight.w500),
                     ),
                 ],
               ),

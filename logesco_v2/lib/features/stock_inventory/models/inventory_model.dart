@@ -47,7 +47,7 @@ class StockInventory {
       ),
       categorieId: json['categorieId'],
       nomCategorie: json['nomCategorie'],
-      utilisateurId: json['utilisateurId'],
+      utilisateurId: json['utilisateurId'] ?? 0,
       nomUtilisateur: json['nomUtilisateur'] ?? '',
       dateCreation: DateTime.parse(json['dateCreation']),
       dateDebut: json['dateDebut'] != null ? DateTime.parse(json['dateDebut']) : null,

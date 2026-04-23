@@ -210,8 +210,8 @@ class UserListView extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user.email),
-            const SizedBox(height: 4),
+            if (user.email != null && user.email!.isNotEmpty) Text(user.email!),
+            if (user.email != null && user.email!.isNotEmpty) const SizedBox(height: 4),
             Row(
               children: [
                 Container(

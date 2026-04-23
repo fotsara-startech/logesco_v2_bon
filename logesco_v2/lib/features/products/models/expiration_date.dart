@@ -2,6 +2,7 @@
 class ExpirationDate {
   final int id;
   final int produitId;
+  final int boutiqueId;
   final DateTime datePeremption;
   final int quantite;
   final String? numeroLot;
@@ -23,6 +24,7 @@ class ExpirationDate {
   ExpirationDate({
     required this.id,
     required this.produitId,
+    required this.boutiqueId,
     required this.datePeremption,
     required this.quantite,
     this.numeroLot,
@@ -42,6 +44,7 @@ class ExpirationDate {
     return ExpirationDate(
       id: json['id'] as int,
       produitId: json['produitId'] as int,
+      boutiqueId: json['boutiqueId'] as int? ?? 1, // Valeur par défaut si pas présent
       datePeremption: DateTime.parse(json['datePeremption'] as String),
       quantite: json['quantite'] as int,
       numeroLot: json['numeroLot'] as String?,
@@ -62,6 +65,7 @@ class ExpirationDate {
     return {
       'id': id,
       'produitId': produitId,
+      'boutiqueId': boutiqueId,
       'datePeremption': datePeremption.toIso8601String(),
       'quantite': quantite,
       'numeroLot': numeroLot,
@@ -130,6 +134,7 @@ class ExpirationDate {
   ExpirationDate copyWith({
     int? id,
     int? produitId,
+    int? boutiqueId,
     DateTime? datePeremption,
     int? quantite,
     String? numeroLot,
@@ -147,6 +152,7 @@ class ExpirationDate {
     return ExpirationDate(
       id: id ?? this.id,
       produitId: produitId ?? this.produitId,
+      boutiqueId: boutiqueId ?? this.boutiqueId,
       datePeremption: datePeremption ?? this.datePeremption,
       quantite: quantite ?? this.quantite,
       numeroLot: numeroLot ?? this.numeroLot,

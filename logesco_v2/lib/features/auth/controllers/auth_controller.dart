@@ -12,6 +12,8 @@ import '../../../core/utils/exceptions.dart';
 import '../../../core/config/app_config.dart';
 import '../models/user.dart';
 import '../../users/models/role_model.dart' as role_model;
+import '../../boutiques/controllers/boutique_controller.dart';
+import '../../../core/utils/snackbar_helper.dart';
 
 /// Contrôleur d'authentification avec GetX
 class AuthController extends GetxController {
@@ -201,22 +203,23 @@ class AuthController extends GetxController {
 
         try {
           await Get.offAllNamed(AppRoutes.dashboard);
-          print('✅ Navigation réussie');
 
-          Get.snackbar('Succès', 'Connexion réussie');
+          // Charger les boutiques maintenant que le token est disponible
+          try {
+            Get.find<BoutiqueController>().loadBoutiques();
+          } catch (_) {}
         } catch (e) {
-          print('❌ Erreur de navigation: $e');
-          Get.snackbar('Erreur', 'Impossible de charger le tableau de bord');
+          SnackbarHelper.error('Impossible de charger le tableau de bord');
         }
 
         return true;
       }
     } on ApiException catch (e) {
       errorMessage.value = e.message;
-      Get.snackbar('Erreur de connexion', e.message);
+      SnackbarHelper.error(e.message, title: 'Erreur de connexion');
     } catch (e) {
       errorMessage.value = 'Erreur inattendue lors de la connexion';
-      Get.snackbar('Erreur', 'Erreur inattendue lors de la connexion');
+      SnackbarHelper.error('Erreur inattendue lors de la connexion');
     } finally {
       isLoading.value = false;
     }
@@ -224,20 +227,55 @@ class AuthController extends GetxController {
     return false;
   }
 
+  // Flag pour éviter les redirections parasites pendant la déconnexion
+  bool _isLoggingOut = false;
+  bool get isLoggingOut => _isLoggingOut;
+
   /// Déconnexion utilisateur
   Future<void> logout() async {
+    print('🔓 [AuthController] Début de la déconnexion...');
+    if (_isLoggingOut) {
+      print('🔓 [AuthController] Déconnexion déjà en cours, abandon');
+      return;
+    }
+    _isLoggingOut = true;
+
+    print('🔓 [AuthController] Effacement du token et état...');
+    // Effacer le token immédiatement pour bloquer toute requête authentifiée
+    _apiClient.clearAuthToken();
+    isAuthenticated.value = false;
+    currentUser.value = null;
+
     try {
-      print('🚪 [AuthController] Début de la déconnexion...');
-      // Appeler l'API de déconnexion
-      await _apiClient.post('/auth/logout', {});
+      print('🔓 [AuthController] Appel API logout...');
+      await _apiClient.post('/auth/logout', {}).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => throw Exception('timeout'),
+      );
+      print('🔓 [AuthController] API logout réussi');
     } catch (e) {
-      print('⚠️ [AuthController] Erreur API déconnexion (ignorée): $e');
+      print('🔓 [AuthController] API logout échoué: $e (ignoré)');
+      // Erreur API ignorée — on déconnecte quand même
     } finally {
-      print('🧹 [AuthController] Nettoyage des données d\'authentification...');
+      print('🔓 [AuthController] Nettoyage des données...');
       await _clearAuthData();
-      // currentUser.value = null déclenche le ever() dans CashSessionController
-      print('🔄 [AuthController] Redirection vers la page de connexion...');
-      Get.offAllNamed(AppRoutes.login);
+
+      // Forcer la navigation avec plusieurs tentatives
+      print('🔓 [AuthController] Navigation forcée vers /login...');
+      _isLoggingOut = false;
+
+      // Tentative 1 : navigation normale
+      Get.offAllNamed('/login');
+
+      // Tentative 2 : si la première échoue, réessayer après un délai
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (Get.currentRoute != '/login') {
+          print('🔓 [AuthController] Retry navigation vers /login...');
+          Get.offAllNamed('/login');
+        }
+      });
+
+      print('🔓 [AuthController] Déconnexion terminée');
     }
   }
 
