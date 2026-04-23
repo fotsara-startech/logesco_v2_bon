@@ -80,13 +80,16 @@ class FinancialMovementService {
         throw new Error('Impossible de générer une référence unique');
       }
 
-      // Récupérer la session active de l'utilisateur
+      // Récupérer la session active de l'utilisateur (filtrée par boutique si fournie)
+      const sessionLookupWhere = {
+        utilisateurId: data.utilisateurId,
+        isActive: true,
+        dateFermeture: null
+      };
+      if (data.boutiqueId) sessionLookupWhere.boutiqueId = parseInt(data.boutiqueId);
+
       const activeSession = await this.prisma.cashSession.findFirst({
-        where: {
-          utilisateurId: data.utilisateurId,
-          isActive: true,
-          dateFermeture: null
-        }
+        where: sessionLookupWhere
       });
 
       const sessionId = activeSession ? activeSession.id : null;
@@ -100,6 +103,7 @@ class FinancialMovementService {
         data: {
           reference,
           sessionId: sessionId,
+          boutiqueId: data.boutiqueId || null,
           montant: parseFloat(data.montant),
           categorieId: data.categorieId,
           description: data.description.trim(),
@@ -109,6 +113,7 @@ class FinancialMovementService {
         },
         include: {
           categorie: true,
+          boutique: true,
           utilisateur: {
             select: {
               id: true,
@@ -120,10 +125,10 @@ class FinancialMovementService {
         }
       });
 
-      console.log(`✅ Mouvement financier créé: ${movement.reference} - ${movement.montant}€`);
+      console.log(`✅ Mouvement financier créé: ${movement.reference} - ${movement.montant}€ - boutiqueId: ${movement.boutiqueId}`);
       
       // Impacter la caisse active de l'utilisateur
-      const cashUpdate = await this.updateActiveCashRegister(movement.montant, movement.utilisateurId);
+      const cashUpdate = await this.updateActiveCashRegister(movement.montant, movement.utilisateurId, movement.boutiqueId);
       
       // Ajouter le nouveau solde au résultat
       return {
@@ -141,16 +146,20 @@ class FinancialMovementService {
    * Met à jour le solde de la caisse active lors d'une dépense
    * @param {number} montant - Montant de la dépense
    * @param {number} utilisateurId - ID de l'utilisateur
+   * @param {number|null} boutiqueId - ID de la boutique active
    */
-  async updateActiveCashRegister(montant, utilisateurId) {
+  async updateActiveCashRegister(montant, utilisateurId, boutiqueId = null) {
     try {
-      // Trouver la session active de l'utilisateur
+      // Trouver la session active de l'utilisateur (filtrée par boutique si fournie)
+      const sessionWhere = {
+        utilisateurId: utilisateurId,
+        dateFermeture: null,
+        isActive: true
+      };
+      if (boutiqueId) sessionWhere.boutiqueId = parseInt(boutiqueId);
+
       const activeSession = await this.prisma.cashSession.findFirst({
-        where: {
-          utilisateurId: utilisateurId,
-          dateFermeture: null,
-          isActive: true
-        },
+        where: sessionWhere,
         include: {
           caisse: true
         }
@@ -188,6 +197,8 @@ class FinancialMovementService {
       await this.prisma.cashMovement.create({
         data: {
           caisseId: activeSession.caisseId,
+          sessionId: activeSession.id,
+          boutiqueId: boutiqueId ? parseInt(boutiqueId) : (activeSession.boutiqueId || null),
           type: 'depense',
           montant: -parseFloat(montant), // Négatif car c'est une sortie
           description: 'Dépense enregistrée',
@@ -232,6 +243,7 @@ class FinancialMovementService {
         limit = 20,
         search,
         categorieId,
+        boutiqueId,
         startDate,
         endDate,
         minAmount,
@@ -241,6 +253,11 @@ class FinancialMovementService {
 
       // Construction des filtres
       const where = {};
+
+      // Filtre par boutique
+      if (boutiqueId) {
+        where.boutiqueId = parseInt(boutiqueId);
+      }
 
       // Recherche textuelle
       if (search) {
@@ -292,6 +309,7 @@ class FinancialMovementService {
           where,
           include: {
             categorie: true,
+            boutique: true,
             utilisateur: {
               select: {
                 id: true,
@@ -337,6 +355,7 @@ class FinancialMovementService {
         where: { id: parseInt(id) },
         include: {
           categorie: true,
+          boutique: true,
           utilisateur: {
             select: {
               id: true,

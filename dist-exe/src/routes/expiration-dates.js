@@ -19,20 +19,51 @@ function createExpirationDatesRouter(models) {
 
   /**
    * POST /expiration-dates
-   * Crée une nouvelle date de péremption pour un produit
+   * Crée une nouvelle date de péremption pour un produit avec isolation par boutique
    */
   router.post('/',
     authenticateToken(models.authService),
     validate(datePeremptionSchemas.create),
     async (req, res) => {
       try {
-        const { produitId, datePeremption, quantite, numeroLot, notes } = req.body;
+        const { produitId, datePeremption, quantite, numeroLot, notes, boutiqueId } = req.body;
+
+        // Déterminer la boutique à utiliser
+        let activeBoutiqueId = boutiqueId;
+        if (!activeBoutiqueId) {
+          // Récupérer la boutique principale par défaut
+          const boutiquePrincipale = await models.prisma.boutique.findFirst({
+            where: { estPrincipale: true }
+          });
+          
+          if (!boutiquePrincipale) {
+            return res.status(400).json(
+              BaseResponseDTO.error('Aucune boutique principale trouvée. Veuillez spécifier une boutiqueId.')
+            );
+          }
+          
+          activeBoutiqueId = boutiquePrincipale.id;
+        }
+
+        // Vérifier que la boutique existe
+        const boutique = await models.prisma.boutique.findUnique({
+          where: { id: activeBoutiqueId }
+        });
+
+        if (!boutique) {
+          return res.status(404).json(
+            BaseResponseDTO.error('Boutique non trouvée')
+          );
+        }
 
         // Vérifier que le produit existe et a la gestion de péremption activée
         const produit = await models.prisma.produit.findUnique({
           where: { id: produitId },
           include: {
-            stock: true
+            stock: true,
+            stocksBoutiques: {
+              where: { boutiqueId: activeBoutiqueId }
+            }
           }
         });
 
@@ -48,13 +79,18 @@ function createExpirationDatesRouter(models) {
           );
         }
 
-        // Vérifier la cohérence des quantités
-        const stockDisponible = produit.stock?.quantiteDisponible || 0;
+        // Vérifier la cohérence des quantités (utiliser le stock de la boutique si disponible)
+        // Note: Vérification souple pour permettre la création même sans stock strict
+        let stockDisponible = produit.stock?.quantiteDisponible || 0;
+        if (produit.stocksBoutiques.length > 0) {
+          stockDisponible = produit.stocksBoutiques[0].quantiteDisponible;
+        }
         
-        // Calculer le total des quantités déjà enregistrées (non épuisées)
+        // Calculer le total des quantités déjà enregistrées pour cette boutique (non épuisées)
         const datesExistantes = await models.prisma.datePeremption.findMany({
           where: {
             produitId,
+            boutiqueId: activeBoutiqueId,
             estEpuise: false
           },
           select: {
@@ -65,21 +101,18 @@ function createExpirationDatesRouter(models) {
         const totalQuantitesEnregistrees = datesExistantes.reduce((sum, d) => sum + d.quantite, 0);
         const nouvelleQuantiteTotale = totalQuantitesEnregistrees + quantite;
 
-        if (nouvelleQuantiteTotale > stockDisponible) {
-          return res.status(400).json(
-            BaseResponseDTO.error(
-              `Quantité incohérente. Stock disponible: ${stockDisponible}, ` +
-              `Déjà enregistré: ${totalQuantitesEnregistrees}, ` +
-              `Tentative d'ajout: ${quantite}. ` +
-              `Le total (${nouvelleQuantiteTotale}) dépasse le stock disponible.`
-            )
-          );
+        // Avertissement si quantité incohérente, mais permettre la création
+        if (nouvelleQuantiteTotale > stockDisponible && stockDisponible > 0) {
+          console.warn(`⚠️ Quantité potentiellement incohérente pour boutique "${boutique.nom}": ` +
+            `Stock: ${stockDisponible}, Enregistré: ${totalQuantitesEnregistrees}, ` +
+            `Nouveau: ${quantite}, Total: ${nouvelleQuantiteTotale}`);
         }
 
-        // Créer la date de péremption
+        // Créer la date de péremption avec boutiqueId
         const datePerem = await models.prisma.datePeremption.create({
           data: {
             produitId,
+            boutiqueId: activeBoutiqueId,
             datePeremption: new Date(datePeremption),
             quantite,
             numeroLot,
@@ -93,6 +126,12 @@ function createExpirationDatesRouter(models) {
                 nom: true,
                 prixUnitaire: true,
                 prixAchat: true
+              }
+            },
+            boutique: {
+              select: {
+                id: true,
+                nom: true
               }
             }
           }
@@ -115,14 +154,14 @@ function createExpirationDatesRouter(models) {
 
   /**
    * GET /expiration-dates
-   * Liste toutes les dates de péremption avec filtres
+   * Liste toutes les dates de péremption avec filtres et isolation par boutique
    */
   router.get('/',
     authenticateToken(models.authService),
     validate(datePeremptionSchemas.search, 'query'),
     async (req, res) => {
       try {
-        const { page = 1, limit = 20, produitId, estPerime, joursRestants, estEpuise } = req.query;
+        const { page = 1, limit = 20, produitId, estPerime, joursRestants, estEpuise, boutiqueId } = req.query;
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const offset = (pageNum - 1) * limitNum;
@@ -136,6 +175,11 @@ function createExpirationDatesRouter(models) {
 
         if (estEpuise !== undefined) {
           where.estEpuise = estEpuise === 'true' || estEpuise === true;
+        }
+
+        // Filtrage par boutique
+        if (boutiqueId) {
+          where.boutiqueId = parseInt(boutiqueId);
         }
 
         // Filtrer par date de péremption
@@ -163,6 +207,12 @@ function createExpirationDatesRouter(models) {
                 select: {
                   id: true,
                   reference: true,
+                  nom: true
+                }
+              },
+              boutique: {
+                select: {
+                  id: true,
                   nom: true
                 }
               }
@@ -195,14 +245,14 @@ function createExpirationDatesRouter(models) {
 
   /**
    * GET /expiration-dates/alertes
-   * Récupère les alertes de péremption (produits périmés ou proches de la péremption)
+   * Récupère les alertes de péremption avec isolation par boutique
    */
   router.get('/alertes',
     authenticateToken(models.authService),
     validate(datePeremptionSchemas.alertes, 'query'),
     async (req, res) => {
       try {
-        const { niveauAlerte, joursMax = 30, page = 1, limit = 20 } = req.query;
+        const { niveauAlerte, joursMax = 30, page = 1, limit = 20, boutiqueId } = req.query;
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const offset = (pageNum - 1) * limitNum;
@@ -215,6 +265,11 @@ function createExpirationDatesRouter(models) {
           estEpuise: false,
           datePeremption: { lte: dateLimite }
         };
+
+        // Filtrage par boutique
+        if (boutiqueId) {
+          where.boutiqueId = parseInt(boutiqueId);
+        }
 
         // Filtrer par niveau d'alerte si spécifié
         if (niveauAlerte) {
@@ -251,6 +306,12 @@ function createExpirationDatesRouter(models) {
                   nom: true,
                   prixUnitaire: true,
                   prixAchat: true
+                }
+              },
+              boutique: {
+                select: {
+                  id: true,
+                  nom: true
                 }
               }
             },
@@ -296,18 +357,24 @@ function createExpirationDatesRouter(models) {
 
   /**
    * GET /expiration-dates/product/:produitId/stats
-   * Récupère les statistiques de péremption pour un produit
+   * Récupère les statistiques de péremption pour un produit avec isolation par boutique
    */
   router.get('/product/:produitId/stats',
     authenticateToken(models.authService),
     async (req, res) => {
       try {
         const produitId = parseInt(req.params.produitId);
+        const { boutiqueId } = req.query;
 
         // Récupérer le produit avec son stock
         const produit = await models.prisma.produit.findUnique({
           where: { id: produitId },
-          include: { stock: true }
+          include: { 
+            stock: true,
+            stocksBoutiques: boutiqueId ? {
+              where: { boutiqueId: parseInt(boutiqueId) }
+            } : false
+          }
         });
 
         if (!produit) {
@@ -316,14 +383,35 @@ function createExpirationDatesRouter(models) {
           );
         }
 
-        const stockDisponible = produit.stock?.quantiteDisponible || 0;
+        // Utiliser le stock de la boutique si spécifié, sinon le stock global
+        let stockDisponible = 0;
+        if (boutiqueId) {
+          // Mode boutique spécifique : utiliser uniquement le stock de cette boutique
+          if (produit.stocksBoutiques.length > 0) {
+            stockDisponible = produit.stocksBoutiques[0].quantiteDisponible;
+          } else {
+            // Pas de stock pour cette boutique = 0
+            stockDisponible = 0;
+          }
+        } else {
+          // Mode global : utiliser le stock global
+          stockDisponible = produit.stock?.quantiteDisponible || 0;
+        }
 
-        // Calculer les quantités enregistrées
+        // Construire les conditions de recherche pour les dates de péremption
+        const whereConditions = {
+          produitId,
+          estEpuise: false
+        };
+
+        // Ajouter le filtrage par boutique si spécifié
+        if (boutiqueId) {
+          whereConditions.boutiqueId = parseInt(boutiqueId);
+        }
+
+        // Calculer les quantités enregistrées avec filtrage par boutique
         const datesActives = await models.prisma.datePeremption.findMany({
-          where: {
-            produitId,
-            estEpuise: false
-          },
+          where: whereConditions,
           select: {
             quantite: true
           }

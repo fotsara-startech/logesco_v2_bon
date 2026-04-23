@@ -31,6 +31,18 @@ function createInventoryRouter(models) {
     validate(stockSchemas.create),
     async (req, res) => {
       try {
+        // Extraire boutiqueId depuis le body, header ou query params
+        const boutiqueId = req.body.boutiqueId || 
+                          req.headers['x-boutique-id'] || 
+                          req.query.boutiqueId;
+
+        console.log('🏪 [Inventory] boutiqueId reçu:', {
+          body: req.body.boutiqueId,
+          header: req.headers['x-boutique-id'],
+          query: req.query.boutiqueId,
+          final: boutiqueId
+        });
+
         const { produitId, quantiteInitiale } = req.body;
 
         // Vérifier que le produit existe
@@ -44,10 +56,94 @@ function createInventoryRouter(models) {
           );
         }
 
+        if (boutiqueId) {
+          // ── Mode multi-boutique : utiliser StockBoutique ──────────────────
+          const boutiqueIdInt = parseInt(boutiqueId);
+          
+          // Vérifier si un stock existe déjà pour cette boutique
+          const existingStock = await models.prisma.stockBoutique.findUnique({
+            where: { 
+              boutiqueId_produitId: { 
+                boutiqueId: boutiqueIdInt, 
+                produitId 
+              } 
+            }
+          });
+
+          if (existingStock) {
+            return res.status(409).json(
+              BaseResponseDTO.error('Un stock existe déjà pour ce produit dans cette boutique. Utilisez /adjust pour le modifier.')
+            );
+          }
+
+          // Créer le stock boutique
+          const stock = await models.prisma.stockBoutique.create({
+            data: {
+              boutiqueId: boutiqueIdInt,
+              produitId,
+              quantiteDisponible: quantiteInitiale || 0,
+              quantiteReservee: 0
+            },
+            include: {
+              produit: {
+                select: {
+                  id: true,
+                  reference: true,
+                  nom: true,
+                  seuilStockMinimum: true
+                }
+              },
+              boutique: {
+                select: {
+                  id: true,
+                  nom: true
+                }
+              }
+            }
+          });
+
+          console.log(`✅ Stock boutique créé: produit ${produitId} - boutique ${boutiqueIdInt} - quantité ${quantiteInitiale}`);
+
+          // Créer un mouvement de stock pour tracer l'initialisation
+          if (quantiteInitiale > 0) {
+            await models.prisma.mouvementStock.create({
+              data: {
+                produitId,
+                typeMouvement: 'initialisation',
+                changementQuantite: quantiteInitiale,
+                notes: `Initialisation du stock pour boutique ${stock.boutique.nom}`
+              }
+            });
+          }
+
+          // Adapter la réponse pour correspondre au format StockDTO
+          const stockFormatted = {
+            id: stock.id,
+            produitId: stock.produitId,
+            quantiteDisponible: stock.quantiteDisponible,
+            quantiteReservee: stock.quantiteReservee,
+            derniereMaj: stock.derniereMaj,
+            produit: stock.produit,
+            boutique: stock.boutique
+          };
+
+          const stockDTO = StockDTO.fromEntity(stockFormatted);
+          return res.status(201).json(
+            BaseResponseDTO.success(stockDTO, 'Stock boutique créé avec succès')
+          );
+        }
+
+        // ── Mode classique : utiliser Stock global ──────────────────────────
         // Vérifier si un stock existe déjà
         const existingStock = await models.prisma.stock.findUnique({
           where: { produitId }
         });
+
+        if (existingStock) {
+          return res.status(409).json(
+            BaseResponseDTO.error('Un stock existe déjà pour ce produit. Utilisez /adjust pour le modifier.')
+          );
+        }
 
         if (existingStock) {
           return res.status(409).json(
@@ -116,6 +212,120 @@ function createInventoryRouter(models) {
         const limitNum = parseInt(limit);
         const offset = (pageNum - 1) * limitNum;
 
+        // Si boutiqueId fourni, lire depuis stock_boutiques
+        const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+
+        console.log('🏪 [Inventory GET] boutiqueId reçu:', {
+          query: req.query.boutiqueId,
+          parsed: boutiqueId,
+          type: typeof req.query.boutiqueId
+        });
+
+        if (boutiqueId) {
+          console.log('🏪 [Inventory GET] Mode multi-boutique activé pour boutique', boutiqueId);
+          // ── Mode multi-boutique : tous les produits avec quantité boutique (0 si absent) ──
+          const produitWhere = { estActif: true };
+          if (produitId) produitWhere.id = parseInt(produitId);
+          if (search && search.trim()) {
+            const s = search.trim();
+            produitWhere.OR = [
+              { nom: { contains: s } }, 
+              { reference: { contains: s } }, 
+              { codeBarre: { contains: s } }
+            ];
+          }
+          if (category && category.trim()) {
+            produitWhere.categorie = { is: { nom: category.trim() } };
+          }
+
+          // Pour les alertes en mode boutique, charger tous les produits puis filtrer
+          if (alerteStock === 'true' || alerteStock === true) {
+            const allProduits = await models.prisma.produit.findMany({
+              where: produitWhere,
+              include: {
+                stocksBoutiques: { 
+                  where: { boutiqueId },
+                  include: { boutique: { select: { id: true, nom: true, adresse: true } } }
+                },
+                categorie: true
+              },
+              orderBy: { nom: 'asc' }
+            });
+
+            const allStocks = allProduits.map(p => {
+              const sb = p.stocksBoutiques[0];
+              const qte = sb?.quantiteDisponible ?? 0;
+              const seuil = p.seuilStockMinimum ?? 0;
+              const estRupture = qte === 0;
+              const estAlerte = seuil > 0 && qte <= seuil;
+              return {
+                id: sb?.id ?? `temp_${p.id}`,
+                produitId: p.id,
+                boutiqueId: boutiqueId,
+                quantiteDisponible: qte,
+                quantiteReservee: sb?.quantiteReservee ?? 0,
+                derniereMaj: sb?.derniereMaj ?? p.dateModification,
+                stockFaible: estAlerte && !estRupture, // alerte mais pas rupture
+                produit: p,
+                boutique: sb?.boutique ?? null
+              };
+            }).filter(s => s.quantiteDisponible === 0 || s.stockFaible); // rupture OU alerte
+
+            const paginated = allStocks.slice(offset, offset + limitNum);
+            return res.json(new PaginatedResponseDTO(
+              StockDTO.fromEntities(paginated),
+              { page: pageNum, limit: limitNum, total: allStocks.length },
+              'Alertes stock boutique récupérées avec succès'
+            ));
+          }
+
+          const [produits, totalCount] = await Promise.all([
+            models.prisma.produit.findMany({
+              where: produitWhere,
+              include: {
+                stocksBoutiques: { 
+                  where: { boutiqueId },
+                  include: {
+                    boutique: { select: { id: true, nom: true, adresse: true } }
+                  }
+                },
+                categorie: true
+              },
+              orderBy: { nom: 'asc' },
+              skip: offset,
+              take: limitNum
+            }),
+            models.prisma.produit.count({ where: produitWhere })
+          ]);
+
+          const stocks = produits.map(p => {
+            const sb = p.stocksBoutiques[0];
+            const qte = sb?.quantiteDisponible ?? 0;
+            const seuil = p.seuilStockMinimum ?? 0;
+            return {
+              id: sb?.id ?? `temp_${p.id}`,
+              produitId: p.id,
+              boutiqueId: boutiqueId,
+              quantiteDisponible: qte,
+              quantiteReservee: sb?.quantiteReservee ?? 0,
+              derniereMaj: sb?.derniereMaj ?? p.dateModification,
+              stockFaible: seuil > 0 && qte <= seuil,
+              produit: p,
+              boutique: sb?.boutique ?? null
+            };
+          });
+
+          const stocksDTO = StockDTO.fromEntities(stocks);
+          return res.json(new PaginatedResponseDTO(
+            stocksDTO,
+            { page: pageNum, limit: limitNum, total: totalCount },
+            'Stocks boutique récupérés avec succès'
+          ));
+        }
+
+        console.log('🏪 [Inventory GET] Mode classique activé (pas de boutiqueId)');
+
+        // ── Mode classique : lire stock global ──────────────────────────────
         // Construire les conditions de recherche pour les produits
         const produitWhere = { estActif: true };
 
@@ -152,23 +362,34 @@ function createInventoryRouter(models) {
             orderBy: { nom: 'asc' }
           });
 
-          // Filtrer pour ne garder que les produits en alerte
-          const produitsEnAlerte = allProduits.filter(
-            p => !p.stock || p.stock.quantiteDisponible <= p.seuilStockMinimum
-          );
+          // Filtrer pour ne garder que les produits en alerte OU en rupture
+          // Alerte : seuil > 0 ET qté <= seuil
+          // Rupture : qté = 0 (peu importe le seuil)
+          const produitsEnAlerte = allProduits.filter(p => {
+            const qte = p.stock?.quantiteDisponible ?? 0;
+            const seuil = p.seuilStockMinimum ?? 0;
+            const estRupture = qte === 0;
+            const estAlerte = seuil > 0 && qte <= seuil;
+            return estRupture || estAlerte;
+          });
 
           // Appliquer la pagination APRÈS le filtrage
           const paginatedAlerts = produitsEnAlerte.slice(offset, offset + limitNum);
 
           // Mapper vers le format attendu
-          const alertStocks = paginatedAlerts.map(p => ({
-            id: p.stock?.id || `alert_${p.id}`,
-            produitId: p.id,
-            quantiteDisponible: p.stock?.quantiteDisponible ?? 0,
-            quantiteReservee: p.stock?.quantiteReservee ?? 0,
-            derniereMaj: p.stock?.derniereMaj || new Date(),
-            produit: p
-          }));
+          const alertStocks = paginatedAlerts.map(p => {
+            const qte = p.stock?.quantiteDisponible ?? 0;
+            const seuil = p.seuilStockMinimum ?? 0;
+            return {
+              id: p.stock?.id || `alert_${p.id}`,
+              produitId: p.id,
+              quantiteDisponible: qte,
+              quantiteReservee: p.stock?.quantiteReservee ?? 0,
+              derniereMaj: p.stock?.derniereMaj || new Date(),
+              stockFaible: seuil > 0 && qte <= seuil && qte > 0, // alerte mais pas rupture
+              produit: p
+            };
+          });
 
           const totalAlerts = produitsEnAlerte.length;
 
@@ -203,15 +424,19 @@ function createInventoryRouter(models) {
         ]);
 
         // Transformer en objets Stock
-        const stocks = produits.map(p => ({
-          id: p.stock?.id || `temp_${p.id}`,
-          produitId: p.id,
-          quantiteDisponible: p.stock?.quantiteDisponible ?? 0,
-          quantiteReservee: p.stock?.quantiteReservee ?? 0,
-          derniereMaj: p.stock?.derniereMaj || new Date(),
-          stockFaible: (p.stock?.quantiteDisponible ?? 0) <= p.seuilStockMinimum,
-          produit: p
-        }));
+        const stocks = produits.map(p => {
+          const qte = p.stock?.quantiteDisponible ?? 0;
+          const seuil = p.seuilStockMinimum ?? 0;
+          return {
+            id: p.stock?.id || `temp_${p.id}`,
+            produitId: p.id,
+            quantiteDisponible: qte,
+            quantiteReservee: p.stock?.quantiteReservee ?? 0,
+            derniereMaj: p.stock?.derniereMaj || new Date(),
+            stockFaible: seuil > 0 && qte <= seuil,
+            produit: p
+          };
+        });
 
         const stocksDTO = StockDTO.fromEntities(stocks);
 
@@ -315,13 +540,14 @@ function createInventoryRouter(models) {
       try {
         const { page, limit } = req.query;
 
-        // Requête pour les stocks en alerte (quantité <= seuil minimum)
+        // Requête pour les stocks en alerte (quantité <= seuil minimum, seuil > 0)
         const alertes = await models.prisma.$queryRaw`
           SELECT s.id, s.produit_id, s.quantite_disponible, s.quantite_reservee, s.derniere_maj,
                  p.reference, p.nom, p.seuil_stock_minimum, p.est_actif
           FROM stock s
           INNER JOIN produits p ON s.produit_id = p.id
           WHERE s.quantite_disponible <= p.seuil_stock_minimum
+          AND p.seuil_stock_minimum > 0
           AND p.est_actif = 1
           ORDER BY (s.quantite_disponible - p.seuil_stock_minimum) ASC
           LIMIT ${parseInt(limit)} OFFSET ${(parseInt(page) - 1) * parseInt(limit)}
@@ -332,6 +558,7 @@ function createInventoryRouter(models) {
           FROM stock s
           INNER JOIN produits p ON s.produit_id = p.id
           WHERE s.quantite_disponible <= p.seuil_stock_minimum
+          AND p.seuil_stock_minimum > 0
           AND p.est_actif = 1
         `;
 
@@ -385,10 +612,23 @@ function createInventoryRouter(models) {
       try {
         console.log('🔍 GET /movements - Paramètres reçus:', req.query);
         const { page, limit, q, produitId, typeMouvement, dateDebut, dateFin } = req.query;
+
+        // Extraire boutiqueId depuis query ou header
+        const boutiqueId = req.query.boutiqueId
+          ? parseInt(req.query.boutiqueId)
+          : req.headers['x-boutique-id']
+            ? parseInt(req.headers['x-boutique-id'])
+            : null;
+
         const options = buildPrismaQuery({ page, limit });
 
         // Construire les conditions de recherche
         const where = {};
+
+        // Filtrer par boutique si fourni
+        if (boutiqueId) {
+          where.boutiqueId = boutiqueId;
+        }
 
         // Recherche par nom de produit (sans mode insensitive dans les relations)
         if (q && q.trim().length > 0) {
@@ -422,9 +662,13 @@ function createInventoryRouter(models) {
         options.include = { 
           produit: {
             include: {
-              stock: true
+              stock: true,
+              stocksBoutiques: boutiqueId ? {
+                where: { boutiqueId }
+              } : false
             }
-          }
+          },
+          boutique: boutiqueId ? true : false
         };
         options.orderBy = { dateMouvement: 'desc' };
 
@@ -480,6 +724,12 @@ function createInventoryRouter(models) {
     validate(stockSchemas.createMouvement),
     async (req, res) => {
       try {
+        // Extraire boutiqueId depuis body, header ou query
+        const boutiqueId = req.body.boutiqueId ||
+          req.headers['x-boutique-id'] ||
+          req.query.boutiqueId;
+        const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
+
         const { produitId, typeMouvement, changementQuantite, notes, referenceId, typeReference } = sanitizeInput(req.body);
 
         // Vérifier que le produit existe
@@ -498,51 +748,66 @@ function createInventoryRouter(models) {
         const typesAffectantStock = ['achat', 'vente', 'ajustement', 'retour', 'correction', 'transfert'];
 
         await models.prisma.$transaction(async (tx) => {
-          // Créer le mouvement de stock
+          // Créer le mouvement de stock avec boutiqueId
           const mouvement = await tx.mouvementStock.create({
             data: {
               produitId,
+              boutiqueId: boutiqueIdInt,
               typeMouvement,
               changementQuantite,
               notes: notes || `Mouvement ${typeMouvement}`,
               referenceId,
               typeReference
             },
-            include: {
-              produit: true
-            }
+            include: { produit: true }
           });
 
           // Mettre à jour le stock si le type de mouvement l'affecte
           if (typesAffectantStock.includes(typeMouvement)) {
-            // Vérifier si le stock existe
-            if (!produit.stock) {
-              // Créer le stock s'il n'existe pas (pour les nouveaux produits)
-              if (changementQuantite > 0) {
-                await tx.stock.create({
-                  data: {
-                    produitId,
-                    quantiteDisponible: changementQuantite,
-                    quantiteReservee: 0
-                  }
-                });
+            if (boutiqueIdInt) {
+              // ── Mode multi-boutique : mettre à jour StockBoutique ──────────
+              const stockBoutique = await tx.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId } }
+              });
+
+              if (!stockBoutique) {
+                if (changementQuantite > 0) {
+                  await tx.stockBoutique.create({
+                    data: { boutiqueId: boutiqueIdInt, produitId, quantiteDisponible: changementQuantite, quantiteReservee: 0 }
+                  });
+                } else {
+                  throw new Error('Impossible de créer un stock avec une quantité négative');
+                }
               } else {
-                throw new Error('Impossible de créer un stock avec une quantité négative');
+                const nouvelleQuantite = stockBoutique.quantiteDisponible + changementQuantite;
+                if (nouvelleQuantite < 0) {
+                  throw new Error(`Stock insuffisant. Disponible: ${stockBoutique.quantiteDisponible}, demandé: ${changementQuantite}`);
+                }
+                await tx.stockBoutique.update({
+                  where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId } },
+                  data: { quantiteDisponible: nouvelleQuantite }
+                });
               }
             } else {
-              // Mettre à jour le stock existant
-              const nouvelleQuantite = produit.stock.quantiteDisponible + changementQuantite;
-
-              if (nouvelleQuantite < 0) {
-                throw new Error(`Stock insuffisant. Quantité disponible: ${produit.stock.quantiteDisponible}, changement demandé: ${changementQuantite}`);
-              }
-
-              await tx.stock.update({
-                where: { produitId },
-                data: {
-                  quantiteDisponible: nouvelleQuantite
+              // ── Mode classique : mettre à jour Stock global ────────────────
+              if (!produit.stock) {
+                if (changementQuantite > 0) {
+                  await tx.stock.create({
+                    data: { produitId, quantiteDisponible: changementQuantite, quantiteReservee: 0 }
+                  });
+                } else {
+                  throw new Error('Impossible de créer un stock avec une quantité négative');
                 }
-              });
+              } else {
+                const nouvelleQuantite = produit.stock.quantiteDisponible + changementQuantite;
+                if (nouvelleQuantite < 0) {
+                  throw new Error(`Stock insuffisant. Disponible: ${produit.stock.quantiteDisponible}, demandé: ${changementQuantite}`);
+                }
+                await tx.stock.update({
+                  where: { produitId },
+                  data: { quantiteDisponible: nouvelleQuantite }
+                });
+              }
             }
           }
 
@@ -580,7 +845,63 @@ function createInventoryRouter(models) {
     authenticateToken(models.authService),
     async (req, res) => {
       try {
-        // Statistiques globales
+        const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+
+        if (boutiqueId) {
+          // ── Mode multi-boutique : stats depuis stock_boutiques ──────────────
+          const [
+            totalProduits,
+            stocksBoutique,
+            valeurBoutique
+          ] = await Promise.all([
+            models.prisma.produit.count({ where: { estActif: true } }),
+            models.prisma.stockBoutique.findMany({
+              where: { boutiqueId },
+              include: {
+                produit: {
+                  select: { prixUnitaire: true, prixAchat: true, seuilStockMinimum: true, estActif: true }
+                }
+              }
+            }),
+            models.prisma.$queryRaw`
+              SELECT 
+                SUM(sb.quantite_disponible * COALESCE(p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
+                SUM(sb.quantite_disponible * p.prix_unitaire) as valeurVente
+              FROM stock_boutiques sb
+              INNER JOIN produits p ON sb.produit_id = p.id
+              WHERE sb.boutique_id = ${boutiqueId} AND p.est_actif = 1
+            `
+          ]);
+
+          const produitsEnStock = stocksBoutique.filter(sb => sb.quantiteDisponible > 0).length;
+          // Alerte : seuil > 0 ET qté <= seuil ET qté > 0 (pas rupture)
+          const produitsEnAlerte = stocksBoutique.filter(sb => {
+            const seuil = sb.produit?.seuilStockMinimum ?? 0;
+            return seuil > 0 && sb.quantiteDisponible > 0 && sb.quantiteDisponible <= seuil;
+          }).length;
+          // Rupture : qté = 0 (produits avec stock boutique à 0 + produits sans entrée stock boutique)
+          const produitsAvecStockBoutique = stocksBoutique.length;
+          const produitsEnRuptureAvecStock = stocksBoutique.filter(sb => sb.quantiteDisponible === 0).length;
+          const produitsSansStockBoutique = totalProduits - produitsAvecStockBoutique;
+          const produitsEnRupture = produitsEnRuptureAvecStock + produitsSansStockBoutique;
+
+          const summary = {
+            totalProduits,
+            produitsEnStock,
+            produitsEnAlerte,
+            produitsEnRupture,
+            valeurTotaleStock: parseFloat(valeurBoutique[0]?.valeurVente || 0),
+            valeurStockAchat: parseFloat(valeurBoutique[0]?.valeurAchat || 0),
+            valeurStockVente: parseFloat(valeurBoutique[0]?.valeurVente || 0),
+            pourcentageEnStock: totalProduits > 0 ? Math.round((produitsEnStock / totalProduits) * 100) : 0,
+            pourcentageEnAlerte: totalProduits > 0 ? Math.round((produitsEnAlerte / totalProduits) * 100) : 0,
+            pourcentageEnRupture: totalProduits > 0 ? Math.round((produitsEnRupture / totalProduits) * 100) : 0
+          };
+
+          return res.json(BaseResponseDTO.success(summary, 'Résumé du stock boutique récupéré avec succès'));
+        }
+
+        // ── Mode classique : stats globales ────────────────────────────────
         const [
           totalProduits,
           produitsEnStock,
@@ -599,22 +920,25 @@ function createInventoryRouter(models) {
             }
           }),
 
-          // Produits en alerte (stock <= seuil, incluant les ruptures)
+          // Produits en alerte (stock <= seuil, seuil > 0)
           models.prisma.$queryRaw`
             SELECT COUNT(*) as count
             FROM stock s
             INNER JOIN produits p ON s.produit_id = p.id
             WHERE s.quantite_disponible <= p.seuil_stock_minimum
+            AND p.seuil_stock_minimum > 0
             AND p.est_actif = 1
           `,
 
-          // Produits en rupture (stock = 0)
-          models.prisma.stock.count({
-            where: {
-              quantiteDisponible: 0,
-              produit: { estActif: true }
-            }
-          }),
+          // Produits en rupture (stock = 0 OU pas d'entrée stock)
+          models.prisma.$queryRaw`
+            SELECT COUNT(*) as count
+            FROM produits p
+            LEFT JOIN stock s ON s.produit_id = p.id
+            WHERE (s.quantite_disponible = 0 OR s.id IS NULL)
+            AND p.est_actif = 1
+            AND p.est_service = 0
+          `,
 
           // Valeur totale du stock (prix d'achat et de vente)
           models.prisma.$queryRaw`
@@ -631,7 +955,7 @@ function createInventoryRouter(models) {
           totalProduits,
           produitsEnStock,
           produitsEnAlerte: parseInt(produitsEnAlerte[0].count),
-          produitsEnRupture,
+          produitsEnRupture: parseInt(produitsEnRupture[0].count),
           valeurTotaleStock: parseFloat(valeurTotaleStock[0].valeurVente || 0), // Compatibilité
           valeurStockAchat: parseFloat(valeurTotaleStock[0].valeurAchat || 0),
           valeurStockVente: parseFloat(valeurTotaleStock[0].valeurVente || 0),
@@ -817,6 +1141,7 @@ function createInventoryRouter(models) {
             FROM stock s
             INNER JOIN produits p ON s.produit_id = p.id
             WHERE s.quantite_disponible <= p.seuil_stock_minimum
+            AND p.seuil_stock_minimum > 0
             AND p.est_actif = 1
             ORDER BY s.derniere_maj DESC
           `;
@@ -1009,12 +1334,46 @@ function createInventoryRouter(models) {
     async (req, res) => {
       try {
         const produitId = parseInt(req.params.id);
+        const boutiqueId = req.query.boutiqueId || req.headers['x-boutique-id'];
 
+        if (boutiqueId) {
+          // ── Mode multi-boutique : retourner le stock boutique ──────────────
+          const boutiqueIdInt = parseInt(boutiqueId);
+          const stockBoutique = await models.prisma.stockBoutique.findUnique({
+            where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId } },
+            include: {
+              produit: true,
+              boutique: { select: { id: true, nom: true } }
+            }
+          });
+
+          // Si pas de stock boutique, retourner quantité 0
+          const stockFormatted = stockBoutique ? {
+            id: stockBoutique.id,
+            produitId: stockBoutique.produitId,
+            boutiqueId: stockBoutique.boutiqueId,
+            quantiteDisponible: stockBoutique.quantiteDisponible,
+            quantiteReservee: stockBoutique.quantiteReservee,
+            derniereMaj: stockBoutique.derniereMaj,
+            produit: stockBoutique.produit,
+            boutique: stockBoutique.boutique
+          } : {
+            id: null,
+            produitId,
+            boutiqueId: boutiqueIdInt,
+            quantiteDisponible: 0,
+            quantiteReservee: 0,
+            derniereMaj: new Date(),
+            produit: null
+          };
+
+          return res.json(BaseResponseDTO.success(StockDTO.fromEntity(stockFormatted), 'Stock boutique récupéré avec succès'));
+        }
+
+        // ── Mode classique : stock global ──────────────────────────────────
         const stock = await models.prisma.stock.findUnique({
           where: { produitId },
-          include: {
-            produit: true
-          }
+          include: { produit: true }
         });
 
         if (!stock) {
@@ -1023,9 +1382,7 @@ function createInventoryRouter(models) {
           );
         }
 
-        const stockDTO = StockDTO.fromEntity(stock);
-
-        res.json(BaseResponseDTO.success(stockDTO, 'Stock récupéré avec succès'));
+        res.json(BaseResponseDTO.success(StockDTO.fromEntity(stock), 'Stock récupéré avec succès'));
 
       } catch (error) {
         console.error('Erreur récupération stock:', error);
