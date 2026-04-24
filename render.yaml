@@ -3,7 +3,7 @@ services:
     name: logesco-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npx prisma generate --schema=prisma/schema.postgresql.prisma && npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+    buildCommand: chmod +x deploy-render.sh && ./deploy-render.sh
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
