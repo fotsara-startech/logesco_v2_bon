@@ -27,6 +27,7 @@ backend/dist/
 backend/prisma/dev.db*
 backend/prisma/database/
 logesco_v2/assets/backend/
+backend/.env
 
 # Fichiers d'installation et builds
 *.exe
