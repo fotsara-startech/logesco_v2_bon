@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 // ── Logging vers fichier dès le démarrage ─────────────────────────────────
 const fs   = require('fs');
