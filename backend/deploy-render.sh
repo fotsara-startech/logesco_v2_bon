@@ -21,8 +21,13 @@ npm install
 echo "🔧 Generating Prisma Client..."
 npx prisma generate --schema=prisma/schema.postgresql.prisma
 
+# Resolve any failed migrations from previous attempts
+echo "🧹 Cleaning up any failed migrations..."
+npx prisma migrate resolve --rolled-back 20251106124948_init_with_licenses --schema=prisma/schema.postgresql.prisma 2>/dev/null || true
+npx prisma migrate resolve --rolled-back 20251217123620_add_cash_sessions --schema=prisma/schema.postgresql.prisma 2>/dev/null || true
+
 # Deploy migrations
 echo "🗄️ Deploying migrations..."
 npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
 
-echo "✅ Deployment preparation complete!"
+echo "✅ Deployment complete!"
