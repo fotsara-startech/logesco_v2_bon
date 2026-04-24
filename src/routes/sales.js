@@ -9,6 +9,7 @@ const { validate, validateId, validatePagination } = require('../middleware/vali
 const { authenticateToken } = require('../middleware/auth');
 const { buildSalesSearchConditions, generateSaleNumber } = require('../utils/transformers');
 const { updateExpirationDatesAfterSale } = require('../utils/expiration-manager');
+const { resolveBoutiqueId } = require('../utils/boutique-helper');
 
 function createSalesRouter({ prisma, authService }) {
   const router = express.Router();
