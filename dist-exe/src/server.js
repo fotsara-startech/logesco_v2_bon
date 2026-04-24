@@ -110,17 +110,28 @@ class LogescoServer {
           }
         });
 
-        // Utilisateur admin
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        await prisma.utilisateur.create({
-          data: {
-            nomUtilisateur: 'admin',
-            motDePasseHash: hashedPassword,
-            email: 'admin@logesco.local',
-            roleId: adminRole.id,
-            isActive: true
-          }
-        });
+      // Utilisateur admin
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await prisma.utilisateur.create({
+        data: {
+          nomUtilisateur: 'admin',
+          motDePasseHash: hashedPassword,
+          email: 'admin@logesco.local',
+          roleId: adminRole.id,
+          isActive: true
+        }
+      });
+
+      // Caisse principale
+      await prisma.cashRegister.create({
+        data: {
+          nom: 'Caisse Principale',
+          description: 'Caisse principale du système',
+          isActive: true,
+          soldeActuel: 0,
+          soldeInitial: 0
+        }
+      });
 
         // Paramètres entreprise
         await prisma.parametresEntreprise.create({
