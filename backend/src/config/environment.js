@@ -37,16 +37,28 @@ class EnvironmentConfig {
    * @returns {boolean}
    */
   detectLocalEnvironment() {
-    // Vérifications pour détecter un environnement local
+    // Vérifications pour détecter un environnement cloud
+    const cloudIndicators = [
+      process.env.RENDER,
+      process.env.HEROKU_APP_NAME,
+      process.env.VERCEL_URL,
+      process.env.AWS_REGION,
+      process.env.DEPLOYMENT_TYPE === 'cloud'
+    ];
+
+    // Si au moins un indicateur cloud est présent, on n'est PAS en local
+    if (cloudIndicators.some(indicator => indicator)) {
+      return false;
+    }
+
+    // Sinon, vérifier les indicateurs locaux
     const localIndicators = [
       // Présence d'un dossier database local
       fs.existsSync(path.join(__dirname, '../../database')),
       // Variable d'environnement explicite
       process.env.DEPLOYMENT_TYPE === 'local',
       // URL de base de données SQLite
-      process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:'),
-      // Absence de variables cloud typiques
-      !process.env.HEROKU_APP_NAME && !process.env.VERCEL_URL && !process.env.AWS_REGION
+      process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:')
     ];
 
     // Si au moins un indicateur local est présent
