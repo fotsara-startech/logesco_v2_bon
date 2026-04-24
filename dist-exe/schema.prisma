@@ -8,29 +8,119 @@ datasource db {
 }
 
 model Utilisateur {
-  id                    Int                 @id @default(autoincrement())
-  nomUtilisateur        String              @unique @map("nom_utilisateur")
-  email                 String              @unique
-  motDePasseHash        String              @map("mot_de_passe_hash")
-  roleId                Int?                @map("role_id")
-  isActive              Boolean             @default(true) @map("is_active")
-  dateCreation          DateTime            @default(now()) @map("date_creation")
-  dateModification      DateTime            @updatedAt @map("date_modification")
-  dateDerniereConnexion DateTime?           @map("date_derniere_connexion")
+  id                    Int                      @id @default(autoincrement())
+  nomUtilisateur        String                   @unique @map("nom_utilisateur")
+  email                 String?                  @map("email")
+  motDePasseHash        String                   @map("mot_de_passe_hash")
+  roleId                Int?                     @map("role_id")
+  isActive              Boolean                  @default(true) @map("is_active")
+  dateCreation          DateTime                 @default(now()) @map("date_creation")
+  dateModification      DateTime                 @updatedAt @map("date_modification")
+  dateDerniereConnexion DateTime?                @map("date_derniere_connexion")
   mouvementsCaisse      CashMovement[]
   caisses               CashRegister[]
   sessionsCaisse        CashSession[]
   mouvementsFinanciers  FinancialMovement[]
-  comptagesInventaire   InventoryItem[]     @relation("UtilisateurComptage")
+  comptagesInventaire   InventoryItem[]          @relation("UtilisateurComptage")
   inventaires           StockInventory[]
-  role                  UserRole?           @relation(fields: [roleId], references: [id])
+  transfertsStock       TransfertStock[]
+  boutiquesAssignees    UserBoutiqueAssignment[]
+  role                  UserRole?                @relation(fields: [roleId], references: [id])
   ventesVendeur         Vente[]
   proformasVendeur      VenteProforma[]
 
-  @@index([email], map: "idx_utilisateurs_email")
   @@index([nomUtilisateur], map: "idx_utilisateurs_nom")
   @@index([roleId], map: "idx_utilisateurs_role")
   @@map("utilisateurs")
+}
+
+model Boutique {
+  id                   Int                         @id @default(autoincrement())
+  nom                  String
+  adresse              String?
+  telephone            String?
+  email                String?
+  description          String?
+  estPrincipale        Boolean                     @default(false) @map("est_principale")
+  isActive             Boolean                     @default(true) @map("is_active")
+  dateCreation         DateTime                    @default(now()) @map("date_creation")
+  dateModification     DateTime                    @updatedAt @map("date_modification")
+  cashMovements        CashMovement[]
+  caisses              CashRegister[]
+  cashSessions         CashSession[]
+  commandes            CommandeApprovisionnement[]
+  datesPeremption      DatePeremption[]
+  mouvementsFinanciers FinancialMovement[]
+  mouvementsStock      MouvementStock[]
+  proformas            VenteProforma[]
+  stocksBoutique       StockBoutique[]
+  transfertsDest       TransfertStock[]            @relation("TransfertDestination")
+  transfertsSource     TransfertStock[]            @relation("TransfertSource")
+  utilisateurs         UserBoutiqueAssignment[]
+  ventes               Vente[]
+  inventaires          StockInventory[]
+  transactionsComptes  TransactionCompte[]
+
+  @@index([estPrincipale], map: "idx_boutiques_principale")
+  @@index([isActive], map: "idx_boutiques_active")
+  @@map("boutiques")
+}
+
+model UserBoutiqueAssignment {
+  id               Int         @id @default(autoincrement())
+  utilisateurId    Int         @map("utilisateur_id")
+  boutiqueId       Int         @map("boutique_id")
+  roleId           Int?        @map("role_id")
+  isActive         Boolean     @default(true) @map("is_active")
+  dateCreation     DateTime    @default(now()) @map("date_creation")
+  dateModification DateTime    @updatedAt @map("date_modification")
+  role             UserRole?   @relation(fields: [roleId], references: [id])
+  boutique         Boutique    @relation(fields: [boutiqueId], references: [id], onDelete: Cascade)
+  utilisateur      Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@unique([utilisateurId, boutiqueId])
+  @@index([utilisateurId], map: "idx_user_boutique_utilisateur")
+  @@index([boutiqueId], map: "idx_user_boutique_boutique")
+  @@map("user_boutique_assignments")
+}
+
+model StockBoutique {
+  id                 Int      @id @default(autoincrement())
+  boutiqueId         Int      @map("boutique_id")
+  produitId          Int      @map("produit_id")
+  quantiteDisponible Int      @default(0) @map("quantite_disponible")
+  quantiteReservee   Int      @default(0) @map("quantite_reservee")
+  derniereMaj        DateTime @updatedAt @map("derniere_maj")
+  produit            Produit  @relation(fields: [produitId], references: [id])
+  boutique           Boutique @relation(fields: [boutiqueId], references: [id], onDelete: Cascade)
+
+  @@unique([boutiqueId, produitId])
+  @@index([boutiqueId], map: "idx_stock_boutique_boutique")
+  @@index([produitId], map: "idx_stock_boutique_produit")
+  @@map("stock_boutiques")
+}
+
+model TransfertStock {
+  id               Int         @id @default(autoincrement())
+  reference        String      @unique
+  sourceBoutiqueId Int         @map("source_boutique_id")
+  destBoutiqueId   Int         @map("dest_boutique_id")
+  produitId        Int         @map("produit_id")
+  quantite         Int
+  notes            String?
+  utilisateurId    Int         @map("utilisateur_id")
+  dateTransfert    DateTime    @default(now()) @map("date_transfert")
+  dateCreation     DateTime    @default(now()) @map("date_creation")
+  utilisateur      Utilisateur @relation(fields: [utilisateurId], references: [id])
+  produit          Produit     @relation(fields: [produitId], references: [id])
+  destBoutique     Boutique    @relation("TransfertDestination", fields: [destBoutiqueId], references: [id])
+  sourceBoutique   Boutique    @relation("TransfertSource", fields: [sourceBoutiqueId], references: [id])
+
+  @@index([sourceBoutiqueId], map: "idx_transfert_source")
+  @@index([destBoutiqueId], map: "idx_transfert_dest")
+  @@index([produitId], map: "idx_transfert_produit")
+  @@index([dateTransfert], map: "idx_transfert_date")
+  @@map("transferts_stock")
 }
 
 model Fournisseur {
@@ -51,14 +141,14 @@ model Fournisseur {
 }
 
 model Client {
-  id               Int           @id @default(autoincrement())
+  id               Int             @id @default(autoincrement())
   nom              String
   prenom           String?
   telephone        String?
   email            String?
   adresse          String?
-  dateCreation     DateTime      @default(now()) @map("date_creation")
-  dateModification DateTime      @updatedAt @map("date_modification")
+  dateCreation     DateTime        @default(now()) @map("date_creation")
+  dateModification DateTime        @updatedAt @map("date_modification")
   compte           CompteClient?
   ventes           Vente[]
   proformas        VenteProforma[]
@@ -128,6 +218,8 @@ model Produit {
   mouvementsStock    MouvementStock[]
   categorie          Category?                         @relation(fields: [categorieId], references: [id])
   stock              Stock?
+  stocksBoutiques    StockBoutique[]
+  transferts         TransfertStock[]
 
   @@index([seuilStockMinimum], map: "idx_produits_stock_minimum")
   @@index([nom, estActif], map: "idx_produits_nom_actif")
@@ -154,6 +246,7 @@ model CommandeApprovisionnement {
   id                  Int                               @id @default(autoincrement())
   numeroCommande      String                            @unique @map("numero_commande")
   fournisseurId       Int                               @map("fournisseur_id")
+  boutiqueId          Int?                              @map("boutique_id")
   statut              String                            @default("en_attente")
   dateCommande        DateTime                          @default(now()) @map("date_commande")
   dateLivraisonPrevue DateTime?                         @map("date_livraison_prevue")
@@ -162,11 +255,13 @@ model CommandeApprovisionnement {
   montantRestant      Float                             @default(0) @map("montant_restant")
   modePaiement        String                            @default("credit") @map("mode_paiement")
   notes               String?
+  boutique            Boutique?                         @relation(fields: [boutiqueId], references: [id])
   fournisseur         Fournisseur                       @relation(fields: [fournisseurId], references: [id])
   details             DetailCommandeApprovisionnement[]
 
   @@index([statut], map: "idx_commandes_statut")
   @@index([fournisseurId, dateCommande], map: "idx_commandes_fournisseur_date")
+  @@index([boutiqueId], map: "idx_commandes_boutique")
   @@map("commandes_approvisionnement")
 }
 
@@ -190,6 +285,7 @@ model Vente {
   clientId       Int?             @map("client_id")
   vendeurId      Int?             @map("vendeur_id")
   sessionId      Int?             @map("session_id")
+  boutiqueId     Int?             @map("boutique_id")
   dateVente      DateTime         @default(now()) @map("date_vente")
   sousTotal      Float            @map("sous_total")
   montantRemise  Float            @default(0) @map("montant_remise")
@@ -202,15 +298,17 @@ model Vente {
   montantRestant Float            @default(0) @map("montant_restant")
   details        DetailVente[]
   recus          HistoriqueRecu[]
-  session        CashSession?     @relation(fields: [sessionId], references: [id])
-  vendeur        Utilisateur?     @relation(fields: [vendeurId], references: [id])
+  boutique       Boutique?        @relation(fields: [boutiqueId], references: [id])
   client         Client?          @relation(fields: [clientId], references: [id])
+  vendeur        Utilisateur?     @relation(fields: [vendeurId], references: [id])
+  session        CashSession?     @relation(fields: [sessionId], references: [id])
 
   @@index([modePaiement], map: "idx_ventes_mode_paiement")
   @@index([statut], map: "idx_ventes_statut")
   @@index([clientId, dateVente], map: "idx_ventes_client_date")
   @@index([vendeurId, dateVente], map: "idx_ventes_vendeur_date")
   @@index([sessionId], map: "idx_ventes_session")
+  @@index([boutiqueId], map: "idx_ventes_boutique")
   @@map("ventes")
 }
 
@@ -232,40 +330,46 @@ model DetailVente {
 }
 
 model TransactionCompte {
-  id                    Int      @id @default(autoincrement())
-  typeCompte            String   @map("type_compte")
-  compteId              Int      @map("compte_id")
-  typeTransaction       String   @map("type_transaction")
+  id                    Int       @id @default(autoincrement())
+  typeCompte            String    @map("type_compte")
+  compteId              Int       @map("compte_id")
+  typeTransaction       String    @map("type_transaction")
   montant               Float
   description           String?
-  referenceId           Int?     @map("reference_id")
-  referenceType         String?  @map("reference_type")
-  dateTransaction       DateTime @default(now()) @map("date_transaction")
-  soldeApres            Float    @map("solde_apres")
-  typeTransactionDetail String?  @map("type_transaction_detail")
-  venteId               Int?     @map("vente_id")
-  venteReference        String?  @map("vente_reference")
+  referenceId           Int?      @map("reference_id")
+  referenceType         String?   @map("reference_type")
+  dateTransaction       DateTime  @default(now()) @map("date_transaction")
+  soldeApres            Float     @map("solde_apres")
+  typeTransactionDetail String?   @map("type_transaction_detail")
+  venteId               Int?      @map("vente_id")
+  venteReference        String?   @map("vente_reference")
+  boutiqueId            Int?      @map("boutique_id")
+  boutique              Boutique? @relation(fields: [boutiqueId], references: [id])
 
   @@index([referenceType, referenceId], map: "idx_transactions_reference")
   @@index([dateTransaction], map: "idx_transactions_date")
   @@index([venteId], map: "idx_transactions_vente")
   @@index([typeTransactionDetail], map: "idx_transactions_type_detail")
+  @@index([boutiqueId], map: "idx_transactions_boutique")
   @@map("transactions_comptes")
 }
 
 model MouvementStock {
-  id                 Int      @id @default(autoincrement())
-  produitId          Int      @map("produit_id")
-  typeMouvement      String   @map("type_mouvement")
-  changementQuantite Int      @map("changement_quantite")
-  referenceId        Int?     @map("reference_id")
-  typeReference      String?  @map("type_reference")
-  dateMouvement      DateTime @default(now()) @map("date_mouvement")
+  id                 Int       @id @default(autoincrement())
+  produitId          Int       @map("produit_id")
+  boutiqueId         Int?      @map("boutique_id")
+  typeMouvement      String    @map("type_mouvement")
+  changementQuantite Int       @map("changement_quantite")
+  referenceId        Int?      @map("reference_id")
+  typeReference      String?   @map("type_reference")
+  dateMouvement      DateTime  @default(now()) @map("date_mouvement")
   notes              String?
-  produit            Produit  @relation(fields: [produitId], references: [id])
+  boutique           Boutique? @relation(fields: [boutiqueId], references: [id])
+  produit            Produit   @relation(fields: [produitId], references: [id])
 
   @@index([typeReference, referenceId], map: "idx_mouvements_reference")
   @@index([typeMouvement], map: "idx_mouvements_type")
+  @@index([boutiqueId], map: "idx_mouvements_stock_boutique")
   @@map("mouvements_stock")
 }
 
@@ -280,9 +384,9 @@ model ParametresEntreprise {
   logo             String?
   slogan           String?
   langueFacture    String   @default("fr") @map("langue_facture")
-  tauxTva          Float?   @map("taux_tva")
   dateCreation     DateTime @default(now()) @map("date_creation")
   dateModification DateTime @updatedAt @map("date_modification")
+  tauxTva          Float?   @map("taux_tva")
 
   @@map("parametres_entreprise")
 }
@@ -319,14 +423,15 @@ model ReimpressionRecu {
 }
 
 model UserRole {
-  id               Int           @id @default(autoincrement())
-  nom              String        @unique
-  displayName      String        @map("display_name")
-  isAdmin          Boolean       @default(false) @map("is_admin")
-  privileges       String?
-  dateCreation     DateTime      @default(now()) @map("date_creation")
-  dateModification DateTime      @updatedAt @map("date_modification")
-  utilisateurs     Utilisateur[]
+  id                 Int                      @id @default(autoincrement())
+  nom                String                   @unique
+  displayName        String                   @map("display_name")
+  isAdmin            Boolean                  @default(false) @map("is_admin")
+  privileges         String?
+  dateCreation       DateTime                 @default(now()) @map("date_creation")
+  dateModification   DateTime                 @updatedAt @map("date_modification")
+  boutiquesAssignees UserBoutiqueAssignment[]
+  utilisateurs       Utilisateur[]
 
   @@map("user_roles")
 }
@@ -339,16 +444,19 @@ model CashRegister {
   soldeActuel      Float          @default(0) @map("solde_actuel")
   isActive         Boolean        @default(true) @map("is_active")
   utilisateurId    Int?           @map("utilisateur_id")
+  boutiqueId       Int?           @map("boutique_id")
   dateCreation     DateTime       @default(now()) @map("date_creation")
   dateModification DateTime       @updatedAt @map("date_modification")
   dateOuverture    DateTime?      @map("date_ouverture")
   dateFermeture    DateTime?      @map("date_fermeture")
   mouvements       CashMovement[]
+  boutique         Boutique?      @relation(fields: [boutiqueId], references: [id])
   utilisateur      Utilisateur?   @relation(fields: [utilisateurId], references: [id])
   sessions         CashSession[]
 
   @@index([nom], map: "idx_cash_registers_nom")
   @@index([utilisateurId], map: "idx_cash_registers_utilisateur")
+  @@index([boutiqueId], map: "idx_cash_registers_boutique")
   @@map("cash_registers")
 }
 
@@ -356,20 +464,23 @@ model CashMovement {
   id            Int          @id @default(autoincrement())
   caisseId      Int          @map("caisse_id")
   sessionId     Int?         @map("session_id")
+  boutiqueId    Int?         @map("boutique_id")
   type          String
   montant       Float
   description   String?
   utilisateurId Int?         @map("utilisateur_id")
   dateCreation  DateTime     @default(now()) @map("date_creation")
   metadata      String?
-  utilisateur   Utilisateur? @relation(fields: [utilisateurId], references: [id])
-  session       CashSession? @relation(fields: [sessionId], references: [id])
+  boutique      Boutique?    @relation(fields: [boutiqueId], references: [id])
   caisse        CashRegister @relation(fields: [caisseId], references: [id], onDelete: Cascade)
+  session       CashSession? @relation(fields: [sessionId], references: [id])
+  utilisateur   Utilisateur? @relation(fields: [utilisateurId], references: [id])
 
   @@index([caisseId], map: "idx_cash_movements_caisse")
   @@index([sessionId], map: "idx_cash_movements_session")
   @@index([dateCreation], map: "idx_cash_movements_date")
   @@index([type], map: "idx_cash_movements_type")
+  @@index([boutiqueId], map: "idx_cash_movements_boutique")
   @@map("cash_movements")
 }
 
@@ -377,6 +488,7 @@ model CashSession {
   id                   Int                 @id @default(autoincrement())
   caisseId             Int                 @map("caisse_id")
   utilisateurId        Int                 @map("utilisateur_id")
+  boutiqueId           Int?                @map("boutique_id")
   soldeOuverture       Float               @map("solde_ouverture")
   soldeFermeture       Float?              @map("solde_fermeture")
   dateOuverture        DateTime            @default(now()) @map("date_ouverture")
@@ -386,8 +498,9 @@ model CashSession {
   soldeAttendu         Float?              @map("solde_attendu")
   ecart                Float?
   mouvements           CashMovement[]
-  utilisateur          Utilisateur         @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  boutique             Boutique?           @relation(fields: [boutiqueId], references: [id])
   caisse               CashRegister        @relation(fields: [caisseId], references: [id], onDelete: Cascade)
+  utilisateur          Utilisateur         @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
   mouvementsFinanciers FinancialMovement[]
   ventes               Vente[]
 
@@ -395,6 +508,7 @@ model CashSession {
   @@index([utilisateurId], map: "idx_cash_sessions_utilisateur")
   @@index([dateOuverture], map: "idx_cash_sessions_date_ouverture")
   @@index([isActive], map: "idx_cash_sessions_active")
+  @@index([boutiqueId], map: "idx_cash_sessions_boutique")
   @@map("cash_sessions")
 }
 
@@ -405,6 +519,7 @@ model StockInventory {
   type          String
   status        String          @default("BROUILLON")
   categorieId   Int?            @map("categorie_id")
+  boutiqueId    Int?            @map("boutique_id")
   utilisateurId Int             @map("utilisateur_id")
   dateCreation  DateTime        @default(now()) @map("date_creation")
   dateDebut     DateTime?       @map("date_debut")
@@ -412,10 +527,12 @@ model StockInventory {
   items         InventoryItem[]
   utilisateur   Utilisateur     @relation(fields: [utilisateurId], references: [id])
   categorie     Category?       @relation(fields: [categorieId], references: [id])
+  boutique      Boutique?       @relation(fields: [boutiqueId], references: [id])
 
   @@index([status], map: "idx_stock_inventories_status")
   @@index([type], map: "idx_stock_inventories_type")
   @@index([utilisateurId], map: "idx_stock_inventories_utilisateur")
+  @@index([boutiqueId], map: "idx_stock_inventories_boutique")
   @@index([dateCreation], map: "idx_stock_inventories_date")
   @@map("stock_inventories")
 }
@@ -462,6 +579,7 @@ model FinancialMovement {
   id               Int                  @id @default(autoincrement())
   reference        String               @unique
   sessionId        Int?                 @map("session_id")
+  boutiqueId       Int?                 @map("boutique_id")
   montant          Float
   categorieId      Int                  @map("categorie_id")
   description      String
@@ -470,15 +588,17 @@ model FinancialMovement {
   dateCreation     DateTime             @default(now()) @map("date_creation")
   dateModification DateTime             @updatedAt @map("date_modification")
   notes            String?
-  session          CashSession?         @relation(fields: [sessionId], references: [id])
-  utilisateur      Utilisateur          @relation(fields: [utilisateurId], references: [id])
   categorie        MovementCategory     @relation(fields: [categorieId], references: [id])
+  utilisateur      Utilisateur          @relation(fields: [utilisateurId], references: [id])
+  boutique         Boutique?            @relation(fields: [boutiqueId], references: [id])
+  session          CashSession?         @relation(fields: [sessionId], references: [id])
   attachments      MovementAttachment[]
 
   @@index([reference], map: "idx_financial_movements_reference")
   @@index([categorieId], map: "idx_financial_movements_categorie")
   @@index([utilisateurId], map: "idx_financial_movements_utilisateur")
   @@index([sessionId], map: "idx_financial_movements_session")
+  @@index([boutiqueId], map: "idx_financial_movements_boutique")
   @@index([date], map: "idx_financial_movements_date")
   @@index([montant], map: "idx_financial_movements_montant")
   @@map("financial_movements")
@@ -510,37 +630,44 @@ model DatePeremption {
   estEpuise        Boolean  @default(false) @map("est_epuise")
   dateCreation     DateTime @default(now()) @map("date_creation")
   dateModification DateTime @updatedAt @map("date_modification")
+  boutiqueId       Int?     @map("boutique_id")
   produit          Produit  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  boutique         Boutique? @relation(fields: [boutiqueId], references: [id], onDelete: SetNull)
 
   @@index([produitId], map: "idx_dates_peremption_produit")
+  @@index([boutiqueId], map: "idx_dates_peremption_boutique")
   @@index([datePeremption], map: "idx_dates_peremption_date")
   @@index([estEpuise], map: "idx_dates_peremption_epuise")
   @@index([produitId, datePeremption], map: "idx_dates_peremption_produit_date")
+  @@index([boutiqueId, datePeremption], map: "idx_dates_peremption_boutique_date")
   @@map("dates_peremption")
 }
 
 model VenteProforma {
-  id               Int                    @id @default(autoincrement())
-  numeroProforma   String                 @unique @map("numero_proforma")
-  clientId         Int?                   @map("client_id")
-  vendeurId        Int?                   @map("vendeur_id")
-  dateVente        DateTime?              @map("date_vente")
-  sousTotal        Float                  @map("sous_total")
-  montantRemise    Float                  @default(0) @map("montant_remise")
-  montantTva       Float                  @default(0) @map("montant_tva")
-  tauxTva          Float?                 @map("taux_tva")
-  montantTotal     Float                  @map("montant_total")
-  statut           String                 @default("brouillon")
-  modePaiement     String                 @default("comptant") @map("mode_paiement")
-  dateCreation     DateTime               @default(now()) @map("date_creation")
-  dateModification DateTime               @updatedAt @map("date_modification")
-  client           Client?                @relation(fields: [clientId], references: [id])
-  vendeur          Utilisateur?           @relation(fields: [vendeurId], references: [id])
+  id               Int                   @id @default(autoincrement())
+  numeroProforma   String                @unique @map("numero_proforma")
+  clientId         Int?                  @map("client_id")
+  vendeurId        Int?                  @map("vendeur_id")
+  boutiqueId       Int?                  @map("boutique_id")
+  dateVente        DateTime?             @map("date_vente")
+  sousTotal        Float                 @map("sous_total")
+  montantRemise    Float                 @default(0) @map("montant_remise")
+  montantTva       Float                 @default(0) @map("montant_tva")
+  tauxTva          Float?                @map("taux_tva")
+  montantTotal     Float                 @map("montant_total")
+  statut           String                @default("brouillon")
+  modePaiement     String                @default("comptant") @map("mode_paiement")
+  dateCreation     DateTime              @default(now()) @map("date_creation")
+  dateModification DateTime              @updatedAt @map("date_modification")
   details          DetailVenteProforma[]
+  vendeur          Utilisateur?          @relation(fields: [vendeurId], references: [id])
+  client           Client?               @relation(fields: [clientId], references: [id])
+  boutique         Boutique?             @relation(fields: [boutiqueId], references: [id])
 
   @@index([statut], map: "idx_proformas_statut")
   @@index([clientId], map: "idx_proformas_client")
   @@index([vendeurId], map: "idx_proformas_vendeur")
+  @@index([boutiqueId], map: "idx_proformas_boutique")
   @@index([dateCreation], map: "idx_proformas_date")
   @@map("ventes_proforma")
 }
@@ -555,8 +682,8 @@ model DetailVenteProforma {
   remiseAppliquee     Float         @default(0) @map("remise_appliquee")
   justificationRemise String?       @map("justification_remise")
   prixTotal           Float         @map("prix_total")
-  proforma            VenteProforma @relation(fields: [proformaId], references: [id], onDelete: Cascade)
   produit             Produit       @relation(fields: [produitId], references: [id])
+  proforma            VenteProforma @relation(fields: [proformaId], references: [id], onDelete: Cascade)
 
   @@index([proformaId], map: "idx_details_proforma_proforma")
   @@map("details_ventes_proforma")

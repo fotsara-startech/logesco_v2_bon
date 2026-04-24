@@ -138,24 +138,26 @@ function createUserRouter(dependencies) {
 
       console.log('➕ [UserRouter] Création d\'un nouvel utilisateur:', { nomUtilisateur, email, roleId: role?.id });
       
-      // Validation des données
-      if (!nomUtilisateur || !email || !motDePasse || !role) {
+      // Validation des données (email optionnel)
+      if (!nomUtilisateur || !motDePasse || !role) {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Données manquantes (nomUtilisateur, email, motDePasse, role requis)',
+            message: 'Données manquantes (nomUtilisateur, motDePasse, role requis)',
             code: 'MISSING_DATA'
           }
         });
       }
       
       // Vérifier si l'utilisateur existe déjà
+      const whereConditions = [{ nomUtilisateur: nomUtilisateur }];
+      if (email && email.trim() !== '') {
+        whereConditions.push({ email: email });
+      }
+      
       const existingUser = await prisma.utilisateur.findFirst({
         where: {
-          OR: [
-            { nomUtilisateur: nomUtilisateur },
-            { email: email }
-          ]
+          OR: whereConditions
         }
       });
       
@@ -188,14 +190,20 @@ function createUserRouter(dependencies) {
       const hashedPassword = await bcrypt.hash(motDePasse, 10);
       
       // Créer l'utilisateur
+      const userData = {
+        nomUtilisateur,
+        motDePasseHash: hashedPassword,
+        roleId: role.id,
+        isActive
+      };
+      
+      // N'ajouter l'email que s'il est fourni et non vide
+      if (email && email.trim() !== '') {
+        userData.email = email.trim();
+      }
+      
       const newUser = await prisma.utilisateur.create({
-        data: {
-          nomUtilisateur,
-          email,
-          motDePasseHash: hashedPassword,
-          roleId: role.id,
-          isActive
-        },
+        data: userData,
         include: {
           role: true
         }
@@ -272,29 +280,30 @@ function createUserRouter(dependencies) {
       }
       
       // Vérifier les conflits de nom/email (sauf pour l'utilisateur actuel)
-      if (nomUtilisateur || email) {
-        const conflictUser = await prisma.utilisateur.findFirst({
-          where: {
-            AND: [
-              { id: { not: id } },
-              {
-                OR: [
-                  nomUtilisateur ? { nomUtilisateur: nomUtilisateur } : {},
-                  email ? { email: email } : {}
-                ].filter(condition => Object.keys(condition).length > 0)
-              }
-            ]
-          }
-        });
+      if (nomUtilisateur || (email && email.trim() !== '')) {
+        const conflictConditions = [];
+        if (nomUtilisateur) conflictConditions.push({ nomUtilisateur: nomUtilisateur });
+        if (email && email.trim() !== '') conflictConditions.push({ email: email.trim() });
         
-        if (conflictUser) {
-          return res.status(409).json({
-            success: false,
-            error: {
-              message: 'Un autre utilisateur avec ce nom ou cet email existe déjà',
-              code: 'USER_EXISTS'
+        if (conflictConditions.length > 0) {
+          const conflictUser = await prisma.utilisateur.findFirst({
+            where: {
+              AND: [
+                { id: { not: id } },
+                { OR: conflictConditions }
+              ]
             }
           });
+          
+          if (conflictUser) {
+            return res.status(409).json({
+              success: false,
+              error: {
+                message: 'Un autre utilisateur avec ce nom ou cet email existe déjà',
+                code: 'USER_EXISTS'
+              }
+            });
+          }
         }
       }
 
@@ -318,7 +327,10 @@ function createUserRouter(dependencies) {
       // Préparer les données de mise à jour
       const updateData = {};
       if (nomUtilisateur) updateData.nomUtilisateur = nomUtilisateur;
-      if (email) updateData.email = email;
+      if (email !== undefined) {
+        // Si email est fourni et non vide, l'utiliser, sinon le mettre à null
+        updateData.email = (email && email.trim() !== '') ? email.trim() : null;
+      }
       if (role && role.id) updateData.roleId = role.id;
       if (isActive !== undefined) updateData.isActive = isActive;
       if (motDePasse) {
@@ -589,6 +601,61 @@ function createUserRouter(dependencies) {
           code: 'PASSWORD_UPDATE_ERROR'
         }
       });
+    }
+  });
+
+  // GET /users/:id/boutiques — boutiques assignées à un utilisateur
+  router.get('/:id/boutiques', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignments = await prisma.userBoutiqueAssignment.findMany({
+        where: { utilisateurId: id, isActive: true },
+        include: { boutique: true },
+        orderBy: { boutique: { nom: 'asc' } }
+      });
+      res.json({
+        success: true,
+        data: assignments.map(a => ({
+          boutiqueId: a.boutiqueId,
+          nom: a.boutique.nom,
+          adresse: a.boutique.adresse,
+          estPrincipale: a.boutique.estPrincipale,
+          isActive: a.boutique.isActive
+        }))
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: { message: error.message, code: 'USER_BOUTIQUES_FETCH_ERROR' } });
+    }
+  });
+
+  // PUT /users/:id/boutiques — remplacer toutes les assignations boutiques d'un utilisateur
+  router.put('/:id/boutiques', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { boutiqueIds } = req.body;
+
+      if (!Array.isArray(boutiqueIds)) {
+        return res.status(400).json({ success: false, error: { message: 'boutiqueIds doit être un tableau', code: 'VALIDATION_ERROR' } });
+      }
+
+      // Désactiver toutes les assignations existantes
+      await prisma.userBoutiqueAssignment.updateMany({
+        where: { utilisateurId: id },
+        data: { isActive: false }
+      });
+
+      // Créer ou réactiver les nouvelles assignations
+      for (const boutiqueId of boutiqueIds) {
+        await prisma.userBoutiqueAssignment.upsert({
+          where: { utilisateurId_boutiqueId: { utilisateurId: id, boutiqueId: parseInt(boutiqueId) } },
+          update: { isActive: true },
+          create: { utilisateurId: id, boutiqueId: parseInt(boutiqueId), isActive: true }
+        });
+      }
+
+      res.json({ success: true, message: 'Assignations mises à jour avec succès' });
+    } catch (error) {
+      res.status(500).json({ success: false, error: { message: error.message, code: 'USER_BOUTIQUES_UPDATE_ERROR' } });
     }
   });
 

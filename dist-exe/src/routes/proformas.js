@@ -44,12 +44,13 @@ function createProformaRouter({ prisma, authService }) {
   // ── GET /proformas ────────────────────────────────────────────────────────
   router.get('/', async (req, res) => {
     try {
-      const { page = 1, limit = 20, statut, clientId, vendeurId } = req.query;
+      const { page = 1, limit = 20, statut, clientId, vendeurId, boutiqueId } = req.query;
       const skip = (parseInt(page) - 1) * parseInt(limit);
       const where = {};
       if (statut) where.statut = statut;
       if (clientId) where.clientId = parseInt(clientId);
       if (vendeurId) where.vendeurId = parseInt(vendeurId);
+      if (boutiqueId) where.boutiqueId = parseInt(boutiqueId);
 
       const [total, proformas] = await Promise.all([
         prisma.venteProforma.count({ where }),
@@ -97,10 +98,23 @@ function createProformaRouter({ prisma, authService }) {
   // ── POST /proformas ───────────────────────────────────────────────────────
   router.post('/', async (req, res) => {
     try {
-      const { clientId, modePaiement, montantRemise, montantTva, tauxTva, dateVente, details } = req.body;
+      const { clientId, modePaiement, montantRemise, montantTva, tauxTva, dateVente, details, boutiqueId } = req.body;
 
       if (!details || details.length === 0) {
         return res.status(400).json({ success: false, message: 'Au moins un article est requis' });
+      }
+
+      // Déterminer la boutique à utiliser
+      let activeBoutiqueId = boutiqueId;
+      if (!activeBoutiqueId) {
+        // Récupérer la boutique principale par défaut
+        const boutiquePrincipale = await prisma.boutique.findFirst({
+          where: { estPrincipale: true }
+        });
+        
+        if (boutiquePrincipale) {
+          activeBoutiqueId = boutiquePrincipale.id;
+        }
       }
 
       // Calculer les totaux
@@ -134,6 +148,7 @@ function createProformaRouter({ prisma, authService }) {
           numeroProforma,
           clientId: clientId || null,
           vendeurId: req.user?.id || null,
+          boutiqueId: activeBoutiqueId,
           modePaiement: modePaiement || 'comptant',
           sousTotal,
           montantRemise: remise,
@@ -164,10 +179,25 @@ function createProformaRouter({ prisma, authService }) {
         return res.status(400).json({ success: false, message: 'Seules les proformas en brouillon peuvent être modifiées' });
       }
 
-      const { clientId, modePaiement, montantRemise, montantTva, tauxTva, dateVente, details } = req.body;
+      const { clientId, modePaiement, montantRemise, montantTva, tauxTva, dateVente, details, boutiqueId } = req.body;
 
       if (!details || details.length === 0) {
         return res.status(400).json({ success: false, message: 'Au moins un article est requis' });
+      }
+
+      // Déterminer la boutique à utiliser
+      let activeBoutiqueId = boutiqueId;
+      if (!activeBoutiqueId) {
+        // Garder la boutique existante ou utiliser la boutique principale
+        activeBoutiqueId = existing.boutiqueId;
+        if (!activeBoutiqueId) {
+          const boutiquePrincipale = await prisma.boutique.findFirst({
+            where: { estPrincipale: true }
+          });
+          if (boutiquePrincipale) {
+            activeBoutiqueId = boutiquePrincipale.id;
+          }
+        }
       }
 
       let sousTotal = 0;
@@ -199,6 +229,7 @@ function createProformaRouter({ prisma, authService }) {
         data: {
           clientId: clientId || null,
           modePaiement: modePaiement || 'comptant',
+          boutiqueId: activeBoutiqueId,
           sousTotal,
           montantRemise: remise,
           montantTva: tva,
@@ -230,14 +261,46 @@ function createProformaRouter({ prisma, authService }) {
         return res.status(400).json({ success: false, message: 'Cette proforma a déjà été traitée' });
       }
 
+      console.log(`✅ [PROFORMA VALIDATION] Validation proforma ${id} pour boutique ${proforma.boutiqueId}`);
+
       // Vérifier le stock pour chaque article
       for (const detail of proforma.details) {
-        const stock = await prisma.stock.findUnique({ where: { produitId: detail.produitId } });
         const produit = await prisma.produit.findUnique({ where: { id: detail.produitId } });
-        if (!produit?.estService && stock && stock.quantiteDisponible < detail.quantite) {
+        
+        // Ignorer la vérification pour les services
+        if (produit?.estService) {
+          continue;
+        }
+
+        let stock;
+        let stockDisponible = 0;
+
+        // Vérifier le stock selon la boutique de la proforma
+        if (proforma.boutiqueId) {
+          // Vérifier le stock spécifique à la boutique
+          stock = await prisma.stockBoutique.findUnique({
+            where: { 
+              boutiqueId_produitId: { 
+                boutiqueId: proforma.boutiqueId, 
+                produitId: detail.produitId 
+              } 
+            },
+            include: { produit: { select: { nom: true, reference: true } } }
+          });
+          
+          stockDisponible = stock?.quantiteDisponible || 0;
+          
+        } else {
+          // Fallback sur le stock global si pas de boutique
+          stock = await prisma.stock.findUnique({ where: { produitId: detail.produitId } });
+          stockDisponible = stock?.quantiteDisponible || 0;
+        }
+
+        // Vérifier si le stock est suffisant
+        if (stockDisponible < detail.quantite) {
           return res.status(400).json({
             success: false,
-            message: `Stock insuffisant pour ${detail.produit?.nom || 'produit ' + detail.produitId}. Disponible: ${stock.quantiteDisponible}, Requis: ${detail.quantite}`,
+            message: `Stock insuffisant pour ${detail.produit?.nom || produit?.nom || 'produit ' + detail.produitId}. Disponible: ${stockDisponible}, Requis: ${detail.quantite}`,
           });
         }
       }
@@ -262,6 +325,7 @@ function createProformaRouter({ prisma, authService }) {
             numeroVente,
             clientId: proforma.clientId,
             vendeurId: proforma.vendeurId,
+            boutiqueId: proforma.boutiqueId, // ← Ajouter le boutiqueId de la proforma
             dateVente: dateVente ? new Date(dateVente) : proforma.dateVente || now,
             sousTotal: proforma.sousTotal,
             montantRemise: proforma.montantRemise,
@@ -295,13 +359,31 @@ function createProformaRouter({ prisma, authService }) {
         for (const detail of proforma.details) {
           const produit = await tx.produit.findUnique({ where: { id: detail.produitId } });
           if (!produit?.estService) {
-            await tx.stock.update({
-              where: { produitId: detail.produitId },
-              data: { quantiteDisponible: { decrement: detail.quantite } },
-            });
+            // Décrémenter le stock selon la boutique de la proforma
+            if (proforma.boutiqueId) {
+              // Décrémenter le stock spécifique à la boutique
+              await tx.stockBoutique.update({
+                where: { 
+                  boutiqueId_produitId: { 
+                    boutiqueId: proforma.boutiqueId, 
+                    produitId: detail.produitId 
+                  } 
+                },
+                data: { quantiteDisponible: { decrement: detail.quantite } },
+              });
+            } else {
+              // Fallback sur le stock global si pas de boutique
+              await tx.stock.update({
+                where: { produitId: detail.produitId },
+                data: { quantiteDisponible: { decrement: detail.quantite } },
+              });
+            }
+
+            // Créer le mouvement de stock avec boutiqueId
             await tx.mouvementStock.create({
               data: {
                 produitId: detail.produitId,
+                boutiqueId: proforma.boutiqueId || null,
                 typeMouvement: 'sortie',
                 changementQuantite: -detail.quantite,
                 referenceId: newVente.id,

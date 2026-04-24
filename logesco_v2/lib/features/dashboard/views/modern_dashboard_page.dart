@@ -57,29 +57,29 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          const BoutiqueContextIndicator(compact: true),
-          const SizedBox(width: 8),
-          const CashSessionIndicator(),
-          const SubscriptionAppBarWidget(),
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: () => Get.to(() => const DebugBoutiqueContextPage()),
-            tooltip: 'Debug Boutique Context',
-          ),
-          IconButton(
-            icon: const Icon(Icons.science),
-            onPressed: () => Get.to(() => const TestBoutiqueInjectionPage()),
-            tooltip: 'Test Injection BoutiqueId',
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
-          ),
+        actions: const [
+          BoutiqueContextIndicator(compact: true),
+          SizedBox(width: 8),
+          CashSessionIndicator(),
+          SubscriptionAppBarWidget(),
+          // IconButton(
+          //   icon: const Icon(Icons.bug_report),
+          //   onPressed: () => Get.to(() => const DebugBoutiqueContextPage()),
+          //   tooltip: 'Debug Boutique Context',
+          // ),
+          // IconButton(
+          //   icon: const Icon(Icons.science),
+          //   onPressed: () => Get.to(() => const TestBoutiqueInjectionPage()),
+          //   tooltip: 'Test Injection BoutiqueId',
+          // ),
+          // IconButton(
+          //   icon: const Icon(Icons.notifications_outlined),
+          //   onPressed: () {},
+          // ),
+          // IconButton(
+          //   icon: const Icon(Icons.settings_outlined),
+          //   onPressed: () {},
+          // ),
         ],
       ),
       drawer: Drawer(

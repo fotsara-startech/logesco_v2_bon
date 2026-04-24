@@ -12,61 +12,57 @@ function createCashSessionsRouter({ prisma, authService }) {
   // Authentification requise pour toutes les routes
   router.use(authenticateToken(authService));
 
-  // GET /api/v1/cash-sessions/active - Récupérer la session active de l'utilisateur
+  // GET /api/v1/cash-sessions/active - Récupérer la session active de l'utilisateur pour la boutique active
   router.get('/active', async (req, res) => {
     try {
       const userId = req.user.id;
-      
+      const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+
+      // Chercher la session active pour cet utilisateur ET cette boutique
+      const where = {
+        utilisateurId: userId,
+        isActive: true,
+        dateFermeture: null
+      };
+      if (boutiqueId) where.boutiqueId = boutiqueId;
+
       const activeSession = await prisma.cashSession.findFirst({
-        where: {
-          utilisateurId: userId,
-          isActive: true,
-          dateFermeture: null
-        },
-        include: {
-          caisse: true,
-          utilisateur: true
-        }
+        where,
+        include: { caisse: true, utilisateur: true },
+        orderBy: { dateOuverture: 'desc' }
       });
       
       if (!activeSession) {
         return res.status(404).json({
           success: false,
-          error: {
-            message: 'Aucune session active trouvée',
-            code: 'NO_ACTIVE_SESSION'
-          }
+          error: { message: 'Aucune session active trouvée', code: 'NO_ACTIVE_SESSION' }
         });
       }
       
-      const formattedSession = {
-        id: activeSession.id,
-        caisseId: activeSession.caisseId,
-        nomCaisse: activeSession.caisse.nom,
-        utilisateurId: activeSession.utilisateurId,
-        nomUtilisateur: activeSession.utilisateur.nomUtilisateur,
-        soldeOuverture: parseFloat(activeSession.soldeOuverture),
-        soldeFermeture: activeSession.soldeFermeture ? parseFloat(activeSession.soldeFermeture) : null,
-        soldeAttendu: activeSession.soldeAttendu ? parseFloat(activeSession.soldeAttendu) : null,
-        ecart: activeSession.ecart ? parseFloat(activeSession.ecart) : null,
-        dateOuverture: activeSession.dateOuverture,
-        dateFermeture: activeSession.dateFermeture,
-        isActive: Boolean(activeSession.isActive),
-        metadata: activeSession.metadata ? JSON.parse(activeSession.metadata) : null
-      };
-      
       res.json({
         success: true,
-        data: formattedSession
+        data: {
+          id: activeSession.id,
+          caisseId: activeSession.caisseId,
+          nomCaisse: activeSession.caisse.nom,
+          boutiqueId: activeSession.boutiqueId,
+          utilisateurId: activeSession.utilisateurId,
+          nomUtilisateur: activeSession.utilisateur.nomUtilisateur,
+          soldeOuverture: parseFloat(activeSession.soldeOuverture),
+          soldeFermeture: activeSession.soldeFermeture ? parseFloat(activeSession.soldeFermeture) : null,
+          soldeAttendu: activeSession.soldeAttendu ? parseFloat(activeSession.soldeAttendu) : null,
+          ecart: activeSession.ecart ? parseFloat(activeSession.ecart) : null,
+          dateOuverture: activeSession.dateOuverture,
+          dateFermeture: activeSession.dateFermeture,
+          isActive: Boolean(activeSession.isActive),
+          metadata: activeSession.metadata ? JSON.parse(activeSession.metadata) : null
+        }
       });
     } catch (error) {
       console.error('Erreur lors de la récupération de la session active:', error);
       res.status(500).json({
         success: false,
-        error: {
-          message: 'Erreur serveur',
-          code: 'ACTIVE_SESSION_FETCH_ERROR'
-        }
+        error: { message: 'Erreur serveur', code: 'ACTIVE_SESSION_FETCH_ERROR' }
       });
     }
   });
@@ -74,22 +70,21 @@ function createCashSessionsRouter({ prisma, authService }) {
   // GET /api/v1/cash-sessions/available-cash-registers - Récupérer les caisses disponibles
   router.get('/available-cash-registers', async (req, res) => {
     try {
-      const userId = req.user.id;
-      const availableCashRegisters = await prisma.cashRegister.findMany({
-        where: {
-          isActive: true,
-          NOT: {
-            sessions: {
-              some: {
-                isActive: true,
-                dateFermeture: null
-              }
-            }
+      const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
+
+      const where = {
+        isActive: true,
+        NOT: {
+          sessions: {
+            some: { isActive: true, dateFermeture: null }
           }
-        },
-        orderBy: {
-          nom: 'asc'
         }
+      };
+      if (boutiqueId) where.boutiqueId = boutiqueId;
+
+      const availableCashRegisters = await prisma.cashRegister.findMany({
+        where,
+        orderBy: { nom: 'asc' }
       });
       
       const formattedCashRegisters = availableCashRegisters.map(cashRegister => ({
@@ -99,23 +94,15 @@ function createCashSessionsRouter({ prisma, authService }) {
         soldeInitial: parseFloat(cashRegister.soldeInitial),
         soldeActuel: parseFloat(cashRegister.soldeActuel),
         isActive: Boolean(cashRegister.isActive),
+        boutiqueId: cashRegister.boutiqueId,
         dateCreation: cashRegister.dateCreation,
         dateModification: cashRegister.dateModification
       }));
       
-      res.json({
-        success: true,
-        data: formattedCashRegisters
-      });
+      res.json({ success: true, data: formattedCashRegisters });
     } catch (error) {
       console.error('Erreur lors de la récupération des caisses disponibles:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          message: 'Erreur serveur',
-          code: 'AVAILABLE_CASH_REGISTERS_FETCH_ERROR'
-        }
-      });
+      res.status(500).json({ success: false, error: { message: 'Erreur serveur', code: 'AVAILABLE_CASH_REGISTERS_FETCH_ERROR' } });
     }
   });
 
@@ -124,6 +111,12 @@ function createCashSessionsRouter({ prisma, authService }) {
     try {
       const { cashRegisterId, soldeInitial } = req.body;
       const userId = req.user.id;
+
+      // Extraire boutiqueId depuis body, header ou query
+      const boutiqueId = req.body.boutiqueId ||
+        req.headers['x-boutique-id'] ||
+        req.query.boutiqueId;
+      const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
       
       // Validation
       if (!cashRegisterId || soldeInitial === undefined) {
@@ -136,13 +129,16 @@ function createCashSessionsRouter({ prisma, authService }) {
         });
       }
       
-      // Vérifier si l'utilisateur a déjà une session active
+      // Vérifier si l'utilisateur a déjà une session active (dans la même boutique)
+      const existingSessionWhere = {
+        utilisateurId: userId,
+        isActive: true,
+        dateFermeture: null
+      };
+      if (boutiqueIdInt) existingSessionWhere.boutiqueId = boutiqueIdInt;
+
       const existingUserSession = await prisma.cashSession.findFirst({
-        where: {
-          utilisateurId: userId,
-          isActive: true,
-          dateFermeture: null
-        },
+        where: existingSessionWhere,
         include: { caisse: true }
       });
 
@@ -210,8 +206,9 @@ function createCashSessionsRouter({ prisma, authService }) {
         data: {
           caisseId: parseInt(cashRegisterId),
           utilisateurId: userId,
+          boutiqueId: boutiqueIdInt,
           soldeOuverture: parseFloat(soldeInitial),
-          soldeAttendu: parseFloat(soldeInitial), // Initialiser avec le solde d'ouverture
+          soldeAttendu: parseFloat(soldeInitial),
           dateOuverture: new Date(),
           isActive: true
         },
@@ -281,6 +278,12 @@ function createCashSessionsRouter({ prisma, authService }) {
     try {
       const { soldeFermeture } = req.body;
       const userId = req.user.id;
+
+      // Extraire boutiqueId pour fermer la bonne session
+      const boutiqueId = req.body.boutiqueId ||
+        req.headers['x-boutique-id'] ||
+        req.query.boutiqueId;
+      const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
       
       // Validation
       if (soldeFermeture === undefined || soldeFermeture === null) {
@@ -293,13 +296,16 @@ function createCashSessionsRouter({ prisma, authService }) {
         });
       }
       
-      // Récupérer la session active
+      // Récupérer la session active (filtrée par boutique si fournie)
+      const sessionWhere = {
+        utilisateurId: userId,
+        isActive: true,
+        dateFermeture: null
+      };
+      if (boutiqueIdInt) sessionWhere.boutiqueId = boutiqueIdInt;
+
       const activeSession = await prisma.cashSession.findFirst({
-        where: {
-          utilisateurId: userId,
-          isActive: true,
-          dateFermeture: null
-        },
+        where: sessionWhere,
         include: {
           caisse: true,
           utilisateur: true
@@ -470,11 +476,14 @@ function createCashSessionsRouter({ prisma, authService }) {
     try {
       const { limit = 10 } = req.query;
       const userId = req.user.id;
+
+      // Filtrer par boutique si fourni
+      const boutiqueId = req.query.boutiqueId || req.headers['x-boutique-id'];
+      const where = { utilisateurId: userId };
+      if (boutiqueId) where.boutiqueId = parseInt(boutiqueId);
       
       const sessions = await prisma.cashSession.findMany({
-        where: {
-          utilisateurId: userId
-        },
+        where,
         include: {
           caisse: true,
           utilisateur: true
@@ -637,13 +646,21 @@ function createCashSessionsRouter({ prisma, authService }) {
     }
   });
 
-  // POST /api/v1/cash-sessions/force-close - Forcer la fermeture de la session active (admin ou propriétaire)
+  // POST /api/v1/cash-sessions/force-close - Forcer la fermeture de la session active
   router.post('/force-close', async (req, res) => {
     try {
       const userId = req.user.id;
 
+      const boutiqueId = req.body.boutiqueId ||
+        req.headers['x-boutique-id'] ||
+        req.query.boutiqueId;
+      const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
+
+      const sessionWhere = { utilisateurId: userId, isActive: true, dateFermeture: null };
+      if (boutiqueIdInt) sessionWhere.boutiqueId = boutiqueIdInt;
+
       const activeSession = await prisma.cashSession.findFirst({
-        where: { utilisateurId: userId, isActive: true, dateFermeture: null },
+        where: sessionWhere,
         include: { caisse: true, utilisateur: true }
       });
 

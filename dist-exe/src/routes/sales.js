@@ -9,6 +9,7 @@ const { validate, validateId, validatePagination } = require('../middleware/vali
 const { authenticateToken } = require('../middleware/auth');
 const { buildSalesSearchConditions, generateSaleNumber } = require('../utils/transformers');
 const { updateExpirationDatesAfterSale } = require('../utils/expiration-manager');
+const { resolveBoutiqueId } = require('../utils/boutique-helper');
 
 function createSalesRouter({ prisma, authService }) {
   const router = express.Router();
@@ -395,7 +396,20 @@ function createSalesRouter({ prisma, authService }) {
     validate(venteSchemas.create, 'body'),
     async (req, res) => {
       try {
+        // Extraire boutiqueId depuis le body, header ou query params
+        const boutiqueIdFromRequest = req.body.boutiqueId || 
+                                     req.headers['x-boutique-id'] || 
+                                     req.query.boutiqueId;
+
+        console.log('🏪 [Sales] boutiqueId reçu:', {
+          body: req.body.boutiqueId,
+          header: req.headers['x-boutique-id'],
+          query: req.query.boutiqueId,
+          final: boutiqueIdFromRequest
+        });
+
         const { clientId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente } = req.body;
+        const boutiqueId = boutiqueIdFromRequest;
 
         // DEBUG: Log des données reçues
         console.log('📥 Données reçues pour création vente:');
@@ -541,10 +555,21 @@ function createSalesRouter({ prisma, authService }) {
             }
 
             // Pour les produits physiques, vérifier le stock
-            const stock = await prisma.stock.findUnique({
-              where: { produitId: detail.produitId },
-              include: { produit: { select: { nom: true, reference: true } } }
-            });
+            // Si boutiqueId fourni → vérifier StockBoutique, sinon Stock global
+            let stock;
+            if (boutiqueId) {
+              const boutiqueIdInt = parseInt(boutiqueId);
+              stock = await prisma.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId: detail.produitId } },
+                include: { produit: { select: { nom: true, reference: true } } }
+              });
+              if (stock) stock._isBoutiqueStock = true;
+            } else {
+              stock = await prisma.stock.findUnique({
+                where: { produitId: detail.produitId },
+                include: { produit: { select: { nom: true, reference: true } } }
+              });
+            }
 
             if (!stock) {
               throw new Error(`Produit physique ${detail.produitId} non trouvé en stock`);
@@ -631,13 +656,16 @@ function createSalesRouter({ prisma, authService }) {
 
         // Créer la vente dans une transaction
         const vente = await prisma.$transaction(async (tx) => {
-          // Récupérer la session active de l'utilisateur connecté
+          // Récupérer la session active de l'utilisateur connecté (filtrée par boutique)
+          const sessionWhere = {
+            utilisateurId: req.user.id,
+            isActive: true,
+            dateFermeture: null
+          };
+          if (boutiqueId) sessionWhere.boutiqueId = parseInt(boutiqueId);
+
           const activeSession = await tx.cashSession.findFirst({
-            where: {
-              utilisateurId: req.user.id,
-              isActive: true,
-              dateFermeture: null
-            }
+            where: sessionWhere
           });
 
           const sessionId = activeSession ? activeSession.id : null;
@@ -657,7 +685,8 @@ function createSalesRouter({ prisma, authService }) {
               ...(clientId ? { client: { connect: { id: clientId } } } : {}),
               ...(sessionId ? { session: { connect: { id: sessionId } } } : {}),
               ...(req.user?.id ? { vendeur: { connect: { id: req.user.id } } } : {}),
-              modePaiement: modeDeTermine, // Mode déterminé automatiquement
+              ...(boutiqueId ? { boutique: { connect: { id: parseInt(boutiqueId) } } } : {}),
+              modePaiement: modeDeTermine,
               sousTotal: montantVente,
               montantRemise: montantRemise || 0,
               montantTva: montantTvaVal,
@@ -693,23 +722,29 @@ function createSalesRouter({ prisma, authService }) {
 
           // Mettre à jour le stock pour les produits physiques uniquement
           for (const { stock, detail, isService } of stockChecks) {
-            // Ignorer les services pour la gestion de stock
             if (isService) {
               console.log(`Service vendu: ${detail.produitId} - pas de gestion de stock`);
               continue;
             }
 
-            await tx.stock.update({
-              where: { id: stock.id },
-              data: {
-                quantiteDisponible: stock.quantiteDisponible - detail.quantite
-              }
-            });
+            // Mettre à jour StockBoutique ou Stock global selon le contexte
+            if (stock._isBoutiqueStock) {
+              await tx.stockBoutique.update({
+                where: { id: stock.id },
+                data: { quantiteDisponible: stock.quantiteDisponible - detail.quantite }
+              });
+            } else {
+              await tx.stock.update({
+                where: { id: stock.id },
+                data: { quantiteDisponible: stock.quantiteDisponible - detail.quantite }
+              });
+            }
 
-            // Créer le mouvement de stock pour les produits physiques uniquement
+            // Créer le mouvement de stock avec boutiqueId
             await tx.mouvementStock.create({
               data: {
                 produitId: detail.produitId,
+                boutiqueId: boutiqueId ? parseInt(boutiqueId) : null,
                 typeMouvement: 'vente',
                 changementQuantite: -detail.quantite,
                 notes: `Vente ${numeroVente}`,
@@ -923,12 +958,16 @@ function createSalesRouter({ prisma, authService }) {
 
         // Mettre à jour le solde attendu de la session de caisse active
         try {
+          const boutiqueIdForSession = boutiqueId ? parseInt(boutiqueId) : null;
+          const sessionWhere = {
+            utilisateurId: req.user.id,
+            isActive: true,
+            dateFermeture: null
+          };
+          if (boutiqueIdForSession) sessionWhere.boutiqueId = boutiqueIdForSession;
+
           const activeSession = await prisma.cashSession.findFirst({
-            where: {
-              utilisateurId: req.user.id,
-              isActive: true,
-              dateFermeture: null
-            }
+            where: sessionWhere
           });
 
           if (activeSession) {
@@ -1200,31 +1239,39 @@ function createSalesRouter({ prisma, authService }) {
 
           // Restaurer le stock pour les produits physiques uniquement
           for (const detail of vente.details) {
-            // Vérifier si c'est un service
             const produit = await tx.produit.findUnique({
               where: { id: detail.produitId },
               select: { estService: true }
             });
 
-            // Ignorer les services pour la restauration de stock
             if (produit?.estService) {
               console.log(`Service annulé: ${detail.produitId} - pas de restauration de stock`);
               continue;
             }
 
-            await tx.stock.update({
-              where: { produitId: detail.produitId },
-              data: {
-                quantiteDisponible: {
-                  increment: detail.quantite
-                }
+            // Restaurer StockBoutique ou Stock global selon le boutiqueId de la vente
+            if (vente.boutiqueId) {
+              const stockBoutique = await tx.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId: detail.produitId } }
+              });
+              if (stockBoutique) {
+                await tx.stockBoutique.update({
+                  where: { id: stockBoutique.id },
+                  data: { quantiteDisponible: { increment: detail.quantite } }
+                });
               }
-            });
+            } else {
+              await tx.stock.update({
+                where: { produitId: detail.produitId },
+                data: { quantiteDisponible: { increment: detail.quantite } }
+              });
+            }
 
-            // Créer le mouvement de stock d'annulation pour les produits physiques uniquement
+            // Créer le mouvement de stock d'annulation avec boutiqueId
             await tx.mouvementStock.create({
               data: {
                 produitId: detail.produitId,
+                boutiqueId: vente.boutiqueId || null,
                 typeMouvement: 'retour',
                 changementQuantite: detail.quantite,
                 notes: `Annulation vente ${vente.numeroVente}`,
