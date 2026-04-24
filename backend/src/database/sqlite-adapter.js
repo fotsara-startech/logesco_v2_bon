@@ -142,7 +142,7 @@ class SQLiteAdapter {
       const existingAdmin = this.db.prepare('SELECT id FROM users WHERE role = ? LIMIT 1').get('admin');
       
       if (!existingAdmin) {
-        const bcrypt = require('bcrypt');
+        const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash('admin123', 10);
         
         const stmt = this.db.prepare(`
