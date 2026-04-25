@@ -1286,6 +1286,7 @@ const Map<String, String> enTranslations = {
   'customers_title': 'Customers',
   'customers_list': 'Customer List',
   'customers_add': 'Add Customer',
+  'customers_refresh': 'Refresh',
   'customers_edit': 'Edit Customer',
   'customers_delete': 'Delete Customer',
   'customers_delete_confirm': 'Are you sure you want to delete this customer?',

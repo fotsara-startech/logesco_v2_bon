@@ -185,7 +185,7 @@ class _CreateExpenseCategoryPageState extends State<CreateExpenseCategoryPage> {
 
     final success = await controller.createCategory(request);
 
-    if (success) {
+    if (success && mounted) {
       Get.back(); // Retourner à la page précédente
     }
   }

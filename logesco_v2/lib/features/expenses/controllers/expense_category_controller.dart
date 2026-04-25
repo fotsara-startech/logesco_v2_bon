@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/expense_category.dart';
 import '../services/expense_category_service.dart';
+import '../../../core/utils/snackbar_helper.dart';
 
 class ExpenseCategoryController extends GetxController {
   final ExpenseCategoryService _service = Get.find<ExpenseCategoryService>();
@@ -100,26 +101,14 @@ class ExpenseCategoryController extends GetxController {
 
   /// Affiche un message d'erreur
   void _showError(String title, String? message) {
-    Get.snackbar(
-      title,
+    SnackbarHelper.error(
       message ?? 'Une erreur est survenue',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.shade100,
-      colorText: Colors.red.shade800,
-      duration: const Duration(seconds: 4),
+      title: title,
     );
   }
 
   /// Affiche un message de succès
-  void _showSuccess(String message) async {
-    Get.back();
-    Get.snackbar(
-      'Succès',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade100,
-      colorText: Colors.green.shade800,
-      duration: const Duration(seconds: 3),
-    );
+  void _showSuccess(String message) {
+    SnackbarHelper.success(message);
   }
 }

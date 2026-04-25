@@ -15,6 +15,21 @@ class CustomerListView extends GetView<CustomerController> {
       appBar: AppBar(
         title: Text('customers_title'.tr),
         actions: [
+          // Bouton d'actualisation
+          Obx(() => IconButton(
+                icon: controller.isLoading.value
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.refresh),
+                onPressed: controller.isLoading.value ? null : controller.refreshCustomers,
+                tooltip: 'customers_refresh'.tr,
+              )),
           // Bouton Import/Export
           PopupMenuButton<String>(
             icon: const Icon(Icons.import_export),

@@ -1201,6 +1201,7 @@ const Map<String, String> esTranslations = {
   'customers_title': 'Clientes',
   'customers_list': 'Lista de clientes',
   'customers_add': 'Agregar cliente',
+  'customers_refresh': 'Actualizar',
   'customers_edit': 'Editar cliente',
   'customers_delete': 'Eliminar cliente',
   'customers_delete_confirm': '¿Está seguro de que desea eliminar este cliente?',

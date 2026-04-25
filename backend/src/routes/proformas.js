@@ -6,7 +6,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 
-function createProformaRouter({ prisma, authService }) {
+function createProformaRouter({ prisma, authService, syncService }) {
   const router = express.Router();
   router.use(authenticateToken(authService));
 
@@ -162,6 +162,17 @@ function createProformaRouter({ prisma, authService }) {
         include,
       });
 
+      // Enqueue pour sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('ventes_proforma', 'INSERT', proforma);
+        // Sync des détails
+        if (proforma.details) {
+          for (const detail of proforma.details) {
+            await syncService.enqueue('details_ventes_proforma', 'INSERT', detail);
+          }
+        }
+      }
+
       res.status(201).json({ success: true, data: proforma, message: `Proforma ${numeroProforma} créée` });
     } catch (err) {
       console.error('POST /proformas error:', err);
@@ -240,6 +251,17 @@ function createProformaRouter({ prisma, authService }) {
         },
         include,
       });
+
+      // Enqueue pour sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('ventes_proforma', 'UPDATE', updated);
+        // Sync des nouveaux détails
+        if (updated.details) {
+          for (const detail of updated.details) {
+            await syncService.enqueue('details_ventes_proforma', 'INSERT', detail);
+          }
+        }
+      }
 
       res.json({ success: true, data: updated, message: 'Proforma mise à jour' });
     } catch (err) {

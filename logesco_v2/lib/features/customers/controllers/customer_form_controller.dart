@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
+import '../../../core/utils/snackbar_helper.dart';
 import '../models/customer.dart';
 import '../services/customer_service.dart';
 import 'customer_controller.dart';
@@ -136,25 +137,13 @@ class CustomerFormController extends GetxController {
           customerForm,
         );
 
-        Get.snackbar(
-          'Succès',
-          'Client modifié avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Client modifié avec succès');
       } else {
         // Création
         print('➕ Création d\'un nouveau client');
         savedCustomer = await _customerService.createCustomer(customerForm);
 
-        Get.snackbar(
-          'Succès',
-          'Client créé avec succès',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade800,
-        );
+        SnackbarHelper.success('Client créé avec succès');
       }
 
       print('✅ Sauvegarde réussie - ID: ${savedCustomer.id}');
@@ -215,14 +204,7 @@ class CustomerFormController extends GetxController {
         print('📋 Erreur générique: $e');
       }
 
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-        duration: const Duration(seconds: 5),
-      );
+      SnackbarHelper.error(message, duration: const Duration(seconds: 5));
     } finally {
       isLoading.value = false;
     }
