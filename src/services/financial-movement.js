@@ -4,8 +4,9 @@
  */
 
 class FinancialMovementService {
-  constructor(prisma) {
+  constructor(prisma, syncService = null) {
     this.prisma = prisma;
+    this.syncService = syncService;
   }
 
   /**
@@ -80,25 +81,45 @@ class FinancialMovementService {
         throw new Error('Impossible de générer une référence unique');
       }
 
-      // Récupérer la session active de l'utilisateur (filtrée par boutique si fournie)
-      const sessionLookupWhere = {
+      // Récupérer la session active pour la boutique (pas nécessairement l'utilisateur)
+      // Priorité 1: Session de l'utilisateur dans la boutique
+      let sessionLookupWhere = {
         utilisateurId: data.utilisateurId,
         isActive: true,
         dateFermeture: null
       };
       if (data.boutiqueId) sessionLookupWhere.boutiqueId = parseInt(data.boutiqueId);
 
-      const activeSession = await this.prisma.cashSession.findFirst({
+      let activeSession = await this.prisma.cashSession.findFirst({
         where: sessionLookupWhere
       });
 
+      // Priorité 2: Si pas de session pour cet utilisateur, chercher n'importe quelle session active dans la boutique
+      if (!activeSession && data.boutiqueId) {
+        console.log('⚠️ Aucune session pour cet utilisateur, recherche d\'une session active dans la boutique...');
+        activeSession = await this.prisma.cashSession.findFirst({
+          where: {
+            boutiqueId: parseInt(data.boutiqueId),
+            isActive: true,
+            dateFermeture: null
+          },
+          orderBy: { dateOuverture: 'desc' }
+        });
+      }
+
+      // IMPORTANT: Définir sessionId APRÈS avoir trouvé la session
       const sessionId = activeSession ? activeSession.id : null;
       
       if (!activeSession) {
         console.log('⚠️ Aucune session active trouvée - le mouvement sera créé sans session');
+        console.log(`   Critères: utilisateurId=${data.utilisateurId}, boutiqueId=${data.boutiqueId}, isActive=true`);
+      } else {
+        console.log(`✅ Session active trouvée: ID ${activeSession.id}`);
+        console.log(`   sessionId qui sera utilisé: ${sessionId} (type: ${typeof sessionId})`);
       }
 
       // Créer le mouvement
+      console.log(`🔍 Création du mouvement avec sessionId=${sessionId}`);
       const movement = await this.prisma.financialMovement.create({
         data: {
           reference,
@@ -126,6 +147,18 @@ class FinancialMovementService {
       });
 
       console.log(`✅ Mouvement financier créé: ${movement.reference} - ${movement.montant}€ - boutiqueId: ${movement.boutiqueId}`);
+      console.log(`🔍 VERIFICATION: sessionId dans l'objet retourné = ${movement.sessionId} (devrait être ${sessionId})`);
+      
+      // VERIFICATION IMMEDIATE: Relire depuis la BD pour confirmer
+      const verif = await this.prisma.financialMovement.findUnique({
+        where: { id: movement.id },
+        select: { id: true, reference: true, sessionId: true }
+      });
+      console.log(`🔍 VERIFICATION BD: sessionId dans la BD = ${verif.sessionId} (devrait être ${sessionId})`);
+      
+      if (verif.sessionId !== sessionId) {
+        console.error(`❌ ERREUR: sessionId n'a pas été enregistré! Attendu: ${sessionId}, Obtenu: ${verif.sessionId}`);
+      }
       
       // Impacter la caisse active de l'utilisateur
       const cashUpdate = await this.updateActiveCashRegister(movement.montant, movement.utilisateurId, movement.boutiqueId);
@@ -188,13 +221,21 @@ class FinancialMovementService {
         }
       });
       
+      // Enqueue la mise à jour de la session pour sync
+      if (this.syncService) {
+        const updatedSession = await this.prisma.cashSession.findUnique({
+          where: { id: activeSession.id }
+        });
+        await this.syncService.enqueue('cash_sessions', 'UPDATE', updatedSession);
+      }
+      
       console.log(`💰 Session de caisse mise à jour:`);
       console.log(`   Solde attendu avant: ${currentSoldeAttendu} FCFA`);
       console.log(`   Dépense: -${montant} FCFA`);
       console.log(`   Solde attendu après: ${newSoldeAttendu} FCFA`);
       
       // Créer un mouvement de caisse pour tracer la dépense
-      await this.prisma.cashMovement.create({
+      const cashMovement = await this.prisma.cashMovement.create({
         data: {
           caisseId: activeSession.caisseId,
           sessionId: activeSession.id,
@@ -207,6 +248,11 @@ class FinancialMovementService {
         }
       });
       
+      // Enqueue le mouvement de caisse pour sync
+      if (this.syncService) {
+        await this.syncService.enqueue('cash_movements', 'INSERT', cashMovement);
+      }
+      
       // Mettre à jour le solde de la caisse (réduire, même si négatif)
       await this.prisma.cashRegister.update({
         where: { id: activeSession.caisseId },
@@ -216,6 +262,14 @@ class FinancialMovementService {
           }
         }
       });
+      
+      // Enqueue la mise à jour de la caisse pour sync
+      if (this.syncService) {
+        const updatedCashRegister = await this.prisma.cashRegister.findUnique({
+          where: { id: activeSession.caisseId }
+        });
+        await this.syncService.enqueue('cash_registers', 'UPDATE', updatedCashRegister);
+      }
       
       console.log(`✅ Caisse ${activeSession.caisse.nom} mise à jour: -${montant} FCFA (solde réduit)`);
       

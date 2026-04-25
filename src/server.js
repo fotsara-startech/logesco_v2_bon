@@ -338,18 +338,32 @@ class LogescoServer {
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
 
+      // Initialiser le service de synchronisation cloud (si CLOUD_DB_URL défini)
+      const syncService = require('./services/sync-service');
+      await syncService.initialize(prisma);
+      this.syncService = syncService;
+      const syncStatus = syncService.getStatus();
+      console.log(`🔄 Mode sync: ${syncStatus.mode}`);
+
+      // Exposer prisma dans app.locals pour le sync middleware
+      this.app.locals.prisma = prisma;
+
       // Initialiser les modèles et services
       this.models = new ModelFactory(prisma);
       this.authService = new AuthService(this.models.utilisateur);
       
       // Services pour les mouvements financiers
-      this.financialMovementService = new FinancialMovementService(prisma);
+      this.financialMovementService = new FinancialMovementService(prisma, syncService);
       this.movementCategoryService = new MovementCategoryService(prisma);
       this.fileUploadService = new FileUploadService(prisma);
       this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
 
       // Configurer les middlewares
       this.configureMiddlewares();
+
+      // Middleware de synchronisation cloud (après auth, avant routes)
+      const syncMiddleware = require('./middleware/sync-middleware');
+      this.app.use('/api', syncMiddleware);
 
       // Configurer les routes
       this.configureRoutes();
@@ -400,7 +414,12 @@ class LogescoServer {
 
     // Route health check (utilisée par BackendService Flutter pour détecter le démarrage)
     this.app.get('/health', (req, res) => {
-      res.json({ status: 'ok', uptime: process.uptime() });
+      const syncService = require('./services/sync-service');
+      res.json({
+        status: 'ok',
+        uptime: process.uptime(),
+        sync: syncService.getStatus()
+      });
     });
 
     // Route debug — retourne l'état de la DB et les variables d'env clés
@@ -483,7 +502,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/expense-categories`, createExpenseCategoriesRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/inventory`, createInventoryRouter({ 
       ...this.models, 

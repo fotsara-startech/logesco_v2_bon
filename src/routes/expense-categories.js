@@ -24,7 +24,7 @@ const expenseCategorySchemas = {
     })
 };
 
-function createExpenseCategoriesRouter({ prisma, authService }) {
+function createExpenseCategoriesRouter({ prisma, authService, syncService }) {
     const router = express.Router();
 
     // Middleware d'authentification
@@ -135,6 +135,11 @@ function createExpenseCategoriesRouter({ prisma, authService }) {
                     }
                 });
 
+                // Enqueue pour sync vers Neon
+                if (syncService) {
+                    await syncService.enqueue('movement_categories', 'INSERT', category);
+                }
+
                 res.status(201).json({
                     success: true,
                     data: category,
@@ -211,6 +216,11 @@ function createExpenseCategoriesRouter({ prisma, authService }) {
                     }
                 });
 
+                // Enqueue pour sync vers Neon
+                if (syncService) {
+                    await syncService.enqueue('movement_categories', 'UPDATE', updatedCategory);
+                }
+
                 res.json({
                     success: true,
                     data: updatedCategory,
@@ -271,6 +281,11 @@ function createExpenseCategoriesRouter({ prisma, authService }) {
             await prisma.movementCategory.delete({
                 where: { id: categoryId }
             });
+
+            // Enqueue pour sync vers Neon
+            if (syncService) {
+                await syncService.enqueue('movement_categories', 'DELETE', { id: categoryId });
+            }
 
             res.json({
                 success: true,
