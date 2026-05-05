@@ -1,0 +1,66 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                  REDÉMARRAGE BACKEND REQUIS                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Les hooks Prisma pour la synchronisation de stock sont maintenant 
+configurés, mais le backend doit être COMPLÈTEMENT redémarré pour 
+charger le nouveau code.
+
+┌──────────────────────────────────────────────────────────────────┐
+│ OPTION 1: Script Automatique (Recommandé)                       │
+└──────────────────────────────────────────────────────────────────┘
+
+Dans PowerShell:
+  cd D:\projects\Logesco_bon\logesco_app\backend
+  .\restart-backend.ps1
+
+┌──────────────────────────────────────────────────────────────────┐
+│ OPTION 2: Manuel                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Fermer COMPLÈTEMENT la fenêtre PowerShell où tourne le backend
+   (pas juste Ctrl+C, mais fermer la fenêtre)
+
+2. Ouvrir une NOUVELLE fenêtre PowerShell
+
+3. Lancer:
+   cd D:\projects\Logesco_bon\logesco_app\backend
+   npm start
+
+┌──────────────────────────────────────────────────────────────────┐
+│ VÉRIFICATION: Logs à Voir au Démarrage                          │
+└──────────────────────────────────────────────────────────────────┘
+
+Vous devriez voir ces lignes:
+
+  🔍 Activation des hooks de synchronisation Prisma...
+     CLOUD_DB_URL défini: OUI
+     Méthode $extends disponible: function
+  🔧 setupPrismaSyncHooks: Configuration des extensions Prisma...
+  ✅ Hooks Prisma de synchronisation activés pour: mouvementStock, stockBoutique, stock
+     Tables surveillées: mouvements_stock, stock_boutiques, stock
+     Extension Prisma appliquée avec succès
+     Extension réussie: OUI
+
+┌──────────────────────────────────────────────────────────────────┐
+│ TEST: Créer une Vente                                           │
+└──────────────────────────────────────────────────────────────────┘
+
+Après redémarrage:
+1. Créer une vente dans l'application Flutter
+2. Vérifier les logs du backend pour:
+   🔄 [Prisma Extension] mouvements_stock (INSERT): ...
+   🔄 [Prisma Extension] stock_boutiques (UPDATE): ...
+
+┌──────────────────────────────────────────────────────────────────┐
+│ DOCUMENTATION COMPLÈTE                                           │
+└──────────────────────────────────────────────────────────────────┘
+
+- SYNC_STOCK_MOUVEMENTS_SOLUTION.md  → Solution complète
+- HOOKS_PRISMA_STATUS.md             → Status et dépannage
+- test-prisma-hooks.js               → Script de test
+
+╔══════════════════════════════════════════════════════════════════╗
+║  ⚠️  IMPORTANT: Le backend DOIT être complètement redémarré     ║
+║     pour que les hooks fonctionnent!                             ║
+╚══════════════════════════════════════════════════════════════════╝

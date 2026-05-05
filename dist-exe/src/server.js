@@ -110,28 +110,17 @@ class LogescoServer {
           }
         });
 
-      // Utilisateur admin
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await prisma.utilisateur.create({
-        data: {
-          nomUtilisateur: 'admin',
-          motDePasseHash: hashedPassword,
-          email: 'admin@logesco.local',
-          roleId: adminRole.id,
-          isActive: true
-        }
-      });
-
-      // Caisse principale
-      await prisma.cashRegister.create({
-        data: {
-          nom: 'Caisse Principale',
-          description: 'Caisse principale du système',
-          isActive: true,
-          soldeActuel: 0,
-          soldeInitial: 0
-        }
-      });
+        // Utilisateur admin
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await prisma.utilisateur.create({
+          data: {
+            nomUtilisateur: 'admin',
+            motDePasseHash: hashedPassword,
+            email: 'admin@logesco.local',
+            roleId: adminRole.id,
+            isActive: true
+          }
+        });
 
         // Paramètres entreprise
         await prisma.parametresEntreprise.create({
@@ -269,31 +258,29 @@ class LogescoServer {
     const { execSync } = require('child_process');
     const path = require('path');
     const fs = require('fs');
+    const environment = require('./config/environment');
 
     try {
       console.log('🔄 Vérification des migrations de base de données...');
 
-      const backendDir    = path.join(__dirname, '..');
-
-      // Chercher schema.prisma : d'abord dans prisma/, puis à la racine
-      let schemaPath = path.join(backendDir, 'prisma', 'schema.prisma');
+      const backendDir = path.join(__dirname, '..');
+      
+      // Choisir le bon schema selon l'environnement
+      const schemaFile = environment.isCloud ? 'schema.postgresql.prisma' : 'schema.prisma';
+      let schemaPath = path.join(backendDir, 'prisma', schemaFile);
+      
       if (!fs.existsSync(schemaPath)) {
-        schemaPath = path.join(backendDir, 'schema.prisma');
-      }
-      if (!fs.existsSync(schemaPath)) {
-        console.log('⚠️  schema.prisma introuvable, migration ignorée');
+        console.log(`⚠️  ${schemaFile} introuvable, migration ignorée`);
         return;
       }
-      // S'assurer que prisma/schema.prisma existe (requis par prisma CLI)
-      const prismaDirSchema = path.join(backendDir, 'prisma', 'schema.prisma');
-      if (!fs.existsSync(path.dirname(prismaDirSchema))) {
-        fs.mkdirSync(path.dirname(prismaDirSchema), { recursive: true });
+
+      // En cloud, pas besoin de migration automatique (déjà fait au build)
+      if (environment.isCloud) {
+        console.log('☁️  Environnement cloud détecté, migrations déjà appliquées au build');
+        return;
       }
-      if (schemaPath !== prismaDirSchema && !fs.existsSync(prismaDirSchema)) {
-        fs.copyFileSync(schemaPath, prismaDirSchema);
-        schemaPath = prismaDirSchema;
-      }
-      // Chercher prisma CLI dans node_modules local
+
+      // Le reste du code pour l'environnement local uniquement
       const prismaCmdWin  = path.join(backendDir, 'node_modules/.bin/prisma.cmd');
       const prismaCmdUnix = path.join(backendDir, 'node_modules/.bin/prisma');
 
@@ -303,7 +290,6 @@ class LogescoServer {
         return `file:${dbPath}`;
       })();
 
-      // Utiliser node.exe portable si disponible (même répertoire que ce script)
       const nodeExe = (() => {
         const portable = path.join(backendDir, 'node.exe');
         return fs.existsSync(portable) ? portable : 'node';
@@ -311,7 +297,6 @@ class LogescoServer {
 
       let cmd;
       if (fs.existsSync(prismaCmdWin)) {
-        // Lancer prisma via node.exe portable pour éviter les conflits de version
         const prismaJs = path.join(__dirname, '../node_modules/prisma/build/index.js');
         if (fs.existsSync(prismaJs)) {
           cmd = `"${nodeExe}" "${prismaJs}" db push --accept-data-loss --schema="${schemaPath}"`;
@@ -326,7 +311,7 @@ class LogescoServer {
 
       execSync(cmd, {
         stdio: 'pipe',
-        timeout: 120000, // 2 minutes pour les machines lentes
+        timeout: 120000,
         cwd: backendDir,
         env: { ...process.env, DATABASE_URL: dbUrl },
       });
@@ -353,18 +338,32 @@ class LogescoServer {
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
 
+      // Initialiser le service de synchronisation cloud (si CLOUD_DB_URL défini)
+      const syncService = require('./services/sync-service');
+      await syncService.initialize(prisma);
+      this.syncService = syncService;
+      const syncStatus = syncService.getStatus();
+      console.log(`🔄 Mode sync: ${syncStatus.mode}`);
+
+      // Exposer prisma dans app.locals pour le sync middleware
+      this.app.locals.prisma = prisma;
+
       // Initialiser les modèles et services
       this.models = new ModelFactory(prisma);
       this.authService = new AuthService(this.models.utilisateur);
       
       // Services pour les mouvements financiers
-      this.financialMovementService = new FinancialMovementService(prisma);
+      this.financialMovementService = new FinancialMovementService(prisma, syncService);
       this.movementCategoryService = new MovementCategoryService(prisma);
       this.fileUploadService = new FileUploadService(prisma);
       this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
 
       // Configurer les middlewares
       this.configureMiddlewares();
+
+      // Middleware de synchronisation cloud (après auth, avant routes)
+      const syncMiddleware = require('./middleware/sync-middleware');
+      this.app.use('/api', syncMiddleware(prisma));
 
       // Configurer les routes
       this.configureRoutes();
@@ -415,7 +414,12 @@ class LogescoServer {
 
     // Route health check (utilisée par BackendService Flutter pour détecter le démarrage)
     this.app.get('/health', (req, res) => {
-      res.json({ status: 'ok', uptime: process.uptime() });
+      const syncService = require('./services/sync-service');
+      res.json({
+        status: 'ok',
+        uptime: process.uptime(),
+        sync: syncService.getStatus()
+      });
     });
 
     // Route debug — retourne l'état de la DB et les variables d'env clés
@@ -489,6 +493,7 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
       prisma: this.models.prisma,
       authService: this.authService,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/discount-reports`, createDiscountReportsRouter({ 
       ...this.models, 
@@ -498,7 +503,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/expense-categories`, createExpenseCategoriesRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/inventory`, createInventoryRouter({ 
       ...this.models, 
@@ -508,7 +514,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/stock-inventory`, createStockInventoryRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/company-settings`, companySettingsRouter);
     this.app.use(`/api/${apiVersion}/printing`, createPrintingRouter({ 

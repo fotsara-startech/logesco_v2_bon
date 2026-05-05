@@ -51,8 +51,13 @@ class DatabaseManager {
       // Test simple de connexion
       await this.prisma.$connect();
 
-      // Vérification de la structure avec une requête plus simple
-      await this.prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table' LIMIT 1`;
+      // Vérification de la structure selon le provider
+      if (environment.databaseConfig.provider === 'sqlite') {
+        await this.prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table' LIMIT 1`;
+      } else {
+        // PostgreSQL
+        await this.prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public' LIMIT 1`;
+      }
 
       console.log('🔍 Structure de base de données vérifiée');
     } catch (error) {

@@ -8,6 +8,7 @@ import '../../accounts/widgets/unpaid_sales_selector_dialog.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
 import '../../../core/services/cash_register_refresh_service.dart';
 import '../../../core/utils/snackbar_helper.dart';
+import '../../../core/services/permission_service.dart';
 
 /// Vue du compte client - SOLUTION 2: Système centralisé
 ///
@@ -29,8 +30,13 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     super.initState();
     _customer = Get.arguments as Customer?;
     if (_customer != null) {
-      // Utiliser WidgetsBinding pour charger après la construction
+      // Vérifier la permission accounts.READ
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!PermissionService.to.hasPermission('accounts', 'READ')) {
+          Get.back();
+          SnackbarHelper.error('error_forbidden'.tr);
+          return;
+        }
         _loadTransactions();
       });
     }

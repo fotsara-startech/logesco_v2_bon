@@ -2216,6 +2216,8 @@ const Map<String, String> enTranslations = {
   'procurement_create_dialog_title': 'New procurement order',
   'procurement_supplier_required': 'Supplier *',
   'procurement_select_supplier': 'Select a supplier',
+  'procurement_search_supplier': 'Search a supplier...',
+  'procurement_no_supplier_found': 'No supplier found',
   'procurement_no_supplier': 'No supplier',
   'procurement_create_suppliers_first': 'Please create suppliers first',
   'procurement_delivery_date': 'Expected delivery date',
@@ -2302,6 +2304,8 @@ const Map<String, String> enTranslations = {
 
   // Categories
   'categories_management': 'Category Management',
+  'categories_search_hint': 'Search a category...',
+  'categories_no_results': 'No category found',
   'categories_refresh': 'Refresh',
   'categories_loading': 'Loading categories...',
   'categories_error_loading': 'Loading error',

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/boutique_service.dart';
 
+enum PeriodFilter { today, week, month, year, custom }
+
 /// Dashboard consolidé multi-boutique
 class BoutiqueDashboardPage extends StatefulWidget {
   const BoutiqueDashboardPage({super.key});
@@ -15,11 +17,37 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
   bool _loading = true;
   String? _error;
 
+  PeriodFilter _selectedPeriod = PeriodFilter.month;
+  DateTimeRange? _customRange;
+
   @override
   void initState() {
     super.initState();
     _load();
   }
+
+  (String?, String?) _getPeriodDates() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case PeriodFilter.today:
+        final d = _dateStr(now);
+        return (d, d);
+      case PeriodFilter.week:
+        final start = now.subtract(Duration(days: now.weekday - 1));
+        return (_dateStr(start), _dateStr(now));
+      case PeriodFilter.month:
+        return (_dateStr(DateTime(now.year, now.month, 1)), _dateStr(now));
+      case PeriodFilter.year:
+        return (_dateStr(DateTime(now.year, 1, 1)), _dateStr(now));
+      case PeriodFilter.custom:
+        if (_customRange != null) {
+          return (_dateStr(_customRange!.start), _dateStr(_customRange!.end));
+        }
+        return (null, null);
+    }
+  }
+
+  String _dateStr(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _load() async {
     setState(() {
@@ -28,7 +56,11 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     });
     try {
       final service = Get.find<BoutiqueService>();
-      final result = await service.getDashboardConsolide();
+      final (dateDebut, dateFin) = _getPeriodDates();
+      final result = await service.getDashboardConsolide(
+        dateDebut: dateDebut,
+        dateFin: dateFin,
+      );
       setState(() => _data = result);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -36,6 +68,55 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
       setState(() => _loading = false);
     }
   }
+
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: now,
+      initialDateRange: _customRange ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 30)),
+            end: now,
+          ),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: const Color(0xFF1565C0),
+              ),
+        ),
+        child: child!,
+      ),
+    );
+    if (range != null) {
+      setState(() {
+        _customRange = range;
+        _selectedPeriod = PeriodFilter.custom;
+      });
+      _load();
+    }
+  }
+
+  String get _periodLabel {
+    switch (_selectedPeriod) {
+      case PeriodFilter.today:
+        return "Aujourd'hui";
+      case PeriodFilter.week:
+        return 'Cette semaine';
+      case PeriodFilter.month:
+        return 'Ce mois';
+      case PeriodFilter.year:
+        return 'Cette année';
+      case PeriodFilter.custom:
+        if (_customRange != null) {
+          return '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}';
+        }
+        return 'Personnalisée';
+    }
+  }
+
+  String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +127,89 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text('Erreur: $_error', style: const TextStyle(color: Colors.red)))
-              : _data == null
-                  ? const Center(child: Text('Aucune donnée'))
-                  : _buildContent(),
+      body: Column(
+        children: [
+          _buildPeriodFilter(),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text('Erreur: $_error', style: const TextStyle(color: Colors.red)))
+                    : _data == null
+                        ? const Center(child: Text('Aucune donnée'))
+                        : _buildContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodFilter() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _PeriodChip(
+                  label: "Aujourd'hui",
+                  selected: _selectedPeriod == PeriodFilter.today,
+                  onTap: () {
+                    setState(() => _selectedPeriod = PeriodFilter.today);
+                    _load();
+                  },
+                ),
+                const SizedBox(width: 8),
+                _PeriodChip(
+                  label: 'Cette semaine',
+                  selected: _selectedPeriod == PeriodFilter.week,
+                  onTap: () {
+                    setState(() => _selectedPeriod = PeriodFilter.week);
+                    _load();
+                  },
+                ),
+                const SizedBox(width: 8),
+                _PeriodChip(
+                  label: 'Ce mois',
+                  selected: _selectedPeriod == PeriodFilter.month,
+                  onTap: () {
+                    setState(() => _selectedPeriod = PeriodFilter.month);
+                    _load();
+                  },
+                ),
+                const SizedBox(width: 8),
+                _PeriodChip(
+                  label: 'Cette année',
+                  selected: _selectedPeriod == PeriodFilter.year,
+                  onTap: () {
+                    setState(() => _selectedPeriod = PeriodFilter.year);
+                    _load();
+                  },
+                ),
+                const SizedBox(width: 8),
+                _PeriodChip(
+                  label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'Personnalisée',
+                  selected: _selectedPeriod == PeriodFilter.custom,
+                  icon: Icons.date_range,
+                  onTap: _pickCustomRange,
+                ),
+              ],
+            ),
+          ),
+          if (_selectedPeriod != PeriodFilter.custom)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _periodLabel,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -68,7 +225,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Totaux globaux
-            _SectionTitle(title: 'Totaux globaux', icon: Icons.bar_chart),
+            const _SectionTitle(title: 'Totaux globaux', icon: Icons.bar_chart),
             const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
@@ -108,7 +265,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             const SizedBox(height: 24),
 
             // Par boutique
-            _SectionTitle(title: 'Par boutique', icon: Icons.store),
+            const _SectionTitle(title: 'Par boutique', icon: Icons.store),
             const SizedBox(height: 12),
             ...boutiques.map((b) => _BoutiqueStatCard(data: b)),
           ],
@@ -122,6 +279,56 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M FCFA';
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K FCFA';
     return '${n.toStringAsFixed(0)} FCFA';
+  }
+}
+
+class _PeriodChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  const _PeriodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = const Color(0xFF1565C0);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? primary : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? primary : Colors.grey[300]!,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: selected ? Colors.white : Colors.grey[700]),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

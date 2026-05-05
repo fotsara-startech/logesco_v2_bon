@@ -363,7 +363,7 @@ class LogescoServer {
 
       // Middleware de synchronisation cloud (après auth, avant routes)
       const syncMiddleware = require('./middleware/sync-middleware');
-      this.app.use('/api', syncMiddleware);
+      this.app.use('/api', syncMiddleware(prisma));
 
       // Configurer les routes
       this.configureRoutes();
@@ -493,6 +493,7 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
       prisma: this.models.prisma,
       authService: this.authService,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/discount-reports`, createDiscountReportsRouter({ 
       ...this.models, 
@@ -513,7 +514,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/stock-inventory`, createStockInventoryRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/company-settings`, companySettingsRouter);
     this.app.use(`/api/${apiVersion}/printing`, createPrintingRouter({ 

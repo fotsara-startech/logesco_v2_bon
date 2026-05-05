@@ -19,9 +19,9 @@ const ROUTE_MODEL_MAP = {
   '/products':            { 
     table: 'produits', model: 'produit',
     allowedColumns: [
-      'id','nom','description','prix_vente','prix_achat','quantite_stock',
-      'quantite_minimale','code_barre','categorie_id','fournisseur_id',
-      'date_creation','date_modification','is_active'
+      'id','reference','nom','description','prixUnitaire','prixAchat','codeBarre',
+      'categorieId','seuilStockMinimum','remiseMaxAutorisee','estActif','estService',
+      'gestionPeremption','dateCreation','dateModification'
     ]
   },
   '/customers':           { 
@@ -49,9 +49,9 @@ const ROUTE_MODEL_MAP = {
   '/cash-sessions':       {
     table: 'cash_sessions', model: 'cashSession',
     allowedColumns: [
-      'id','caisseId','utilisateurId','boutiqueId','soldeOuverture',
-      'soldeFermeture','dateOuverture','dateFermeture','isActive',
-      'metadata','soldeAttendu','ecart'
+      'id','caisse_id','utilisateur_id','boutique_id','solde_ouverture',
+      'solde_fermeture','date_ouverture','date_fermeture','is_active',
+      'metadata','solde_attendu','ecart'
     ]
   },
   '/cash-registers':      { 
@@ -82,8 +82,17 @@ const ROUTE_MODEL_MAP = {
       'est_principale','is_active','date_creation','date_modification'
     ]
   },
+  '/company-settings':    { 
+    table: 'parametres_entreprise', model: 'parametresEntreprise',
+    allowedColumns: [
+      'id','nom_entreprise','adresse','telephone','email','nui_rccm',
+      'localisation','logo','slogan','langue_facture','taux_tva',
+      'date_creation','date_modification'
+    ]
+  },
   '/users':               { 
     table: 'utilisateurs', model: 'utilisateur',
+    fetchFromDb: true,  // mot_de_passe_hash n'est pas dans la réponse API
     allowedColumns: [
       'id','nom_utilisateur','email','mot_de_passe_hash','role_id',
       'is_active','date_creation','date_modification','date_derniere_connexion'
@@ -110,6 +119,22 @@ const ROUTE_MODEL_MAP = {
       'date_creation','date_modification'
     ]
   },
+  '/stock-movements':     {
+    table: 'mouvements_stock', model: 'mouvementStock',
+    fetchFromDb: true,  // Les mouvements sont créés dans des transactions
+    allowedColumns: [
+      'id','produit_id','boutique_id','type_mouvement','changement_quantite',
+      'reference_id','type_reference','date_mouvement','notes','date_modification'
+    ]
+  },
+  '/stock-boutiques':     {
+    table: 'stock_boutiques', model: 'stockBoutique',
+    fetchFromDb: true,  // Les stocks sont mis à jour dans des transactions
+    allowedColumns: [
+      'id','boutique_id','produit_id','quantite_disponible',
+      'quantite_reservee','derniere_maj','date_modification'
+    ]
+  },
 };
 
 function getConfigFromPath(path) {
@@ -129,60 +154,70 @@ function snakeToCamel(str) {
 /**
  * Middleware principal
  */
-function syncMiddleware(req, res, next) {
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
-  if (!process.env.CLOUD_DB_URL) return next();
+function syncMiddleware(prisma) {
+  return function(req, res, next) {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+    if (!process.env.CLOUD_DB_URL) return next();
 
-  const config = getConfigFromPath(req.path);
-  if (!config || config.skip) return next();  // Skip if marked as skip
+    const config = getConfigFromPath(req.path);
+    if (!config || config.skip) return next();
 
-  const originalJson = res.json.bind(res);
-  res.json = function(body) {
-    originalJson(body);
+    const originalJson = res.json.bind(res);
+    res.json = function(body) {
+      originalJson(body);
 
-    if (body && body.success && body.data) {
-      const operation = req.method === 'POST' ? 'INSERT'
-        : req.method === 'DELETE' ? 'DELETE'
-        : 'UPDATE';
+      if (body && body.success && body.data) {
+        const operation = req.method === 'POST' ? 'INSERT'
+          : req.method === 'DELETE' ? 'DELETE'
+          : 'UPDATE';
 
-      const responseData = Array.isArray(body.data) ? body.data[0] : body.data;
-      const recordId = responseData?.id;
-      if (!recordId) return;
+        const responseData = Array.isArray(body.data) ? body.data[0] : body.data;
+        const recordId = responseData?.id;
+        if (!recordId) return;
 
-      // Filtre les colonnes autorisées AVANT d'enqueuer
-      let dataToSync = responseData;
-      if (config.allowedColumns) {
-        dataToSync = {};
-        for (const col of config.allowedColumns) {
-          // Cherche le champ en camelCase (ex: session_id → sessionId)
-          const camelCol = snakeToCamel(col);
-          
-          // Cherche d'abord en camelCase
-          if (responseData[camelCol] !== undefined && responseData[camelCol] !== null) {
-            dataToSync[camelCol] = responseData[camelCol];
-          } 
-          // Puis en snake_case
-          else if (responseData[col] !== undefined && responseData[col] !== null) {
-            dataToSync[col] = responseData[col];
+        // Si fetchFromDb est activé, récupérer les données directement depuis la BD locale
+        if (config.fetchFromDb && prisma) {
+          const modelName = config.model;
+          prisma[modelName].findUnique({ where: { id: recordId } })
+            .then(dbRecord => {
+              if (!dbRecord) return;
+              syncService.enqueue(config.table, operation, dbRecord).catch(() => {});
+            })
+            .catch(() => {});
+          return;
+        }
+
+        // Filtre les colonnes autorisées AVANT d'enqueuer
+        let dataToSync = responseData;
+        if (config.allowedColumns) {
+          dataToSync = {};
+          for (const col of config.allowedColumns) {
+            const camelCol = snakeToCamel(col);
+            
+            // Inclure la valeur même si null (null est une valeur valide en BD)
+            if (responseData[camelCol] !== undefined) {
+              dataToSync[camelCol] = responseData[camelCol];
+            } 
+            else if (responseData[col] !== undefined) {
+              dataToSync[col] = responseData[col];
+            }
+          }
+          if (!dataToSync.id) dataToSync.id = recordId;
+        }
+
+        if (process.env.DEBUG_SYNC || config.table === 'cash_sessions' || config.table === 'ventes') {
+          console.log(`🔍 Sync ${config.table} (${operation}): ${Object.keys(dataToSync).length} fields`);
+          if (process.env.DEBUG_SYNC) {
+            console.log(`   Data:`, JSON.stringify(dataToSync).substring(0, 300));
           }
         }
-        // S'assurer que id est toujours présent
-        if (!dataToSync.id) dataToSync.id = recordId;
-      }
 
-      // Debug: log what we're syncing
-      if (process.env.DEBUG_SYNC || config.table === 'cash_sessions' || config.table === 'ventes') {
-        console.log(`🔍 Sync ${config.table} (${operation}): ${Object.keys(dataToSync).length} fields`);
-        if (process.env.DEBUG_SYNC) {
-          console.log(`   Data:`, JSON.stringify(dataToSync).substring(0, 300));
-        }
+        syncService.enqueue(config.table, operation, dataToSync).catch(() => {});
       }
+    };
 
-      syncService.enqueue(config.table, operation, dataToSync).catch(() => {});
-    }
+    next();
   };
-
-  next();
 }
 
 module.exports = syncMiddleware;

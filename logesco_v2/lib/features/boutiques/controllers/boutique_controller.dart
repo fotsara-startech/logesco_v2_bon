@@ -68,24 +68,21 @@ class BoutiqueController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Tentative de chargement initial (peut échouer si pas encore authentifié)
-    // Le vrai chargement se fait dans auth_controller après login réussi
-    loadBoutiques();
+    // Écouter les changements d'authentification pour charger les boutiques automatiquement
+    ever(Get.find<AuthController>().isAuthenticated, (bool authenticated) {
+      if (authenticated) {
+        loadBoutiques();
+      } else {
+        // Réinitialiser quand déconnecté
+        boutiques.clear();
+        boutiquesActive.value = null;
+      }
+    });
   }
 
   // ─── Chargement ──────────────────────────────────────────────────────────────
 
   Future<void> loadBoutiques() async {
-    // Ne pas charger si pas authentifié
-    try {
-      final authController = Get.find<AuthController>();
-      if (!authController.isAuthenticated.value) {
-        return;
-      }
-    } catch (_) {
-      return; // AuthController pas encore initialisé
-    }
-
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -93,7 +90,6 @@ class BoutiqueController extends GetxController {
       boutiques.assignAll(list);
       _restoreActiveBoutique();
     } catch (e) {
-      // Échec silencieux si pas encore authentifié (normal au démarrage)
       errorMessage.value = e.toString();
     } finally {
       isLoading.value = false;

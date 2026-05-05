@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/supplier_detail_controller.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/error_widget.dart';
+import '../../../core/widgets/permission_widget.dart';
 
 /// Vue de détail d'un fournisseur
 class SupplierDetailView extends StatelessWidget {
@@ -102,46 +103,50 @@ class SupplierDetailView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Section Compte et Transactions
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
-                          const SizedBox(width: 8),
-                          Text(
-                            'suppliers_account'.tr,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+              // Section Compte et Transactions (protégée par permission)
+              PermissionWidget(
+                module: 'accounts',
+                privilege: 'READ',
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
+                            const SizedBox(width: 8),
+                            Text(
+                              'suppliers_account'.tr,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'suppliers_account_description'.tr,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => Get.toNamed(
-                            '/suppliers/${supplier.id}/account',
-                            arguments: supplier,
-                          ),
-                          icon: const Icon(Icons.history),
-                          label: Text('suppliers_view_account'.tr),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          'suppliers_account_description'.tr,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => Get.toNamed(
+                              '/suppliers/${supplier.id}/account',
+                              arguments: supplier,
+                            ),
+                            icon: const Icon(Icons.history),
+                            label: Text('suppliers_view_account'.tr),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

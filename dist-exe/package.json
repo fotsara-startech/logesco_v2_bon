@@ -4,7 +4,8 @@
   "description": "LOGESCO v2 Backend API with hybrid SQLite/PostgreSQL support",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "npx prisma generate --schema=prisma/schema.prisma && node src/server.js",
+    "start:prod": "npx prisma generate --schema=prisma/schema.postgresql.prisma && node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
@@ -40,7 +41,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -53,6 +53,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "pdfkit": "^0.15.2",
+    "pg": "^8.20.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {

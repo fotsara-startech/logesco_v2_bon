@@ -99,27 +99,21 @@ class UserController extends GetxController with PermissionMixin {
       // Vérifier les permissions
       requirePermission('users.create');
 
-      print('➕ [UserController] Début createUser pour: ${user.nomUtilisateur}');
       isLoading.value = true;
 
       final newUser = await _userService.createUser(user, motDePasse ?? 'password123');
 
-      print('✅ [UserController] Utilisateur créé: ${newUser.nomUtilisateur}');
       users.add(newUser);
+      // Stocker le dernier utilisateur créé pour récupérer son ID
+      selectedUser.value = newUser;
 
       SnackbarHelper.success('Utilisateur créé avec succès');
-
-      print('✅ [UserController] createUser terminé avec succès');
       return true;
     } catch (e) {
-      print('❌ [UserController] Erreur createUser: $e');
-      print('❌ [UserController] Type d\'erreur: ${e.runtimeType}');
-
       SnackbarHelper.error('Impossible de créer l\'utilisateur: $e');
       return false;
     } finally {
       isLoading.value = false;
-      print('🏁 [UserController] createUser finally block');
     }
   }
 

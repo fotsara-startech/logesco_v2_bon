@@ -11,6 +11,17 @@ class CategoryController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
   final Rx<Category?> selectedCategory = Rx<Category?>(null);
+  final RxString searchQuery = ''.obs;
+
+  /// Liste filtrée selon la recherche
+  List<Category> get filteredCategories {
+    if (searchQuery.value.isEmpty) return categories;
+    final q = searchQuery.value.toLowerCase();
+    return categories.where((c) => c.nom.toLowerCase().contains(q) || (c.description?.toLowerCase().contains(q) ?? false)).toList();
+  }
+
+  void updateSearch(String query) => searchQuery.value = query;
+  void clearSearch() => searchQuery.value = '';
 
   @override
   void onInit() {

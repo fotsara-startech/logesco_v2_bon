@@ -643,6 +643,7 @@ class FinancialMovementDTO {
   constructor(movement) {
     this.id = movement.id;
     this.reference = movement.reference;
+    this.sessionId = movement.sessionId;  // ← AJOUTÉ
     this.boutiqueId = movement.boutiqueId;
     this.montant = parseFloat(movement.montant);
     this.categorieId = movement.categorieId;

@@ -224,23 +224,27 @@ class ProductController extends GetxController {
   /// Navigue vers l'édition d'un produit
   Future<void> goToEditProduct(Product product) async {
     try {
-      print('');
-
       // Récupérer le produit complet avec catégorie résolue via l'API
       final fullProduct = await _productService.getProductById(product.id);
+      final args = fullProduct ?? product;
 
-      if (fullProduct != null) {
-        print(' Produit complet récupéré avec catégorie: "${fullProduct.categorie}"');
-        Get.toNamed('/products/${product.id}/edit', arguments: fullProduct);
-      } else {
-        print(' Impossible de récupérer le produit complet');
-        // Fallback avec le produit original
-        Get.toNamed('/products/${product.id}/edit', arguments: product);
+      final result = await Get.toNamed('/products/${product.id}/edit', arguments: args);
+
+      // Rafraîchir le produit dans la liste si la modification a réussi
+      if (result != null && result is Product) {
+        final index = products.indexWhere((p) => p.id == result.id);
+        if (index != -1) {
+          products[index] = result;
+          products.refresh();
+        } else {
+          await refreshProducts();
+        }
       }
     } catch (e) {
-      print(' Erreur lors de la récupération du produit: $e');
-      // Fallback avec le produit original
-      Get.toNamed('/products/${product.id}/edit', arguments: product);
+      final result = await Get.toNamed('/products/${product.id}/edit', arguments: product);
+      if (result != null && result is Product) {
+        await refreshProducts();
+      }
     }
   }
 

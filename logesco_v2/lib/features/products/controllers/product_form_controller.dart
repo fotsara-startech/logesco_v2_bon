@@ -109,12 +109,9 @@ class ProductFormController extends GetxController {
   /// Charge les catégories disponibles depuis la base de données
   Future<void> _loadCategories() async {
     try {
-      print('');
       final categoriesList = await _categoryService.getCategories();
       categories.assignAll(categoriesList);
-      print(' ${categoriesList.length} catégories chargées pour le formulaire');
     } catch (e) {
-      print(' Erreur chargement catégories pour formulaire: $e');
       // En cas d'erreur, on continue avec une liste vide
       categories.clear();
     }
@@ -122,12 +119,86 @@ class ProductFormController extends GetxController {
 
   /// Vérifie si on est en mode édition
   void _checkIfEditing() {
-    final product = Get.arguments as Product?;
-    if (product != null) {
-      isEditing.value = true;
-      editingProduct.value = product;
-      _populateFormWithProduct(product);
+    final arguments = Get.arguments;
+
+    // Gérer le cas où l'argument est un Map (duplication ou édition)
+    if (arguments is Map<String, dynamic>) {
+      final isDuplicate = arguments['duplicate'] == true;
+
+      if (isDuplicate && arguments['product'] != null) {
+        // Mode duplication : extraire le produit du Map
+        try {
+          final productData = arguments['product'];
+          Product product;
+
+          if (productData is Product) {
+            product = productData;
+          } else if (productData is Map<String, dynamic>) {
+            product = Product.fromJson(productData);
+          } else {
+            return;
+          }
+
+          // Mode duplication : pré-remplir le formulaire mais pas en mode édition
+          isEditing.value = false;
+          editingProduct.value = null;
+          _populateFormForDuplication(product);
+        } catch (e, stackTrace) {
+          // Erreur lors de la duplication du produit
+        }
+      } else {
+        // Mode édition : le Map contient directement les données du produit
+        try {
+          final product = Product.fromJson(arguments);
+          isEditing.value = true;
+          editingProduct.value = product;
+          _populateFormWithProduct(product);
+        } catch (e) {
+          // Erreur lors de la conversion du Map en Product
+        }
+      }
     }
+    // Gérer le cas où l'argument est déjà un Product (édition normale)
+    else if (arguments is Product) {
+      isEditing.value = true;
+      editingProduct.value = arguments;
+      _populateFormWithProduct(arguments);
+    }
+  }
+
+  /// Remplit le formulaire pour la duplication d'un produit
+  void _populateFormForDuplication(Product product) {
+    // Activer la génération automatique mais permettre à l'utilisateur de la désactiver
+    isAutoReference.value = true;
+
+    // Remplir les autres champs
+    nomController.text = product.nom;
+    descriptionController.text = product.description ?? '';
+    prixUnitaireController.text = product.prixUnitaire.toString();
+    prixAchatController.text = product.prixAchat?.toString() ?? '';
+    codeBarreController.text = ''; // Ne pas copier le code barre (doit être unique)
+    categorieController.text = product.categorie ?? '';
+    seuilStockController.text = product.seuilStockMinimum.toString();
+    remiseMaxController.text = product.remiseMaxAutorisee.toString();
+    estActif.value = product.estActif;
+    estService.value = product.estService;
+    gestionPeremption.value = product.gestionPeremption;
+
+    // Gérer la catégorie
+    final productCategory = product.categorie ?? '';
+    if (productCategory.isEmpty) {
+      selectedCategory.value = '';
+    } else {
+      final existingCategory = categories.firstWhereOrNull((cat) => cat.nom == productCategory);
+      if (existingCategory != null) {
+        selectedCategory.value = existingCategory.nom;
+      } else {
+        selectedCategory.value = productCategory;
+      }
+    }
+
+    // Générer une nouvelle référence automatiquement
+    generateReference();
   }
 
   /// Remplit le formulaire avec les données du produit
@@ -339,14 +410,11 @@ class ProductFormController extends GetxController {
         final newReference = await _productService.generateProductReference();
         referenceController.text = newReference;
         referenceError.value = '';
-        print(' Référence générée par l\'API: $newReference');
       } catch (apiError) {
-        print(' Erreur API génération référence: $apiError');
         // En cas d'échec de l'API, générer localement
         final localReference = _generateLocalReference();
         referenceController.text = localReference;
         referenceError.value = '';
-        print(' Référence générée localement: $localReference');
 
         // Afficher un message informatif (avec délai pour éviter les conflits)
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -356,7 +424,6 @@ class ProductFormController extends GetxController {
         });
       }
     } catch (e) {
-      print(' Erreur génération référence: $e');
       referenceError.value = 'Erreur lors de la génération de la référence';
     } finally {
       isGeneratingReference.value = false;
@@ -453,20 +520,6 @@ class ProductFormController extends GetxController {
         gestionPeremption: gestionPeremption.value,
       );
 
-      // Debug: Afficher les données qui vont être envoyées
-      print('=== DONNES PRODUIT À ENVOYER ===');
-      print('Reference: ${productForm.reference}');
-      print('Nom: ${productForm.nom}');
-      print('Prix unitaire: ${productForm.prixUnitaire}');
-      print('Prix achat: ${productForm.prixAchat}');
-      print('Code barre: ${productForm.codeBarre}');
-      print('Catégorie: ${productForm.categorie}');
-      print('Seuil stock: ${productForm.seuilStockMinimum}');
-      print('Est actif: ${productForm.estActif}');
-      print('Est service: ${productForm.estService}');
-      print('JSON complet: ${productForm.toJson()}');
-      print('================================');
-
       Product savedProduct;
       String successMessage;
 
@@ -493,8 +546,6 @@ class ProductFormController extends GetxController {
       if (e is ApiException) {
         message = e.message;
       }
-
-      print(' Erreur sauvegarde produit: $e');
 
       // Afficher l'erreur avec un délai pour éviter les conflits
       Future.delayed(const Duration(milliseconds: 100), () {

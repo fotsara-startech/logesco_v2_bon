@@ -80,15 +80,15 @@ function createProductRouter(models) {
   router.get('/generate-reference',
     async (req, res) => {
       try {
-        // Générer une référence basée sur l'année et un compteur
+        // Format: PRD + année 4 chiffres + séquence 4 chiffres → PRD20260001
         const currentYear = new Date().getFullYear();
-        const yearSuffix = currentYear.toString().slice(-2); // Derniers 2 chiffres de l'année
+        const prefix = `PRD${currentYear}`;
 
-        // Trouver le dernier produit créé cette année
+        // Trouver la dernière référence avec ce préfixe, triée numériquement
         const lastProduct = await models.prisma.produit.findMany({
           where: {
             reference: {
-              startsWith: `PRD${yearSuffix}`
+              startsWith: prefix
             }
           },
           orderBy: {
@@ -99,9 +99,8 @@ function createProductRouter(models) {
 
         let nextNumber = 1;
         if (lastProduct.length > 0) {
-          // Extraire le numéro de la dernière référence
           const lastRef = lastProduct[0].reference;
-          const match = lastRef.match(/PRD\d{2}(\d{4})$/);
+          const match = lastRef.match(/PRD\d{4}(\d+)$/);
           if (match) {
             nextNumber = parseInt(match[1]) + 1;
           }
@@ -109,7 +108,7 @@ function createProductRouter(models) {
 
         // Formater le numéro sur 4 chiffres
         const formattedNumber = nextNumber.toString().padStart(4, '0');
-        const newReference = `PRD${yearSuffix}${formattedNumber}`;
+        const newReference = `${prefix}${formattedNumber}`;
 
         res.json(BaseResponseDTO.success({ reference: newReference }, 'Référence générée avec succès'));
 
@@ -281,13 +280,7 @@ function createProductRouter(models) {
     validate(produitSchemas.create),
     async (req, res) => {
       try {
-        // Utiliser directement les données du body pour le debug
         const produitData = req.body;
-        
-        // Debug: Afficher les données reçues
-        console.log('=== DONNÉES PRODUIT REÇUES ===');
-        console.log('Body brut:', req.body);
-        console.log('==============================');
 
         // Vérifier l'unicité de la référence
         const existingProduct = await models.prisma.produit.findMany({
@@ -309,17 +302,12 @@ function createProductRouter(models) {
         // Gérer la conversion de catégorie nom -> ID
         let categorieId = null;
         if (produitData.categorie && produitData.categorie.trim() !== '') {
-          console.log('🔍 Recherche de la catégorie:', produitData.categorie);
-          
           const category = await models.prisma.category.findUnique({
             where: { nom: produitData.categorie.trim() }
           });
           
           if (category) {
             categorieId = category.id;
-            console.log('✅ Catégorie trouvée, ID:', categorieId);
-          } else {
-            console.log('⚠️ Catégorie non trouvée, création ignorée');
           }
         }
 
@@ -345,7 +333,6 @@ function createProductRouter(models) {
 
         // Créer automatiquement une entrée de stock pour les produits physiques
         if (!produit.estService) {
-          console.log(`📦 Création du stock initial pour le produit ${produit.id}`);
           await models.prisma.stock.create({
             data: {
               produitId: produit.id,
@@ -353,9 +340,6 @@ function createProductRouter(models) {
               quantiteReservee: 0
             }
           });
-          console.log(`✅ Stock créé avec quantité initiale: ${produitData.quantiteInitiale || 0}`);
-        } else {
-          console.log(`ℹ️ Produit de type service, pas de stock créé`);
         }
 
         const produitDTO = ProduitDTO.fromEntity(produit);
@@ -364,13 +348,7 @@ function createProductRouter(models) {
         );
 
       } catch (error) {
-        console.error('=== ERREUR CRÉATION PRODUIT ===');
-        console.error('Type d\'erreur:', error.constructor.name);
-        console.error('Code d\'erreur:', error.code);
-        console.error('Message:', error.message);
-        console.error('Stack:', error.stack);
-        console.error('Données reçues:', produitData);
-        console.error('================================');
+        console.error('Erreur création produit:', error.message);
 
         if (error.code === 'P2002') {
           return res.status(409).json(
@@ -429,32 +407,53 @@ function createProductRouter(models) {
           }
         }
 
-        // Gérer la conversion de catégorie nom -> ID pour la mise à jour
-        let categorieId = null;
-        if (updateData.categorie !== undefined) {
-          if (updateData.categorie && updateData.categorie.trim() !== '') {
-            console.log('🔍 Recherche de la catégorie pour mise à jour:', updateData.categorie);
-            
-            const category = await models.prisma.category.findUnique({
-              where: { nom: updateData.categorie.trim() }
-            });
-            
-            if (category) {
-              categorieId = category.id;
-              console.log('✅ Catégorie trouvée pour mise à jour, ID:', categorieId);
+        // Préparer les données de mise à jour avec conversion de types
+        const dataToUpdate = {};
+
+        // Copier tous les champs et convertir les types si nécessaire
+        for (const [key, value] of Object.entries(updateData)) {
+          if (key === 'categorie') {
+            // Gérer la conversion de catégorie nom -> ID
+            if (value && value.trim() !== '') {
+              const category = await models.prisma.category.findUnique({
+                where: { nom: value.trim() }
+              });
+              
+              if (category) {
+                dataToUpdate.categorieId = category.id;
+              } else {
+                dataToUpdate.categorieId = null;
+              }
             } else {
-              console.log('⚠️ Catégorie non trouvée pour mise à jour');
+              dataToUpdate.categorieId = null;
             }
+          } else if (key === 'prixUnitaire' || key === 'prixAchat' || key === 'remiseMaxAutorisee') {
+            // Convertir les prix en Float
+            if (value !== null && value !== undefined && value !== '') {
+              dataToUpdate[key] = parseFloat(value);
+            }
+          } else if (key === 'seuilStockMinimum') {
+            // Convertir le seuil en Int
+            if (value !== null && value !== undefined && value !== '') {
+              dataToUpdate[key] = parseInt(value);
+            }
+          } else if (key === 'estActif' || key === 'estService' || key === 'gestionPeremption') {
+            // Convertir les booléens
+            if (typeof value === 'string') {
+              dataToUpdate[key] = value === 'true' || value === true;
+            } else {
+              dataToUpdate[key] = !!value;
+            }
+          } else if (key !== 'categorieId') {
+            // Copier les autres champs
+            dataToUpdate[key] = value;
           }
-          // Remplacer le champ categorie par categorieId
-          delete updateData.categorie;
-          updateData.categorieId = categorieId;
         }
 
         // Mettre à jour le produit avec Prisma directement
         const produitUpdated = await models.prisma.produit.update({
           where: { id: parseInt(produitId) },
-          data: updateData,
+          data: dataToUpdate,
           include: { 
             stock: true,
             categorie: true // Inclure les données de catégorie
@@ -465,7 +464,7 @@ function createProductRouter(models) {
         res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
 
       } catch (error) {
-        console.error('Erreur mise à jour produit:', error);
+        console.error('Erreur mise à jour produit:', error.message);
 
         if (error.code === 'P2002') {
           return res.status(409).json(
@@ -474,7 +473,7 @@ function createProductRouter(models) {
         }
 
         res.status(500).json(
-          BaseResponseDTO.error('Erreur lors de la mise à jour du produit')
+          BaseResponseDTO.error('Erreur lors de la mise à jour du produit: ' + error.message)
         );
       }
     }

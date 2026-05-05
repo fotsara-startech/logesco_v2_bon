@@ -2055,6 +2055,8 @@ const Map<String, String> esTranslations = {
   'procurement_create_dialog_title': 'Nuevo pedido de aprovisionamiento',
   'procurement_supplier_required': 'Proveedor *',
   'procurement_select_supplier': 'Seleccionar proveedor',
+  'procurement_search_supplier': 'Buscar proveedor...',
+  'procurement_no_supplier_found': 'No se encontró ningún proveedor',
   'procurement_no_supplier': 'Sin proveedor',
   'procurement_create_suppliers_first': 'Cree proveedores primero',
   'procurement_delivery_date': 'Fecha de entrega prevista',
@@ -2136,6 +2138,8 @@ const Map<String, String> esTranslations = {
   // ============================================================================
 
   'categories_management': 'Gestión de categorías',
+  'categories_search_hint': 'Buscar una categoría...',
+  'categories_no_results': 'No se encontró ninguna categoría',
   'categories_refresh': 'Actualizar',
   'categories_loading': 'Cargando categorías...',
   'categories_error_loading': 'Error de carga',

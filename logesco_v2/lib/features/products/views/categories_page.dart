@@ -105,13 +105,59 @@ class CategoriesPage extends StatelessWidget {
 
         return RefreshIndicator(
           onRefresh: controller.refresh,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: controller.categories.length,
-            itemBuilder: (context, index) {
-              final category = controller.categories[index];
-              return _buildCategoryCard(context, category, controller);
-            },
+          child: Column(
+            children: [
+              // Barre de recherche
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: TextField(
+                  onChanged: controller.updateSearch,
+                  decoration: InputDecoration(
+                    hintText: 'categories_search_hint'.tr,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: controller.clearSearch,
+                          )
+                        : const SizedBox.shrink()),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  ),
+                ),
+              ),
+              // Liste des catégories
+              Expanded(
+                child: Obx(() {
+                  final filtered = controller.filteredCategories;
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'categories_no_results'.tr,
+                            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final category = filtered[index];
+                      return _buildCategoryCard(context, category, controller);
+                    },
+                  );
+                }),
+              ),
+            ],
           ),
         );
       }),

@@ -170,7 +170,7 @@ class ProductFormView extends StatelessWidget {
                     ),
                     textCapitalization: TextCapitalization.characters,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9-_]')),
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-_]')),
                       LengthLimitingTextInputFormatter(20),
                     ],
                   ),

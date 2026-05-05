@@ -233,9 +233,9 @@ class ProductForm {
   });
 
   /// Convertit le formulaire en JSON pour l'API
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeReference = true}) {
     return {
-      'reference': reference,
+      if (includeReference) 'reference': reference,
       'nom': nom,
       'description': description,
       'prixUnitaire': prixUnitaire,

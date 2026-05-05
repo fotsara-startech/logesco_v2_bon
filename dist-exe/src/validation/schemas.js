@@ -39,7 +39,7 @@ const utilisateurSchemas = {
 // Validation des produits
 const produitSchemas = {
   create: Joi.object({
-    reference: Joi.string().pattern(/^[A-Z0-9]+$/).min(1).max(50).required(),
+    reference: Joi.string().pattern(/^[A-Z0-9\-_]+$/i).min(1).max(50).required(),
     nom: Joi.string().min(1).max(100).required(),
     description: Joi.string().max(500).allow('', null),
     prixUnitaire: baseSchemas.montant.required(),
@@ -54,15 +54,15 @@ const produitSchemas = {
   }),
 
   update: Joi.object({
-    reference: Joi.string().pattern(/^[A-Z0-9]+$/).min(1).max(50),
+    reference: Joi.string().pattern(/^[A-Z0-9\-_]+$/i).min(1).max(50),
     nom: Joi.string().min(1).max(100),
     description: Joi.string().max(500).allow('', null),
-    prixUnitaire: baseSchemas.montant,
+    prixUnitaire: baseSchemas.montant.allow(null),
     prixAchat: baseSchemas.montant.allow(null),
     codeBarre: Joi.string().max(50).allow('', null),
     categorie: Joi.string().max(50).allow('', null),
     seuilStockMinimum: Joi.number().integer().min(0),
-    remiseMaxAutorisee: baseSchemas.montant,
+    remiseMaxAutorisee: baseSchemas.montant.allow(null),
     estActif: Joi.boolean(),
     estService: Joi.boolean(),
     gestionPeremption: Joi.boolean()

@@ -32,6 +32,29 @@ class DatabaseManager {
       // Test de connexion
       await this.testConnection();
 
+      // Activer les hooks de synchronisation APRÈS la connexion réussie
+      if (process.env.CLOUD_DB_URL) {
+        try {
+          console.log('🔍 Activation des hooks de synchronisation Prisma...');
+          console.log('   CLOUD_DB_URL défini:', process.env.CLOUD_DB_URL ? 'OUI' : 'NON');
+          console.log('   Type de prisma avant:', typeof this.prisma);
+          console.log('   Méthode $extends disponible:', typeof this.prisma.$extends);
+          
+          const { setupPrismaSyncHooks } = require('../middleware/prisma-sync-hooks');
+          const extendedPrisma = setupPrismaSyncHooks(this.prisma);
+          
+          console.log('   Type de prisma après:', typeof extendedPrisma);
+          console.log('   Extension réussie:', extendedPrisma !== this.prisma ? 'OUI' : 'NON');
+          
+          this.prisma = extendedPrisma;
+        } catch (error) {
+          console.error('❌ Erreur lors de l\'activation des hooks de sync:', error.message);
+          console.error('   Stack:', error.stack);
+        }
+      } else {
+        console.log('ℹ️  CLOUD_DB_URL non défini, hooks de synchronisation désactivés');
+      }
+
       this.isConnected = true;
       console.log('✅ Base de données connectée avec succès');
 

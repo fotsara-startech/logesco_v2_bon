@@ -12,7 +12,6 @@ import '../../../core/utils/exceptions.dart';
 import '../../../core/config/app_config.dart';
 import '../models/user.dart';
 import '../../users/models/role_model.dart' as role_model;
-import '../../boutiques/controllers/boutique_controller.dart';
 import '../../../core/utils/snackbar_helper.dart';
 
 /// Contrôleur d'authentification avec GetX
@@ -48,18 +47,17 @@ class AuthController extends GetxController {
       if (token != null) {
         _apiClient.setAuthToken(token);
 
-        // Configurer aussi l'ApiService pour les autres modules
         try {
           final apiService = Get.find<ApiService>();
           apiService.setAuthToken(token);
         } catch (e) {
-          print('⚠️ ApiService non trouvé lors de la vérification: $e');
+          // ignore
         }
 
         await _loadUserProfile();
+        // Les boutiques se chargent automatiquement via ever(isAuthenticated)
       }
     } catch (e) {
-      // Erreur lors de la vérification, nettoyer les données
       await _clearAuthData();
     }
   }
@@ -203,11 +201,6 @@ class AuthController extends GetxController {
 
         try {
           await Get.offAllNamed(AppRoutes.dashboard);
-
-          // Charger les boutiques maintenant que le token est disponible
-          try {
-            Get.find<BoutiqueController>().loadBoutiques();
-          } catch (_) {}
         } catch (e) {
           SnackbarHelper.error('Impossible de charger le tableau de bord');
         }
@@ -347,7 +340,6 @@ class AuthController extends GetxController {
     await _secureStorage.delete(key: AppConstants.refreshTokenKey);
     _apiClient.clearAuthToken();
 
-    // Effacer aussi le token en mémoire dans AuthService
     try {
       final authService = Get.find<AuthService>();
       await authService.clearTokens();
@@ -356,7 +348,7 @@ class AuthController extends GetxController {
     }
 
     currentUser.value = null;
-    isAuthenticated.value = false;
+    isAuthenticated.value = false; // Déclenche ever() → boutiques.clear()
     errorMessage.value = '';
     isLoading.value = false;
   }

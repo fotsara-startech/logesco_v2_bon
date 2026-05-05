@@ -465,23 +465,15 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
 
       final selectedSupplier = await showDialog<Supplier>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('procurement_select_supplier'.tr),
-          content: SizedBox(
-            width: 400,
-            height: 400,
-            child: ListView.builder(
-              itemCount: supplierController.suppliers.length,
-              itemBuilder: (context, index) {
-                final supplier = supplierController.suppliers[index];
-                return ListTile(
-                  title: Text(supplier.nom),
-                  subtitle: Text(supplier.telephone ?? 'phone'.tr),
-                  onTap: () => Navigator.of(context).pop(supplier),
-                );
-              },
-            ),
-          ),
+        builder: (context) => _SupplierSearchDialog(
+          suppliers: supplierController.suppliers
+              .fold<Map<int, Supplier>>({}, (map, s) {
+                map[s.id] = s;
+                return map;
+              })
+              .values
+              .toList()
+            ..sort((a, b) => a.nom.compareTo(b.nom)),
         ),
       );
 
@@ -1033,5 +1025,101 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
         'unitCost': unitCost,
       });
     }
+  }
+}
+
+/// Dialogue de sélection de fournisseur avec barre de recherche
+class _SupplierSearchDialog extends StatefulWidget {
+  final List<Supplier> suppliers;
+  const _SupplierSearchDialog({required this.suppliers});
+
+  @override
+  State<_SupplierSearchDialog> createState() => _SupplierSearchDialogState();
+}
+
+class _SupplierSearchDialogState extends State<_SupplierSearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Supplier> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.suppliers;
+    _searchController.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchController.text.toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty ? widget.suppliers : widget.suppliers.where((s) => s.nom.toLowerCase().contains(q) || (s.telephone?.toLowerCase().contains(q) ?? false)).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('procurement_select_supplier'.tr),
+      content: SizedBox(
+        width: 400,
+        height: 450,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'procurement_search_supplier'.tr,
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'procurement_no_supplier_found'.tr,
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (context, index) {
+                        final supplier = _filtered[index];
+                        return ListTile(
+                          title: Text(supplier.nom),
+                          subtitle: Text(supplier.telephone ?? ''),
+                          onTap: () => Navigator.of(context).pop(supplier),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('cancel'.tr),
+        ),
+      ],
+    );
   }
 }

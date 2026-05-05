@@ -640,15 +640,13 @@ class _UserFormViewState extends State<UserFormView> {
     print('?? [UserFormView] Résultat de sauvegarde: $success');
 
     if (success) {
-      // Sauvegarder les assignations boutiques si l'utilisateur a un ID
-      final savedUser = controller.users.firstWhereOrNull((u) => u.nomUtilisateur == user.nomUtilisateur);
-      final userId = user.id ?? savedUser?.id;
-      if (userId != null) {
+      // Récupérer l'ID: pour la création, il est dans selectedUser (mis à jour par createUser)
+      // Pour l'édition, il est dans user.id
+      final userId = user.id ?? controller.selectedUser.value?.id;
+      if (userId != null && _selectedBoutiqueIds.isNotEmpty) {
         await controller.updateUserBoutiques(userId, _selectedBoutiqueIds.toList());
       }
       Get.back();
-    } else {
-      print('? [UserFormView] Échec de sauvegarde, pas de navigation');
     }
   }
 

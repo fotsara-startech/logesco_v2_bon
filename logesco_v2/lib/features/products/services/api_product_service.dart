@@ -55,32 +55,23 @@ class ApiProductService extends GetxService {
 
   /// Récupère un produit par son ID
   Future<Product?> getProductById(int id) async {
-    print('🔍 ApiProductService.getProductById($id) - Début');
-
     final response = await _apiClient.get<Map<String, dynamic>>('/products/$id');
 
     if (response.isSuccess && response.data != null) {
       // Le backend retourne le produit directement dans 'data'
       final productData = response.data!['data'] as Map<String, dynamic>;
-      print('🔍 Données produit reçues: $productData');
 
       final product = Product.fromJson(productData);
-      print('🔍 Produit parsé - categorie: "${product.categorie}", categorieId: ${product.categorieId}');
 
       // Résoudre le nom de la catégorie si le service est disponible
       if (_categoryResolver != null) {
-        print('🔍 CategoryResolver disponible, résolution en cours...');
         final resolvedProduct = await _categoryResolver!.resolveProductCategory(product);
-        print('🔍 Produit résolu - categorie: "${resolvedProduct.categorie}", categorieId: ${resolvedProduct.categorieId}');
         return resolvedProduct;
-      } else {
-        print('⚠️ CategoryResolver non disponible');
       }
 
       return product;
     }
 
-    print('❌ Erreur API ou données nulles');
     return null;
   }
 
@@ -118,19 +109,10 @@ class ApiProductService extends GetxService {
 
   /// Supprime un produit
   Future<bool> deleteProduct(int id) async {
-    print('🗑️ Appel API DELETE /products/$id');
-    print('🔑 Token présent: ${_apiClient.hasAuthToken}');
-
     try {
       final response = await _apiClient.delete<Map<String, dynamic>>('/products/$id');
-
-      print('📡 Réponse DELETE:');
-      print('  - Success: ${response.isSuccess}');
-      print('  - Data: ${response.data}');
-
       return response.isSuccess;
     } catch (e) {
-      print('❌ Erreur DELETE: $e');
       rethrow;
     }
   }
@@ -221,14 +203,10 @@ class ApiProductService extends GetxService {
   Future<List<Product>> importProducts(List<ProductForm> products) async {
     final productsData = products.map((p) => p.toJson()).toList();
 
-    print('🔄 Import de ${products.length} produits...');
-
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/products/import',
       {'products': productsData},
     );
-
-    print('📡 Réponse import: Success=${response.isSuccess}, Data=${response.data}');
 
     if (response.isSuccess && response.data != null) {
       try {
@@ -240,11 +218,6 @@ class ApiProductService extends GetxService {
           if (responseData.containsKey('errors')) {
             final errors = responseData['errors'] as List<dynamic>;
             if (errors.isNotEmpty) {
-              print('❌ Erreurs détectées dans l\'import:');
-              for (var error in errors) {
-                print('  - ${error['reference']}: ${error['error']}');
-              }
-
               // Vérifier le résumé
               if (responseData.containsKey('summary')) {
                 final summary = responseData['summary'] as Map<String, dynamic>;
@@ -253,8 +226,6 @@ class ApiProductService extends GetxService {
 
                 if (imported == 0 && errorCount > 0) {
                   throw Exception('Aucun produit n\'a pu être importé. Erreur backend: ${errors.first['error']}');
-                } else if (errorCount > 0) {
-                  print('⚠️ Import partiel: $imported produits importés, $errorCount erreurs');
                 }
               }
             }
@@ -286,11 +257,8 @@ class ApiProductService extends GetxService {
         }
 
         // Si aucune structure connue, retourner une liste vide mais considérer comme succès
-        print('⚠️ Structure de réponse inattendue, mais import réussi');
         return [];
       } catch (e) {
-        print('❌ Erreur parsing réponse import: $e');
-        print('📄 Données reçues: ${response.data}');
         rethrow; // Relancer l'exception pour qu'elle soit gérée par le contrôleur
       }
     }

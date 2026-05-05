@@ -93,44 +93,48 @@ class CustomerDetailView extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Section Compte et Transactions
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Text(
-                          'customers_account'.tr,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+            // Section Compte et Transactions (protégée par permission)
+            PermissionWidget(
+              module: 'accounts',
+              privilege: 'READ',
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet, color: Colors.blue),
+                          const SizedBox(width: 8),
+                          Text(
+                            'customers_account'.tr,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'customers_account_history'.tr,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => Get.toNamed(
-                          '/customers/${customer.id}/transactions',
-                          arguments: customer,
-                        ),
-                        icon: const Icon(Icons.history),
-                        label: Text('customers_view_transactions'.tr),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'customers_account_history'.tr,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => Get.toNamed(
+                            '/customers/${customer.id}/transactions',
+                            arguments: customer,
+                          ),
+                          icon: const Icon(Icons.history),
+                          label: Text('customers_view_transactions'.tr),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

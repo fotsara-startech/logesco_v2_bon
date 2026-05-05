@@ -319,10 +319,21 @@ class ProductDetailView extends StatelessWidget {
 
   /// Duplique un produit
   void _duplicateProduct(Product product) {
-    Get.toNamed('/products/create', arguments: {
+    print('🔄 _duplicateProduct appelée');
+    print('   - Produit: ${product.nom} (ID: ${product.id})');
+    print('   - Référence: ${product.reference}');
+    print('   - Catégorie: ${product.categorie}');
+    print('   - Type de product: ${product.runtimeType}');
+
+    final args = {
       'duplicate': true,
       'product': product,
-    });
+    };
+
+    print('   - Arguments à passer: $args');
+    print('   - Type de product dans args: ${args['product'].runtimeType}');
+
+    Get.toNamed('/products/create', arguments: args);
   }
 
   /// Construit la vue d'erreur

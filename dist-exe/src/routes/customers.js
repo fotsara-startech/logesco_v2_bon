@@ -20,6 +20,7 @@ const {
  */
 function createCustomerRouter(models) {
   const router = express.Router();
+  const syncService = models.syncService;
 
   /**
    * GET /customers
@@ -141,6 +142,11 @@ function createCustomerRouter(models) {
         // Créer le client avec son compte
         const client = await models.client.createWithAccount(clientData);
         
+        // Enqueue pour sync vers Neon
+        if (syncService) {
+          await syncService.enqueue('clients', 'INSERT', client);
+        }
+        
         const clientDTO = ClientDTO.fromEntity(client);
         res.status(201).json(
           BaseResponseDTO.success(clientDTO, 'Client créé avec succès')
@@ -203,6 +209,11 @@ function createCustomerRouter(models) {
         const clientUpdated = await models.client.update(clientId, updateData, {
           include: { compte: true }
         });
+
+        // Enqueue pour sync vers Neon
+        if (syncService) {
+          await syncService.enqueue('clients', 'UPDATE', clientUpdated);
+        }
 
         const clientDTO = ClientDTO.fromEntity(clientUpdated);
         res.json(BaseResponseDTO.success(clientDTO, 'Client mis à jour avec succès'));
@@ -270,6 +281,11 @@ function createCustomerRouter(models) {
             where: { id: parseInt(clientId) }
           });
         });
+        
+        // Enqueue pour sync vers Neon
+        if (syncService) {
+          await syncService.enqueue('clients', 'DELETE', { id: parseInt(clientId) });
+        }
         
         res.json(BaseResponseDTO.success(null, 'Client supprimé avec succès'));
 
