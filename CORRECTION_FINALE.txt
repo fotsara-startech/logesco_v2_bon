@@ -1,0 +1,130 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║        🔧 CORRECTION FINALE - SYNC MOUVEMENTS_STOCK             ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+PROBLÈME IDENTIFIÉ:
+  ❌ mouvements_stock non synchronisé vers Neon
+  ❌ Quantités de stock incorrectes sur Neon
+  
+CAUSE:
+  Les extensions Prisma ($extends) ne fonctionnent PAS dans les 
+  transactions ($transaction). C'est une limitation de Prisma.
+  
+  Documentation: https://www.prisma.io/docs/concepts/components/prisma-client/client-extensions
+  "Extensions are not inherited by interactive transactions"
+
+SOLUTION APPLIQUÉE:
+  ✅ Synchronisation manuelle APRÈS la transaction
+  ✅ Récupération des données créées/modifiées
+  ✅ Envoi à la queue de sync
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🚀 ACTION: Redémarrer le Backend                                │
+└──────────────────────────────────────────────────────────────────┘
+
+Dans PowerShell:
+  1. Ctrl+C pour arrêter le backend
+  2. npm start
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ✅ LOGS ATTENDUS                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+Lors d'une vente, vous devriez voir:
+
+  POST /api/v1/sales 200 150 ms
+  🔄 [Manual Sync] mouvements_stock (INSERT): 640
+  🔄 [Manual Sync] stock_boutiques (UPDATE): 122
+  📤 Push 3 opération(s) vers Neon...
+  📥 mouvements_stock: 1 récupéré(s), 1 inséré(s) au total
+  📥 stock_boutiques: 1 récupéré(s), 1 inséré(s) au total
+  📥 ventes: 1 récupéré(s), 1 inséré(s) au total
+
+AVANT (incorrect):
+  📤 Push 2 opération(s) vers Neon...  ← mouvements_stock manquant!
+
+APRÈS (correct):
+  📤 Push 3 opération(s) vers Neon...  ← Tout est synchronisé!
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🧪 TEST                                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Créer une vente dans l'application Flutter
+2. Noter le produit et la quantité vendue
+3. Vérifier les logs du backend (voir ci-dessus)
+4. Vérifier dans Neon:
+
+   SELECT 
+     ms.id,
+     ms.produit_id,
+     p.nom as produit_nom,
+     ms.type_mouvement,
+     ms.changement_quantite,
+     ms.date_modification,
+     sb.quantite_disponible as stock_actuel
+   FROM mouvements_stock ms
+   JOIN produits p ON p.id = ms.produit_id
+   LEFT JOIN stock_boutiques sb ON sb.produit_id = ms.produit_id
+   WHERE ms.date_modification > NOW() - INTERVAL '2 minutes'
+   ORDER BY ms.date_modification DESC;
+
+RÉSULTAT ATTENDU:
+  • Mouvement de stock créé avec changement_quantite négatif
+  • Stock boutique mis à jour avec la nouvelle quantité
+  • date_modification récente (< 2 minutes)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📋 MODIFICATIONS TECHNIQUES                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+Fichier: backend/src/routes/sales.js
+
+Ajout après la transaction:
+  • Récupération des mouvements de stock créés
+  • Récupération des stock_boutiques mis à jour
+  • Envoi manuel à syncService.enqueue()
+  • Logs détaillés avec [Manual Sync]
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎯 POURQUOI CETTE APPROCHE?                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+Les hooks Prisma ($extends) sont excellents MAIS:
+  ❌ Ne fonctionnent pas dans les transactions
+  ❌ Limitation documentée de Prisma
+  ❌ Pas de solution simple avec $extends
+
+Alternatives considérées:
+  1. Extensions de transaction → Trop complexe, non documenté
+  2. Triggers PostgreSQL → Idéal mais nécessite PostgreSQL partout
+  3. Sync manuelle → Simple, fonctionne partout ✅ CHOISI
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+• PRISMA_EXTENSIONS_TRANSACTIONS.md  → Explication détaillée
+• RESUME_CORRECTIONS.md              → Historique complet (5 problèmes)
+• FIX_TRANSACTION_TIMEOUT.md         → Correction du timeout
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🔮 PROCHAINES ÉTAPES                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+Appliquer la même logique de sync manuelle aux autres routes:
+  • Achats/Approvisionnements (procurement.js)
+  • Ajustements de stock manuels (inventory.js)
+  • Inventaires (stock-inventory.js)
+
+Pour l'instant, seules les VENTES sont corrigées.
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  ⚡ REDÉMARREZ LE BACKEND ET TESTEZ UNE VENTE ! ⚡              ║
+║                                                                  ║
+║              Ctrl+C puis npm start                               ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝

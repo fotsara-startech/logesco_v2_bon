@@ -20,6 +20,17 @@ function getPrismaClient() {
     prismaInstance = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['error'] : ['error']
     });
+    
+    // Activer les hooks de synchronisation APRÈS la création de l'instance
+    // Les hooks seront activés lors du premier appel à cette fonction
+    if (process.env.CLOUD_DB_URL) {
+      try {
+        const { setupPrismaSyncHooks } = require('../middleware/prisma-sync-hooks');
+        setupPrismaSyncHooks(prismaInstance);
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'activation des hooks de sync:', error.message);
+      }
+    }
   }
   return prismaInstance;
 }

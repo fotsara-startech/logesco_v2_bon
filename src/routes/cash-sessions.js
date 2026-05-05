@@ -117,8 +117,9 @@ function createCashSessionsRouter({ prisma, authService }) {
         req.headers['x-boutique-id'] ||
         req.query.boutiqueId;
       const boutiqueIdInt = boutiqueId ? parseInt(boutiqueId) : null;
+
+      console.log(`🏪 [CashSession] Ouverture session — cashRegisterId: ${cashRegisterId}, boutiqueId reçu: ${boutiqueId} → int: ${boutiqueIdInt}`);
       
-      // Validation
       if (!cashRegisterId || soldeInitial === undefined) {
         return res.status(400).json({
           success: false,
@@ -202,11 +203,14 @@ function createCashSessionsRouter({ prisma, authService }) {
       }
       
       // Créer la session
+      // Si boutiqueId non fourni, utiliser celui de la caisse comme fallback
+      const effectiveBoutiqueId = boutiqueIdInt || cashRegister.boutiqueId || null;
+
       const newSession = await prisma.cashSession.create({
         data: {
           caisseId: parseInt(cashRegisterId),
           utilisateurId: userId,
-          boutiqueId: boutiqueIdInt,
+          boutiqueId: effectiveBoutiqueId,
           soldeOuverture: parseFloat(soldeInitial),
           soldeAttendu: parseFloat(soldeInitial),
           dateOuverture: new Date(),
@@ -244,6 +248,7 @@ function createCashSessionsRouter({ prisma, authService }) {
       const formattedSession = {
         id: newSession.id,
         caisseId: newSession.caisseId,
+        boutiqueId: newSession.boutiqueId,
         nomCaisse: newSession.caisse.nom,
         utilisateurId: newSession.utilisateurId,
         nomUtilisateur: newSession.utilisateur.nomUtilisateur,
@@ -441,6 +446,7 @@ function createCashSessionsRouter({ prisma, authService }) {
       const formattedSession = {
         id: closedSession.id,
         caisseId: closedSession.caisseId,
+        boutiqueId: closedSession.boutiqueId,
         nomCaisse: closedSession.caisse.nom,
         utilisateurId: closedSession.utilisateurId,
         nomUtilisateur: closedSession.utilisateur.nomUtilisateur,
@@ -536,6 +542,7 @@ function createCashSessionsRouter({ prisma, authService }) {
         return {
           id: session.id,
           caisseId: session.caisseId,
+          boutiqueId: session.boutiqueId,
           nomCaisse: session.caisse.nom,
           utilisateurId: session.utilisateurId,
           nomUtilisateur: session.utilisateur.nomUtilisateur,

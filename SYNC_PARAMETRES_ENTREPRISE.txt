@@ -1,0 +1,138 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║      ✅ SYNCHRONISATION PARAMÈTRES ENTREPRISE AJOUTÉE           ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+PROBLÈME:
+  ❌ Table parametres_entreprise non synchronisée vers Neon
+  ❌ Modifications des paramètres non reflétées sur Neon
+
+CAUSE:
+  La table n'était pas configurée dans le middleware de synchronisation.
+
+SOLUTION APPLIQUÉE:
+  ✅ Ajout de /company-settings dans sync-middleware.js
+  ✅ Configuration des colonnes autorisées
+  ✅ Synchronisation automatique via middleware
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📋 FICHIER MODIFIÉ                                               │
+└──────────────────────────────────────────────────────────────────┘
+
+backend/src/middleware/sync-middleware.js
+  • Ajout de la route /company-settings
+  • Table: parametres_entreprise
+  • Colonnes synchronisées:
+    - id, nom_entreprise, adresse, telephone, email
+    - nui_rccm, localisation, logo, slogan
+    - langue_facture, taux_tva
+    - date_creation, date_modification
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🚀 ACTION: Redémarrer le Backend                                │
+└──────────────────────────────────────────────────────────────────┘
+
+Dans PowerShell:
+  1. Ctrl+C pour arrêter le backend
+  2. npm start
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ✅ LOGS ATTENDUS                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+Lors de la modification des paramètres d'entreprise:
+
+  PUT /api/v1/company-settings 200 50 ms
+  🔍 Sync parametres_entreprise (UPDATE): 13 fields
+  📤 Push 1 opération(s) vers Neon...
+  📥 parametres_entreprise: 1 récupéré(s), 1 inséré(s) au total
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🧪 TEST                                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Redémarrer le backend
+
+2. Dans l'application Flutter:
+   • Aller dans Paramètres → Paramètres Entreprise
+   • Modifier le nom de l'entreprise
+   • Modifier l'adresse ou le téléphone
+   • Enregistrer
+
+3. Vérifier les logs du backend (voir ci-dessus)
+
+4. Vérifier dans Neon:
+
+   SELECT 
+     id,
+     nom_entreprise,
+     adresse,
+     telephone,
+     email,
+     nui_rccm,
+     localisation,
+     slogan,
+     langue_facture,
+     taux_tva,
+     date_modification
+   FROM parametres_entreprise
+   ORDER BY date_modification DESC;
+
+RÉSULTAT ATTENDU:
+  • Paramètres d'entreprise présents dans Neon
+  • Toutes les modifications synchronisées
+  • date_modification mise à jour
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📊 SYNCHRONISATION AUTOMATIQUE                                   │
+└──────────────────────────────────────────────────────────────────┘
+
+Le middleware de synchronisation intercepte automatiquement:
+
+  ✅ PUT /api/v1/company-settings  → UPDATE
+  ✅ POST /api/v1/company-settings → INSERT (si création)
+
+Pas besoin de code supplémentaire, c'est automatique!
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎯 RÉCAPITULATIF DES TABLES SYNCHRONISÉES                        │
+└──────────────────────────────────────────────────────────────────┘
+
+Via Middleware (automatique):
+  ✅ ventes
+  ✅ produits
+  ✅ clients
+  ✅ fournisseurs
+  ✅ commandes_approvisionnement
+  ✅ cash_sessions
+  ✅ cash_registers
+  ✅ financial_movements
+  ✅ categories
+  ✅ boutiques
+  ✅ parametres_entreprise ← NOUVEAU
+  ✅ utilisateurs
+  ✅ user_roles
+  ✅ stock_inventories
+  ✅ inventory_items
+
+Via Sync Manuelle (transactions):
+  ✅ mouvements_stock (ventes + mouvements manuels)
+  ✅ stock_boutiques (ventes + mouvements manuels)
+  ✅ stock (ventes + mouvements manuels)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+• SYNC_MOUVEMENTS_MANUELS.txt     → Mouvements de stock
+• FIX_PERFORMANCE_SYNC.md         → Performance optimisée
+• RESUME_CORRECTIONS.md           → Historique complet
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  ⚡ REDÉMARREZ LE BACKEND ET TESTEZ ! ⚡                        ║
+║                                                                  ║
+║     Les paramètres d'entreprise seront synchronisés!             ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝

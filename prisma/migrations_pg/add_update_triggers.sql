@@ -85,3 +85,49 @@ CREATE TRIGGER update_mouvements_stock_date_modification
     BEFORE UPDATE ON mouvements_stock
     FOR EACH ROW
     EXECUTE FUNCTION update_date_modification();
+
+DROP TRIGGER IF EXISTS update_ventes_proforma_date_modification ON ventes_proforma;
+CREATE TRIGGER update_ventes_proforma_date_modification
+    BEFORE UPDATE ON ventes_proforma
+    FOR EACH ROW
+    EXECUTE FUNCTION update_date_modification();
+
+DROP TRIGGER IF EXISTS update_details_ventes_proforma_date_modification ON details_ventes_proforma;
+CREATE TRIGGER update_details_ventes_proforma_date_modification
+    BEFORE UPDATE ON details_ventes_proforma
+    FOR EACH ROW
+    EXECUTE FUNCTION update_date_modification();
+
+-- ============================================================
+-- Ajout date_modification à stock_inventories et inventory_items
+-- ============================================================
+
+-- Ajouter la colonne date_modification à stock_inventories
+ALTER TABLE stock_inventories
+    ADD COLUMN IF NOT EXISTS date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE stock_inventories
+SET date_modification = date_creation
+WHERE date_modification IS NULL;
+
+-- Ajouter la colonne date_modification à inventory_items
+ALTER TABLE inventory_items
+    ADD COLUMN IF NOT EXISTS date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE inventory_items
+SET date_modification = CURRENT_TIMESTAMP
+WHERE date_modification IS NULL;
+
+-- Trigger pour stock_inventories
+DROP TRIGGER IF EXISTS update_stock_inventories_date_modification ON stock_inventories;
+CREATE TRIGGER update_stock_inventories_date_modification
+    BEFORE UPDATE ON stock_inventories
+    FOR EACH ROW
+    EXECUTE FUNCTION update_date_modification();
+
+-- Trigger pour inventory_items
+DROP TRIGGER IF EXISTS update_inventory_items_date_modification ON inventory_items;
+CREATE TRIGGER update_inventory_items_date_modification
+    BEFORE UPDATE ON inventory_items
+    FOR EACH ROW
+    EXECUTE FUNCTION update_date_modification();

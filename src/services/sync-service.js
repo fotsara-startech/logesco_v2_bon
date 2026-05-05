@@ -10,27 +10,39 @@
 
 const { Pool } = require('pg');
 
-// Tables avec date_modification pour le pull (dans l'ordre FK)
+// Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
 const PULL_TABLES = [
   'user_roles',
   'utilisateurs',
   'boutiques',
+  'user_boutique_assignments',
   'categories',
   'produits',
   'stock',
   'stock_boutiques',
   'fournisseurs',
+  'comptes_fournisseurs',
   'clients',
+  'comptes_clients',
   'cash_registers',
   'cash_sessions',
   'cash_movements',
   'movement_categories',
   'financial_movements',
+  'commandes_approvisionnement',
+  'details_commandes_approvisionnement',
   'ventes',
   'details_ventes',
   'ventes_proforma',
   'details_ventes_proforma',
   'mouvements_stock',
+  'transferts_stock',
+  'transactions_comptes',
+  'dates_peremption',
+  'stock_inventories',
+  'inventory_items',
+  'historique_recus',
+  'parametres_entreprise',
 ];
 
 class SyncService {
@@ -56,8 +68,10 @@ class SyncService {
     await this._checkCloudConnection();
 
     if (this.isCloudAvailable) {
-      // Push initial des données existantes si Neon est vide
+      // Si Neon est peuplé et la BD locale est fraîche → pull complet depuis Neon
+      // Neon est la source de vérité : on vide d'abord le local pour éviter les conflits de seeds
       await this._initialSync();
+      await this._resetLocalIfNeonIsSourceOfTruth();
     }
 
     // Vérification + sync toutes les 30 secondes
@@ -129,6 +143,80 @@ class SyncService {
   }
 
   /**
+   * Si Neon est peuplé et la BD locale est fraîche (peu de données),
+   * vider les tables locales pour que le pull Neon soit la seule source de vérité.
+   * Évite les conflits entre les seeds locaux (boutique id=1, admin...) et les vraies données Neon.
+   */
+  async _resetLocalIfNeonIsSourceOfTruth() {
+    try {
+      // Vérifier si Neon a des données
+      const pgClient = await this.cloudPool.connect();
+      const neonCount = await pgClient.query('SELECT COUNT(*) as total FROM utilisateurs');
+      pgClient.release();
+
+      const neonUsers = parseInt(neonCount.rows[0].total);
+      if (neonUsers === 0) return; // Neon vide, rien à faire
+
+      // Vérifier si le pull initial a déjà été fait
+      const metaResult = await this.localPrisma.$queryRawUnsafe(
+        "SELECT value FROM sync_meta WHERE key = 'initial_pull_done' LIMIT 1"
+      );
+      if (metaResult[0]?.value === '1') return; // Déjà fait
+
+      console.log('🔄 Neon est la source de vérité — réinitialisation du local avant pull...');
+
+      // Vider les tables locales dans l'ordre inverse des FK
+      const tablesToClear = [
+        'reimpressions_recus', 'historique_recus',
+        'inventory_items', 'stock_inventories',
+        'details_ventes_proforma', 'ventes_proforma',
+        'details_ventes', 'ventes',
+        'details_commandes_approvisionnement', 'commandes_approvisionnement',
+        'transactions_comptes',
+        'financial_movements', 'movement_attachments',
+        'cash_movements', 'cash_sessions', 'cash_registers',
+        'transferts_stock', 'mouvements_stock',
+        'dates_peremption',
+        'stock_boutiques', 'stock',
+        'comptes_clients', 'comptes_fournisseurs',
+        'clients', 'fournisseurs',
+        'user_boutique_assignments',
+        'parametres_entreprise',
+        'produits', 'categories',
+        'boutiques',
+        'utilisateurs', 'user_roles',
+      ];
+
+      await this.localPrisma.$executeRawUnsafe('PRAGMA foreign_keys = OFF');
+      for (const table of tablesToClear) {
+        try {
+          await this.localPrisma.$executeRawUnsafe(`DELETE FROM "${table}"`);
+        } catch (e) {
+          // Table inexistante, on skip
+        }
+      }
+      await this.localPrisma.$executeRawUnsafe('PRAGMA foreign_keys = ON');
+
+      // Réinitialiser last_pull pour forcer un pull complet
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO sync_meta (key, value) VALUES ('last_pull', '1970-01-01T00:00:00.000Z')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+      );
+
+      console.log('✅ Local vidé — pull complet depuis Neon en cours...');
+
+      // Marquer que le pull initial a été fait (sera mis à jour après le pull)
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO sync_meta (key, value) VALUES ('initial_pull_done', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+      );
+
+    } catch (e) {
+      console.warn('⚠️  Erreur reset local:', e.message);
+    }
+  }
+
+  /**
    * Sync initial — envoie toutes les données locales vers Neon si Neon est vide
    */
   async _initialSync() {
@@ -152,7 +240,8 @@ class SyncService {
         'cash_registers', 'cash_sessions', 'cash_movements',
         'movement_categories', 'financial_movements',
         'commandes_approvisionnement', 'details_commandes_approvisionnement',
-        'ventes', 'details_ventes', 'mouvements_stock', 'transferts_stock',
+        'ventes', 'details_ventes', 'ventes_proforma', 'details_ventes_proforma',
+        'mouvements_stock', 'transferts_stock',
         'transactions_comptes', 'parametres_entreprise', 'dates_peremption',
         'stock_inventories', 'inventory_items', 'historique_recus',
       ];
@@ -249,6 +338,11 @@ class SyncService {
          WHEN 'cash_movements' THEN 11
          WHEN 'financial_movements' THEN 12
          WHEN 'ventes' THEN 13
+         WHEN 'ventes_proforma' THEN 14
+         WHEN 'details_ventes' THEN 15
+         WHEN 'details_ventes_proforma' THEN 16
+         WHEN 'stock_inventories' THEN 17
+         WHEN 'inventory_items' THEN 18
          ELSE 20
        END, id ASC LIMIT 100`
     );
@@ -315,6 +409,57 @@ class SyncService {
             }
           }
           
+          // IMPORTANT: Si c'est un inventory_item, vérifier que l'inventaire parent existe en Neon
+          if (item.table_name === 'inventory_items') {
+            const inventaireId = data.inventaireId || data.inventaire_id;
+            if (inventaireId) {
+              try {
+                const inventoryExists = await client.query(
+                  'SELECT id FROM stock_inventories WHERE id = $1',
+                  [inventaireId]
+                );
+                if (inventoryExists.rows.length === 0) {
+                  const localInventory = await this.localPrisma.$queryRawUnsafe(
+                    'SELECT * FROM stock_inventories WHERE id = ?',
+                    inventaireId
+                  );
+                  if (localInventory && localInventory.length > 0) {
+                    console.log(`  ⚠️  Inventaire ${inventaireId} manquant en Neon, sync d'abord...`);
+                    await this._applyToCloud(client, 'stock_inventories', 'INSERT', localInventory[0]);
+                  }
+                }
+              } catch (e) {
+                // Erreur lors de la vérification, continuer
+              }
+            }
+          }
+
+          // IMPORTANT: Si c'est un utilisateur, récupérer les données complètes depuis la BD locale
+          // (mot_de_passe_hash n'est pas inclus dans la réponse API pour des raisons de sécurité)
+          if (item.table_name === 'utilisateurs') {
+            const recordId = data.id || data.utilisateur_id;
+            if (recordId) {
+              try {
+                const localUser = await this.localPrisma.$queryRawUnsafe(
+                  'SELECT * FROM utilisateurs WHERE id = ?',
+                  recordId
+                );
+                if (localUser && localUser.length > 0) {
+                  // Remplacer les données par les données complètes de la BD locale
+                  Object.assign(data, localUser[0]);
+                } else {
+                  // Utilisateur supprimé localement, marquer comme synced pour éviter les retries
+                  await this.localPrisma.$executeRawUnsafe(
+                    'UPDATE sync_queue SET synced = 1 WHERE id = ?', item.id
+                  );
+                  continue;
+                }
+              } catch (e) {
+                // Continuer avec les données disponibles
+              }
+            }
+          }
+
           await this._applyToCloud(client, item.table_name, item.operation, data);
           await this.localPrisma.$executeRawUnsafe(
             'UPDATE sync_queue SET synced = 1 WHERE id = ?', item.id
@@ -361,9 +506,57 @@ class SyncService {
       return;
     }
 
+    // Gérer les champs obligatoires avec valeurs NULL (générer des valeurs par défaut)
+    if (tableName === 'produits') {
+      if (!row.reference) {
+        // Générer une référence unique si manquante (format PRD20260001)
+        const year = new Date().getFullYear();
+        row.reference = `PRD${year}${String(row.id || Date.now()).padStart(4, '0')}`;
+        console.log(`⚠️  Produit ${row.id}: référence manquante, génération automatique: ${row.reference}`);
+      }
+      if (row.prix_unitaire === null || row.prix_unitaire === undefined) {
+        row.prix_unitaire = 0;
+        console.log(`⚠️  Produit ${row.id}: prix_unitaire manquant, valeur par défaut: 0`);
+      }
+      if (!row.nom) {
+        row.nom = `Produit ${row.id || 'Sans nom'}`;
+        console.log(`⚠️  Produit ${row.id}: nom manquant, génération automatique: ${row.nom}`);
+      }
+    }
+
+    if (tableName === 'stock_inventories') {
+      if (!row.type) {
+        // Récupérer le type depuis la BD locale
+        try {
+          const local = await this.localPrisma.$queryRawUnsafe(
+            'SELECT type, nom, utilisateur_id FROM stock_inventories WHERE id = ?', row.id
+          );
+          if (local && local.length > 0) {
+            row.type = local[0].type || 'COMPLET';
+            if (!row.nom) row.nom = local[0].nom || `Inventaire ${row.id}`;
+            if (!row.utilisateur_id) row.utilisateur_id = local[0].utilisateur_id;
+          } else {
+            row.type = 'COMPLET';
+          }
+        } catch (e) {
+          row.type = 'COMPLET';
+        }
+        console.log(`⚠️  Inventaire ${row.id}: type manquant, récupéré/défaut: ${row.type}`);
+      }
+      if (!row.nom) row.nom = `Inventaire ${row.id}`;
+      if (!row.utilisateur_id) row.utilisateur_id = 1;
+    }
+
+    if (tableName === 'inventory_items') {
+      if (row.quantite_systeme === null || row.quantite_systeme === undefined) {
+        row.quantite_systeme = 0;
+      }
+    }
+
     // Filtre les clés pour éviter les colonnes inexistantes
     const keys = Object.keys(row).filter(k => {
-      if (row[k] === undefined || row[k] === null) return false;
+      if (row[k] === undefined) return false;
+      if (row[k] === null) return false;
       if (k.startsWith('_')) return false;
       return true;
     });
@@ -403,19 +596,57 @@ class SyncService {
     const client = await this.cloudPool.connect();
     let pulled = 0;
 
+    // Sur une nouvelle machine (last_pull = epoch), pull complet sans limite
+    const isInitialPull = lastSync === '1970-01-01T00:00:00.000Z';
+    const limitClause = isInitialPull ? '' : 'LIMIT 500';
+
+    // Désactiver les FK SQLite pendant le pull pour éviter les erreurs en cascade
+    await this.localPrisma.$executeRawUnsafe('PRAGMA foreign_keys = OFF');
+
     try {
+      // Cache des colonnes SQLite locales par table (évite N requêtes PRAGMA)
+      const localColumnsCache = {};
+      const getLocalColumns = async (tableName) => {
+        if (!localColumnsCache[tableName]) {
+          try {
+            const pragma = await this.localPrisma.$queryRawUnsafe(
+              `PRAGMA table_info("${tableName}")`
+            );
+            localColumnsCache[tableName] = new Set(pragma.map(r => r.name));
+          } catch (e) {
+            localColumnsCache[tableName] = new Set();
+          }
+        }
+        return localColumnsCache[tableName];
+      };
+
       for (const table of PULL_TABLES) {
         try {
-          const result = await client.query(
-            `SELECT * FROM "${table}" WHERE date_modification > $1 LIMIT 500`,
-            [lastSync]
-          );
+          // Détecter dynamiquement si la table a date_modification sur Neon
+          let result;
+          try {
+            result = await client.query(
+              `SELECT * FROM "${table}" WHERE date_modification > $1 ${limitClause}`,
+              [lastSync]
+            );
+          } catch (colErr) {
+            // date_modification absente sur Neon — fallback: pull complet de la table
+            console.warn(`  ⚠️  ${table}: pas de date_modification sur Neon, pull complet...`);
+            result = await client.query(`SELECT * FROM "${table}"`);
+          }
+
+          if (result.rows.length === 0) continue;
+
+          // Récupérer les colonnes SQLite locales pour cette table
+          const localCols = await getLocalColumns(table);
 
           for (const row of result.rows) {
-            const keys = Object.keys(row);
-            const vals = Object.values(row).map(v =>
-              v instanceof Date ? v.toISOString() : v
-            );
+            // Filtrer uniquement les colonnes qui existent en SQLite local
+            const entries = Object.entries(row).filter(([k]) => localCols.has(k));
+            if (entries.length === 0) continue;
+
+            const keys = entries.map(([k]) => k);
+            const vals = entries.map(([, v]) => v instanceof Date ? v.toISOString() : v);
             const cols = keys.map(k => `"${k}"`).join(', ');
             const placeholders = keys.map(() => `?`).join(', ');
             const updates = keys.filter(k => k !== 'id').map(k => `"${k}" = excluded."${k}"`).join(', ');
@@ -426,16 +657,19 @@ class SyncService {
                 ...vals
               );
               pulled++;
-            } catch (e) {
-              // Conflit ou contrainte FK, on skip
+            } catch (insertErr) {
+              console.warn(`  ⚠️  ${table} INSERT échoué (id=${row.id}): ${insertErr.message}`);
             }
           }
+          console.log(`  📥 ${table}: ${result.rows.length} récupéré(s), ${pulled} inséré(s) au total`);
         } catch (e) {
-          // Table sans date_modification ou inexistante, on skip
+          console.warn(`  ❌ ${table}: erreur pull — ${e.message}`);
         }
       }
     } finally {
       client.release();
+      // Réactiver les FK SQLite
+      await this.localPrisma.$executeRawUnsafe('PRAGMA foreign_keys = ON');
     }
 
     if (pulled > 0) console.log(`📥 Pull ${pulled} enregistrement(s) depuis Neon`);

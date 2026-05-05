@@ -61,6 +61,8 @@ Les triggers sont appliqués sur :
 - `cash_sessions`
 - `movement_categories`
 - `ventes`
+- `ventes_proforma`
+- `details_ventes_proforma`
 - `mouvements_stock`
 
 ## Synchronisation

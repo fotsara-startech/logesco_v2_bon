@@ -654,7 +654,7 @@ function createSalesRouter({ prisma, authService }) {
         // Générer le numéro de vente
         const numeroVente = await generateSaleNumber(prisma);
 
-        // Créer la vente dans une transaction
+        // Créer la vente dans une transaction avec timeout augmenté
         const vente = await prisma.$transaction(async (tx) => {
           // Récupérer la session active de l'utilisateur connecté (filtrée par boutique)
           const sessionWhere = {
@@ -954,7 +954,118 @@ function createSalesRouter({ prisma, authService }) {
           }
 
           return nouvelleVente;
+        }, {
+          timeout: 15000 // Augmenter le timeout à 15 secondes pour les transactions complexes
         });
+
+        // Synchroniser manuellement les mouvements de stock et stock_boutiques vers Neon
+        // (Les extensions Prisma ne s'appliquent pas aux transactions)
+        // IMPORTANT: Exécuter de manière asynchrone pour ne pas bloquer la réponse
+        if (process.env.CLOUD_DB_URL) {
+          // Utiliser setImmediate pour exécuter la sync APRÈS avoir renvoyé la réponse
+          setImmediate(async () => {
+            try {
+              console.log('🔧 [Sync] Début de la synchronisation manuelle...');
+              console.log('🔧 [Sync] Nombre de détails à synchroniser:', details.length);
+              const syncService = require('../services/sync-service');
+              
+              // Synchroniser les mouvements de stock créés
+              for (const detail of details) {
+                console.log(`🔧 [Sync] Traitement produit ${detail.produitId}, type: ${detail.type}`);
+                if (detail.type !== 'service') {
+              try {
+                // Récupérer le mouvement de stock créé
+                const mouvement = await prisma.mouvementStock.findFirst({
+                  where: {
+                    produitId: detail.produitId,
+                    referenceId: vente.id,
+                    typeReference: 'vente'
+                  },
+                  orderBy: { id: 'desc' } // Utiliser id au lieu de dateModification
+                });
+                
+                if (mouvement) {
+                  console.log(`🔄 [Manual Sync] mouvements_stock trouvé: ${mouvement.id}`);
+                  await syncService.enqueue('mouvements_stock', 'INSERT', {
+                    id: mouvement.id,
+                    produit_id: mouvement.produitId,
+                    boutique_id: mouvement.boutiqueId,
+                    type_mouvement: mouvement.typeMouvement,
+                    changement_quantite: mouvement.changementQuantite,
+                    reference_id: mouvement.referenceId,
+                    type_reference: mouvement.typeReference,
+                    date_mouvement: mouvement.dateMouvement,
+                    notes: mouvement.notes
+                  });
+                  
+                  console.log(`✅ [Manual Sync] mouvements_stock synchronisé: ${mouvement.id}`);
+                } else {
+                  console.log(`⚠️  [Manual Sync] Mouvement de stock non trouvé pour produit ${detail.produitId}`);
+                }
+                
+                // Synchroniser le stock_boutiques mis à jour
+                if (boutiqueId) {
+                  const stockBoutique = await prisma.stockBoutique.findUnique({
+                    where: {
+                      boutiqueId_produitId: {
+                        boutiqueId: parseInt(boutiqueId),
+                        produitId: detail.produitId
+                      }
+                    }
+                  });
+                  
+                  if (stockBoutique) {
+                    console.log(`🔄 [Manual Sync] stock_boutiques trouvé: ${stockBoutique.id}`);
+                    await syncService.enqueue('stock_boutiques', 'UPDATE', {
+                      id: stockBoutique.id,
+                      boutique_id: stockBoutique.boutiqueId,
+                      produit_id: stockBoutique.produitId,
+                      quantite_disponible: stockBoutique.quantiteDisponible,
+                      quantite_reservee: stockBoutique.quantiteReservee,
+                      derniere_maj: stockBoutique.derniereMaj,
+                      date_modification: stockBoutique.dateModification
+                    });
+                    
+                    console.log(`✅ [Manual Sync] stock_boutiques synchronisé: ${stockBoutique.id}`);
+                  } else {
+                    console.log(`⚠️  [Manual Sync] stock_boutiques non trouvé pour produit ${detail.produitId}`);
+                  }
+                } else {
+                  // Synchroniser le stock global
+                  const stock = await prisma.stock.findUnique({
+                    where: { produitId: detail.produitId }
+                  });
+                  
+                  if (stock) {
+                    await syncService.enqueue('stock', 'UPDATE', {
+                      id: stock.id,
+                      produit_id: stock.produitId,
+                      quantite_disponible: stock.quantiteDisponible,
+                      quantite_reservee: stock.quantiteReservee,
+                      derniere_maj: stock.derniereMaj,
+                      date_modification: stock.dateModification
+                    });
+                    
+                    console.log(`✅ [Manual Sync] stock synchronisé: ${stock.id}`);
+                  } else {
+                    console.log(`⚠️  [Manual Sync] stock non trouvé pour produit ${detail.produitId}`);
+                  }
+                }
+              } catch (syncError) {
+                console.error('❌ Erreur sync manuelle:', syncError.message);
+                console.error('   Stack:', syncError.stack);
+                // Ne pas bloquer la vente si la sync échoue
+              }
+            }
+          }
+          console.log('✅ [Sync] Synchronisation manuelle terminée');
+            } catch (error) {
+              console.error('❌ Erreur sync manuelle globale:', error.message);
+            }
+          });
+        } else {
+          console.log('ℹ️  [Sync] CLOUD_DB_URL non défini, sync manuelle ignorée');
+        }
 
         // Mettre à jour le solde attendu de la session de caisse active
         try {

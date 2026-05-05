@@ -1,0 +1,146 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║           🔍 DEBUG: SYNCHRONISATION MANUELLE ACTIVÉE            ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+J'ai ajouté des logs détaillés pour comprendre pourquoi la 
+synchronisation manuelle ne s'exécute pas.
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🚀 ACTION: Redémarrer le Backend                                │
+└──────────────────────────────────────────────────────────────────┘
+
+Dans PowerShell:
+  1. Ctrl+C pour arrêter le backend
+  2. npm start
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🧪 TEST: Créer une Vente                                        │
+└──────────────────────────────────────────────────────────────────┘
+
+Après redémarrage:
+  1. Créer une vente dans l'application Flutter
+  2. Observer ATTENTIVEMENT les logs du backend
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📋 LOGS ATTENDUS (Scénario Normal)                              │
+└──────────────────────────────────────────────────────────────────┘
+
+Si tout fonctionne, vous devriez voir:
+
+  POST /api/v1/sales ...
+  🔧 [Sync] Début de la synchronisation manuelle...
+  🔧 [Sync] Nombre de détails à synchroniser: 1
+  🔧 [Sync] Traitement produit 837, type: physique
+  🔄 [Manual Sync] mouvements_stock trouvé: 640
+  ✅ [Manual Sync] mouvements_stock synchronisé: 640
+  🔄 [Manual Sync] stock_boutiques trouvé: 122
+  ✅ [Manual Sync] stock_boutiques synchronisé: 122
+  ✅ [Sync] Synchronisation manuelle terminée
+  📤 Push 3 opération(s) vers Neon...
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🔍 DIAGNOSTICS POSSIBLES                                         │
+└──────────────────────────────────────────────────────────────────┘
+
+Scénario 1: Aucun log de sync
+  Logs:
+    POST /api/v1/sales ...
+    (rien d'autre)
+  
+  Cause possible:
+    • CLOUD_DB_URL non défini
+    • Code de sync pas exécuté (erreur avant)
+  
+  Vérifier:
+    cat backend\.env | Select-String "CLOUD_DB_URL"
+
+Scénario 2: Sync démarre mais mouvement non trouvé
+  Logs:
+    🔧 [Sync] Début de la synchronisation manuelle...
+    🔧 [Sync] Traitement produit 837, type: physique
+    ⚠️  [Manual Sync] Mouvement de stock non trouvé pour produit 837
+  
+  Cause possible:
+    • Mouvement de stock pas créé dans la transaction
+    • Erreur dans la transaction
+  
+  Vérifier:
+    SELECT * FROM mouvements_stock 
+    WHERE produit_id = 837 
+    ORDER BY date_modification DESC 
+    LIMIT 5;
+
+Scénario 3: Erreur de sync
+  Logs:
+    🔧 [Sync] Début de la synchronisation manuelle...
+    ❌ Erreur sync manuelle: ...
+       Stack: ...
+  
+  Cause possible:
+    • Erreur dans syncService.enqueue()
+    • Problème de connexion Neon
+  
+  Action:
+    Copier l'erreur complète et analyser
+
+Scénario 4: CLOUD_DB_URL non défini
+  Logs:
+    POST /api/v1/sales ...
+    ℹ️  [Sync] CLOUD_DB_URL non défini, sync manuelle ignorée
+  
+  Cause:
+    • Variable d'environnement manquante
+  
+  Solution:
+    Vérifier backend\.env et redémarrer
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📊 VÉRIFICATION NEON                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+Après la vente, vérifier dans Neon:
+
+-- Mouvements de stock récents
+SELECT 
+  ms.id,
+  ms.produit_id,
+  p.nom as produit,
+  ms.type_mouvement,
+  ms.changement_quantite,
+  ms.date_modification
+FROM mouvements_stock ms
+JOIN produits p ON p.id = ms.produit_id
+WHERE ms.date_modification > NOW() - INTERVAL '5 minutes'
+ORDER BY ms.date_modification DESC;
+
+-- Stock boutiques récents
+SELECT 
+  sb.id,
+  sb.produit_id,
+  p.nom as produit,
+  sb.quantite_disponible,
+  sb.date_modification
+FROM stock_boutiques sb
+JOIN produits p ON p.id = sb.produit_id
+WHERE sb.date_modification > NOW() - INTERVAL '5 minutes'
+ORDER BY sb.date_modification DESC;
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎯 OBJECTIF                                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+Avec ces logs détaillés, nous pourrons identifier EXACTEMENT:
+  • Si le code de sync s'exécute
+  • Si les mouvements de stock sont trouvés
+  • Si l'envoi à la queue fonctionne
+  • Où se situe le problème
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  👉 REDÉMARREZ LE BACKEND ET CRÉEZ UNE VENTE 👈                 ║
+║                                                                  ║
+║     Puis copiez TOUS les logs qui apparaissent                   ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝

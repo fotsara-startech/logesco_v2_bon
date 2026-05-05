@@ -1,0 +1,135 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║     ✅ SYNCHRONISATION MOUVEMENTS DE STOCK MANUELS AJOUTÉE      ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+PROBLÈME:
+  ❌ Mouvements de stock manuels non synchronisés vers Neon
+  ❌ Quantités de stock incorrectes sur Neon
+
+CAUSE:
+  Même problème que les ventes: les mouvements manuels sont créés
+  dans une transaction, donc les hooks Prisma ne fonctionnent pas.
+
+SOLUTION APPLIQUÉE:
+  ✅ Synchronisation manuelle après transaction (comme pour les ventes)
+  ✅ Utilisation de setImmediate() pour sync asynchrone
+  ✅ Sync de mouvements_stock ET stock_boutiques/stock
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📋 FICHIER MODIFIÉ                                               │
+└──────────────────────────────────────────────────────────────────┘
+
+backend/src/routes/inventory.js
+  • Ajout de sync manuelle après la transaction
+  • Sync de mouvements_stock (INSERT)
+  • Sync de stock_boutiques ou stock (UPDATE)
+  • Logs détaillés: [Sync Inventory]
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🚀 ACTION: Redémarrer le Backend                                │
+└──────────────────────────────────────────────────────────────────┘
+
+Dans PowerShell:
+  1. Ctrl+C pour arrêter le backend
+  2. npm start
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ✅ LOGS ATTENDUS                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+Lors d'un mouvement de stock manuel:
+
+  POST /api/v1/inventory/movements 201 150 ms
+  🔧 [Sync Inventory] Synchronisation mouvement de stock manuel...
+  ✅ [Sync Inventory] mouvements_stock synchronisé: 937
+  ✅ [Sync Inventory] stock_boutiques synchronisé: 330
+  ✅ [Sync Inventory] Synchronisation terminée
+  📤 Push 2 opération(s) vers Neon...
+  📥 mouvements_stock: 1 récupéré(s), 1 inséré(s) au total
+  📥 stock_boutiques: 1 récupéré(s), 1 inséré(s) au total
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🧪 TEST                                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Redémarrer le backend
+2. Dans l'application Flutter:
+   • Aller dans "Mouvement de Stock"
+   • Sélectionner un produit
+   • Type: "Entrée de stock"
+   • Motif: "Réception fournisseur"
+   • Quantité: 10
+   • Enregistrer
+
+3. Vérifier les logs du backend (voir ci-dessus)
+
+4. Vérifier dans Neon:
+
+   SELECT 
+     ms.id,
+     ms.produit_id,
+     p.nom as produit,
+     ms.type_mouvement,
+     ms.changement_quantite,
+     ms.notes,
+     ms.date_mouvement,
+     sb.quantite_disponible as stock_actuel
+   FROM mouvements_stock ms
+   JOIN produits p ON p.id = ms.produit_id
+   LEFT JOIN stock_boutiques sb ON sb.produit_id = ms.produit_id
+   WHERE ms.date_mouvement > NOW() - INTERVAL '5 minutes'
+   ORDER BY ms.id DESC;
+
+RÉSULTAT ATTENDU:
+  • Mouvement de stock créé avec changement_quantite = 10
+  • Stock boutique mis à jour avec nouvelle quantité
+  • Toutes les données présentes dans Neon
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📊 TYPES DE MOUVEMENTS SYNCHRONISÉS                              │
+└──────────────────────────────────────────────────────────────────┘
+
+Tous les types de mouvements manuels sont maintenant synchronisés:
+
+  ✅ Entrée de stock (achat, réception)
+  ✅ Sortie de stock (vente, perte)
+  ✅ Ajustement (correction d'inventaire)
+  ✅ Retour (retour client/fournisseur)
+  ✅ Correction (correction d'erreur)
+  ✅ Transfert (entre boutiques)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎯 RÉCAPITULATIF COMPLET                                         │
+└──────────────────────────────────────────────────────────────────┘
+
+Opérations maintenant synchronisées vers Neon:
+
+  ✅ Ventes (sales.js)
+     → mouvements_stock + stock_boutiques + ventes
+
+  ✅ Mouvements manuels (inventory.js)
+     → mouvements_stock + stock_boutiques/stock
+
+  ⏳ À FAIRE (si nécessaire):
+     • Achats/Approvisionnements (procurement.js)
+     • Inventaires (stock-inventory.js)
+     • Transferts entre boutiques
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+• FIX_PERFORMANCE_SYNC.md         → Sync asynchrone
+• FIX_DATE_MODIFICATION_MOUVEMENTS.md → Correction champ manquant
+• PRISMA_EXTENSIONS_TRANSACTIONS.md   → Limitation Prisma
+• RESUME_CORRECTIONS.md           → Historique complet
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  ⚡ REDÉMARREZ LE BACKEND ET TESTEZ ! ⚡                        ║
+║                                                                  ║
+║     Les mouvements manuels seront synchronisés!                  ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝

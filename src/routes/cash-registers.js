@@ -87,6 +87,17 @@ function createCashRegistersRouter({ prisma, authService }) {
         });
       }
       
+      // Si boutiqueId n'est pas fourni, récupérer la boutique principale
+      let finalBoutiqueId = boutiqueId;
+      if (!finalBoutiqueId) {
+        const boutiquePrincipale = await prisma.boutique.findFirst({
+          where: { estPrincipale: true }
+        });
+        if (boutiquePrincipale) {
+          finalBoutiqueId = boutiquePrincipale.id;
+        }
+      }
+      
       const newCashRegister = await prisma.cashRegister.create({
         data: {
           nom,
@@ -94,7 +105,7 @@ function createCashRegistersRouter({ prisma, authService }) {
           soldeInitial: parseFloat(soldeInitial),
           soldeActuel: parseFloat(soldeInitial),
           isActive,
-          ...(boutiqueId ? { boutiqueId: parseInt(boutiqueId) } : {})
+          ...(finalBoutiqueId ? { boutiqueId: parseInt(finalBoutiqueId) } : {})
         },
         include: {
           utilisateur: true
@@ -110,6 +121,7 @@ function createCashRegistersRouter({ prisma, authService }) {
         isActive: Boolean(newCashRegister.isActive),
         utilisateurId: newCashRegister.utilisateurId,
         nomUtilisateur: newCashRegister.utilisateur?.nomUtilisateur,
+        boutiqueId: newCashRegister.boutiqueId,
         dateCreation: newCashRegister.dateCreation,
         dateModification: newCashRegister.dateModification,
         dateOuverture: newCashRegister.dateOuverture,
