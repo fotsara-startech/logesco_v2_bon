@@ -137,6 +137,38 @@ class Stock {
   }
 }
 
+class StockBoutique {
+  final int boutiqueId;
+  final int produitId;
+  final int quantiteDisponible;
+  final int quantiteReservee;
+
+  StockBoutique({
+    required this.boutiqueId,
+    required this.produitId,
+    required this.quantiteDisponible,
+    required this.quantiteReservee,
+  });
+
+  factory StockBoutique.fromJson(Map<String, dynamic> json) {
+    return StockBoutique(
+      boutiqueId: json['boutiqueId'] as int? ?? 0,
+      produitId: json['produitId'] as int? ?? 0,
+      quantiteDisponible: json['quantiteDisponible'] as int? ?? 0,
+      quantiteReservee: json['quantiteReservee'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'boutiqueId': boutiqueId,
+      'produitId': produitId,
+      'quantiteDisponible': quantiteDisponible,
+      'quantiteReservee': quantiteReservee,
+    };
+  }
+}
+
 class Product {
   final int id;
   final String reference;
@@ -144,6 +176,7 @@ class Product {
   final int seuilStockMinimum;
   final bool? estActif;
   final int? stockActuel;
+  final List<StockBoutique>? stocksBoutiques;
 
   Product({
     required this.id,
@@ -152,6 +185,7 @@ class Product {
     required this.seuilStockMinimum,
     this.estActif,
     this.stockActuel,
+    this.stocksBoutiques,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -162,6 +196,7 @@ class Product {
       seuilStockMinimum: _safeExtractInt(json, ['seuilStockMinimum', 'seuil_stock_minimum', 'minStockLevel']),
       estActif: json['estActif'] as bool?,
       stockActuel: _safeExtractInt(json, ['stockActuel', 'stock_actuel']),
+      stocksBoutiques: json['stocksBoutiques'] != null ? (json['stocksBoutiques'] as List).map((s) => StockBoutique.fromJson(s as Map<String, dynamic>)).toList() : null,
     );
   }
 
@@ -201,6 +236,7 @@ class Product {
 class StockMovement {
   final int id;
   final int produitId;
+  final int? boutiqueId;
   final String typeMouvement;
   final int changementQuantite;
   final DateTime dateMouvement;
@@ -210,6 +246,7 @@ class StockMovement {
   StockMovement({
     required this.id,
     required this.produitId,
+    this.boutiqueId,
     required this.typeMouvement,
     required this.changementQuantite,
     required this.dateMouvement,
@@ -221,6 +258,7 @@ class StockMovement {
     return StockMovement(
       id: _safeExtractInt(json, ['id']),
       produitId: _safeExtractInt(json, ['produitId', 'productId', 'product_id']),
+      boutiqueId: json['boutiqueId'] != null ? _safeExtractInt(json, ['boutiqueId', 'boutique_id']) : null,
       typeMouvement: json['typeMouvement'] as String? ?? '',
       changementQuantite: _safeExtractInt(json, ['changementQuantite', 'changement_quantite', 'quantityChange']),
       dateMouvement: json['dateMouvement'] != null ? DateTime.parse(json['dateMouvement'] as String) : DateTime.now(),

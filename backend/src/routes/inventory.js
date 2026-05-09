@@ -665,10 +665,10 @@ function createInventoryRouter(models) {
               stock: true,
               stocksBoutiques: boutiqueId ? {
                 where: { boutiqueId }
-              } : false
+              } : true
             }
           },
-          boutique: boutiqueId ? true : false
+          boutique: true
         };
         options.orderBy = { dateMouvement: 'desc' };
 

@@ -61,15 +61,15 @@ class BoutiqueContextIndicator extends StatelessWidget {
             children: [
               Icon(
                 boutique.estPrincipale ? Icons.store : Icons.storefront,
-                size: 12,
-                color: Theme.of(context).colorScheme.primary,
+                size: 14,
+                color: Colors.white, //Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 4),
               Text(
                 boutique.nom,
                 style: TextStyle(
-                  fontSize: 10,
-                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 14,
+                  color: Colors.white, //Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

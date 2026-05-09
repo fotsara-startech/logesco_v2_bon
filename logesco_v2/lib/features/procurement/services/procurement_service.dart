@@ -27,6 +27,7 @@ class ProcurementService {
     String? statut,
     DateTime? dateDebut,
     DateTime? dateFin,
+    String? searchQuery,
     int page = 1,
     int limit = 20,
   }) async {
@@ -41,6 +42,7 @@ class ProcurementService {
       if (statut != null) queryParams['statut'] = statut;
       if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
       if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
+      if (searchQuery != null && searchQuery.isNotEmpty) queryParams['search'] = searchQuery;
 
       final uri = Uri.parse(_baseUrl).replace(queryParameters: queryParams);
       final token = await _getToken();
@@ -205,14 +207,21 @@ class ProcurementService {
   /// Réceptionne une commande (partiellement ou totalement)
   Future<CommandeApprovisionnement> recevoirCommande(
     int id,
-    List<Map<String, dynamic>> details,
-  ) async {
+    List<Map<String, dynamic>> details, {
+    String? modePaiement,
+  }) async {
     try {
       final token = await _getToken();
 
       final body = {
         'details': details,
+        if (modePaiement != null) 'modePaiement': modePaiement,
       };
+
+      print('🔍 ENVOI RÉCEPTION:');
+      print('   - ID commande: $id');
+      print('   - Mode paiement: $modePaiement');
+      print('   - Body: ${json.encode(body)}');
 
       final response = await http.put(
         Uri.parse('$_baseUrl/$id/receive'),
@@ -222,6 +231,10 @@ class ProcurementService {
         },
         body: json.encode(body),
       );
+
+      print('📥 RÉPONSE BACKEND:');
+      print('   - Status: ${response.statusCode}');
+      print('   - Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -235,6 +248,7 @@ class ProcurementService {
         throw Exception(data['error']['message'] ?? 'Erreur HTTP: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ ERREUR RÉCEPTION: $e');
       throw Exception('Erreur lors de la réception de la commande: $e');
     }
   }

@@ -249,7 +249,8 @@ const commandeApprovisionnementSchemas = {
         detailId: baseSchemas.id.required(),
         quantiteRecue: Joi.number().integer().min(0).required()
       })
-    ).min(1).required()
+    ).min(1).required(),
+    modePaiement: baseSchemas.modePaiement.optional() // Permettre de changer le mode de paiement lors de la réception
   }),
 
   search: Joi.object({
@@ -258,6 +259,7 @@ const commandeApprovisionnementSchemas = {
     statut: baseSchemas.statut,
     dateDebut: baseSchemas.date,
     dateFin: baseSchemas.date,
+    search: Joi.string().max(100).allow('', null),
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20)
   })

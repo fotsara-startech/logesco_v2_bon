@@ -31,44 +31,48 @@ class CustomerListView extends GetView<CustomerController> {
                 tooltip: 'customers_refresh'.tr,
               )),
           // Bouton Import/Export
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.import_export),
-            tooltip: 'customers_import_export'.tr,
-            onSelected: (value) {
-              if (value == 'export') {
-                controller.exportToExcel();
-              } else if (value == 'import') {
-                controller.importFromExcel();
-              } else if (value == 'template') {
-                controller.downloadTemplate();
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'export',
-                child: ListTile(
-                  leading: const Icon(Icons.download),
-                  title: Text('customers_export_excel'.tr),
-                  contentPadding: EdgeInsets.zero,
+          PermissionWidget(
+            module: 'customers',
+            privilege: 'CREATE', // Import/Export nécessite CREATE pour importer
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.import_export),
+              tooltip: 'customers_import_export'.tr,
+              onSelected: (value) {
+                if (value == 'export') {
+                  controller.exportToExcel();
+                } else if (value == 'import') {
+                  controller.importFromExcel();
+                } else if (value == 'template') {
+                  controller.downloadTemplate();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'export',
+                  child: ListTile(
+                    leading: const Icon(Icons.download),
+                    title: Text('customers_export_excel'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'import',
-                child: ListTile(
-                  leading: const Icon(Icons.upload),
-                  title: Text('customers_import_excel'.tr),
-                  contentPadding: EdgeInsets.zero,
+                PopupMenuItem(
+                  value: 'import',
+                  child: ListTile(
+                    leading: const Icon(Icons.upload),
+                    title: Text('customers_import_excel'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'template',
-                child: ListTile(
-                  leading: const Icon(Icons.file_download),
-                  title: Text('customers_download_template'.tr),
-                  contentPadding: EdgeInsets.zero,
+                PopupMenuItem(
+                  value: 'template',
+                  child: ListTile(
+                    leading: const Icon(Icons.file_download),
+                    title: Text('customers_download_template'.tr),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           PermissionWidget(
             module: 'customers',

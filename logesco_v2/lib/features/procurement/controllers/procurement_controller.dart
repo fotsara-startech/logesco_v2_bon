@@ -35,6 +35,7 @@ class ProcurementController extends GetxController {
   final Rx<CommandeStatut?> statutFiltre = Rx<CommandeStatut?>(null);
   final Rx<DateTime?> dateDebutFiltre = Rx<DateTime?>(null);
   final Rx<DateTime?> dateFinFiltre = Rx<DateTime?>(null);
+  final RxString searchQuery = ''.obs;
 
   // Pagination
   final RxInt currentPage = 1.obs;
@@ -79,6 +80,7 @@ class ProcurementController extends GetxController {
         statut: statutFiltre.value?.value,
         dateDebut: dateDebutFiltre.value,
         dateFin: dateFinFiltre.value,
+        searchQuery: searchQuery.value.isNotEmpty ? searchQuery.value : null,
         page: currentPage.value,
       );
 
@@ -146,7 +148,7 @@ class ProcurementController extends GetxController {
         fournisseurId: fournisseurSelectionne.value!.id,
         boutiqueId: BoutiqueController.getActiveBoutiqueId(),
         dateLivraisonPrevue: dateLivraisonPrevue.value,
-        modePaiement: modePaiement.value.value,
+        modePaiement: 'credit', // Mode de paiement par défaut, sera défini lors de la réception
         notes: notes.value.isNotEmpty ? notes.value : null,
         details: details,
       );
@@ -165,13 +167,12 @@ class ProcurementController extends GetxController {
     }
   }
 
-  ///
-//Réceptionne une commande
-  Future<bool> recevoirCommande(int commandeId, List<Map<String, dynamic>> details) async {
+  /// Réceptionne une commande
+  Future<bool> recevoirCommande(int commandeId, List<Map<String, dynamic>> details, {String? modePaiement}) async {
     try {
       isUpdating.value = true;
 
-      final commande = await _procurementService.recevoirCommande(commandeId, details);
+      final commande = await _procurementService.recevoirCommande(commandeId, details, modePaiement: modePaiement);
 
       // Mettre à jour la commande dans la liste
       final index = commandes.indexWhere((c) => c.id == commandeId);
@@ -292,6 +293,7 @@ class ProcurementController extends GetxController {
     statutFiltre.value = null;
     dateDebutFiltre.value = null;
     dateFinFiltre.value = null;
+    searchQuery.value = '';
     appliquerFiltres();
   }
 

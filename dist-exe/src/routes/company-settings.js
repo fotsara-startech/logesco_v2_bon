@@ -228,7 +228,29 @@ router.post('/',
         );
       }
 
+      // Récupérer l'ancien logo AVANT la mise à jour
+      let oldLogoFilename = null;
+      try {
+        const existingSettings = await companyModel.getSettings();
+        oldLogoFilename = existingSettings?.logo || null;
+      } catch (e) {
+        console.warn('⚠️ Impossible de récupérer l\'ancien logo:', e.message);
+      }
+
       const updatedSettings = await companyModel.upsertSettings(data);
+
+      // Supprimer l'ancien logo si un nouveau a été uploadé et qu'il est différent
+      if (req.file && oldLogoFilename && oldLogoFilename !== req.file.filename) {
+        try {
+          const oldLogoPath = path.join(__dirname, '../../uploads', oldLogoFilename);
+          if (fs.existsSync(oldLogoPath)) {
+            fs.unlinkSync(oldLogoPath);
+            console.log(`🗑️ Ancien logo supprimé: ${oldLogoFilename}`);
+          }
+        } catch (e) {
+          console.warn('⚠️ Impossible de supprimer l\'ancien logo:', e.message);
+        }
+      }
       
       return res.json(
         BaseResponseDTO.success(updatedSettings, 'Paramètres d\'entreprise et logo mis à jour avec succès')

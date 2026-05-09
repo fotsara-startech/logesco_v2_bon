@@ -117,6 +117,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                       Text(
                         'dashboard_subtitle'.tr,
                         style: TextStyle(
+                          // ignore: deprecated_member_use
                           color: Colors.white.withOpacity(0.8),
                           fontSize: 14,
                         ),

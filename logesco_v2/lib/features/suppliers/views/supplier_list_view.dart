@@ -68,44 +68,48 @@ class SupplierListView extends StatelessWidget {
           elevation: 0,
           actions: [
             // Bouton Import/Export
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.import_export),
-              tooltip: 'suppliers_import_export'.tr,
-              onSelected: (value) {
-                if (value == 'export') {
-                  controller.exportToExcel();
-                } else if (value == 'import') {
-                  controller.importFromExcel();
-                } else if (value == 'template') {
-                  controller.downloadTemplate();
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'export',
-                  child: ListTile(
-                    leading: const Icon(Icons.download),
-                    title: Text('suppliers_export_excel'.tr),
-                    contentPadding: EdgeInsets.zero,
+            PermissionWidget(
+              module: 'suppliers',
+              privilege: 'CREATE', // Import/Export nécessite CREATE pour importer
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.import_export),
+                tooltip: 'suppliers_import_export'.tr,
+                onSelected: (value) {
+                  if (value == 'export') {
+                    controller.exportToExcel();
+                  } else if (value == 'import') {
+                    controller.importFromExcel();
+                  } else if (value == 'template') {
+                    controller.downloadTemplate();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'export',
+                    child: ListTile(
+                      leading: const Icon(Icons.download),
+                      title: Text('suppliers_export_excel'.tr),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'import',
-                  child: ListTile(
-                    leading: const Icon(Icons.upload),
-                    title: Text('suppliers_import_excel'.tr),
-                    contentPadding: EdgeInsets.zero,
+                  PopupMenuItem(
+                    value: 'import',
+                    child: ListTile(
+                      leading: const Icon(Icons.upload),
+                      title: Text('suppliers_import_excel'.tr),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'template',
-                  child: ListTile(
-                    leading: const Icon(Icons.file_download),
-                    title: Text('suppliers_download_template'.tr),
-                    contentPadding: EdgeInsets.zero,
+                  PopupMenuItem(
+                    value: 'template',
+                    child: ListTile(
+                      leading: const Icon(Icons.file_download),
+                      title: Text('suppliers_download_template'.tr),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             // Bouton d'ajout visible seulement si l'utilisateur peut créer
             PermissionWidget(

@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
 import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
 
@@ -13,19 +14,19 @@ class StatementPdfService {
   static Future<Uint8List> generateStatementPDF(Map<String, dynamic> data) async {
     final pdf = pw.Document();
 
-    print('');
-    print('   - Type: ${data.runtimeType}');
-    print('   - Clés: ${data.keys.toList()}');
+    // print('');
+    // print('   - Type: ${data.runtimeType}');
+    // print('   - Clés: ${data.keys.toList()}');
 
     final entreprise = data['entreprise'] as Map<String, dynamic>?;
     final client = data['client'] as Map<String, dynamic>;
     final compte = data['compte'] as Map<String, dynamic>;
     final transactions = (data['transactions'] as List<dynamic>?) ?? [];
 
-    print('');
-    print('   Transactions reçues: ${transactions.length}');
-    print('   Logo path: ${entreprise?['logoPath']}');
-    print('   Entreprise: ${entreprise?['nom']}');
+    // print('');
+    // print('   Transactions reçues: ${transactions.length}');
+    // print('   Logo path: ${entreprise?['logoPath']}');
+    // print('   Entreprise: ${entreprise?['nom']}');
 
     // Charger le logo depuis le backend via HTTP
     Uint8List? logoBytes;
@@ -396,7 +397,8 @@ class StatementPdfService {
         print('   - Type: ${t.runtimeType}');
         print('   - Clés: ${(t as Map).keys.toList()}');
 
-        final isCredit = t['isCredit'] == true || (t['typeTransaction'] != null && (t['typeTransaction'].toString().contains('paiement') || t['typeTransaction'].toString().contains('credit')));
+        final typeStr = t['typeTransaction']?.toString() ?? '';
+        final isCredit = t['isCredit'] == true || (typeStr.isNotEmpty && !typeStr.startsWith('achat') && (typeStr.contains('paiement') || typeStr == 'credit'));
 
         final typeDetail = t['typeTransactionDetail'] ?? t['typeTransaction'] ?? 'Transaction';
 
@@ -485,22 +487,19 @@ class StatementPdfService {
     }
   }
 
-  /// Sauvegarde le PDF
+  /// Sauvegarde et ouvre le PDF
   static Future<String> saveAndOpenPDF(Uint8List pdfBytes, String filename) async {
     try {
-      // Pour desktop/mobile, sauvegarder dans le répertoire documents
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/$filename');
 
-      // crire le fichier
       await file.writeAsBytes(pdfBytes);
 
-      print(' PDF sauvegardé: ${file.path}');
+      // Ouvrir automatiquement le PDF
+      await OpenFile.open(file.path);
 
-      // Retourner le chemin
       return file.path;
     } catch (e) {
-      print(' Erreur sauvegarde PDF: $e');
       throw Exception('Erreur lors de la sauvegarde du PDF: $e');
     }
   }

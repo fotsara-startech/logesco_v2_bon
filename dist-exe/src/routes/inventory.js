@@ -665,10 +665,10 @@ function createInventoryRouter(models) {
               stock: true,
               stocksBoutiques: boutiqueId ? {
                 where: { boutiqueId }
-              } : false
+              } : true
             }
           },
-          boutique: boutiqueId ? true : false
+          boutique: true
         };
         options.orderBy = { dateMouvement: 'desc' };
 
@@ -813,6 +813,79 @@ function createInventoryRouter(models) {
 
           return mouvement;
         });
+
+        // Synchroniser manuellement vers Neon (les extensions Prisma ne fonctionnent pas dans les transactions)
+        if (process.env.CLOUD_DB_URL) {
+          setImmediate(async () => {
+            try {
+              console.log('🔧 [Sync Inventory] Synchronisation mouvement de stock manuel...');
+              const syncService = require('../services/sync-service');
+              
+              // Récupérer le mouvement créé
+              const mouvement = await models.prisma.mouvementStock.findFirst({
+                where: { produitId, typeMouvement, changementQuantite },
+                orderBy: { id: 'desc' }
+              });
+              
+              if (mouvement) {
+                await syncService.enqueue('mouvements_stock', 'INSERT', {
+                  id: mouvement.id,
+                  produit_id: mouvement.produitId,
+                  boutique_id: mouvement.boutiqueId,
+                  type_mouvement: mouvement.typeMouvement,
+                  changement_quantite: mouvement.changementQuantite,
+                  reference_id: mouvement.referenceId,
+                  type_reference: mouvement.typeReference,
+                  date_mouvement: mouvement.dateMouvement,
+                  notes: mouvement.notes
+                });
+                console.log(`✅ [Sync Inventory] mouvements_stock synchronisé: ${mouvement.id}`);
+              }
+              
+              // Synchroniser le stock mis à jour
+              if (typesAffectantStock.includes(typeMouvement)) {
+                if (boutiqueIdInt) {
+                  const stockBoutique = await models.prisma.stockBoutique.findUnique({
+                    where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId } }
+                  });
+                  
+                  if (stockBoutique) {
+                    await syncService.enqueue('stock_boutiques', 'UPDATE', {
+                      id: stockBoutique.id,
+                      boutique_id: stockBoutique.boutiqueId,
+                      produit_id: stockBoutique.produitId,
+                      quantite_disponible: stockBoutique.quantiteDisponible,
+                      quantite_reservee: stockBoutique.quantiteReservee,
+                      derniere_maj: stockBoutique.derniereMaj,
+                      date_modification: stockBoutique.dateModification
+                    });
+                    console.log(`✅ [Sync Inventory] stock_boutiques synchronisé: ${stockBoutique.id}`);
+                  }
+                } else {
+                  const stock = await models.prisma.stock.findUnique({
+                    where: { produitId }
+                  });
+                  
+                  if (stock) {
+                    await syncService.enqueue('stock', 'UPDATE', {
+                      id: stock.id,
+                      produit_id: stock.produitId,
+                      quantite_disponible: stock.quantiteDisponible,
+                      quantite_reservee: stock.quantiteReservee,
+                      derniere_maj: stock.derniereMaj,
+                      date_modification: stock.dateModification
+                    });
+                    console.log(`✅ [Sync Inventory] stock synchronisé: ${stock.id}`);
+                  }
+                }
+              }
+              
+              console.log('✅ [Sync Inventory] Synchronisation terminée');
+            } catch (error) {
+              console.error('❌ Erreur sync inventory:', error.message);
+            }
+          });
+        }
 
         // Récupérer le mouvement créé avec les informations du produit
         const mouvementCree = await models.prisma.mouvementStock.findFirst({

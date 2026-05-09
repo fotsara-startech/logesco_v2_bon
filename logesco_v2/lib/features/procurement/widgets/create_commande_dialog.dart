@@ -13,7 +13,6 @@ import '../../inventory/services/inventory_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/constants/constants.dart';
 import '../controllers/procurement_controller.dart';
-import '../models/procurement_models.dart';
 
 class CreateCommandeDialog extends StatefulWidget {
   final ProcurementController controller;
@@ -98,11 +97,6 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
 
                             // Date de livraison
                             _buildDateLivraisonSection(),
-
-                            const SizedBox(height: 24),
-
-                            // Mode de paiement
-                            _buildModePaiementSection(),
 
                             const SizedBox(height: 24),
 
@@ -268,32 +262,6 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                   ],
                 ),
               ),
-            )),
-      ],
-    );
-  }
-
-  Widget _buildModePaiementSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'procurement_payment_method'.tr,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Obx(() => Column(
-              children: ModePaiement.values.map((mode) {
-                return RadioListTile<ModePaiement>(
-                  title: Text(mode.label),
-                  value: mode,
-                  groupValue: widget.controller.modePaiement.value,
-                  onChanged: (value) => widget.controller.modePaiement.value = value!,
-                  contentPadding: EdgeInsets.zero,
-                );
-              }).toList(),
             )),
       ],
     );
@@ -529,12 +497,6 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
   String _formatDate(DateTime date) {
     final months = ['', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month]} ${date.year}';
-  }
-
-  String _formatCurrency(double amount) {
-    final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-    String result = amount.toStringAsFixed(0);
-    return result.replaceAllMapped(formatter, (Match m) => '${m[1]} ');
   }
 }
 
@@ -1000,12 +962,6 @@ class _ProductSelectionDialogState extends State<_ProductSelectionDialog> {
         ],
       );
     });
-  }
-
-  String _formatCurrency(double amount) {
-    final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-    String result = amount.toStringAsFixed(0);
-    return result.replaceAllMapped(formatter, (Match m) => '${m[1]} ');
   }
 
   double _calculateTotal() {

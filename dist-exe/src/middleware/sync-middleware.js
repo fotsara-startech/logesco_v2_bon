@@ -82,6 +82,14 @@ const ROUTE_MODEL_MAP = {
       'est_principale','is_active','date_creation','date_modification'
     ]
   },
+  '/company-settings':    { 
+    table: 'parametres_entreprise', model: 'parametresEntreprise',
+    allowedColumns: [
+      'id','nom_entreprise','adresse','telephone','email','nui_rccm',
+      'localisation','logo','slogan','langue_facture','taux_tva',
+      'date_creation','date_modification'
+    ]
+  },
   '/users':               { 
     table: 'utilisateurs', model: 'utilisateur',
     fetchFromDb: true,  // mot_de_passe_hash n'est pas dans la réponse API
@@ -109,6 +117,22 @@ const ROUTE_MODEL_MAP = {
     allowedColumns: [
       'id','produit_id','boutique_id','date_peremption','quantite',
       'date_creation','date_modification'
+    ]
+  },
+  '/stock-movements':     {
+    table: 'mouvements_stock', model: 'mouvementStock',
+    fetchFromDb: true,  // Les mouvements sont créés dans des transactions
+    allowedColumns: [
+      'id','produit_id','boutique_id','type_mouvement','changement_quantite',
+      'reference_id','type_reference','date_mouvement','notes','date_modification'
+    ]
+  },
+  '/stock-boutiques':     {
+    table: 'stock_boutiques', model: 'stockBoutique',
+    fetchFromDb: true,  // Les stocks sont mis à jour dans des transactions
+    allowedColumns: [
+      'id','boutique_id','produit_id','quantite_disponible',
+      'quantite_reservee','derniere_maj','date_modification'
     ]
   },
 };

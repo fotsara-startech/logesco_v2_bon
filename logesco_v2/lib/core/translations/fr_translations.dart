@@ -2095,6 +2095,7 @@ const Map<String, String> frTranslations = {
   'procurement_payment_cash': 'Comptant',
   'procurement_payment_credit': 'À crédit',
   'procurement_notes': 'Notes',
+  'procurement_search_hint': 'Rechercher par fournisseur ou numéro de commande...',
 
   // PDF Export
   'pdf_procurement_order_title': 'COMMANDE D\'APPROVISIONNEMENT',

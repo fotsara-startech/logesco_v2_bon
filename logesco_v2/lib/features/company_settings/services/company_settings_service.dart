@@ -542,6 +542,9 @@ class CompanySettingsService {
     }
   }
 
+  /// Supprime le cache (public)
+  Future<void> clearCache() => _clearCache();
+
   /// Vérifie si des données sont en cache
   Future<bool> hasCachedData() async {
     final prefs = await SharedPreferences.getInstance();

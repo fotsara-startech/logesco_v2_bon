@@ -321,6 +321,9 @@ class CompanySettingsController extends GetxController {
         _logoPath.value = profile.logo;
         _hasUnsavedChanges.value = false;
 
+        // Vider le cache pour forcer le rechargement depuis l'API au prochain accès
+        await _companySettingsService.clearCache();
+
         PrintingService.setCompanyProfile(profile);
         SnackbarUtils.showSuccess('Profil et logo sauvegardés avec succès');
       } else {
@@ -371,6 +374,9 @@ class CompanySettingsController extends GetxController {
       if (response.success && response.data != null) {
         _companyProfile.value = response.data;
         _hasUnsavedChanges.value = false;
+
+        // Vider le cache pour forcer le rechargement depuis l'API
+        await _companySettingsService.clearCache();
 
         PrintingService.setCompanyProfile(response.data);
         print('✅ Profil d\'entreprise mis à jour dans le service d\'impression');
@@ -551,8 +557,43 @@ class CompanySettingsController extends GetxController {
   }
 
   /// Supprime le logo
-  void removeLogo() {
+  Future<void> removeLogo() async {
     _logoPath.value = null;
     _hasUnsavedChanges.value = true;
+
+    // Sauvegarder immédiatement avec logo = null
+    if (_companyProfile.value != null) {
+      _isSaving.value = true;
+      try {
+        final request = CompanyProfileRequest(
+          name: nameController.text.trim(),
+          address: addressController.text.trim(),
+          location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
+          phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+          email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+          nuiRccm: nuiRccmController.text.trim().isEmpty ? null : nuiRccmController.text.trim(),
+          logo: null, // logo supprimé
+          slogan: sloganController.text.trim().isEmpty ? null : sloganController.text.trim(),
+          receiptLanguage: _selectedLanguage.value,
+          tvaRate: tvaController.text.trim().isEmpty ? null : double.tryParse(tvaController.text.trim().replaceAll(',', '.')),
+        );
+
+        final response = await _companySettingsService.updateCompanyProfile(request);
+
+        if (response.success && response.data != null) {
+          _companyProfile.value = response.data;
+          _hasUnsavedChanges.value = false;
+          await _companySettingsService.clearCache();
+          PrintingService.setCompanyProfile(response.data);
+          SnackbarUtils.showSuccess('Logo supprimé avec succès');
+        } else {
+          SnackbarUtils.showError(response.message ?? 'Erreur lors de la suppression du logo');
+        }
+      } catch (e) {
+        SnackbarUtils.showError('Erreur: $e');
+      } finally {
+        _isSaving.value = false;
+      }
+    }
   }
 }

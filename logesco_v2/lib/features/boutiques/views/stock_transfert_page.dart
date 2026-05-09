@@ -36,6 +36,9 @@ class _StockTransfertPageState extends State<StockTransfertPage> with SingleTick
         title: const Text('Transferts de stock'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
           tabs: const [
             Tab(icon: Icon(Icons.swap_horiz), text: 'Nouveau transfert'),
             Tab(icon: Icon(Icons.history), text: 'Historique'),
@@ -67,25 +70,44 @@ class _TransfertFormState extends State<_TransfertForm> {
   final _formKey = GlobalKey<FormState>();
   final _quantiteCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController();
 
   Boutique? _source;
   Boutique? _destination;
   Map<String, dynamic>? _selectedProduit;
   List<Map<String, dynamic>> _stockSource = [];
+  List<Map<String, dynamic>> _filteredStock = [];
   bool _loadingStock = false;
 
   @override
   void dispose() {
     _quantiteCtrl.dispose();
     _notesCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _filterStock(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredStock = _stockSource;
+      } else {
+        _filteredStock = _stockSource.where((s) {
+          final produit = s['produit'] as Map<String, dynamic>?;
+          final nom = produit?['nom'] as String? ?? '';
+          return nom.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
   }
 
   Future<void> _loadStockSource(Boutique boutique) async {
     setState(() {
       _loadingStock = true;
       _stockSource = [];
+      _filteredStock = [];
       _selectedProduit = null;
+      _searchCtrl.clear();
     });
     try {
       final service = Get.find<BoutiqueService>();
@@ -93,6 +115,7 @@ class _TransfertFormState extends State<_TransfertForm> {
       final stocks = data['stocks'] as List<dynamic>? ?? [];
       setState(() {
         _stockSource = stocks.map((s) => s as Map<String, dynamic>).where((s) => (s['quantiteDisponible'] as int? ?? 0) > 0).toList();
+        _filteredStock = _stockSource;
       });
     } catch (e) {
       if (mounted) {
@@ -128,11 +151,13 @@ class _TransfertFormState extends State<_TransfertForm> {
       _formKey.currentState!.reset();
       _quantiteCtrl.clear();
       _notesCtrl.clear();
+      _searchCtrl.clear();
       setState(() {
         _source = null;
         _destination = null;
         _selectedProduit = null;
         _stockSource = [];
+        _filteredStock = [];
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -157,7 +182,7 @@ class _TransfertFormState extends State<_TransfertForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Boutique source
-              _SectionTitle(title: 'Boutique source', icon: Icons.store),
+              const _SectionTitle(title: 'Boutique source', icon: Icons.store),
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _source,
@@ -180,7 +205,7 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 20),
 
               // Boutique destination
-              _SectionTitle(title: 'Boutique destination', icon: Icons.store_mall_directory),
+              const _SectionTitle(title: 'Boutique destination', icon: Icons.store_mall_directory),
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _destination,
@@ -197,7 +222,7 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 20),
 
               // Produit
-              _SectionTitle(title: 'Produit à transférer', icon: Icons.inventory_2),
+              const _SectionTitle(title: 'Produit à transférer', icon: Icons.inventory_2),
               const SizedBox(height: 8),
               if (_loadingStock)
                 const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
@@ -233,7 +258,28 @@ class _TransfertFormState extends State<_TransfertForm> {
                     ],
                   ),
                 )
-              else
+              else ...[
+                // Barre de recherche
+                TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Rechercher un produit',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchCtrl.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              _filterStock('');
+                            },
+                          )
+                        : null,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: _filterStock,
+                ),
+                const SizedBox(height: 12),
+                // Dropdown des produits filtrés
                 DropdownButtonFormField<Map<String, dynamic>>(
                   value: _selectedProduit,
                   decoration: const InputDecoration(
@@ -241,7 +287,7 @@ class _TransfertFormState extends State<_TransfertForm> {
                     prefixIcon: Icon(Icons.inventory),
                     border: OutlineInputBorder(),
                   ),
-                  items: _stockSource.map((s) {
+                  items: _filteredStock.map((s) {
                     final produit = s['produit'] as Map<String, dynamic>?;
                     final nom = produit?['nom'] as String? ?? 'Produit #${s['produitId']}';
                     final dispo = s['quantiteDisponible'] as int? ?? 0;
@@ -253,11 +299,12 @@ class _TransfertFormState extends State<_TransfertForm> {
                   onChanged: (v) => setState(() => _selectedProduit = v),
                   validator: (v) => v == null ? 'Requis' : null,
                 ),
+              ],
 
               const SizedBox(height: 20),
 
               // Quantité
-              _SectionTitle(title: 'Quantité', icon: Icons.numbers),
+              const _SectionTitle(title: 'Quantité', icon: Icons.numbers),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _quantiteCtrl,

@@ -177,7 +177,7 @@ class ProcurementPdfExportService {
                   pw.Text(
                     'pdf_procurement_order_title'.tr,
                     style: pw.TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
                       color: _primaryColor,
                     ),

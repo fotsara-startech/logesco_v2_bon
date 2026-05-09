@@ -37,6 +37,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -57,6 +58,8 @@ class _ProcurementPageState extends State<ProcurementPage> {
       }
     }
   }
+
+  final _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +153,9 @@ class _ProcurementPageState extends State<ProcurementPage> {
           children: [
             // Statistiques rapides
             _buildStatistiques(controller),
+
+            // Barre de recherche
+            _buildSearchBar(controller),
 
             // Liste des commandes
             Expanded(
@@ -307,6 +313,37 @@ class _ProcurementPageState extends State<ProcurementPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(ProcurementController controller) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'procurement_search_hint'.tr,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    controller.searchQuery.value = '';
+                    controller.loadCommandes(refresh: true);
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+        ),
+        onChanged: (value) {
+          controller.searchQuery.value = value;
+          controller.loadCommandes(refresh: true);
+        },
       ),
     );
   }

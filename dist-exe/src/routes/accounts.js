@@ -1196,6 +1196,7 @@ function createAccountRouter({ prisma, authService, ...models }) {
               select: {
                 produitId: true,
                 quantiteCommandee: true,
+                quantiteRecue: true,
                 coutUnitaire: true
               }
             }
@@ -1217,7 +1218,7 @@ function createAccountRouter({ prisma, authService, ...models }) {
             where: {
               typeCompte: 'fournisseur',
               compteId: compteFournisseur.id,
-              referenceType: 'approvisionnement'
+              referenceType: 'commande_approvisionnement'
             },
             select: {
               referenceId: true,
@@ -1248,13 +1249,22 @@ function createAccountRouter({ prisma, authService, ...models }) {
         // Formater les commandes avec calcul du montant restant
         const commandesFormatted = commandes
           .map(c => {
-            const montantTotal = parseFloat(c.montantTotal || 0);
+            // Calculer le montant réellement réceptionné (quantiteRecue * coutUnitaire)
+            const montantReceptionne = c.details.reduce((sum, d) => {
+              return sum + (parseFloat(d.quantiteRecue || 0) * parseFloat(d.coutUnitaire || 0));
+            }, 0);
+
+            // Utiliser le montant réceptionné comme base (pas le total commandé)
+            // Si rien n'a été réceptionné, utiliser le montant total de la commande
+            const montantBase = montantReceptionne > 0 ? montantReceptionne : parseFloat(c.montantTotal || 0);
             const montantPaye = paiementsParCommande[c.id] || 0;
-            const montantRestant = montantTotal - montantPaye;
+            const montantRestant = montantBase - montantPaye;
 
             console.log(`📋 Commande ${c.numeroCommande}:`, {
               id: c.id,
-              montantTotal,
+              montantTotal: parseFloat(c.montantTotal || 0),
+              montantReceptionne,
+              montantBase,
               montantPaye,
               montantRestant
             });
@@ -1263,7 +1273,7 @@ function createAccountRouter({ prisma, authService, ...models }) {
               id: c.id,
               reference: c.numeroCommande,
               dateCommande: c.dateCommande,
-              montantTotal,
+              montantTotal: montantBase,
               montantPaye,
               montantRestant,
               nombreArticles: c.details.length,

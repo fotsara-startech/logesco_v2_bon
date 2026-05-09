@@ -126,8 +126,21 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
     final isPositive = movement.changementQuantite > 0;
     final typeColor = _getTypeColor(movement.typeMouvement);
 
-    // Calculer le stock initial et final
-    final stockActuel = movement.produit?.stockActuel ?? 0;
+    // Obtenir le stock actuel de la boutique concernée
+    int stockActuel = 0;
+    if (movement.boutiqueId != null && movement.produit?.stocksBoutiques != null) {
+      // Chercher le stock de la boutique spécifique
+      final stockBoutique = movement.produit!.stocksBoutiques!.firstWhereOrNull((s) => s.boutiqueId == movement.boutiqueId);
+      stockActuel = stockBoutique?.quantiteDisponible ?? 0;
+    } else {
+      // Utiliser le stock global si pas de boutique spécifique
+      stockActuel = movement.produit?.stockActuel ?? 0;
+    }
+
+    // Calculer le stock initial (avant le mouvement) et final (après le mouvement)
+    // Note: stockActuel est le stock ACTUEL (maintenant), pas au moment du mouvement
+    // Pour afficher correctement, on ne peut pas calculer le stock historique sans données supplémentaires
+    // On affiche donc juste le changement
     final stockInitial = stockActuel - movement.changementQuantite;
     final stockFinal = stockActuel;
 
