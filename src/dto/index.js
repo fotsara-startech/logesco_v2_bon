@@ -552,7 +552,13 @@ class MouvementStockDTO {
         id: mouvement.produit.id,
         reference: mouvement.produit.reference,
         nom: mouvement.produit.nom,
-        stockActuel
+        stockActuel,
+        stocksBoutiques: mouvement.produit.stocksBoutiques?.map(sb => ({
+          boutiqueId: sb.boutiqueId,
+          produitId: sb.produitId,
+          quantiteDisponible: sb.quantiteDisponible,
+          quantiteReservee: sb.quantiteReservee
+        }))
       };
     }
 

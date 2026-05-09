@@ -328,6 +328,7 @@ function createBoutiquesRouter({ prisma, authService }) {
         await tx.mouvementStock.create({
           data: {
             produitId: prdId,
+            boutiqueId: srcId,
             typeMouvement: 'TRANSFERT_SORTIE',
             changementQuantite: -qty,
             typeReference: 'transfert',
@@ -339,6 +340,7 @@ function createBoutiquesRouter({ prisma, authService }) {
         await tx.mouvementStock.create({
           data: {
             produitId: prdId,
+            boutiqueId: dstId,
             typeMouvement: 'TRANSFERT_ENTREE',
             changementQuantite: qty,
             typeReference: 'transfert',

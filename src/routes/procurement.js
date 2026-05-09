@@ -31,7 +31,8 @@ function createProcurementRouter(services) {
           fournisseurId, 
           statut, 
           dateDebut, 
-          dateFin, 
+          dateFin,
+          search,
           page = 1, 
           limit = 20 
         } = req.query;
@@ -44,6 +45,25 @@ function createProcurementRouter(services) {
           where.dateCommande = {};
           if (dateDebut) where.dateCommande.gte = new Date(dateDebut);
           if (dateFin) where.dateCommande.lte = new Date(dateFin);
+        }
+
+        // Recherche par numéro de commande ou nom de fournisseur
+        if (search && search.trim()) {
+          const searchTerm = search.trim().toLowerCase();
+          where.OR = [
+            {
+              numeroCommande: {
+                contains: searchTerm
+              }
+            },
+            {
+              fournisseur: {
+                nom: {
+                  contains: searchTerm
+                }
+              }
+            }
+          ];
         }
 
         // Filtrer par boutique si fourni
@@ -538,7 +558,7 @@ function createProcurementRouter(services) {
     }
   );
  
- /**
+  /**
    * PUT /procurement/:id/receive - Réceptionner une commande (partielle ou totale)
    */
   router.put('/:id/receive',
@@ -547,7 +567,7 @@ function createProcurementRouter(services) {
     async (req, res) => {
       try {
         const { id } = req.params;
-        const { details } = req.body;
+        const { details, modePaiement: modePaiementReception } = req.body;
 
         // Vérifier que la commande existe
         const commande = await prisma.commandeApprovisionnement.findUnique({
@@ -582,6 +602,10 @@ function createProcurementRouter(services) {
             }
           });
         }
+
+        // Utiliser le mode de paiement fourni lors de la réception, sinon celui de la commande
+        const modePaiementFinal = modePaiementReception || commande.modePaiement;
+        console.log(`🔍 Mode de paiement: ${modePaiementFinal} (reçu: ${modePaiementReception}, commande: ${commande.modePaiement})`);
 
         // Traitement de la réception dans une transaction
         const result = await prisma.$transaction(async (tx) => {
@@ -679,61 +703,65 @@ function createProcurementRouter(services) {
             nouveauStatut = 'partielle';
           }
 
-          // Mettre à jour le statut de la commande si nécessaire
+          // Mettre à jour le statut ET le mode de paiement de la commande si nécessaire
+          const updateData = {};
           if (nouveauStatut !== commande.statut) {
+            updateData.statut = nouveauStatut;
+          }
+          if (modePaiementReception && modePaiementReception !== commande.modePaiement) {
+            updateData.modePaiement = modePaiementReception;
+            console.log(`📝 Mise à jour du mode de paiement: ${commande.modePaiement} → ${modePaiementReception}`);
+          }
+
+          if (Object.keys(updateData).length > 0) {
             await tx.commandeApprovisionnement.update({
               where: { id: parseInt(id) },
-              data: { statut: nouveauStatut }
+              data: updateData
             });
           }
 
-          // Si la commande est à crédit, approvisionner le compte fournisseur
+          // Gérer le compte fournisseur selon le mode de paiement
           let montantReception = 0;
-          console.log(`🔍 Vérification mode paiement: ${commande.modePaiement} pour commande ${commande.id}`);
-          if (commande.modePaiement === 'credit') {
-            console.log(`💳 Commande à crédit détectée - Approvisionnement du compte fournisseur ${commande.fournisseurId}`);
-            
-            // Calculer le montant de la réception
-            for (const receptionDetail of details) {
-              const { detailId, quantiteRecue } = receptionDetail;
-              const detailCommande = commande.details.find(d => d.id === detailId);
-              if (detailCommande) {
-                montantReception += quantiteRecue * detailCommande.coutUnitaire;
-              }
+          console.log(`🔍 Vérification mode paiement: ${modePaiementFinal} pour commande ${commande.id}`);
+
+          // Calculer le montant de la réception (pour crédit ET comptant)
+          for (const receptionDetail of details) {
+            const { detailId, quantiteRecue } = receptionDetail;
+            const detailCommande = commande.details.find(d => d.id === detailId);
+            if (detailCommande) {
+              montantReception += quantiteRecue * detailCommande.coutUnitaire;
             }
+          }
 
-            console.log(`💰 Montant de la réception: ${montantReception} FCFA`);
+          console.log(`💰 Montant de la réception: ${montantReception} FCFA`);
 
-            if (montantReception > 0) {
-              // Vérifier si le compte fournisseur existe
-              let compteFournisseur = await tx.compteFournisseur.findUnique({
-                where: { fournisseurId: commande.fournisseurId }
-              });
+          if (montantReception > 0) {
+            // Vérifier/créer le compte fournisseur
+            let compteFournisseur = await tx.compteFournisseur.findUnique({
+              where: { fournisseurId: commande.fournisseurId }
+            });
 
-              // Créer le compte s'il n'existe pas
-              if (!compteFournisseur) {
-                console.log(`📝 Création du compte fournisseur pour ${commande.fournisseurId}`);
-                compteFournisseur = await tx.compteFournisseur.create({
-                  data: {
-                    fournisseurId: commande.fournisseurId,
-                    soldeActuel: 0,
-                    limiteCredit: 0
-                  }
-                });
-              }
-
-              // Calculer le nouveau solde (augmenter la dette envers le fournisseur)
-              const nouveauSolde = compteFournisseur.soldeActuel + montantReception;
-
-              // Mettre à jour le compte fournisseur
-              await tx.compteFournisseur.update({
-                where: { id: compteFournisseur.id },
+            if (!compteFournisseur) {
+              console.log(`📝 Création du compte fournisseur pour ${commande.fournisseurId}`);
+              compteFournisseur = await tx.compteFournisseur.create({
                 data: {
-                  soldeActuel: nouveauSolde
+                  fournisseurId: commande.fournisseurId,
+                  soldeActuel: 0,
+                  limiteCredit: 0
                 }
               });
+            }
 
-              // Créer la transaction comptable
+            if (modePaiementFinal === 'credit') {
+              console.log(`💳 Commande à crédit - Enregistrement de la dette fournisseur`);
+
+              const nouveauSolde = compteFournisseur.soldeActuel + montantReception;
+
+              await tx.compteFournisseur.update({
+                where: { id: compteFournisseur.id },
+                data: { soldeActuel: nouveauSolde }
+              });
+
               await tx.transactionCompte.create({
                 data: {
                   typeCompte: 'fournisseur',
@@ -747,11 +775,53 @@ function createProcurementRouter(services) {
                 }
               });
 
-              console.log(`✅ Compte fournisseur approvisionné: ${compteFournisseur.soldeActuel} → ${nouveauSolde} FCFA`);
+              console.log(`✅ Compte fournisseur mis à jour: ${compteFournisseur.soldeActuel} → ${nouveauSolde} FCFA`);
+
+            } else if (modePaiementFinal === 'comptant') {
+              console.log(`💵 Commande comptant - Enregistrement achat + paiement immédiat`);
+
+              // 1. Transaction d'achat (dette temporaire)
+              const soldeApresAchat = compteFournisseur.soldeActuel + montantReception;
+
+              await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'fournisseur',
+                  compteId: compteFournisseur.id,
+                  typeTransaction: 'achat',
+                  montant: montantReception,
+                  description: `Réception commande ${commande.numeroCommande} (comptant)`,
+                  referenceId: parseInt(id),
+                  referenceType: 'commande_approvisionnement',
+                  soldeApres: soldeApresAchat
+                }
+              });
+
+              // 2. Transaction de paiement immédiat (solde la dette)
+              const soldeApresPaiement = soldeApresAchat - montantReception; // = solde initial
+
+              await tx.compteFournisseur.update({
+                where: { id: compteFournisseur.id },
+                data: { soldeActuel: soldeApresPaiement }
+              });
+
+              await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'fournisseur',
+                  compteId: compteFournisseur.id,
+                  typeTransaction: 'paiement',
+                  montant: montantReception,
+                  description: `Paiement comptant commande ${commande.numeroCommande}`,
+                  referenceId: parseInt(id),
+                  referenceType: 'commande_approvisionnement',
+                  soldeApres: soldeApresPaiement
+                }
+              });
+
+              console.log(`✅ Paiement comptant enregistré - Solde fournisseur inchangé: ${soldeApresPaiement} FCFA`);
             }
           }
 
-          return { nouveauStatut, mouvementsStock, montantReception };
+          return { nouveauStatut, mouvementsStock, montantReception, modePaiementFinal };
         });
 
         // Récupérer la commande mise à jour
@@ -770,10 +840,11 @@ function createProcurementRouter(services) {
         res.json({
           success: true,
           data: transformers.commandeApprovisionnement(commandeMiseAJour),
-          message: `Réception enregistrée avec succès. Statut: ${result.nouveauStatut}`,
+          message: `Réception enregistrée avec succès. Statut: ${result.nouveauStatut}, Mode: ${result.modePaiementFinal}`,
           meta: {
             mouvementsStock: result.mouvementsStock.length,
-            statut: result.nouveauStatut
+            statut: result.nouveauStatut,
+            modePaiement: result.modePaiementFinal
           }
         });
 
