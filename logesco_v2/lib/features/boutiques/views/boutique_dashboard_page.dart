@@ -1,10 +1,13 @@
+/// Dashboard consolidé multi-boutique avec design moderne
+library;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../services/boutique_service.dart';
 
 enum PeriodFilter { today, week, month, year, custom }
 
-/// Dashboard consolidé multi-boutique
 class BoutiqueDashboardPage extends StatefulWidget {
   const BoutiqueDashboardPage({super.key});
 
@@ -80,14 +83,6 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             start: now.subtract(const Duration(days: 30)),
             end: now,
           ),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-                primary: const Color(0xFF1565C0),
-              ),
-        ),
-        child: child!,
-      ),
     );
     if (range != null) {
       setState(() {
@@ -98,33 +93,21 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     }
   }
 
-  String get _periodLabel {
-    switch (_selectedPeriod) {
-      case PeriodFilter.today:
-        return "Aujourd'hui";
-      case PeriodFilter.week:
-        return 'Cette semaine';
-      case PeriodFilter.month:
-        return 'Ce mois';
-      case PeriodFilter.year:
-        return 'Cette année';
-      case PeriodFilter.custom:
-        if (_customRange != null) {
-          return '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}';
-        }
-        return 'Personnalisée';
-    }
-  }
-
   String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Dashboard consolidé'),
+        elevation: 0,
+        title: const Text('Dashboard consolidé', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _load,
+            tooltip: 'Actualiser',
+          ),
         ],
       ),
       body: Column(
@@ -134,7 +117,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(child: Text('Erreur: $_error', style: const TextStyle(color: Colors.red)))
+                    ? _buildError()
                     : _data == null
                         ? const Center(child: Text('Aucune donnée'))
                         : _buildContent(),
@@ -144,71 +127,77 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     );
   }
 
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text('Erreur: $_error', style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _load,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPeriodFilter() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _PeriodChip(
-                  label: "Aujourd'hui",
-                  selected: _selectedPeriod == PeriodFilter.today,
-                  onTap: () {
-                    setState(() => _selectedPeriod = PeriodFilter.today);
-                    _load();
-                  },
-                ),
-                const SizedBox(width: 8),
-                _PeriodChip(
-                  label: 'Cette semaine',
-                  selected: _selectedPeriod == PeriodFilter.week,
-                  onTap: () {
-                    setState(() => _selectedPeriod = PeriodFilter.week);
-                    _load();
-                  },
-                ),
-                const SizedBox(width: 8),
-                _PeriodChip(
-                  label: 'Ce mois',
-                  selected: _selectedPeriod == PeriodFilter.month,
-                  onTap: () {
-                    setState(() => _selectedPeriod = PeriodFilter.month);
-                    _load();
-                  },
-                ),
-                const SizedBox(width: 8),
-                _PeriodChip(
-                  label: 'Cette année',
-                  selected: _selectedPeriod == PeriodFilter.year,
-                  onTap: () {
-                    setState(() => _selectedPeriod = PeriodFilter.year);
-                    _load();
-                  },
-                ),
-                const SizedBox(width: 8),
-                _PeriodChip(
-                  label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'Personnalisée',
-                  selected: _selectedPeriod == PeriodFilter.custom,
-                  icon: Icons.date_range,
-                  onTap: _pickCustomRange,
-                ),
-              ],
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _PeriodChip(
+              label: "Aujourd'hui",
+              selected: _selectedPeriod == PeriodFilter.today,
+              onTap: () {
+                setState(() => _selectedPeriod = PeriodFilter.today);
+                _load();
+              },
             ),
-          ),
-          if (_selectedPeriod != PeriodFilter.custom)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                _periodLabel,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+            const SizedBox(width: 8),
+            _PeriodChip(
+              label: 'Cette semaine',
+              selected: _selectedPeriod == PeriodFilter.week,
+              onTap: () {
+                setState(() => _selectedPeriod = PeriodFilter.week);
+                _load();
+              },
             ),
-        ],
+            const SizedBox(width: 8),
+            _PeriodChip(
+              label: 'Ce mois',
+              selected: _selectedPeriod == PeriodFilter.month,
+              onTap: () {
+                setState(() => _selectedPeriod = PeriodFilter.month);
+                _load();
+              },
+            ),
+            const SizedBox(width: 8),
+            _PeriodChip(
+              label: 'Cette année',
+              selected: _selectedPeriod == PeriodFilter.year,
+              onTap: () {
+                setState(() => _selectedPeriod = PeriodFilter.year);
+                _load();
+              },
+            ),
+            const SizedBox(width: 8),
+            _PeriodChip(
+              label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'Personnalisée',
+              selected: _selectedPeriod == PeriodFilter.custom,
+              icon: Icons.date_range,
+              onTap: _pickCustomRange,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -224,61 +213,234 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Totaux globaux
-            const _SectionTitle(title: 'Totaux globaux', icon: Icons.bar_chart),
-            const SizedBox(height: 12),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 2.2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _StatCard(
-                  label: 'Chiffre d\'affaires',
-                  value: _formatMoney(totaux['chiffreAffaires']),
-                  icon: Icons.trending_up,
-                  color: Colors.green,
-                ),
-                _StatCard(
-                  label: 'Montant encaissé',
-                  value: _formatMoney(totaux['montantEncaisse']),
-                  icon: Icons.payments,
-                  color: Colors.blue,
-                ),
-                _StatCard(
-                  label: 'Nombre de ventes',
-                  value: '${totaux['nbVentes'] ?? 0}',
-                  icon: Icons.receipt_long,
-                  color: Colors.orange,
-                ),
-                _StatCard(
-                  label: 'Mouvements financiers',
-                  value: _formatMoney(totaux['totalMouvementsFinanciers']),
-                  icon: Icons.account_balance_wallet,
-                  color: Colors.purple,
-                ),
-              ],
-            ),
+            // Totaux globaux - Cards modernes
+            _buildGlobalStats(totaux),
 
             const SizedBox(height: 24),
 
-            // Par boutique
-            const _SectionTitle(title: 'Par boutique', icon: Icons.store),
-            const SizedBox(height: 12),
-            ...boutiques.map((b) => _BoutiqueStatCard(data: b)),
+            // Graphique de répartition
+            if (boutiques.isNotEmpty) ...[
+              _buildRevenueChart(boutiques),
+              const SizedBox(height: 24),
+            ],
+
+            // Liste des boutiques
+            _buildBoutiquesList(boutiques),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildGlobalStats(Map<String, dynamic> totaux) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Vue d\'ensemble',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _CompactStatCard(
+                label: 'Chiffre d\'affaires',
+                value: _formatMoney(totaux['chiffreAffaires']),
+                icon: Icons.trending_up_rounded,
+                color: const Color(0xFF4CAF50),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CompactStatCard(
+                label: 'Montant encaissé',
+                value: _formatMoney(totaux['montantEncaisse']),
+                icon: Icons.account_balance_wallet_rounded,
+                color: const Color(0xFF2196F3),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CompactStatCard(
+                label: 'Nombre de ventes',
+                value: '${totaux['nbVentes'] ?? 0}',
+                icon: Icons.receipt_long_rounded,
+                color: const Color(0xFFFF9800),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CompactStatCard(
+                label: 'Mouvements financiers',
+                value: _formatMoney(totaux['totalMouvementsFinanciers']),
+                icon: Icons.swap_horiz_rounded,
+                color: const Color(0xFF9C27B0),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRevenueChart(List<Map<String, dynamic>> boutiques) {
+    final totalCA = boutiques.fold<double>(0, (sum, b) => sum + ((b['chiffreAffaires'] as num?)?.toDouble() ?? 0));
+
+    if (totalCA == 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(13),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Répartition du chiffre d\'affaires',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 50,
+                      sections: boutiques.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final b = entry.value;
+                        final ca = (b['chiffreAffaires'] as num?)?.toDouble() ?? 0;
+                        final percentage = totalCA > 0 ? (ca / totalCA * 100) : 0;
+                        final color = _getChartColor(index);
+
+                        return PieChartSectionData(
+                          value: ca,
+                          title: '${percentage.toStringAsFixed(1)}%',
+                          radius: 60,
+                          titleStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          color: color,
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: boutiques.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final b = entry.value;
+                      final boutique = b['boutique'] as Map<String, dynamic>? ?? {};
+                      final nom = boutique['nom'] as String? ?? 'Boutique';
+                      final ca = (b['chiffreAffaires'] as num?)?.toDouble() ?? 0;
+                      final color = _getChartColor(index);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                nom,
+                                style: const TextStyle(fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              _formatMoney(ca),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBoutiquesList(List<Map<String, dynamic>> boutiques) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Détails par boutique',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ...boutiques.map((b) => _ModernBoutiqueCard(data: b)),
+      ],
+    );
+  }
+
+  Color _getChartColor(int index) {
+    const colors = [
+      Color(0xFF4CAF50),
+      Color(0xFF2196F3),
+      Color(0xFFFF9800),
+      Color(0xFF9C27B0),
+      Color(0xFFF44336),
+      Color(0xFF00BCD4),
+      Color(0xFFFFEB3B),
+      Color(0xFF795548),
+    ];
+    return colors[index % colors.length];
+  }
+
   String _formatMoney(dynamic val) {
     final n = (val as num? ?? 0).toDouble();
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M FCFA';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K FCFA';
-    return '${n.toStringAsFixed(0)} FCFA';
+    // Format avec séparateur de milliers
+    final formatter = n.toStringAsFixed(0);
+    final parts = <String>[];
+    var remaining = formatter;
+
+    while (remaining.length > 3) {
+      parts.insert(0, remaining.substring(remaining.length - 3));
+      remaining = remaining.substring(0, remaining.length - 3);
+    }
+    if (remaining.isNotEmpty) {
+      parts.insert(0, remaining);
+    }
+
+    return '${parts.join(' ')} FCFA';
   }
 }
 
@@ -297,31 +459,38 @@ class _PeriodChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = const Color(0xFF1565C0);
-    return GestureDetector(
+    const primary = Color(0xFF1565C0);
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? primary : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? primary : Colors.grey[300]!,
-          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: primary.withAlpha(77),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: selected ? Colors.white : Colors.grey[700]),
-              const SizedBox(width: 4),
+              Icon(icon, size: 16, color: selected ? Colors.white : Colors.grey[700]),
+              const SizedBox(width: 6),
             ],
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected ? Colors.white : Colors.grey[700],
               ),
             ),
@@ -332,131 +501,57 @@ class _PeriodChip extends StatelessWidget {
   }
 }
 
-class _BoutiqueStatCard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _BoutiqueStatCard({required this.data});
-
-  String _fmt(dynamic val) {
-    final n = (val as num? ?? 0).toDouble();
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
-    return n.toStringAsFixed(0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final boutique = data['boutique'] as Map<String, dynamic>? ?? {};
-    final nom = boutique['nom'] as String? ?? 'Boutique';
-    final estPrincipale = boutique['estPrincipale'] as bool? ?? false;
-    final caisses = (data['caisses'] as List<dynamic>? ?? []);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(estPrincipale ? Icons.store : Icons.storefront, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(nom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                if (estPrincipale) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('Principale', style: TextStyle(fontSize: 10, color: Colors.amber[800])),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _MiniStat(label: 'CA', value: '${_fmt(data['chiffreAffaires'])} FCFA', color: Colors.green)),
-                Expanded(child: _MiniStat(label: 'Encaissé', value: '${_fmt(data['montantEncaisse'])} FCFA', color: Colors.blue)),
-                Expanded(child: _MiniStat(label: 'Ventes', value: '${data['nbVentes'] ?? 0}', color: Colors.orange)),
-              ],
-            ),
-            if (caisses.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Text('Caisses', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
-              const SizedBox(height: 4),
-              ...caisses.map((c) {
-                final caisse = c as Map<String, dynamic>;
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(caisse['nom'] as String? ?? '', style: const TextStyle(fontSize: 12)),
-                    Text(
-                      '${_fmt(caisse['soldeActuel'])} FCFA',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                );
-              }),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label, value;
-  final Color color;
-  const _MiniStat({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
+class _CompactStatCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
   final Color color;
-  const _StatCard({required this.label, required this.value, required this.icon, required this.color});
+
+  const _CompactStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 8, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: color, size: 20),
-          ),
+          Icon(icon, color: color, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -466,19 +561,252 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  const _SectionTitle({required this.title, required this.icon});
+class _ModernBoutiqueCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _ModernBoutiqueCard({required this.data});
+
+  String _fmt(dynamic val) {
+    final n = (val as num? ?? 0).toDouble();
+    // Format avec séparateur de milliers
+    final formatter = n.toStringAsFixed(0);
+    final parts = <String>[];
+    var remaining = formatter;
+
+    while (remaining.length > 3) {
+      parts.insert(0, remaining.substring(remaining.length - 3));
+      remaining = remaining.substring(0, remaining.length - 3);
+    }
+    if (remaining.isNotEmpty) {
+      parts.insert(0, remaining);
+    }
+
+    return parts.join(' ');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-      ],
+    final boutique = data['boutique'] as Map<String, dynamic>? ?? {};
+    final nom = boutique['nom'] as String? ?? 'Boutique';
+    final estPrincipale = boutique['estPrincipale'] as bool? ?? false;
+    final caisses = (data['caisses'] as List<dynamic>? ?? []);
+
+    final ca = (data['chiffreAffaires'] as num?)?.toDouble() ?? 0;
+    final encaisse = (data['montantEncaisse'] as num?)?.toDouble() ?? 0;
+    final nbVentes = data['nbVentes'] ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(13),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête boutique
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: estPrincipale ? Colors.amber[50] : Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  estPrincipale ? Icons.store_rounded : Icons.storefront_rounded,
+                  color: estPrincipale ? Colors.amber[700] : Colors.blue[700],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nom,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                    if (estPrincipale)
+                      Text(
+                        'Boutique principale',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Statistiques
+          Row(
+            children: [
+              Expanded(
+                child: _StatItem(
+                  label: 'CA',
+                  value: '${_fmt(ca)} FCFA',
+                  icon: Icons.trending_up_rounded,
+                  color: Colors.green,
+                ),
+              ),
+              Expanded(
+                child: _StatItem(
+                  label: 'Encaissé',
+                  value: '${_fmt(encaisse)} FCFA',
+                  icon: Icons.payments_rounded,
+                  color: Colors.blue,
+                ),
+              ),
+              Expanded(
+                child: _StatItem(
+                  label: 'Ventes',
+                  value: '$nbVentes',
+                  icon: Icons.receipt_long_rounded,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+
+          // Caisses
+          if (caisses.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.account_balance_wallet_rounded, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Text(
+                  'Caisses (${caisses.length})',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: 'Solde actuel total de chaque caisse\n(indépendant de la période sélectionnée)',
+                  child: Icon(Icons.info_outline, size: 14, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...caisses.map((c) {
+              final caisse = c as Map<String, dynamic>;
+              final nomCaisse = caisse['nom'] as String? ?? '';
+              final solde = (caisse['soldeActuel'] as num?)?.toDouble() ?? 0;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        nomCaisse,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${_fmt(solde)} FCFA',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Solde actuel',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label, value;
+  final IconData icon;
+  final Color color;
+
+  const _StatItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withAlpha(26),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

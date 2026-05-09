@@ -8,6 +8,7 @@ import '../services/supplier_statement_pdf_service.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../shared/widgets/date_filter_bar.dart';
 
 /// Vue du compte fournisseur
 ///
@@ -23,6 +24,10 @@ class SupplierAccountView extends StatefulWidget {
 class _SupplierAccountViewState extends State<SupplierAccountView> {
   final SupplierController _controller = Get.find<SupplierController>();
   Supplier? _supplier;
+
+  // Variables pour le filtre de dates
+  PeriodFilter _selectedPeriod = PeriodFilter.all;
+  DateTimeRange? _customRange;
 
   @override
   void initState() {
@@ -43,6 +48,54 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
 
   Future<void> _loadTransactions() async {
     await _controller.loadSupplierTransactions(_supplier!.id);
+  }
+
+  // Méthode pour obtenir les transactions filtrées
+  List<dynamic> _getFilteredTransactions() {
+    return DateFilterHelper.filterByDate(
+      _controller.supplierTransactions.toList(),
+      (transaction) => transaction.dateTransaction,
+      _selectedPeriod,
+      _customRange,
+    );
+  }
+
+  // Méthode pour calculer le solde filtré
+  double _calculateFilteredBalance() {
+    final filteredTransactions = _getFilteredTransactions();
+    if (filteredTransactions.isEmpty) return 0.0;
+    return filteredTransactions.first.soldeApres;
+  }
+
+  // Méthode pour changer la période
+  void _onPeriodChanged(PeriodFilter period) {
+    setState(() {
+      _selectedPeriod = period;
+      if (period != PeriodFilter.custom) {
+        _customRange = null;
+      }
+    });
+  }
+
+  // Méthode pour sélectionner une période personnalisée
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: now,
+      initialDateRange: _customRange ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 30)),
+            end: now,
+          ),
+    );
+    if (range != null) {
+      setState(() {
+        _customRange = range;
+        _selectedPeriod = PeriodFilter.custom;
+      });
+    }
   }
 
   @override
@@ -76,6 +129,14 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
             children: [
               _buildAccountSummary(),
               const Divider(height: 1),
+              // Barre de filtre de dates
+              DateFilterBar(
+                selectedPeriod: _selectedPeriod,
+                customRange: _customRange,
+                onPeriodChanged: _onPeriodChanged,
+                onCustomRangePick: _pickCustomRange,
+              ),
+              const Divider(height: 1),
               Expanded(child: _buildTransactionsList()),
             ],
           ),
@@ -85,11 +146,8 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
   }
 
   Widget _buildAccountSummary() {
-    // Calculer le solde à partir des transactions
-    double solde = 0.0;
-    if (_controller.supplierTransactions.isNotEmpty) {
-      solde = _controller.supplierTransactions.first.soldeApres;
-    }
+    // Utiliser le solde filtré au lieu du solde global
+    double solde = _calculateFilteredBalance();
 
     // Pour les fournisseurs: solde POSITIF = on leur doit de l'argent (dette)
     // C'est l'inverse des clients!
@@ -99,7 +157,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: aDette ? [Colors.red.shade400, Colors.red.shade600] : [Colors.green.shade400, Colors.green.shade600],
@@ -107,119 +165,101 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            'suppliers_account_balance_title'.tr,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${solde.toStringAsFixed(0)} FCFA',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              if (aDette)
-                _buildSummaryCard(
-                  'suppliers_to_pay'.tr,
-                  '${montantDette.toStringAsFixed(0)} FCFA',
-                  Icons.warning,
-                  Colors.white.withOpacity(0.9),
-                )
-              else if (avancePayee > 0)
-                _buildSummaryCard(
-                  'suppliers_advance_paid'.tr,
-                  '${avancePayee.toStringAsFixed(0)} FCFA',
-                  Icons.account_balance_wallet,
-                  Colors.white.withOpacity(0.9),
-                )
-              else
-                _buildSummaryCard(
-                  'suppliers_balanced'.tr,
-                  '0 FCFA',
-                  Icons.check_circle,
-                  Colors.white.withOpacity(0.9),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Boutons d'action
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (aDette)
-                ElevatedButton.icon(
-                  onPressed: () => _showPaymentDialog(montantDette),
-                  icon: const Icon(Icons.payment),
-                  label: Text('suppliers_pay_supplier'.tr),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.red.shade700,
-                  ),
-                )
-              else
-                OutlinedButton.icon(
-                  onPressed: () => _showPaymentDialog(0),
-                  icon: const Icon(Icons.payment),
-                  label: Text('suppliers_make_payment_button'.tr),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white, width: 2),
+          // Solde principal
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'suppliers_account_balance_title'.tr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                onPressed: _printStatement,
-                icon: const Icon(Icons.print),
-                label: Text('suppliers_print_button'.tr),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white),
+                const SizedBox(height: 4),
+                Text(
+                  '${solde.toStringAsFixed(0)} FCFA',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          // Info compacte
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  aDette ? Icons.warning : (avancePayee > 0 ? Icons.account_balance_wallet : Icons.check_circle),
+                  color: Colors.white,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    aDette
+                        ? '${'suppliers_to_pay'.tr}: ${montantDette.toStringAsFixed(0)} FCFA'
+                        : (avancePayee > 0 ? '${'suppliers_advance_paid'.tr}: ${avancePayee.toStringAsFixed(0)} FCFA' : 'suppliers_balanced'.tr),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Boutons d'action compacts
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (aDette)
+                  ElevatedButton.icon(
+                    onPressed: () => _showPaymentDialog(montantDette),
+                    icon: const Icon(Icons.payment, size: 16),
+                    label: Text('suppliers_pay_supplier'.tr),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.red.shade700,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: () => _showPaymentDialog(0),
+                    icon: const Icon(Icons.payment, size: 16),
+                    label: Text('suppliers_make_payment_button'.tr),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white, width: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _printStatement,
+                  icon: const Icon(Icons.print, size: 18),
+                  color: Colors.white,
+                  tooltip: 'suppliers_print_button'.tr,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
           ),
         ],
@@ -228,32 +268,33 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
   }
 
   Widget _buildTransactionsList() {
-    return Obx(() {
-      if (_controller.supplierTransactions.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text(
-                'suppliers_no_transactions'.tr,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        );
-      }
+    // Utiliser les transactions filtrées
+    final filteredTransactions = _getFilteredTransactions();
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _controller.supplierTransactions.length,
-        itemBuilder: (context, index) {
-          final transaction = _controller.supplierTransactions[index];
-          return _buildTransactionItem(transaction);
-        },
+    if (filteredTransactions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _selectedPeriod == PeriodFilter.all ? 'suppliers_no_transactions'.tr : 'Aucune transaction pour cette période',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
       );
-    });
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredTransactions.length,
+      itemBuilder: (context, index) {
+        final transaction = filteredTransactions[index];
+        return _buildTransactionItem(transaction);
+      },
+    );
   }
 
   Widget _buildTransactionItem(SupplierTransaction transaction) {

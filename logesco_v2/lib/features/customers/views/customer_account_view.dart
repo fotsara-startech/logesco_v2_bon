@@ -9,6 +9,7 @@ import '../../financial_movements/controllers/financial_movement_controller.dart
 import '../../../core/services/cash_register_refresh_service.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../shared/widgets/date_filter_bar.dart';
 
 /// Vue du compte client - SOLUTION 2: Système centralisé
 ///
@@ -24,6 +25,10 @@ class CustomerAccountView extends StatefulWidget {
 class _CustomerAccountViewState extends State<CustomerAccountView> {
   final CustomerController _controller = Get.find<CustomerController>();
   Customer? _customer;
+
+  // Variables pour le filtre de dates
+  PeriodFilter _selectedPeriod = PeriodFilter.all;
+  DateTimeRange? _customRange;
 
   @override
   void initState() {
@@ -44,6 +49,54 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
   Future<void> _loadTransactions() async {
     await _controller.loadCustomerTransactions(_customer!.id);
+  }
+
+  // Méthode pour obtenir les transactions filtrées
+  List<dynamic> _getFilteredTransactions() {
+    return DateFilterHelper.filterByDate(
+      _controller.customerTransactions.toList(),
+      (transaction) => transaction.dateTransaction,
+      _selectedPeriod,
+      _customRange,
+    );
+  }
+
+  // Méthode pour calculer le solde filtré
+  double _calculateFilteredBalance() {
+    final filteredTransactions = _getFilteredTransactions();
+    if (filteredTransactions.isEmpty) return 0.0;
+    return filteredTransactions.first.soldeApres;
+  }
+
+  // Méthode pour changer la période
+  void _onPeriodChanged(PeriodFilter period) {
+    setState(() {
+      _selectedPeriod = period;
+      if (period != PeriodFilter.custom) {
+        _customRange = null;
+      }
+    });
+  }
+
+  // Méthode pour sélectionner une période personnalisée
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: now,
+      initialDateRange: _customRange ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 30)),
+            end: now,
+          ),
+    );
+    if (range != null) {
+      setState(() {
+        _customRange = range;
+        _selectedPeriod = PeriodFilter.custom;
+      });
+    }
   }
 
   @override
@@ -77,6 +130,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
             children: [
               _buildAccountSummary(),
               const Divider(height: 1),
+              // Barre de filtre de dates
+              DateFilterBar(
+                selectedPeriod: _selectedPeriod,
+                customRange: _customRange,
+                onPeriodChanged: _onPeriodChanged,
+                onCustomRangePick: _pickCustomRange,
+              ),
+              const Divider(height: 1),
               Expanded(child: _buildTransactionsList()),
             ],
           ),
@@ -86,11 +147,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   }
 
   Widget _buildAccountSummary() {
-    // Calculer le solde à partir des transactions
-    double solde = 0.0;
-    if (_controller.customerTransactions.isNotEmpty) {
-      solde = _controller.customerTransactions.first.soldeApres;
-    }
+    // Utiliser le solde filtré au lieu du solde global
+    double solde = _calculateFilteredBalance();
 
     final bool aDette = solde < 0;
     final double montantDette = aDette ? -solde : 0.0;
@@ -98,7 +156,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: aDette ? [Colors.red.shade400, Colors.red.shade600] : [Colors.green.shade400, Colors.green.shade600],
@@ -106,68 +164,62 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            'customers_account_balance'.tr,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${solde.toStringAsFixed(0)} FCFA',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              if (aDette)
-                _buildSummaryCard(
-                  'customers_has_debt'.tr,
-                  '${montantDette.toStringAsFixed(0)} FCFA',
-                  Icons.warning,
-                  Colors.white.withOpacity(0.9),
-                )
-              else
-                _buildSummaryCard(
-                  'customers_available_credit'.tr,
-                  '${creditDisponible.toStringAsFixed(0)} FCFA',
-                  Icons.account_balance_wallet,
-                  Colors.white.withOpacity(0.9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'customers_account_balance'.tr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  '${solde.toStringAsFixed(0)} FCFA',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  aDette ? '${'customers_has_debt'.tr}: ${montantDette.toStringAsFixed(0)} FCFA' : '${'customers_available_credit'.tr}: ${creditDisponible.toStringAsFixed(0)} FCFA',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(230),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          // Boutons d'action
+          // Boutons d'action compacts
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               if (aDette)
                 ElevatedButton.icon(
                   onPressed: () => _showPaymentDialog(montantDette),
-                  icon: const Icon(Icons.payment),
+                  icon: const Icon(Icons.payment, size: 18),
                   label: Text('customers_pay_debt'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
-              if (aDette) const SizedBox(width: 12),
-              OutlinedButton.icon(
+              if (aDette) const SizedBox(width: 8),
+              IconButton(
                 onPressed: _printTransactions,
-                icon: const Icon(Icons.print),
-                label: Text('print'.tr),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white),
+                icon: const Icon(Icons.print, color: Colors.white),
+                tooltip: 'print'.tr,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withAlpha(51),
                 ),
               ),
             ],
@@ -210,32 +262,33 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   }
 
   Widget _buildTransactionsList() {
-    return Obx(() {
-      if (_controller.customerTransactions.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text(
-                'customers_no_transactions'.tr,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        );
-      }
+    // Utiliser les transactions filtrées
+    final filteredTransactions = _getFilteredTransactions();
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _controller.customerTransactions.length,
-        itemBuilder: (context, index) {
-          final transaction = _controller.customerTransactions[index];
-          return _buildTransactionItem(transaction);
-        },
+    if (filteredTransactions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _selectedPeriod == PeriodFilter.all ? 'customers_no_transactions'.tr : 'Aucune transaction pour cette période',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
       );
-    });
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredTransactions.length,
+      itemBuilder: (context, index) {
+        final transaction = filteredTransactions[index];
+        return _buildTransactionItem(transaction);
+      },
+    );
   }
 
   Widget _buildTransactionItem(dynamic transaction) {
