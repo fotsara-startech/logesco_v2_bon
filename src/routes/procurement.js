@@ -8,6 +8,7 @@ const { validate } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { commandeApprovisionnementSchemas, idParamSchema } = require('../validation/schemas');
 const transformers = require('../utils/transformers');
+const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-service');
 
 /**
  * Crée le routeur pour les approvisionnements
@@ -680,6 +681,16 @@ function createProcurementRouter(services) {
                 typeReference: 'approvisionnement',
                 notes: `Réception commande ${commande.numeroCommande}`
               });
+
+              // Enregistrer le prix d'achat dans l'historique et recalculer le CUMP
+              await enregistrerPrixAchatEtRecalculerCump(
+                tx,
+                detailCommande.produitId,
+                detailCommande.coutUnitaire,
+                'approvisionnement',
+                parseInt(id),
+                quantiteRecue  // quantité réellement reçue pour pondérer le CUMP
+              );
             }
 
             // Vérifier si ce détail est complet

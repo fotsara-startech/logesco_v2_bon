@@ -938,7 +938,7 @@ function createInventoryRouter(models) {
             }),
             models.prisma.$queryRaw`
               SELECT 
-                SUM(sb.quantite_disponible * COALESCE(p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
+                SUM(sb.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
                 SUM(sb.quantite_disponible * p.prix_unitaire) as valeurVente
               FROM stock_boutiques sb
               INNER JOIN produits p ON sb.produit_id = p.id
@@ -1016,7 +1016,7 @@ function createInventoryRouter(models) {
           // Valeur totale du stock (prix d'achat et de vente)
           models.prisma.$queryRaw`
             SELECT 
-              SUM(s.quantite_disponible * COALESCE(p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
+              SUM(s.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
               SUM(s.quantite_disponible * p.prix_unitaire) as valeurVente
             FROM stock s
             INNER JOIN produits p ON s.produit_id = p.id
@@ -1175,52 +1175,35 @@ function createInventoryRouter(models) {
     async (req, res) => {
       try {
         const { alerteStock, produitId, search, category } = req.query;
-
-        // Construire les conditions de recherche
-        const where = {};
-        const produitWhere = { estActif: true };
-
-        if (produitId) {
-          where.produitId = parseInt(produitId);
-        }
-
-        // Ajouter la recherche par texte
-        if (search && search.trim()) {
-          const searchTerm = search.trim();
-          produitWhere.OR = [
-            { nom: { contains: searchTerm } },
-            { reference: { contains: searchTerm } },
-            { codeBarre: { contains: searchTerm } }
-          ];
-        }
-
-        // Ajouter le filtre par catégorie
-        if (category && category.trim()) {
-          produitWhere.categorie = {
-            is: {
-              nom: category.trim()
-            }
-          };
-        }
-
-        where.produit = produitWhere;
+        const boutiqueId = req.query.boutiqueId
+          ? parseInt(req.query.boutiqueId)
+          : req.headers['x-boutique-id']
+          ? parseInt(req.headers['x-boutique-id'])
+          : null;
 
         let stocks;
 
-        // Filtrer par alerte de stock si demandé
-        if (alerteStock === true || alerteStock === 'true') {
-          stocks = await models.prisma.$queryRaw`
-            SELECT s.*, p.reference, p.nom, p.seuil_stock_minimum, p.prix_unitaire, p.prix_achat
-            FROM stock s
-            INNER JOIN produits p ON s.produit_id = p.id
-            WHERE s.quantite_disponible <= p.seuil_stock_minimum
-            AND p.seuil_stock_minimum > 0
-            AND p.est_actif = 1
-            ORDER BY s.derniere_maj DESC
-          `;
-        } else {
-          stocks = await models.prisma.stock.findMany({
-            where,
+        if (boutiqueId) {
+          // ── Mode multi-boutique : quantités depuis stock_boutiques ──────────
+          const whereProduct = { estActif: true };
+          if (produitId) whereProduct.id = parseInt(produitId);
+          if (search && search.trim()) {
+            whereProduct.OR = [
+              { nom: { contains: search.trim() } },
+              { reference: { contains: search.trim() } },
+              { codeBarre: { contains: search.trim() } }
+            ];
+          }
+          if (category && category.trim()) {
+            whereProduct.categorie = { is: { nom: category.trim() } };
+          }
+
+          const stocksBoutique = await models.prisma.stockBoutique.findMany({
+            where: {
+              boutiqueId,
+              produit: whereProduct,
+              ...(alerteStock === 'true' ? {} : {})
+            },
             include: {
               produit: {
                 select: {
@@ -1228,12 +1211,89 @@ function createInventoryRouter(models) {
                   nom: true,
                   seuilStockMinimum: true,
                   prixUnitaire: true,
-                  prixAchat: true
+                  prixAchat: true,
+                  cump: true
                 }
               }
             },
             orderBy: { derniereMaj: 'desc' }
           });
+
+          stocks = stocksBoutique
+            .filter(sb => alerteStock !== 'true' || sb.quantiteDisponible <= (sb.produit?.seuilStockMinimum || 0))
+            .map(sb => ({
+              quantiteDisponible: sb.quantiteDisponible,
+              quantiteReservee: sb.quantiteReservee,
+              derniereMaj: sb.derniereMaj,
+              produit: sb.produit
+            }));
+
+        } else {
+          // ── Mode classique : quantités depuis stock global ─────────────────
+          const where = {};
+          const produitWhere = { estActif: true };
+
+          if (produitId) where.produitId = parseInt(produitId);
+          if (search && search.trim()) {
+            produitWhere.OR = [
+              { nom: { contains: search.trim() } },
+              { reference: { contains: search.trim() } },
+              { codeBarre: { contains: search.trim() } }
+            ];
+          }
+          if (category && category.trim()) {
+            produitWhere.categorie = { is: { nom: category.trim() } };
+          }
+          where.produit = produitWhere;
+
+          if (alerteStock === 'true') {
+            const raw = await models.prisma.$queryRaw`
+              SELECT s.quantite_disponible, s.quantite_reservee, s.derniere_maj,
+                     p.reference, p.nom, p.seuil_stock_minimum, p.prix_unitaire, p.prix_achat, p.cump
+              FROM stock s
+              INNER JOIN produits p ON s.produit_id = p.id
+              WHERE s.quantite_disponible <= p.seuil_stock_minimum
+              AND p.seuil_stock_minimum > 0
+              AND p.est_actif = 1
+              ORDER BY s.derniere_maj DESC
+            `;
+            stocks = raw.map(r => ({
+              quantiteDisponible: r.quantite_disponible,
+              quantiteReservee: r.quantite_reservee,
+              derniereMaj: r.derniere_maj,
+              produit: {
+                reference: r.reference,
+                nom: r.nom,
+                seuilStockMinimum: r.seuil_stock_minimum,
+                prixUnitaire: r.prix_unitaire,
+                prixAchat: r.prix_achat,
+                cump: r.cump
+              }
+            }));
+          } else {
+            const raw = await models.prisma.stock.findMany({
+              where,
+              include: {
+                produit: {
+                  select: {
+                    reference: true,
+                    nom: true,
+                    seuilStockMinimum: true,
+                    prixUnitaire: true,
+                    prixAchat: true,
+                    cump: true
+                  }
+                }
+              },
+              orderBy: { derniereMaj: 'desc' }
+            });
+            stocks = raw.map(s => ({
+              quantiteDisponible: s.quantiteDisponible,
+              quantiteReservee: s.quantiteReservee,
+              derniereMaj: s.derniereMaj,
+              produit: s.produit
+            }));
+          }
         }
 
         // Générer le CSV
@@ -1244,61 +1304,50 @@ function createInventoryRouter(models) {
           'Quantité réservée',
           'Seuil minimum',
           'Prix unitaire',
-          'Prix d\'achat',
+          'CUMP',
           'Valeur stock (vente)',
-          'Valeur stock (achat)',
+          'Valeur stock (achat/CUMP)',
           'Statut',
           'Dernière MAJ'
         ];
 
         const csvRows = stocks.map(stock => {
-          const produit = alerteStock ? {
-            reference: stock.reference,
-            nom: stock.nom,
-            seuilStockMinimum: stock.seuil_stock_minimum,
-            prixUnitaire: stock.prix_unitaire,
-            prixAchat: stock.prix_achat
-          } : stock.produit;
-
-          const quantiteDisponible = alerteStock ? stock.quantite_disponible : stock.quantiteDisponible;
-          const quantiteReservee = alerteStock ? stock.quantite_reservee : stock.quantiteReservee;
+          const produit = stock.produit;
+          const qteDisponible = stock.quantiteDisponible || 0;
+          const qteReservee = stock.quantiteReservee || 0;
           const seuilMinimum = produit.seuilStockMinimum || 0;
           const prixUnitaire = produit.prixUnitaire || 0;
-          const prixAchat = produit.prixAchat || prixUnitaire * 0.8;
+          // Utiliser CUMP en priorité, sinon prixAchat, sinon estimation 80%
+          const cump = produit.cump || produit.prixAchat || prixUnitaire * 0.8;
 
-          const valeurVente = quantiteDisponible * prixUnitaire;
-          const valeurAchat = quantiteDisponible * prixAchat;
+          const valeurVente = qteDisponible * prixUnitaire;
+          const valeurAchat = qteDisponible * cump;
 
           let statut = 'Normal';
-          if (quantiteDisponible === 0) {
-            statut = 'Rupture';
-          } else if (quantiteDisponible <= seuilMinimum) {
-            statut = 'Alerte';
-          }
+          if (qteDisponible === 0) statut = 'Rupture';
+          else if (qteDisponible <= seuilMinimum) statut = 'Alerte';
 
           return [
             `"${produit.reference || ''}"`,
             `"${produit.nom || ''}"`,
-            quantiteDisponible,
-            quantiteReservee,
+            qteDisponible,
+            qteReservee,
             seuilMinimum,
             prixUnitaire.toFixed(2),
-            prixAchat.toFixed(2),
+            cump.toFixed(2),
             valeurVente.toFixed(2),
             valeurAchat.toFixed(2),
             `"${statut}"`,
-            `"${(alerteStock ? stock.derniere_maj : stock.derniereMaj)?.toISOString() || ''}"`
+            `"${stock.derniereMaj?.toISOString() || ''}"`
           ].join(',');
         });
 
         const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
 
-        // Définir les en-têtes pour le téléchargement
         const filename = `stocks_export_${new Date().toISOString().split('T')[0]}.csv`;
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.setHeader('Content-Length', Buffer.byteLength(csvContent, 'utf8'));
-
         res.send('\uFEFF' + csvContent); // BOM pour Excel
 
       } catch (error) {
