@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
 
@@ -122,23 +121,10 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.add_shopping_cart),
-              onPressed: () {
-                // TODO: Naviguer vers commande d'approvisionnement
-                SnackbarHelper.info('Fonction d\'approvisionnement à venir');
-              },
-              tooltip: 'Commander',
-            ),
-            IconButton(
-              icon: const Icon(Icons.swap_horiz),
-              onPressed: () => controller.goToStockMovement(stock),
-              tooltip: 'Mouvement de stock',
-            ),
-          ],
+        trailing: IconButton(
+          icon: const Icon(Icons.swap_horiz),
+          onPressed: () => controller.goToStockMovement(stock),
+          tooltip: 'Mouvement de stock',
         ),
         onTap: () => controller.goToStockDetail(stock),
       ),

@@ -1908,6 +1908,8 @@ const Map<String, String> frTranslations = {
   'financial_movements_reports_export_success': 'Export réussi',
   'financial_movements_reports_pdf_saved': 'Rapport PDF sauvegardé',
   'financial_movements_reports_excel_saved': 'Rapport Excel sauvegardé',
+  'financial_movements_reports_generating_pdf': 'Génération du PDF en cours...',
+  'financial_movements_reports_generating_excel': 'Génération du fichier Excel en cours...',
   'financial_movements_reports_loading': 'Chargement des rapports...',
   'financial_movements_reports_period_selector': 'Sélecteur de période',
   'financial_movements_reports_quick_actions': 'Actions rapides',

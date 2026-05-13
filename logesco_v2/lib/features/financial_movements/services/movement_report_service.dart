@@ -259,8 +259,15 @@ class MovementReportService {
         final jsonData = json.decode(response.body);
         final downloadUrl = jsonData['data']['downloadUrl'] as String;
 
+        // Construire l'URL complète si l'URL est relative
+        final baseUrl = AppConfig.currentBaseUrl;
+        final serverUrl = baseUrl.replaceAll('/api/v1', '');
+        final fullDownloadUrl = downloadUrl.startsWith('http') ? downloadUrl : '$serverUrl$downloadUrl';
+
+        print('📥 Téléchargement depuis: $fullDownloadUrl');
+
         // Télécharger le fichier Excel
-        final excelResponse = await http.get(Uri.parse(downloadUrl));
+        final excelResponse = await http.get(Uri.parse(fullDownloadUrl));
 
         if (excelResponse.statusCode == 200) {
           // Sauvegarder le fichier localement

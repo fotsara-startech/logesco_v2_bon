@@ -384,12 +384,26 @@ function createBoutiquesRouter({ prisma, authService }) {
       if (!isAdmin) return res.status(403).json(BaseResponseDTO.error('Accès réservé aux administrateurs'));
 
       const { dateDebut, dateFin } = req.query;
+      console.log('📊 Dashboard consolidé - Paramètres:', { dateDebut, dateFin });
+      
       const where = {};
       if (dateDebut || dateFin) {
         where.dateVente = {};
-        if (dateDebut) where.dateVente.gte = new Date(dateDebut);
-        if (dateFin) where.dateVente.lte = new Date(dateFin);
+        if (dateDebut) {
+          // Pour SQLite, utiliser une date ISO string
+          const startDate = new Date(dateDebut);
+          startDate.setHours(0, 0, 0, 0);
+          where.dateVente.gte = startDate;
+        }
+        if (dateFin) {
+          // Ajouter 23:59:59 à la date de fin pour inclure toute la journée
+          const endDate = new Date(dateFin);
+          endDate.setHours(23, 59, 59, 999);
+          where.dateVente.lte = endDate;
+        }
       }
+
+      console.log('📊 Filtre de date construit:', where);
 
       const boutiques = await prisma.boutique.findMany({
         where: { isActive: true },
@@ -397,14 +411,50 @@ function createBoutiquesRouter({ prisma, authService }) {
       });
 
       const statsBoutiques = await Promise.all(boutiques.map(async (b) => {
-        const venteWhere = { ...where, boutiqueId: b.id, statut: { not: 'annulee' } };
+        // Pour SQLite, on récupère toutes les ventes et on filtre en JavaScript
+        const venteWhere = { 
+          boutiqueId: b.id, 
+          statut: { not: 'annulee' }
+        };
 
-        const [ventesAgg, nbVentes, mouvementsAgg, caisses] = await Promise.all([
-          prisma.vente.aggregate({
-            where: venteWhere,
-            _sum: { montantTotal: true, montantPaye: true }
-          }),
-          prisma.vente.count({ where: venteWhere }),
+        console.log(`📊 Requête ventes pour boutique ${b.nom}:`, JSON.stringify(venteWhere, null, 2));
+
+        // Vérifier les ventes récentes pour cette boutique (debug)
+        const ventesRecentes = await prisma.vente.findMany({
+          where: { boutiqueId: b.id },
+          select: { id: true, numeroVente: true, dateVente: true, montantTotal: true, statut: true },
+          orderBy: { dateVente: 'desc' },
+          take: 3
+        });
+        console.log(`📊 Dernières ventes pour ${b.nom}:`, ventesRecentes);
+
+        // Récupérer toutes les ventes de la boutique
+        const toutesVentes = await prisma.vente.findMany({
+          where: venteWhere,
+          select: { montantTotal: true, montantPaye: true, dateVente: true }
+        });
+
+        // Filtrer par date en JavaScript (solution pour SQLite)
+        let ventesFiltrees = toutesVentes;
+        if (where.dateVente) {
+          const dateDebut = where.dateVente.gte;
+          const dateFin = where.dateVente.lte;
+          
+          ventesFiltrees = toutesVentes.filter(v => {
+            const dateVente = new Date(v.dateVente);
+            if (dateDebut && dateVente < dateDebut) return false;
+            if (dateFin && dateVente > dateFin) return false;
+            return true;
+          });
+          
+          console.log(`📊 Filtrage pour ${b.nom}: ${toutesVentes.length} ventes totales → ${ventesFiltrees.length} dans la période`);
+        }
+
+        const chiffreAffaires = ventesFiltrees.reduce((sum, v) => sum + (v.montantTotal || 0), 0);
+        const montantEncaisse = ventesFiltrees.reduce((sum, v) => sum + (v.montantPaye || 0), 0);
+        const nbVentes = ventesFiltrees.length;
+
+        const [mouvementsAgg, caisses] = await Promise.all([
           prisma.financialMovement.aggregate({
             where: { boutiqueId: b.id, ...(where.dateVente ? { date: where.dateVente } : {}) },
             _sum: { montant: true }
@@ -415,10 +465,16 @@ function createBoutiquesRouter({ prisma, authService }) {
           })
         ]);
 
+        console.log(`📊 Résultats pour ${b.nom}:`, {
+          ca: chiffreAffaires,
+          encaisse: montantEncaisse,
+          nbVentes
+        });
+
         return {
           boutique: { id: b.id, nom: b.nom, estPrincipale: b.estPrincipale },
-          chiffreAffaires: ventesAgg._sum.montantTotal ?? 0,
-          montantEncaisse: ventesAgg._sum.montantPaye ?? 0,
+          chiffreAffaires: chiffreAffaires,
+          montantEncaisse: montantEncaisse,
           nbVentes,
           totalMouvementsFinanciers: mouvementsAgg._sum.montant ?? 0,
           caisses
@@ -431,6 +487,8 @@ function createBoutiquesRouter({ prisma, authService }) {
         nbVentes: statsBoutiques.reduce((s, b) => s + b.nbVentes, 0),
         totalMouvementsFinanciers: statsBoutiques.reduce((s, b) => s + b.totalMouvementsFinanciers, 0)
       };
+
+      console.log('📊 Totaux calculés:', totaux);
 
       res.json(BaseResponseDTO.success({ boutiques: statsBoutiques, totaux }));
     } catch (err) {

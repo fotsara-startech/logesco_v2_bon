@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/expense_category.dart';
 import '../services/expense_category_service.dart';
@@ -9,8 +8,10 @@ class ExpenseCategoryController extends GetxController {
 
   // Observables
   final RxList<ExpenseCategory> categories = <ExpenseCategory>[].obs;
+  final RxList<ExpenseCategory> filteredCategories = <ExpenseCategory>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isCreating = false.obs;
+  final RxString searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -26,6 +27,7 @@ class ExpenseCategoryController extends GetxController {
 
       if (response.success && response.data != null) {
         categories.assignAll(response.data!);
+        _applyFilter();
       } else {
         _showError('Erreur de chargement', response.message);
       }
@@ -36,6 +38,30 @@ class ExpenseCategoryController extends GetxController {
     }
   }
 
+  /// Filtre les catégories selon la recherche
+  void searchCategories(String query) {
+    searchQuery.value = query;
+    _applyFilter();
+  }
+
+  /// Applique le filtre de recherche
+  void _applyFilter() {
+    if (searchQuery.value.isEmpty) {
+      filteredCategories.assignAll(categories);
+    } else {
+      final query = searchQuery.value.toLowerCase();
+      filteredCategories.assignAll(
+        categories.where((category) => category.displayName.toLowerCase().contains(query) || category.nom.toLowerCase().contains(query)).toList(),
+      );
+    }
+  }
+
+  /// Efface la recherche
+  void clearSearch() {
+    searchQuery.value = '';
+    _applyFilter();
+  }
+
   /// Crée une nouvelle catégorie
   Future<bool> createCategory(CreateExpenseCategoryRequest request) async {
     try {
@@ -44,6 +70,7 @@ class ExpenseCategoryController extends GetxController {
 
       if (response.success && response.data != null) {
         categories.add(response.data!);
+        _applyFilter();
         _showSuccess('Catégorie créée avec succès');
         return true;
       } else {
@@ -67,6 +94,7 @@ class ExpenseCategoryController extends GetxController {
         final index = categories.indexWhere((cat) => cat.id == id);
         if (index != -1) {
           categories[index] = response.data!;
+          _applyFilter();
         }
         _showSuccess('Catégorie mise à jour avec succès');
         return true;
@@ -87,6 +115,7 @@ class ExpenseCategoryController extends GetxController {
 
       if (response.success) {
         categories.removeWhere((cat) => cat.id == id);
+        _applyFilter();
         _showSuccess('Catégorie supprimée avec succès');
         return true;
       } else {

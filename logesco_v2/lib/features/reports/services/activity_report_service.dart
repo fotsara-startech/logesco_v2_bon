@@ -543,86 +543,68 @@ class ActivityReportService {
     }
   }
 
-  /// Calcule le coût réel des marchandises vendues (CORRIGÉ selon module comptabilité)
+  /// Cache des CUMP par produitId pour éviter les appels répétés
+  final Map<int, double?> _cumpCache = {};
+
+  /// Calcule le coût réel des marchandises vendues via CUMP
   Future<double> _calculateRealCostOfGoodsSold(DateTime startDate, DateTime endDate) async {
     try {
-      print('📦 Calcul du coût réel des marchandises vendues (méthode accounting)...');
-
-      // Récupérer toutes les ventes de la période
+      _cumpCache.clear();
       final sales = await _getSalesForPeriod(startDate, endDate);
 
       double totalCostOfGoodsSold = 0.0;
-      int totalItemsProcessed = 0;
-      int itemsWithRealCost = 0;
 
       for (final sale in sales) {
-        if (sale.details.isNotEmpty) {
-          for (final item in sale.details) {
-            totalItemsProcessed++;
-
-            final quantity = item.quantite;
-
-            // CORRECTION: Récupérer le prix d'achat réel via API (méthode accounting)
-            final realCostPrice = await _getProductCostPrice(item.produitId);
-
-            double prixAchat = 0.0;
-            if (realCostPrice != null && realCostPrice > 0) {
-              // Utiliser le prix d'achat réel récupéré via API
-              prixAchat = realCostPrice;
-              itemsWithRealCost++;
-            } else if (item.produit?.prixAchat != null && item.produit!.prixAchat! > 0) {
-              // Fallback: utiliser le prix d'achat du modèle
-              prixAchat = item.produit!.prixAchat!;
-              itemsWithRealCost++;
-            } else {
-              // Dernier recours: estimation conservatrice
-              prixAchat = item.prixUnitaire * 0.7;
-            }
-
-            // Calculer le coût basé sur le prix d'achat réel
-            final costForThisItem = quantity * prixAchat;
-            totalCostOfGoodsSold += costForThisItem;
-          }
+        for (final item in sale.details) {
+          final cump = await _getProductCump(item.produitId, item);
+          totalCostOfGoodsSold += item.quantite * cump;
         }
       }
 
-      print('📊 Analyse du coût des marchandises (méthode accounting):');
-      print('  - Articles traités: $totalItemsProcessed');
-      print('  - Articles avec coût réel API: $itemsWithRealCost');
-      print('  - Articles avec estimation: ${totalItemsProcessed - itemsWithRealCost}');
-      print('  - Coût total calculé: ${totalCostOfGoodsSold.toStringAsFixed(0)} FCFA');
-
       return totalCostOfGoodsSold;
     } catch (e) {
-      print('❌ Erreur lors du calcul du coût des marchandises: $e');
-      // En cas d'erreur, retourner 0 pour utiliser l'estimation dans la méthode appelante
       return 0.0;
     }
   }
 
-  /// Récupère le prix d'achat d'un produit via API (méthode accounting)
-  Future<double?> _getProductCostPrice(int productId) async {
+  /// Récupère le CUMP d'un produit depuis le champ `cump` de la table produits.
+  /// Fallback sur prixAchat, puis estimation 70%.
+  Future<double> _getProductCump(int productId, dynamic item) async {
+    if (_cumpCache.containsKey(productId)) return _cumpCache[productId] ?? 0.0;
+
     try {
       final token = await _authService.getToken();
-      if (token == null) return null;
+      if (token == null) throw Exception('no token');
 
       final response = await http.get(
         Uri.parse('$_baseUrl/products/$productId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final productData = data['data'] ?? data;
-        return productData['prixAchat'] != null ? (productData['prixAchat'] as num).toDouble() : null;
+        final p = data['data'] ?? data;
+        final cump = p['cump'] != null ? (p['cump'] as num).toDouble() : null;
+        final prixAchat = p['prixAchat'] != null ? (p['prixAchat'] as num).toDouble() : null;
+        final result = cump ?? prixAchat;
+        if (result != null && result > 0) {
+          _cumpCache[productId] = result;
+          return result;
+        }
       }
-    } catch (e) {
-      print('❌ Erreur lors de la récupération du prix d\'achat pour le produit $productId: $e');
+    } catch (_) {}
+
+    // Fallback : prixAchat du modèle
+    if (item?.produit?.prixAchat != null && (item.produit.prixAchat as double) > 0) {
+      final v = item.produit.prixAchat as double;
+      _cumpCache[productId] = v;
+      return v;
     }
-    return null;
+
+    // Fallback final : estimation 70% du prix de vente
+    final estimation = (item?.prixUnitaire as double? ?? 0.0) * 0.7;
+    _cumpCache[productId] = estimation;
+    return estimation;
   }
 
   /// Génère le résumé d'activité

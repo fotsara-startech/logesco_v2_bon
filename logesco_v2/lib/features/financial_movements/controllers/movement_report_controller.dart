@@ -1,4 +1,5 @@
 ﻿import 'package:get/get.dart';
+import 'package:open_file/open_file.dart';
 import '../models/loading_state.dart';
 import '../services/movement_report_service.dart';
 import '../services/financial_report_pdf_service.dart';
@@ -287,10 +288,10 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         throw Exception('Impossible de charger les données du résumé');
       }
 
-      print('');
+      print('📄 Génération du PDF du rapport...');
 
-      // Générer et imprimer le PDF localement
-      await FinancialReportPdfService.printFinancialReport(
+      // Générer et ouvrir automatiquement le PDF
+      final filePath = await FinancialReportPdfService.generateAndOpenFinancialReport(
         startDate: startDate.value!,
         endDate: endDate.value!,
         summary: currentSummary.value!,
@@ -299,10 +300,9 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
 
       isExporting.value = false;
-      print(' PDF généré et ouvert avec succès');
+      print('✅ PDF généré et ouvert avec succès: $filePath');
 
-      // Retourner un message de succès au lieu d'un chemin de fichier
-      return 'PDF généré avec succès';
+      return filePath;
     } catch (e) {
       isExporting.value = false;
       error.value = 'Erreur lors de la génération du PDF: $e';
@@ -346,7 +346,16 @@ class MovementReportController extends GetxController with LoadingStateMixin {
 
       final filePath = await _reportService.exportReportToExcel(request);
 
-      print(' Export Excel réussi: $filePath');
+      // Ouvrir automatiquement le fichier Excel
+      if (filePath != null && filePath.isNotEmpty) {
+        try {
+          await OpenFile.open(filePath);
+          print(' Export Excel réussi et ouvert: $filePath');
+        } catch (e) {
+          print(' Fichier Excel créé mais impossible de l\'ouvrir: $e');
+        }
+      }
+
       return filePath;
     } on Exception catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');

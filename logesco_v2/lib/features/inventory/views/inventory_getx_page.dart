@@ -106,14 +106,14 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              PopupMenuItem(
-                value: 'bulk_adjust',
-                child: ListTile(
-                  leading: const Icon(Icons.edit_note),
-                  title: Text('stock_bulk_adjustment'.tr),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
+              // PopupMenuItem(
+              //   value: 'bulk_adjust',
+              //   child: ListTile(
+              //     leading: const Icon(Icons.edit_note),
+              //     title: Text('stock_bulk_adjustment'.tr),
+              //     contentPadding: EdgeInsets.zero,
+              //   ),
+              // ),
             ],
           ),
         ],
@@ -631,18 +631,12 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
   }
 
   String _formatValue(double? value) {
-    if (value == null) {
-      return 'N/A';
-    }
-    if (value == 0) {
-      return '0 F';
-    }
-    // Format compact pour les grandes valeurs
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M F';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}K F';
-    }
-    return '${value.toStringAsFixed(0)} F';
+    if (value == null) return 'N/A';
+    if (value == 0) return '0 FCFA';
+    final formatted = value.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]} ',
+        );
+    return '$formatted FCFA';
   }
 }

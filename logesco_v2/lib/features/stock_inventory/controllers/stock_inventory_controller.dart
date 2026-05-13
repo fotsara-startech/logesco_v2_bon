@@ -312,51 +312,45 @@ class StockInventoryController extends GetxController {
     }
   }
 
-  /// Imprimer une feuille de comptage
+  /// Exporter la feuille de comptage en PDF et l'ouvrir
   Future<void> printCountingSheet(int inventoryId) async {
-    print('️ Début impression pour inventaire $inventoryId');
-
     try {
-      // Trouver l'inventaire
       final inventory = inventories.firstWhereOrNull((inv) => inv.id == inventoryId);
-      if (inventory == null) {
-        throw Exception('Inventaire non trouvé');
-      }
+      if (inventory == null) throw Exception('Inventaire non trouvé');
 
-      // Charger les articles si nécessaire
       if (currentInventoryItems.isEmpty || selectedInventory.value?.id != inventoryId) {
         await loadInventoryItems(inventoryId);
       }
 
-      // Générer et imprimer le PDF
-      await InventoryPrintService.printCountingSheet(inventory, currentInventoryItems);
+      final filePath = await InventoryPrintService.printCountingSheet(inventory, currentInventoryItems);
 
-      SnackbarHelper.success('Feuille de comptage générée et envoyée à l\'imprimante');
+      if (filePath != null) {
+        SnackbarHelper.success('Feuille de comptage exportée et ouverte');
+      } else {
+        SnackbarHelper.error('Impossible de générer la feuille de comptage');
+      }
     } catch (e) {
       SnackbarHelper.error('Impossible de générer la feuille de comptage: $e');
     }
   }
 
-  /// Imprimer un rapport d'inventaire terminé
+  /// Exporter le rapport d'inventaire en PDF et l'ouvrir
   Future<void> printInventoryReport(int inventoryId) async {
-    print('️ Début impression rapport pour inventaire $inventoryId');
-
     try {
-      // Trouver l'inventaire
       final inventory = inventories.firstWhereOrNull((inv) => inv.id == inventoryId);
-      if (inventory == null) {
-        throw Exception('Inventaire non trouvé');
-      }
+      if (inventory == null) throw Exception('Inventaire non trouvé');
 
-      // Charger les articles si nécessaire
       if (currentInventoryItems.isEmpty || selectedInventory.value?.id != inventoryId) {
         await loadInventoryItems(inventoryId);
       }
 
-      // Générer et imprimer le rapport PDF
-      await InventoryPrintService.printInventoryReport(inventory, currentInventoryItems);
+      final filePath = await InventoryPrintService.printInventoryReport(inventory, currentInventoryItems);
 
-      SnackbarHelper.success('Rapport d\'inventaire généré et envoyé à l\'imprimante');
+      if (filePath != null) {
+        SnackbarHelper.success('Rapport d\'inventaire exporté et ouvert');
+      } else {
+        SnackbarHelper.error('Impossible de générer le rapport d\'inventaire');
+      }
     } catch (e) {
       SnackbarHelper.error('Impossible de générer le rapport d\'inventaire: $e');
     }

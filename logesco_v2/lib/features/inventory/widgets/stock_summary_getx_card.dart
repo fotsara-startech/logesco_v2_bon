@@ -140,19 +140,14 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
   }
 
   String _formatValueCompact(double? value) {
-    if (value == null) {
-      return 'N/A';
-    }
-    if (value == 0) {
-      return '0';
-    }
-    // Format compact pour les grandes valeurs
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}K';
-    }
-    return value.toStringAsFixed(0);
+    if (value == null) return 'N/A';
+    if (value == 0) return '0 FCFA';
+    // Affichage complet avec séparateurs de milliers
+    final formatted = value.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]} ',
+        );
+    return '$formatted FCFA';
   }
 
   /// Construit l'en-tête avec le bouton de masquage
@@ -198,8 +193,10 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
   }
 
   Widget _buildCompactStatCard(String number, String title, String value, IconData icon, Color color) {
+    // Les cartes monétaires (Achat/Vente) ont besoin de plus de place
+    final isMonetary = number == '2' || number == '3';
     return Container(
-      width: 110,
+      width: isMonetary ? 160 : 110,
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -210,26 +207,20 @@ class StockSummaryGetxCard extends GetView<InventoryGetxController> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Icône
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
-
-          // Valeur principale
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMonetary ? 14 : 18,
               fontWeight: FontWeight.bold,
               color: color,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-
           const SizedBox(height: 4),
-
-          // Titre
           Text(
             title,
             style: TextStyle(

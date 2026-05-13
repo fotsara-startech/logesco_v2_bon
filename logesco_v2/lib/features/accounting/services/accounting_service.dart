@@ -214,20 +214,28 @@ class AccountingService {
     );
   }
 
+  /// Cache des CUMP par produitId pour éviter les appels répétés
+  final Map<int, double?> _cumpCache = {};
+
   Future<double> _calculateCostOfGoodsSold(List<Sale> sales) async {
+    // Vider le cache à chaque nouveau calcul de bilan
+    _cumpCache.clear();
+
     double total = 0.0;
     for (final sale in sales) {
       for (final detail in sale.details) {
-        if (detail.produit != null) {
-          final cost = await _getProductCostPrice(detail.produitId);
-          if (cost != null) total += cost * detail.quantite;
-        }
+        final cost = await _getProductCump(detail.produitId);
+        if (cost != null) total += cost * detail.quantite;
       }
     }
     return total;
   }
 
-  Future<double?> _getProductCostPrice(int productId) async {
+  /// Récupère le CUMP d'un produit depuis le champ `cump` de la table produits.
+  /// Fallback sur prixAchat si cump non disponible.
+  Future<double?> _getProductCump(int productId) async {
+    if (_cumpCache.containsKey(productId)) return _cumpCache[productId];
+
     try {
       final token = await _authService.getToken();
       if (token == null) return null;
@@ -238,9 +246,15 @@ class AccountingService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final p = data['data'] ?? data;
-        return p['prixAchat'] != null ? (p['prixAchat'] as num).toDouble() : null;
+        // Utiliser le CUMP en priorité, sinon prixAchat
+        final cump = p['cump'] != null ? (p['cump'] as num).toDouble() : null;
+        final prixAchat = p['prixAchat'] != null ? (p['prixAchat'] as num).toDouble() : null;
+        final result = cump ?? prixAchat;
+        _cumpCache[productId] = result;
+        return result;
       }
     } catch (_) {}
+    _cumpCache[productId] = null;
     return null;
   }
 

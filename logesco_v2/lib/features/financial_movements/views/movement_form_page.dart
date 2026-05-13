@@ -545,11 +545,34 @@ class _MovementFormPageState extends State<MovementFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'financial_movements_form_category_title'.tr,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'financial_movements_form_category_title'.tr,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                GetBuilder<FinancialMovementController>(
+                  builder: (controller) => IconButton(
+                    onPressed: () async {
+                      await controller.loadCategories(forceRefresh: true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Catégories rafraîchies (${controller.categories.length} catégories)'),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: 'Rafraîchir les catégories',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             ValidationWrapper(

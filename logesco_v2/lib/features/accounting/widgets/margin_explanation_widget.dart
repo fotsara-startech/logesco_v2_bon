@@ -52,7 +52,7 @@ class MarginExplanationWidget extends StatelessWidget {
             _buildCalculationStep(
               '2. Coût des Marchandises',
               '- ${balance.totalCostOfGoodsFormatted}',
-              'Prix d\'achat  Quantités vendues',
+              'CUMP × Quantités vendues',
               Colors.orange.shade600,
               Icons.shopping_basket,
             ),
@@ -177,9 +177,16 @@ class MarginExplanationWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildExplanationSection(
+                'Coût Unitaire Moyen Pondéré (CUMP)',
+                'Le CUMP est calculé à partir de l\'historique de tous les approvisionnements reçus pour chaque produit. Il reflète le coût moyen réel, même si le prix d\'achat a changé entre deux livraisons.',
+                'Formule: Σ(Qté reçue × Prix achat) / Σ(Qté reçue)',
+                Colors.orange.shade600,
+              ),
+              const SizedBox(height: 16),
+              _buildExplanationSection(
                 'Marge Brute',
                 'La marge brute représente le bénéfice réalisé sur la vente des produits, avant déduction des frais généraux.',
-                'Formule: Prix de Vente - Prix d\'Achat',
+                'Formule: Prix de Vente - CUMP',
                 Colors.blue.shade600,
               ),
               const SizedBox(height: 16),

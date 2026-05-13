@@ -34,26 +34,96 @@ class MovementReportsPage extends StatelessWidget {
                 tooltip: 'financial_movements_reports_export'.tr,
                 onSelected: (value) async {
                   if (value == 'pdf') {
-                    final filePath = await controller.exportToPdf();
-                    if (filePath != null) {
-                      Get.snackbar(
-                        'financial_movements_reports_export_success'.tr,
-                        'financial_movements_reports_pdf_saved'.tr,
-                        backgroundColor: Colors.green.shade100,
-                        colorText: Colors.green.shade800,
-                        duration: const Duration(seconds: 3),
-                      );
+                    // Afficher un indicateur de chargement
+                    Get.dialog(
+                      Center(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 16),
+                                Text('financial_movements_reports_generating_pdf'.tr),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      barrierDismissible: false,
+                    );
+
+                    try {
+                      final filePath = await controller.exportToPdf();
+                      Get.back(); // Fermer le dialogue de chargement
+
+                      if (filePath != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${'financial_movements_reports_export_success'.tr}\n${'financial_movements_reports_pdf_saved'.tr}'),
+                            backgroundColor: Colors.green.shade600,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      Get.back(); // Fermer le dialogue de chargement
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erreur: $e'),
+                            backgroundColor: Colors.red.shade600,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
                     }
                   } else if (value == 'excel') {
-                    final filePath = await controller.exportToExcel();
-                    if (filePath != null) {
-                      Get.snackbar(
-                        'financial_movements_reports_export_success'.tr,
-                        'financial_movements_reports_excel_saved'.tr,
-                        backgroundColor: Colors.green.shade100,
-                        colorText: Colors.green.shade800,
-                        duration: const Duration(seconds: 3),
-                      );
+                    // Afficher un indicateur de chargement
+                    Get.dialog(
+                      Center(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 16),
+                                Text('financial_movements_reports_generating_excel'.tr),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      barrierDismissible: false,
+                    );
+
+                    try {
+                      final filePath = await controller.exportToExcel();
+                      Get.back(); // Fermer le dialogue de chargement
+
+                      if (filePath != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${'financial_movements_reports_export_success'.tr}\n${'financial_movements_reports_excel_saved'.tr}'),
+                            backgroundColor: Colors.green.shade600,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      Get.back(); // Fermer le dialogue de chargement
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erreur: $e'),
+                            backgroundColor: Colors.red.shade600,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
                     }
                   }
                 },
@@ -130,25 +200,97 @@ class MovementReportsPage extends StatelessWidget {
                     // Actions rapides
                     ReportActionsWidget(
                       onExportPdf: () async {
-                        final filePath = await controller.exportToPdf();
-                        if (filePath != null) {
-                          Get.snackbar(
-                            'financial_movements_reports_export_success'.tr,
-                            'financial_movements_reports_pdf_saved'.tr,
-                            backgroundColor: Colors.green.shade100,
-                            colorText: Colors.green.shade800,
-                          );
+                        // Afficher un indicateur de chargement
+                        Get.dialog(
+                          Center(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 16),
+                                    Text('financial_movements_reports_generating_pdf'.tr),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          barrierDismissible: false,
+                        );
+
+                        try {
+                          final filePath = await controller.exportToPdf();
+                          Get.back(); // Fermer le dialogue de chargement
+
+                          if (filePath != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${'financial_movements_reports_export_success'.tr}\n${'financial_movements_reports_pdf_saved'.tr}'),
+                                backgroundColor: Colors.green.shade600,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          Get.back(); // Fermer le dialogue de chargement
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Erreur: $e'),
+                                backgroundColor: Colors.red.shade600,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         }
                       },
                       onExportExcel: () async {
-                        final filePath = await controller.exportToExcel();
-                        if (filePath != null) {
-                          Get.snackbar(
-                            'financial_movements_reports_export_success'.tr,
-                            'financial_movements_reports_excel_saved'.tr,
-                            backgroundColor: Colors.green.shade100,
-                            colorText: Colors.green.shade800,
-                          );
+                        // Afficher un indicateur de chargement
+                        Get.dialog(
+                          Center(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 16),
+                                    Text('financial_movements_reports_generating_excel'.tr),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          barrierDismissible: false,
+                        );
+
+                        try {
+                          final filePath = await controller.exportToExcel();
+                          Get.back(); // Fermer le dialogue de chargement
+
+                          if (filePath != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${'financial_movements_reports_export_success'.tr}\n${'financial_movements_reports_excel_saved'.tr}'),
+                                backgroundColor: Colors.green.shade600,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          Get.back(); // Fermer le dialogue de chargement
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Erreur: $e'),
+                                backgroundColor: Colors.red.shade600,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         }
                       },
                       onRefresh: () => controller.refreshAllReportData(),

@@ -1,6 +1,8 @@
-﻿import 'package:pdf/pdf.dart';
+﻿import 'dart:io';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 import '../models/inventory_model.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
@@ -9,17 +11,14 @@ import 'package:get/get.dart';
 
 /// Service d'impression pour les feuilles d'inventaire
 class InventoryPrintService {
-  /// Générer et imprimer une feuille de comptage d'inventaire
-  static Future<void> printCountingSheet(
+  /// Générer et exporter une feuille de comptage en PDF, puis l'ouvrir
+  static Future<String?> printCountingSheet(
     StockInventory inventory,
     List<InventoryItem> items,
   ) async {
-    // Récupérer les informations de l'entreprise
     final companyProfile = await _getCompanyProfile();
-
     final pdf = pw.Document();
 
-    // Générer le contenu PDF
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -32,10 +31,7 @@ class InventoryPrintService {
             pw.SizedBox(height: 20),
             pw.Text(
               'ARTICLES À COMPTER',
-              style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 8),
             _buildItemsTable(items),
@@ -46,21 +42,18 @@ class InventoryPrintService {
       ),
     );
 
-    // Imprimer le PDF
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Feuille_Comptage_${inventory.nom.replaceAll(' ', '_')}.pdf',
+    return await _savePdfAndOpen(
+      pdf,
+      'Feuille_Comptage_${inventory.nom.replaceAll(' ', '_')}',
     );
   }
 
-  /// Générer et imprimer un rapport d'inventaire terminé
-  static Future<void> printInventoryReport(
+  /// Générer et exporter un rapport d'inventaire en PDF, puis l'ouvrir
+  static Future<String?> printInventoryReport(
     StockInventory inventory,
     List<InventoryItem> items,
   ) async {
-    // Récupérer les informations de l'entreprise
     final companyProfile = await _getCompanyProfile();
-
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -76,11 +69,8 @@ class InventoryPrintService {
             _buildStatistics(inventory, items),
             pw.SizedBox(height: 20),
             pw.Text(
-              'DTAIL DES ARTICLES',
-              style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              'DÉTAIL DES ARTICLES',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 8),
             _buildDetailedItemsTable(items),
@@ -91,10 +81,25 @@ class InventoryPrintService {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Rapport_Inventaire_${inventory.nom.replaceAll(' ', '_')}.pdf',
+    return await _savePdfAndOpen(
+      pdf,
+      'Rapport_Inventaire_${inventory.nom.replaceAll(' ', '_')}',
     );
+  }
+
+  /// Sauvegarde le PDF sur le disque et l'ouvre automatiquement
+  static Future<String?> _savePdfAndOpen(pw.Document pdf, String baseName) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = '${dir.path}/${baseName}_$timestamp.pdf';
+      final bytes = await pdf.save();
+      await File(filePath).writeAsBytes(bytes);
+      await OpenFile.open(filePath);
+      return filePath;
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Récupérer le profil de l'entreprise
@@ -314,7 +319,7 @@ class InventoryPrintService {
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('carts détectés:', '$itemsWithVariance')),
+              pw.Expanded(child: _buildStatItem('Écarts détectés:', '$itemsWithVariance')),
               pw.Expanded(child: _buildStatItem('Progression:', '${progress.toStringAsFixed(1)}%')),
             ],
           ),
@@ -336,7 +341,7 @@ class InventoryPrintService {
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('cart de valeur:', '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
+              pw.Expanded(child: _buildStatItem('Écart de valeur:', '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
               pw.Expanded(child: pw.Container()),
             ],
           ),
@@ -414,7 +419,7 @@ class InventoryPrintService {
         7: pw.Alignment.center,
       },
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'cart', 'Valeur Sys.', 'cart Val.', 'Statut'],
+      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Écart', 'Valeur Sys.', 'Écart Val.', 'Statut'],
       data: items
           .map((item) => [
                 item.nomProduit,
@@ -424,7 +429,7 @@ class InventoryPrintService {
                 item.isCounted ? item.calculatedEcart.toStringAsFixed(0) : '-',
                 item.valeurSysteme.toStringAsFixed(0),
                 item.isCounted ? item.ecartValeur.toStringAsFixed(0) : '-',
-                item.isCounted ? (item.hasVariance ? 'CART' : 'OK') : 'À COMPTER',
+                item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'À COMPTER',
               ])
           .toList(),
     );

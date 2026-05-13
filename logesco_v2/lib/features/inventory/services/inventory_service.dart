@@ -563,6 +563,7 @@ class InventoryService {
   Future<String> exportStockToCsv({
     bool? alerteStock,
     int? produitId,
+    int? boutiqueId,
   }) async {
     try {
       final token = await _authService.getToken();
@@ -573,6 +574,7 @@ class InventoryService {
       final queryParams = <String, String>{};
       if (alerteStock != null) queryParams['alerteStock'] = alerteStock.toString();
       if (produitId != null) queryParams['produitId'] = produitId.toString();
+      if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
 
       final uri = Uri.parse('${AppConfig.baseUrl}${AppConfig.inventoryEndpoint}/export/csv').replace(queryParameters: queryParams);
 

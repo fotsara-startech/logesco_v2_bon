@@ -96,6 +96,7 @@ class ProduitDTO {
     this.description = produit.description;
     this.prixUnitaire = parseFloat(produit.prixUnitaire);
     this.prixAchat = produit.prixAchat ? parseFloat(produit.prixAchat) : null;
+    this.cump = produit.cump ? parseFloat(produit.cump) : null;
     this.codeBarre = produit.codeBarre;
     // Gérer la catégorie depuis la relation ou l'ancien champ
     this.categorieId = produit.categorieId;

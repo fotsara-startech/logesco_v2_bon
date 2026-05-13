@@ -13,6 +13,7 @@ const {
   buildPrismaQuery,
   sanitizeInput
 } = require('../utils/transformers');
+const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-service');
 
 /**
  * Crée le routeur pour les produits
@@ -459,6 +460,23 @@ function createProductRouter(models) {
             categorie: true // Inclure les données de catégorie
           }
         });
+
+        // Si le prixAchat a été modifié, enregistrer dans l'historique et recalculer le CUMP
+        if (dataToUpdate.prixAchat !== undefined && dataToUpdate.prixAchat > 0) {
+          await enregistrerPrixAchatEtRecalculerCump(
+            models.prisma,
+            parseInt(produitId),
+            dataToUpdate.prixAchat,
+            'manuel'
+          );
+          // Recharger le produit pour avoir le cump à jour
+          const produitAvecCump = await models.prisma.produit.findUnique({
+            where: { id: parseInt(produitId) },
+            include: { stock: true, categorie: true }
+          });
+          const produitDTO = ProduitDTO.fromEntity(produitAvecCump);
+          return res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
+        }
 
         const produitDTO = ProduitDTO.fromEntity(produitUpdated);
         res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));

@@ -67,17 +67,7 @@ class AccountingDashboardPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // const PopupMenuDivider(),
-                  // PopupMenuItem(
-                  //   value: 'settings',
-                  //   child: Row(
-                  //     children: [
-                  //       const Icon(Icons.settings, color: Colors.grey),
-                  //       const SizedBox(width: 8),
-                  //       Text('settings'.tr),
-                  //     ],
-                  //   ),
-                  // ),
+                 
                 ],
               ),
             ],
@@ -193,30 +183,10 @@ class AccountingDashboardPage extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              DropdownButtonFormField<int?>(
-                                value: controller.selectedCategoryId.value,
-                                decoration: InputDecoration(
-                                  labelText: 'categories_title'.tr,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                items: [
-                                  DropdownMenuItem<int?>(
-                                    value: null,
-                                    child: Text('accounting_all_categories'.tr),
-                                  ),
-                                  ...controller.productCategories.map((category) {
-                                    return DropdownMenuItem<int?>(
-                                      value: category['id'] as int,
-                                      child: Text(category['nom'] as String),
-                                    );
-                                  }).toList(),
-                                ],
-                                onChanged: (value) {
-                                  controller.setCategoryFilter(value);
-                                },
+                              _CategorySearchDropdown(
+                                categories: controller.productCategories,
+                                selectedCategoryId: controller.selectedCategoryId.value,
+                                onChanged: (value) => controller.setCategoryFilter(value),
                               ),
                               if (controller.selectedCategoryId.value != null) ...[
                                 const SizedBox(height: 8),
@@ -374,6 +344,190 @@ class AccountingDashboardPage extends StatelessWidget {
       'accounting_feature_in_development'.tr,
       backgroundColor: Colors.grey.shade100,
       colorText: Colors.grey.shade800,
+    );
+  }
+}
+
+/// Dropdown de catégories avec recherche intégrée
+class _CategorySearchDropdown extends StatefulWidget {
+  final List<Map<String, dynamic>> categories;
+  final int? selectedCategoryId;
+  final ValueChanged<int?> onChanged;
+
+  const _CategorySearchDropdown({
+    required this.categories,
+    required this.selectedCategoryId,
+    required this.onChanged,
+  });
+
+  @override
+  State<_CategorySearchDropdown> createState() => _CategorySearchDropdownState();
+}
+
+class _CategorySearchDropdownState extends State<_CategorySearchDropdown> {
+  final TextEditingController _searchController = TextEditingController();
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+  List<Map<String, dynamic>> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.categories;
+  }
+
+  @override
+  void didUpdateWidget(_CategorySearchDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categories != widget.categories) {
+      _applyFilter(_searchController.text);
+    }
+    // Sync label when selection changes externally
+    if (oldWidget.selectedCategoryId != widget.selectedCategoryId) {
+      _updateLabel();
+    }
+  }
+
+  void _updateLabel() {
+    if (widget.selectedCategoryId == null) {
+      _searchController.clear();
+    } else {
+      final match = widget.categories.firstWhereOrNull((c) => c['id'] == widget.selectedCategoryId);
+      if (match != null) _searchController.text = match['nom'] as String;
+    }
+  }
+
+  void _applyFilter(String query) {
+    setState(() {
+      _filtered = query.isEmpty ? widget.categories : widget.categories.where((c) => (c['nom'] as String).toLowerCase().contains(query.toLowerCase())).toList();
+    });
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  void _openDropdown() {
+    if (_isOpen) return;
+    _isOpen = true;
+    _searchController.clear();
+    _applyFilter('');
+
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0, size.height + 4),
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: StatefulBuilder(
+                builder: (_, setOverlayState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'search'.tr,
+                            prefixIcon: const Icon(Icons.search, size: 18),
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          ),
+                          onChanged: (v) {
+                            _applyFilter(v);
+                            setOverlayState(() {});
+                          },
+                        ),
+                      ),
+                      Flexible(
+                        child: ListView(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          children: [
+                            // Option "Toutes les catégories"
+                            ListTile(
+                              dense: true,
+                              title: Text('accounting_all_categories'.tr),
+                              selected: widget.selectedCategoryId == null,
+                              selectedColor: Colors.blue[700],
+                              onTap: () {
+                                _closeDropdown();
+                                widget.onChanged(null);
+                              },
+                            ),
+                            ..._filtered.map((cat) => ListTile(
+                                  dense: true,
+                                  title: Text(cat['nom'] as String),
+                                  selected: widget.selectedCategoryId == cat['id'],
+                                  selectedColor: Colors.blue[700],
+                                  onTap: () {
+                                    _closeDropdown();
+                                    widget.onChanged(cat['id'] as int);
+                                  },
+                                )),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _closeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _isOpen = false;
+    // Restore label
+    _updateLabel();
+  }
+
+  @override
+  void dispose() {
+    _closeDropdown();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String get _displayText {
+    if (widget.selectedCategoryId == null) return 'accounting_all_categories'.tr;
+    final match = widget.categories.firstWhereOrNull((c) => c['id'] == widget.selectedCategoryId);
+    return match != null ? match['nom'] as String : 'accounting_all_categories'.tr;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        onTap: _isOpen ? _closeDropdown : _openDropdown,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'categories_title'.tr,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            suffixIcon: Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down),
+          ),
+          child: Text(_displayText, overflow: TextOverflow.ellipsis),
+        ),
+      ),
     );
   }
 }

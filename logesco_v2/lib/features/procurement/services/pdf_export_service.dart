@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 
@@ -102,6 +103,14 @@ class ProcurementPdfExportService {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/commande_${commande.numeroCommande}.pdf');
     await file.writeAsBytes(await pdf.save());
+
+    // Ouvrir automatiquement le fichier PDF
+    try {
+      await OpenFile.open(file.path);
+      print(' PDF ouvert automatiquement: ${file.path}');
+    } catch (e) {
+      print('⚠️ Impossible d\'ouvrir le PDF automatiquement: $e');
+    }
 
     return file.path;
   }

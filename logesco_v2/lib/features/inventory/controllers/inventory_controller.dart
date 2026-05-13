@@ -4,6 +4,7 @@ import '../models/stock_model.dart';
 import '../services/inventory_service.dart';
 import '../services/export_service.dart';
 import '../../subscription/mixins/subscription_verification_mixin.dart';
+import '../../boutiques/controllers/boutique_controller.dart';
 
 class InventoryController extends GetxController with SubscriptionVerificationMixin {
   final InventoryService _inventoryService;
@@ -382,6 +383,7 @@ class InventoryController extends GetxController with SubscriptionVerificationMi
       final csvData = await _inventoryService.exportStockToCsv(
         alerteStock: _alertFilter.value,
         produitId: _productFilter.value,
+        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
       );
 
       if (csvData != null) {

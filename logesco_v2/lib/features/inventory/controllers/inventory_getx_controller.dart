@@ -420,6 +420,7 @@ class InventoryGetxController extends GetxController {
       final csvData = await _inventoryService.exportStockToCsv(
         alerteStock: alertFilter.value,
         produitId: productFilter.value,
+        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
       );
 
       if (csvData != null) {

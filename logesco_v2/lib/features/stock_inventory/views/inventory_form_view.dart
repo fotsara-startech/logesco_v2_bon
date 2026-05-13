@@ -184,31 +184,50 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               ],
             ),
             const SizedBox(height: 16),
-            Obx(() => DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
+            Obx(() {
+              final categories = _controller.categories;
+              // Nom de la catégorie sélectionnée
+              final selectedName = _selectedCategoryId != null ? (categories.firstWhereOrNull((c) => c['id'] == _selectedCategoryId)?['nom'] as String? ?? '') : '';
+
+              return GestureDetector(
+                onTap: () async {
+                  final result = await showDialog<Map<String, dynamic>>(
+                    context: context,
+                    builder: (_) => _CategorySearchDialog(
+                      categories: categories.toList(),
+                      selectedId: _selectedCategoryId,
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() => _selectedCategoryId = result['id'] as int?);
+                  }
+                },
+                child: InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'inventory_form_category'.tr,
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.folder),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedCategoryId != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () => setState(() => _selectedCategoryId = null),
+                            padding: EdgeInsets.zero,
+                          ),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                    errorText: _selectedType == InventoryType.PARTIEL && _selectedCategoryId == null ? 'inventory_form_category_required'.tr : null,
                   ),
-                  items: _controller.categories.map((category) {
-                    return DropdownMenuItem<int>(
-                      value: category['id'],
-                      child: Text(category['nom']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategoryId = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (_selectedType == InventoryType.PARTIEL && value == null) {
-                      return 'inventory_form_category_required'.tr;
-                    }
-                    return null;
-                  },
-                )),
+                  child: Text(
+                    selectedName.isEmpty ? '' : selectedName,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -353,5 +372,115 @@ class _InventoryFormViewState extends State<InventoryFormView> {
         _isLoading = false;
       });
     }
+  }
+}
+
+/// Dialog de sélection de catégorie avec barre de recherche
+class _CategorySearchDialog extends StatefulWidget {
+  final List<Map<String, dynamic>> categories;
+  final int? selectedId;
+
+  const _CategorySearchDialog({required this.categories, this.selectedId});
+
+  @override
+  State<_CategorySearchDialog> createState() => _CategorySearchDialogState();
+}
+
+class _CategorySearchDialogState extends State<_CategorySearchDialog> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  late List<Map<String, dynamic>> _filtered;
+  int? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.selectedId;
+    _filtered = widget.categories;
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty ? widget.categories : widget.categories.where((c) => (c['nom'] as String).toLowerCase().contains(q)).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('inventory_form_category'.tr),
+      contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'search'.tr,
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () => _searchCtrl.clear(),
+                        )
+                      : null,
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'product_search_category_empty'.tr,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final cat = _filtered[i];
+                        final id = cat['id'] as int;
+                        return ListTile(
+                          dense: true,
+                          title: Text(cat['nom'] as String),
+                          leading: Radio<int>(
+                            value: id,
+                            groupValue: _selected,
+                            onChanged: (v) {
+                              setState(() => _selected = v);
+                              Navigator.of(context).pop(cat);
+                            },
+                          ),
+                          onTap: () => Navigator.of(context).pop(cat),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('product_search_category_close'.tr),
+        ),
+      ],
+    );
   }
 }

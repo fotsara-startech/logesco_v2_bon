@@ -24,35 +24,95 @@ class ExpenseCategoriesPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-
-        if (controller.categories.isEmpty) {
-          return EmptyState(
-            icon: Icons.category_outlined,
-            title: 'expenses_categories_empty'.tr,
-            subtitle: 'expenses_categories_empty_subtitle'.tr,
-            actionText: 'expenses_category_create'.tr,
-            onAction: () => Get.to(() => const CreateExpenseCategoryPage()),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: controller.loadCategories,
-          child: ListView.builder(
+      body: Column(
+        children: [
+          // Barre de recherche
+          Padding(
             padding: const EdgeInsets.all(16),
-            itemCount: controller.categories.length,
-            itemBuilder: (context, index) {
-              final category = controller.categories[index];
-              return _buildCategoryCard(category, controller);
-            },
+            child: Obx(() => TextField(
+                  onChanged: controller.searchCategories,
+                  decoration: InputDecoration(
+                    hintText: 'search'.tr,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: controller.searchQuery.value.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: controller.clearSearch,
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                )),
           ),
-        );
-      }),
+          // Liste des catégories
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (controller.categories.isEmpty) {
+                return EmptyState(
+                  icon: Icons.category_outlined,
+                  title: 'expenses_categories_empty'.tr,
+                  subtitle: 'expenses_categories_empty_subtitle'.tr,
+                  actionText: 'expenses_category_create'.tr,
+                  onAction: () => Get.to(() => const CreateExpenseCategoryPage()),
+                );
+              }
+
+              if (controller.filteredCategories.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'no_results'.tr,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'try_different_search'.tr,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                onRefresh: controller.loadCategories,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: controller.filteredCategories.length,
+                  itemBuilder: (context, index) {
+                    final category = controller.filteredCategories[index];
+                    return _buildCategoryCard(category, controller);
+                  },
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.to(() => const CreateExpenseCategoryPage()),
         icon: const Icon(Icons.add),

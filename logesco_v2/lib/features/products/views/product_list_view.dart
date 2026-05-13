@@ -4,6 +4,7 @@ import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/error_widget.dart';
 import '../../../core/widgets/permission_widget.dart';
 import '../controllers/product_controller.dart';
+import '../models/product.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_search_bar.dart';
 import '../widgets/product_filter_bar.dart';
@@ -109,9 +110,14 @@ class ProductListView extends StatelessWidget {
                 return _buildEmptyState(controller);
               }
 
+              final displayProducts = controller.priceFilteredProducts;
+              if (displayProducts.isEmpty) {
+                return _buildEmptyState(controller);
+              }
+
               return RefreshIndicator(
                 onRefresh: controller.refreshProducts,
-                child: _buildProductList(controller),
+                child: _buildProductList(controller, displayProducts),
               );
             }),
           ),
@@ -181,12 +187,12 @@ class ProductListView extends StatelessWidget {
   }
 
   /// Construit la liste des produits
-  Widget _buildProductList(ProductController controller) {
+  Widget _buildProductList(ProductController controller, List<Product> products) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: controller.products.length,
+      itemCount: products.length,
       itemBuilder: (context, index) {
-        final product = controller.products[index];
+        final product = products[index];
         return ProductCard(
           product: product,
           onTap: () => controller.goToProductDetail(product),

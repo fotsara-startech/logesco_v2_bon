@@ -236,7 +236,7 @@ class InventoryDetailView extends StatelessWidget {
                 if (inventory.status == InventoryStatus.TERMINE) ...[
                   ElevatedButton.icon(
                     onPressed: () => controller.printCountingSheet(inventory.id!),
-                    icon: const Icon(Icons.print),
+                    icon: const Icon(Icons.picture_as_pdf),
                     label: Text('inventory_detail_counting_sheet'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
@@ -246,7 +246,7 @@ class InventoryDetailView extends StatelessWidget {
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () => controller.printInventoryReport(inventory.id!),
-                    icon: const Icon(Icons.assessment),
+                    icon: const Icon(Icons.picture_as_pdf),
                     label: Text('inventory_detail_full_report'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -257,6 +257,27 @@ class InventoryDetailView extends StatelessWidget {
                     onPressed: () => controller.closeInventory(inventory.id!),
                     icon: const Icon(Icons.lock),
                     label: Text('inventory_detail_close'.tr),
+                  ),
+                ],
+                if (inventory.status == InventoryStatus.CLOTURE) ...[
+                  ElevatedButton.icon(
+                    onPressed: () => controller.printCountingSheet(inventory.id!),
+                    icon: const Icon(Icons.picture_as_pdf),
+                    label: Text('inventory_detail_counting_sheet'.tr),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => controller.printInventoryReport(inventory.id!),
+                    icon: const Icon(Icons.picture_as_pdf),
+                    label: Text('inventory_detail_full_report'.tr),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ],
                 if (inventory.canBeModified)

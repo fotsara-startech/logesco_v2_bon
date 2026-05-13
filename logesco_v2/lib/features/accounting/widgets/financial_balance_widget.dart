@@ -133,7 +133,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                   child: _buildDetailCard(
                     'Coût Marchandises',
                     balance.totalCostOfGoodsFormatted,
-                    'Prix d\'achat',
+                    'CUMP (moy. pondérée)',
                     Icons.shopping_basket,
                     Colors.orange.shade600,
                   ),

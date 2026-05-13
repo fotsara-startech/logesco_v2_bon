@@ -24,6 +24,10 @@ class ProductController extends GetxController {
   final RxString sortBy = 'nom'.obs; // nom, prix, reference
   final RxBool sortAscending = true.obs;
 
+  // Filtre par prix
+  final Rxn<double> minPrice = Rxn<double>();
+  final Rxn<double> maxPrice = Rxn<double>();
+
   // Pagination (gérée automatiquement - chargement de tous les produits à la fois)
   final RxInt currentPage = 1.obs;
   final RxBool hasMoreData = true.obs;
@@ -42,6 +46,8 @@ class ProductController extends GetxController {
     // Écouter les changements de recherche avec debouncing
     ever(searchQuery, (_) => _debounceSearch());
     ever(selectedCategory, (_) => _resetAndLoadProducts());
+    ever(minPrice, (_) => _resetAndLoadProducts());
+    ever(maxPrice, (_) => _resetAndLoadProducts());
   }
 
   @override
@@ -50,6 +56,8 @@ class ProductController extends GetxController {
     // Réinitialiser tous les filtres pour éviter qu'ils persistent
     searchQuery.value = '';
     selectedCategory.value = '';
+    minPrice.value = null;
+    maxPrice.value = null;
     sortBy.value = 'nom';
     sortAscending.value = true;
     super.onClose();
@@ -160,7 +168,28 @@ class ProductController extends GetxController {
   void clearFilters() {
     searchQuery.value = '';
     selectedCategory.value = '';
+    minPrice.value = null;
+    maxPrice.value = null;
   }
+
+  /// Définit le filtre par prix
+  void setPriceFilter({double? min, double? max}) {
+    minPrice.value = min;
+    maxPrice.value = max;
+  }
+
+  /// Retourne les produits filtrés par prix (appliqué côté client)
+  List<Product> get priceFilteredProducts {
+    if (minPrice.value == null && maxPrice.value == null) return products;
+    return products.where((p) {
+      if (minPrice.value != null && p.prixUnitaire < minPrice.value!) return false;
+      if (maxPrice.value != null && p.prixUnitaire > maxPrice.value!) return false;
+      return true;
+    }).toList();
+  }
+
+  /// Indique si un filtre prix est actif
+  bool get hasPriceFilter => minPrice.value != null || maxPrice.value != null;
 
   /// Change l'ordre de tri
   void toggleSort() {
