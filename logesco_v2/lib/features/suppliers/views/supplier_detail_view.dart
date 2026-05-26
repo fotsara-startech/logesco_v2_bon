@@ -6,12 +6,52 @@ import '../../../shared/widgets/error_widget.dart';
 import '../../../core/widgets/permission_widget.dart';
 
 /// Vue de détail d'un fournisseur
-class SupplierDetailView extends StatelessWidget {
+class SupplierDetailView extends StatefulWidget {
   const SupplierDetailView({super.key});
+
+  @override
+  State<SupplierDetailView> createState() => _SupplierDetailViewState();
+}
+
+class _SupplierDetailViewState extends State<SupplierDetailView> {
+  double? _totalPurchases;
+  int? _totalOrders;
+  bool _isLoadingStats = true;
+  bool _statsLoaded = false;
+
+  Future<void> _loadSupplierStats() async {
+    if (_statsLoaded) return;
+    _statsLoaded = true;
+
+    try {
+      final controller = Get.find<SupplierDetailController>();
+      setState(() => _isLoadingStats = true);
+
+      final stats = await controller.getSupplierPurchases();
+      if (mounted) {
+        setState(() {
+          _totalPurchases = stats['totalPurchases'] as double?;
+          _totalOrders = stats['totalOrders'] as int?;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingStats = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SupplierDetailController());
+
+    // Load stats after controller is initialized
+    if (!_statsLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadSupplierStats();
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -79,6 +119,59 @@ class SupplierDetailView extends StatelessWidget {
               // En-tête avec nom du fournisseur
               _buildHeader(supplier.nom),
               const SizedBox(height: 24),
+
+              // Statistiques du fournisseur
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.analytics, color: Colors.green),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Statistiques',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLoadingStats)
+                        const Center(child: CircularProgressIndicator())
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                'Total achats',
+                                _totalPurchases != null ? '${_totalPurchases!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
+                                Icons.shopping_bag,
+                                Colors.orange,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Nombre de commandes',
+                                _totalOrders?.toString() ?? '0',
+                                Icons.receipt_long,
+                                Colors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Informations générales
               _buildInfoCard(
@@ -165,7 +258,7 @@ class SupplierDetailView extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Actions rapides
-              _buildQuickActions(controller),
+              // _buildQuickActions(controller),
             ],
           ),
         );
@@ -322,5 +415,41 @@ class SupplierDetailView extends StatelessWidget {
   /// Formate une date
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  /// Construit une carte de statistique
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

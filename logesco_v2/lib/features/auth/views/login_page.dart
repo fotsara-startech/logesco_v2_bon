@@ -1,10 +1,10 @@
-import 'dart:io';
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../../core/services/backend_service.dart';
+import '../../../core/services/backend_service.dart' if (dart.library.html) '../../../core/services/backend_service_stub.dart';
 import '../../../core/config/app_config.dart';
 import '../../../shared/widgets/loading_widget.dart';
 
@@ -23,14 +23,14 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  // En mode client, le backend est toujours "prêt" (c'est le serveur distant)
-  bool _backendReady = AppConfig.isClientMode;
-  String _backendStatus = AppConfig.isClientMode ? '' : 'Démarrage du serveur...';
+  // Sur web ou en mode client, le backend est toujours "prêt" (serveur distant)
+  bool _backendReady = AppConfig.isClientMode || kIsWeb;
+  String _backendStatus = (AppConfig.isClientMode || kIsWeb) ? '' : 'Démarrage du serveur...';
 
   @override
   void initState() {
     super.initState();
-    if (!AppConfig.isClientMode) {
+    if (!AppConfig.isClientMode && !kIsWeb) {
       _waitForBackend();
     }
   }
@@ -68,20 +68,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _diagnose() async {
+    if (kIsWeb) return;
     try {
-      final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
       final serverBase = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
-      final req = await client.getUrl(Uri.parse('$serverBase/debug'));
-      final res = await req.close().timeout(const Duration(seconds: 5));
-      final body = await res.transform(const Utf8Decoder()).join();
-      client.close();
+      final uri = Uri.parse('$serverBase/debug');
+      final response = await _diagnoseRequest(uri);
       if (mounted) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Diagnostic Backend'),
             content: SingleChildScrollView(
-              child: SelectableText(body, style: const TextStyle(fontSize: 11)),
+              child: SelectableText(response, style: const TextStyle(fontSize: 11)),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
@@ -103,6 +101,11 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     }
+  }
+
+  Future<String> _diagnoseRequest(Uri uri) async {
+    final response = await http.get(uri).timeout(const Duration(seconds: 5));
+    return response.body;
   }
 
   @override
@@ -135,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   _buildLoginForm(context),
                   // Bannière de statut backend — uniquement en mode serveur
-                  if (!AppConfig.isClientMode && !_backendReady)
+                  if (!AppConfig.isClientMode && !kIsWeb && !_backendReady)
                     Positioned(
                       bottom: 0,
                       left: 0,
@@ -327,7 +330,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
           ),
         ),
-        if (!AppConfig.isClientMode)
+        if (!AppConfig.isClientMode && !kIsWeb)
           TextButton(
             onPressed: _diagnose,
             child: const Text('Diagnostiquer', style: TextStyle(fontSize: 11, color: Colors.grey)),

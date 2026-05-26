@@ -2,10 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/widgets/permission_widget.dart';
 import '../models/customer.dart';
+import '../controllers/customer_controller.dart';
 
 /// Vue de détail d'un client (version simplifiée)
-class CustomerDetailView extends StatelessWidget {
+class CustomerDetailView extends StatefulWidget {
   const CustomerDetailView({super.key});
+
+  @override
+  State<CustomerDetailView> createState() => _CustomerDetailViewState();
+}
+
+class _CustomerDetailViewState extends State<CustomerDetailView> {
+  final CustomerController _controller = Get.find<CustomerController>();
+  double? _totalRevenue;
+  int? _totalSales;
+  bool _isLoadingStats = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomerStats();
+  }
+
+  Future<void> _loadCustomerStats() async {
+    final Customer customer = Get.arguments as Customer;
+    setState(() => _isLoadingStats = true);
+
+    try {
+      final stats = await _controller.getCustomerRevenue(customer.id);
+      setState(() {
+        _totalRevenue = stats['totalRevenue'] as double?;
+        _totalSales = stats['totalSales'] as int?;
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingStats = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +107,58 @@ class CustomerDetailView extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Statistiques du client
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.analytics, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Statistiques',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (_isLoadingStats)
+                      const Center(child: CircularProgressIndicator())
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Chiffre d\'affaires',
+                              _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
+                              Icons.attach_money,
+                              Colors.green,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Nombre de ventes',
+                              _totalSales?.toString() ?? '0',
+                              Icons.shopping_cart,
+                              Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -250,5 +335,41 @@ class CustomerDetailView extends StatelessWidget {
   /// Formate une date
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Construit une carte de statistique
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

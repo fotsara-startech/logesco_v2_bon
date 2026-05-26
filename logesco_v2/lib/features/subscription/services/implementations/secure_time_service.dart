@@ -111,18 +111,11 @@ class SecureTimeService {
     Duration? systemTimeOffset;
 
     try {
-      // 1. Vérifier la manipulation de l'horloge système
-      final manipulationDetected = await _detectTimeManipulation();
-      if (manipulationDetected) {
+      // 1. Vérifier le retour en arrière de l'horloge système
+      final clockRollback = await _detectTimeManipulation();
+      if (clockRollback) {
         isSystemTimeReliable = false;
-        warnings.add('Manipulation de l\'horloge système détectée');
-
-        if (throwOnManipulation) {
-          throw TimeValidationException(
-            TimeValidationError.timeManipulation,
-            'L\'horloge système a été manipulée. Veuillez restaurer la date et l\'heure correctes.',
-          );
-        }
+        warnings.add('Retour en arrière de l\'horloge système détecté');
       }
 
       // 2. Essayer d'obtenir l'heure NTP
@@ -136,43 +129,56 @@ class SecureTimeService {
         final systemTime = DateTime.now();
         systemTimeOffset = ntpTime.difference(systemTime);
 
-        // Vérifier si l'offset est suspect
+        // Offset > 5 minutes = manipulation de date système confirmée
         if (systemTimeOffset.abs() > _maxAcceptableOffset) {
           isSystemTimeReliable = false;
           warnings.add(
-            'Différence importante entre l\'heure système et NTP: ${systemTimeOffset.inMinutes} minutes',
+            'Manipulation de date détectée: décalage de ${systemTimeOffset.inMinutes} minutes avec NTP',
           );
         }
 
-        // Mettre à jour le cache
-        await _updateLastCheckTime(trustedTime);
+        // Mettre à jour le cache seulement si l'heure système est fiable
+        if (isSystemTimeReliable) {
+          await _updateLastCheckTime(trustedTime);
+        }
       } else {
-        // 3. Pas de NTP disponible, utiliser le temps calculé
+        // Pas de NTP disponible
         warnings.add('Serveur NTP non disponible, utilisation du temps calculé');
 
         if (_cachedNtpTime != null && _cachedNtpTimestamp != null) {
-          // Calculer le temps écoulé depuis la dernière vérification NTP
           final elapsedSinceNtp = DateTime.now().difference(_cachedNtpTimestamp!);
-          trustedTime = _cachedNtpTime!.add(elapsedSinceNtp);
 
-          warnings.add('Temps calculé depuis la dernière vérification NTP');
-        } else if (_lastCheckTime != null && !manipulationDetected) {
-          // Utiliser l'heure système si aucune manipulation détectée
+          // Si elapsed est négatif → date système reculée par rapport au moment du cache NTP
+          if (elapsedSinceNtp.isNegative) {
+            isSystemTimeReliable = false;
+            // Utiliser le cache NTP directement comme référence minimale
+            trustedTime = _cachedNtpTime!;
+            warnings.add('Manipulation de date détectée: date système antérieure au cache NTP');
+          } else {
+            trustedTime = _cachedNtpTime!.add(elapsedSinceNtp);
+            warnings.add('Temps calculé depuis la dernière vérification NTP');
+          }
+        } else if (_lastCheckTime != null && !clockRollback) {
           trustedTime = DateTime.now();
           await _updateLastCheckTime(trustedTime);
         } else {
-          // Situation critique: pas de référence fiable
           if (throwOnManipulation) {
             throw TimeValidationException(
               TimeValidationError.ntpUnavailable,
               'Impossible de valider l\'heure. Veuillez vous connecter à Internet.',
             );
           }
-
-          // Fallback: utiliser l'heure système avec avertissement
           trustedTime = DateTime.now();
           warnings.add('ATTENTION: Utilisation de l\'heure système non vérifiée');
         }
+      }
+
+      // 3. Si manipulation confirmée et throwOnManipulation, lancer l'exception
+      if (!isSystemTimeReliable && throwOnManipulation) {
+        throw TimeValidationException(
+          TimeValidationError.timeManipulation,
+          'L\'horloge système a été manipulée. Veuillez restaurer la date et l\'heure correctes.',
+        );
       }
 
       return TimeValidationResult(
@@ -186,8 +192,6 @@ class SecureTimeService {
       if (e is TimeValidationException) {
         rethrow;
       }
-
-      // Erreur inattendue
       throw TimeValidationException(
         TimeValidationError.systemClockSuspicious,
         'Erreur lors de la validation du temps: $e',

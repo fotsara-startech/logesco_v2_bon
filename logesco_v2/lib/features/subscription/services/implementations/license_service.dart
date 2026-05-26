@@ -187,9 +187,9 @@ class LicenseService implements ILicenseService {
       // Utiliser le stockage sécurisé avec chiffrement et redondance
       await _secureStorage.storeLicense(license);
 
-      // Mettre à jour le cache
-      _cachedLicense = license;
-      _lastValidation = DateTime.now();
+      // Invalider le cache pour forcer la relecture de la nouvelle licence
+      _cachedLicense = null;
+      _lastValidation = null;
     } catch (e) {
       throw LicenseException(
         LicenseError.storageError,
@@ -355,42 +355,30 @@ class LicenseService implements ILicenseService {
     }
   }
 
-  /// Valide les dates d'expiration avec temps sécurisé
+  /// Valide les dates d'expiration — NTP optionnel lors de l'activation
   Future<LicenseValidationResult> _validateExpiration(LicenseKeyPayload payload) async {
     try {
-      // Obtenir l'heure sécurisée
-      final timeResult = await _secureTimeService.getSecureTime(
-        throwOnManipulation: true,
-      );
-
-      final secureTime = timeResult.trustedTime;
       final expirationDate = DateTime.parse(payload.expires);
+      DateTime referenceTime;
 
-      print('Y. [LicenseService] Validation expiration:');
-      print('   Heure sécurisée: $secureTime');
-      print('   Date expiration: $expirationDate');
-      print('   NTP disponible: ${timeResult.ntpAvailable}');
-      print('   Heure système fiable: ${timeResult.isSystemTimeReliable}');
-
-      if (timeResult.hasWarnings) {
-        print('   ⚠️  Avertissements:');
-        for (final warning in timeResult.warnings) {
-          print('      - $warning');
-        }
+      try {
+        // Essayer d'obtenir l'heure sécurisée, mais ne pas bloquer si NTP indisponible
+        final timeResult = await _secureTimeService.getSecureTime(
+          throwOnManipulation: false, // Ne pas bloquer lors de l'activation
+        );
+        // Utiliser NTP si disponible, sinon heure système
+        referenceTime = timeResult.trustedTime;
+      } catch (_) {
+        // Pas de connexion internet ou erreur NTP → fallback sur l'heure système
+        referenceTime = DateTime.now();
       }
 
-      if (secureTime.isAfter(expirationDate)) {
-        // Vérifier si on est dans la période de grâce
+      if (referenceTime.isAfter(expirationDate)) {
         final gracePeriodEnd = expirationDate.add(const Duration(days: 3));
-        if (secureTime.isBefore(gracePeriodEnd)) {
-          final warnings = ['Licence expirée mais dans la période de grâce'];
-          if (timeResult.hasWarnings) {
-            warnings.addAll(timeResult.warnings);
-          }
-
+        if (referenceTime.isBefore(gracePeriodEnd)) {
           return LicenseValidationResult.success(
             payload.toLicenseData(''),
-            warnings,
+            ['Licence expirée mais dans la période de grâce'],
           );
         } else {
           return LicenseValidationResult.failure(
@@ -402,26 +390,8 @@ class LicenseService implements ILicenseService {
         }
       }
 
-      // Licence valide
-      final warnings = <String>[];
-      if (timeResult.hasWarnings) {
-        warnings.addAll(timeResult.warnings);
-      }
-
-      return LicenseValidationResult.success(
-        payload.toLicenseData(''),
-        warnings,
-      );
-    } on TimeValidationException catch (e) {
-      print(' [LicenseService] Erreur validation temps: $e');
-      return LicenseValidationResult.failure(
-        LicenseException(
-          LicenseError.expiredLicense,
-          e.message,
-        ),
-      );
+      return LicenseValidationResult.success(payload.toLicenseData(''));
     } catch (e) {
-      print(' [LicenseService] Erreur validation expiration: $e');
       return LicenseValidationResult.failure(
         LicenseException(
           LicenseError.invalidKey,

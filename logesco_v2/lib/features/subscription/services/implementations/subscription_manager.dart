@@ -7,6 +7,7 @@ import '../interfaces/i_crypto_service.dart';
 import '../../models/subscription_status.dart';
 import '../../models/license_data.dart';
 import '../../../../../core/config/app_config.dart';
+import 'secure_time_service.dart';
 
 /// Modes de dégradation de l'application
 enum DegradationMode {
@@ -32,6 +33,7 @@ class SubscriptionManager implements ISubscriptionManager {
   final IDeviceService _deviceService;
   final ICryptoService _cryptoService;
   final FlutterSecureStorage _secureStorage;
+  final SecureTimeService _secureTimeService;
 
   // Clés de stockage sécurisé
   static const String _trialStartKey = 'trial_start_date';
@@ -69,10 +71,12 @@ class SubscriptionManager implements ISubscriptionManager {
     required IDeviceService deviceService,
     required ICryptoService cryptoService,
     FlutterSecureStorage? secureStorage,
+    SecureTimeService? secureTimeService,
   })  : _licenseService = licenseService,
         _deviceService = deviceService,
         _cryptoService = cryptoService,
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _secureTimeService = secureTimeService ?? SecureTimeService();
 
   @override
   Stream<SubscriptionStatus> get statusStream => _statusController.stream;
@@ -176,13 +180,16 @@ class SubscriptionManager implements ISubscriptionManager {
         return false;
       }
 
-      // Stocker la licence validée
+      // Stocker la nouvelle licence (remplace toute licence existante)
       await _licenseService.storeLicense(validationResult.licenseData!);
 
       // Désactiver la période d'essai
       await _secureStorage.write(key: _trialActiveKey, value: 'false');
 
-      // Mettre à jour le statut
+      // Invalider TOUT le cache pour forcer le rechargement immédiat
+      _invalidateCache();
+
+      // Calculer et diffuser le nouveau statut immédiatement
       final newStatus = await _getSubscriptionStatus(validationResult.licenseData!);
       _updateStatus(newStatus);
 
@@ -244,9 +251,31 @@ class SubscriptionManager implements ISubscriptionManager {
       if (trialStartStr == null) return false;
 
       final trialStart = DateTime.parse(trialStartStr);
-      final now = DateTime.now();
-      final daysSinceStart = now.difference(trialStart).inDays;
 
+      // Utiliser l'heure sécurisée — bloquer si manipulation détectée
+      DateTime secureNow;
+      bool manipulationDetected = false;
+      try {
+        final timeResult = await _secureTimeService.getSecureTime(throwOnManipulation: false);
+        secureNow = timeResult.trustedTime;
+        manipulationDetected = timeResult.isManipulationDetected;
+      } catch (_) {
+        secureNow = DateTime.now();
+      }
+
+      // Manipulation détectée → invalider l'essai
+      if (manipulationDetected) {
+        await _secureStorage.write(key: _trialActiveKey, value: 'false');
+        return false;
+      }
+
+      // Retour en arrière : date actuelle avant le début de l'essai
+      if (secureNow.isBefore(trialStart)) {
+        await _secureStorage.write(key: _trialActiveKey, value: 'false');
+        return false;
+      }
+
+      final daysSinceStart = secureNow.difference(trialStart).inDays;
       return daysSinceStart < _trialDurationDays;
     } catch (e) {
       return false;
@@ -260,9 +289,20 @@ class SubscriptionManager implements ISubscriptionManager {
       if (trialStartStr == null) return 0;
 
       final trialStart = DateTime.parse(trialStartStr);
-      final now = DateTime.now();
-      final daysSinceStart = now.difference(trialStart).inDays;
 
+      DateTime secureNow;
+      bool manipulationDetected = false;
+      try {
+        final timeResult = await _secureTimeService.getSecureTime(throwOnManipulation: false);
+        secureNow = timeResult.trustedTime;
+        manipulationDetected = timeResult.isManipulationDetected;
+      } catch (_) {
+        secureNow = DateTime.now();
+      }
+
+      if (manipulationDetected || secureNow.isBefore(trialStart)) return 0;
+
+      final daysSinceStart = secureNow.difference(trialStart).inDays;
       final remaining = _trialDurationDays - daysSinceStart;
       return remaining > 0 ? remaining : 0;
     } catch (e) {
@@ -775,9 +815,45 @@ class SubscriptionManager implements ISubscriptionManager {
   }
 
   Future<SubscriptionStatus> _getSubscriptionStatus(LicenseData license) async {
-    final isExpired = license.isExpired;
-    final isInGracePeriod = license.isInGracePeriod;
-    final remainingDays = license.remainingDays;
+    // Cas spécial : licence à vie
+    if (license.subscriptionType == SubscriptionType.lifetime) {
+      final status = SubscriptionStatus(
+        isActive: true,
+        type: SubscriptionType.lifetime,
+        expirationDate: null,
+        remainingDays: null,
+        warnings: [],
+      );
+      _updateCachedStatus(status);
+      return status;
+    }
+
+    // Obtenir l'heure sécurisée — bloquer si manipulation détectée
+    DateTime secureNow;
+    bool manipulationDetected = false;
+    try {
+      final timeResult = await _secureTimeService.getSecureTime(throwOnManipulation: false);
+      secureNow = timeResult.trustedTime;
+      manipulationDetected = timeResult.isManipulationDetected;
+    } catch (_) {
+      secureNow = DateTime.now();
+    }
+
+    // Si manipulation détectée, bloquer immédiatement
+    if (manipulationDetected) {
+      return SubscriptionStatus(
+        isActive: false,
+        type: license.subscriptionType,
+        expirationDate: license.expiresAt,
+        remainingDays: 0,
+        isInGracePeriod: false,
+        warnings: ['Manipulation de la date système détectée. Restaurez la date correcte.'],
+      );
+    }
+
+    final isExpired = license.isExpiredSecure(secureNow);
+    final isInGracePeriod = license.isInGracePeriodSecure(secureNow);
+    final remainingDays = license.remainingDaysSecure(secureNow);
 
     List<String> warnings = [];
 
@@ -800,7 +876,6 @@ class SubscriptionManager implements ISubscriptionManager {
       );
     }
 
-    // Générer les avertissements d'expiration
     if (remainingDays <= _urgentWarningDaysThreshold) {
       warnings.add('Expiration imminente dans $remainingDays jour(s)');
     } else if (remainingDays <= _warningDaysThreshold) {

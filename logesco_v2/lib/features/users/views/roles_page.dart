@@ -104,17 +104,36 @@ class RolesPage extends GetView<RoleController> {
         return Column(
           children: [
             _buildStatsCard(),
+            _buildSearchBar(),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: controller.refresh,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: controller.roles.length,
-                  itemBuilder: (context, index) {
-                    final role = controller.roles[index];
-                    return _buildRoleCard(context, role);
-                  },
-                ),
+                child: Obx(() {
+                  final filtered = controller.filteredRoles;
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            'roles_no_results'.tr,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final role = filtered[index];
+                      return _buildRoleCard(context, role);
+                    },
+                  );
+                }),
               ),
             ),
           ],
@@ -124,6 +143,33 @@ class RolesPage extends GetView<RoleController> {
         onPressed: _showCreateRoleDialog,
         tooltip: 'roles_add_role'.tr,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: TextField(
+        onChanged: (value) => controller.searchQuery.value = value,
+        decoration: InputDecoration(
+          hintText: 'roles_search_hint'.tr,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    controller.searchQuery.value = '';
+                  },
+                )
+              : const SizedBox.shrink()),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
       ),
     );
   }
@@ -200,7 +246,7 @@ class RolesPage extends GetView<RoleController> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: role.isAdmin ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+          backgroundColor: role.isAdmin ? Colors.red.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
           radius: 24,
           child: Icon(
             role.isAdmin ? Icons.admin_panel_settings : Icons.person,
@@ -227,29 +273,53 @@ class RolesPage extends GetView<RoleController> {
               ),
             ),
             const SizedBox(height: 4),
-            if (role.isAdmin)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
-                ),
-                child: Text(
-                  'roles_admin_badge'.tr,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                if (role.isAdmin)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      'roles_admin_badge'.tr,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                else
+                  ..._buildPrivilegeChips(role),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.people, size: 10, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Text(
+                        role.userCount == 1 ? '1 ${'roles_user_singular'.tr}' : '${role.userCount} ${'roles_user_plural'.tr}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              )
-            else
-              Wrap(
-                spacing: 4,
-                runSpacing: 2,
-                children: _buildPrivilegeChips(role),
-              ),
+              ],
+            ),
           ],
         ),
         trailing: PopupMenuButton<String>(
@@ -294,7 +364,7 @@ class RolesPage extends GetView<RoleController> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -312,7 +382,7 @@ class RolesPage extends GetView<RoleController> {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.1),
+          color: Colors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

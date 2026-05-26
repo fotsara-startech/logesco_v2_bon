@@ -345,6 +345,10 @@ const Map<String, String> enTranslations = {
   'roles_add_role': 'Add role',
   'roles_loading_error': 'Loading error',
   'roles_retry': 'Retry',
+  'roles_search_hint': 'Search a role...',
+  'roles_no_results': 'No role found',
+  'roles_user_singular': 'user',
+  'roles_user_plural': 'users',
 
   // Statistics
   'roles_stats_total': 'Total',

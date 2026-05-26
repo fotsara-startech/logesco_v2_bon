@@ -211,4 +211,19 @@ class SupplierDetailController extends GetxController {
   void viewOrders() {
     SnackbarHelper.info('Affichage des commandes à implémenter', title: 'Fonctionnalité');
   }
+
+  /// Récupère le total des achats d'un fournisseur
+  Future<Map<String, dynamic>> getSupplierPurchases() async {
+    try {
+      print('📊 Récupération des achats pour le fournisseur $supplierId...');
+
+      final stats = await _supplierService.getSupplierPurchases(supplierId);
+
+      print('✅ Total achats: ${stats['totalPurchases']} FCFA, Commandes: ${stats['totalOrders']}');
+      return stats;
+    } catch (e) {
+      print('❌ Erreur récupération achats: $e');
+      return {'totalPurchases': 0.0, 'totalOrders': 0};
+    }
+  }
 }

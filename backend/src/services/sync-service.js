@@ -18,6 +18,7 @@ const PULL_TABLES = [
   'user_boutique_assignments',
   'categories',
   'produits',
+  'historique_prix_achat',
   'stock',
   'stock_boutiques',
   'fournisseurs',
@@ -120,7 +121,7 @@ class SyncService {
           ssl: { rejectUnauthorized: false },
           max: 3,
           idleTimeoutMillis: 10000,
-          connectionTimeoutMillis: 5000,
+          connectionTimeoutMillis: 10000,
         });
       }
 
@@ -622,6 +623,15 @@ class SyncService {
 
       for (const table of PULL_TABLES) {
         try {
+          // Colonnes de date alternatives par table (quand date_modification n'existe pas)
+          const DATE_COLUMN_FALLBACK = {
+            'historique_prix_achat': 'date_creation',
+            'mouvements_stock': 'date_mouvement',
+            'cash_movements': 'date_creation',
+            'historique_recus': 'date_generation',
+            'transactions_comptes': 'date_transaction',
+          };
+
           // Détecter dynamiquement si la table a date_modification sur Neon
           let result;
           try {
@@ -630,9 +640,22 @@ class SyncService {
               [lastSync]
             );
           } catch (colErr) {
-            // date_modification absente sur Neon — fallback: pull complet de la table
-            console.warn(`  ⚠️  ${table}: pas de date_modification sur Neon, pull complet...`);
-            result = await client.query(`SELECT * FROM "${table}"`);
+            // date_modification absente — essayer la colonne alternative
+            const altCol = DATE_COLUMN_FALLBACK[table];
+            if (altCol) {
+              try {
+                result = await client.query(
+                  `SELECT * FROM "${table}" WHERE "${altCol}" > $1 ${limitClause}`,
+                  [lastSync]
+                );
+              } catch (altErr) {
+                console.warn(`  ⚠️  ${table}: pas de date_modification sur Neon, pull complet...`);
+                result = await client.query(`SELECT * FROM "${table}"`);
+              }
+            } else {
+              console.warn(`  ⚠️  ${table}: pas de date_modification sur Neon, pull complet...`);
+              result = await client.query(`SELECT * FROM "${table}"`);
+            }
           }
 
           if (result.rows.length === 0) continue;
@@ -652,10 +675,19 @@ class SyncService {
             const updates = keys.filter(k => k !== 'id').map(k => `"${k}" = excluded."${k}"`).join(', ');
 
             try {
-              await this.localPrisma.$executeRawUnsafe(
-                `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updates}`,
-                ...vals
-              );
+              // Pour stock_boutiques et stock : ne pas écraser si local est plus récent
+              if (table === 'stock_boutiques' || table === 'stock') {
+                await this.localPrisma.$executeRawUnsafe(
+                  `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updates}
+                   WHERE excluded.derniere_maj >= "${table}".derniere_maj`,
+                  ...vals
+                );
+              } else {
+                await this.localPrisma.$executeRawUnsafe(
+                  `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updates}`,
+                  ...vals
+                );
+              }
               pulled++;
             } catch (insertErr) {
               console.warn(`  ⚠️  ${table} INSERT échoué (id=${row.id}): ${insertErr.message}`);

@@ -198,6 +198,29 @@ class ApiCustomerService extends GetxService implements CustomerService {
     return [];
   }
 
+  /// Récupère le chiffre d'affaires total d'un client
+  Future<Map<String, dynamic>> getCustomerRevenue(int customerId) async {
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>('/customers/$customerId/revenue');
+
+      if (response.isSuccess && response.data != null) {
+        final responseMap = response.data as Map<String, dynamic>;
+
+        if (responseMap.containsKey('data')) {
+          final data = responseMap['data'] as Map<String, dynamic>;
+          return {
+            'totalRevenue': (data['totalRevenue'] as num?)?.toDouble() ?? 0.0,
+            'totalSales': (data['totalSales'] as num?)?.toInt() ?? 0,
+          };
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la récupération du chiffre d\'affaires: $e');
+    }
+
+    return {'totalRevenue': 0.0, 'totalSales': 0};
+  }
+
   /// Enregistre un paiement de dette pour un client
   Future<bool> payCustomerDebt(int customerId, double montant, {String? description}) async {
     try {

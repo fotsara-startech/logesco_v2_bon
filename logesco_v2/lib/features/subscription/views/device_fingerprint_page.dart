@@ -138,32 +138,24 @@ class _DeviceFingerprintPageState extends State<DeviceFingerprintPage> {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // En-tête avec icône
-          _buildHeader(),
-
-          const SizedBox(height: 32),
-
-          // Instructions
-          _buildInstructions(),
-
-          const SizedBox(height: 24),
-
-          // Empreinte principale
-          _buildFingerprintCard(),
-
-          const SizedBox(height: 24),
-
-          // Informations détaillées
-          _buildDeviceInfoCard(),
-
-          const SizedBox(height: 24),
-
-          // Avertissement
-          _buildWarningCard(),
-        ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 32),
+              _buildInstructions(),
+              const SizedBox(height: 24),
+              _buildFingerprintCard(),
+              const SizedBox(height: 24),
+              _buildDeviceInfoCard(),
+              const SizedBox(height: 24),
+              _buildWarningCard(),
+            ],
+          ),
+        ),
       ),
     );
   }

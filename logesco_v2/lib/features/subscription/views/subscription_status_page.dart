@@ -99,32 +99,24 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Carte de statut principal
-          _buildMainStatusCard(),
-
-          const SizedBox(height: 16),
-
-          // Détails de l'abonnement
-          _buildSubscriptionDetails(),
-
-          const SizedBox(height: 16),
-
-          // Notifications et alertes
-          if (_subscriptionController.shouldShowNotifications()) _buildNotificationsCard(),
-
-          const SizedBox(height: 16),
-
-          // Actions disponibles
-          _buildActionsCard(),
-
-          const SizedBox(height: 16),
-
-          // Informations supplémentaires
-          _buildAdditionalInfo(),
-        ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildMainStatusCard(),
+              const SizedBox(height: 16),
+              _buildSubscriptionDetails(),
+              const SizedBox(height: 16),
+              if (_subscriptionController.shouldShowNotifications()) _buildNotificationsCard(),
+              const SizedBox(height: 16),
+              _buildActionsCard(),
+              const SizedBox(height: 16),
+              _buildAdditionalInfo(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -498,23 +490,23 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
             const SizedBox(height: 12),
 
             // Bouton de renouvellement (si abonnement actif)
-            if (isActive) ...[
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _showRenewalDialog,
-                  icon: const Icon(Icons.refresh),
-                  label: Text('subscription_renew'.tr),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            // if (isActive) ...[
+            //   SizedBox(
+            //     width: double.infinity,
+            //     child: OutlinedButton.icon(
+            //       onPressed: _showRenewalDialog,
+            //       icon: const Icon(Icons.refresh),
+            //       label: Text('subscription_renew'.tr),
+            //       style: OutlinedButton.styleFrom(
+            //         padding: const EdgeInsets.symmetric(vertical: 12),
+            //       ),
+            //     ),
+            //   ),
+            //   const SizedBox(height: 12),
+            // ],
 
             // Bouton de démarrage d'essai (si possible)
-            if (canStartTrial) ...[
+            /* if (canStartTrial) ...[
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -548,22 +540,22 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                 ),
               ),
               const SizedBox(height: 12),
-            ],
+            ],*/
 
             // Bouton de validation forcée
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: () async {
-                  await _subscriptionController.forceValidation();
-                },
-                icon: const Icon(Icons.sync),
-                label: Text('subscription_verify_license'.tr),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
+            // SizedBox(
+            //   width: double.infinity,
+            //   child: TextButton.icon(
+            //     onPressed: () async {
+            //       await _subscriptionController.forceValidation();
+            //     },
+            //     icon: const Icon(Icons.sync),
+            //     label: Text('subscription_verify_license'.tr),
+            //     style: TextButton.styleFrom(
+            //       padding: const EdgeInsets.symmetric(vertical: 12),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

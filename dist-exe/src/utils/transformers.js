@@ -146,11 +146,83 @@ function buildSalesSearchConditions(searchParams) {
   if (searchParams.dateDebut || searchParams.dateFin) {
     conditions.dateVente = {};
     if (searchParams.dateDebut) {
-      conditions.dateVente.gte = new Date(searchParams.dateDebut);
+      // Si c'est déjà un objet Date, le convertir en ISO string d'abord
+      let dateStr = searchParams.dateDebut;
+      if (dateStr instanceof Date) {
+        dateStr = dateStr.toISOString();
+      }
+      // Enlever le Z si présent pour traiter comme date locale
+      dateStr = String(dateStr).replace('Z', '');
+      
+      // Regex qui accepte les millisecondes optionnelles
+      const parts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?/);
+      if (parts) {
+        // Créer la date locale directement à partir des composants
+        const dateLocal = new Date(
+          parseInt(parts[1]), // année
+          parseInt(parts[2]) - 1, // mois (0-indexed)
+          parseInt(parts[3]), // jour
+          parseInt(parts[4]), // heure
+          parseInt(parts[5]), // minute
+          parseInt(parts[6])  // seconde
+        );
+        
+        // CORRECTION: getTimezoneOffset() retourne -60 pour UTC+1
+        // On doit AJOUTER cet offset (qui est négatif) pour compenser
+        const offset = dateLocal.getTimezoneOffset() * 60000; // en millisecondes
+        const dateAjustee = new Date(dateLocal.getTime() + offset);
+        
+        conditions.dateVente.gte = dateAjustee;
+        
+        console.log('📅 [BACKEND] Filtre dateDebut:', {
+          recu: searchParams.dateDebut,
+          dateLocal: dateLocal.toISOString(),
+          offset: (offset / 3600000) + 'h',
+          dateAjustee: dateAjustee.toISOString(),
+          explication: 'Date ajustée pour compenser la conversion UTC de Prisma'
+        });
+      } else {
+        console.log('⚠️ [BACKEND] dateDebut ne match pas le regex:', dateStr);
+      }
     }
     if (searchParams.dateFin) {
-      conditions.dateVente.lte = new Date(searchParams.dateFin);
+      // Si c'est déjà un objet Date, le convertir en ISO string d'abord
+      let dateStr = searchParams.dateFin;
+      if (dateStr instanceof Date) {
+        dateStr = dateStr.toISOString();
+      }
+      // Enlever le Z si présent pour traiter comme date locale
+      dateStr = String(dateStr).replace('Z', '');
+      
+      // Regex qui accepte les millisecondes optionnelles
+      const parts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?/);
+      if (parts) {
+        const dateLocal = new Date(
+          parseInt(parts[1]), // année
+          parseInt(parts[2]) - 1, // mois (0-indexed)
+          parseInt(parts[3]), // jour
+          parseInt(parts[4]), // heure
+          parseInt(parts[5]), // minute
+          parseInt(parts[6])  // seconde
+        );
+        
+        const offset = dateLocal.getTimezoneOffset() * 60000;
+        const dateAjustee = new Date(dateLocal.getTime() + offset);
+        
+        conditions.dateVente.lte = dateAjustee;
+        
+        console.log('📅 [BACKEND] Filtre dateFin:', {
+          recu: searchParams.dateFin,
+          dateLocal: dateLocal.toISOString(),
+          offset: (offset / 3600000) + 'h',
+          dateAjustee: dateAjustee.toISOString(),
+          explication: 'Date ajustée pour compenser la conversion UTC de Prisma'
+        });
+      } else {
+        console.log('⚠️ [BACKEND] dateFin ne match pas le regex:', dateStr);
+      }
     }
+    console.log('📅 [BACKEND] Conditions finales dateVente:', conditions.dateVente);
   }
 
   return conditions;

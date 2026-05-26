@@ -20,89 +20,75 @@ class SubscriptionBlockedPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.red.shade50,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icône d'erreur
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.block,
-                  size: 60,
-                  color: Colors.red.shade600,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Titre principal
-              Text(
-                isInGracePeriod ? 'subscription_grace_period_active'.tr : 'subscription_expired_title'.tr,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade700,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      shape: BoxShape.circle,
                     ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Message principal
-              Text(
-                _getMainMessage(),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    child: Icon(
+                      Icons.block,
+                      size: 60,
                       color: Colors.red.shade600,
                     ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 32),
-
-              // Détails de l'abonnement
-              if (status != null) _buildStatusCard(context),
-
-              const SizedBox(height: 32),
-
-              // Actions
-              _buildActionButtons(context),
-
-              const SizedBox(height: 24),
-
-              // Message d'aide
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.blue.shade600,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'subscription_contact_support'.tr,
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 14,
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    isInGracePeriod ? 'subscription_grace_period_active'.tr : 'subscription_expired_title'.tr,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade700,
                         ),
-                      ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _getMainMessage(),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.red.shade600,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  if (status != null) _buildStatusCard(context),
+                  const SizedBox(height: 32),
+                  _buildActionButtons(context),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue.shade600),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'subscription_contact_support'.tr,
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -155,17 +141,10 @@ class SubscriptionBlockedPage extends StatelessWidget {
   Widget _buildDetailRow(String label, String value, IconData icon, {Color? valueColor}) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Colors.grey.shade600,
-        ),
+        Icon(icon, size: 20, color: Colors.grey.shade600),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
+          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         ),
         Text(
           value,
@@ -181,7 +160,6 @@ class SubscriptionBlockedPage extends StatelessWidget {
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        // Bouton principal d'activation
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -198,25 +176,16 @@ class SubscriptionBlockedPage extends StatelessWidget {
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
-
-        const SizedBox(height: 16),
-
-        // Bouton secondaire (seulement en période de grâce)
-        if (isInGracePeriod)
+        if (isInGracePeriod) ...[
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {
-                // Retourner à l'application en mode dégradé
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.visibility),
               label: Text('subscription_continue_read_only'.tr),
               style: OutlinedButton.styleFrom(
@@ -226,6 +195,7 @@ class SubscriptionBlockedPage extends StatelessWidget {
               ),
             ),
           ),
+        ],
       ],
     );
   }
@@ -233,9 +203,8 @@ class SubscriptionBlockedPage extends StatelessWidget {
   String _getMainMessage() {
     if (isInGracePeriod) {
       return 'subscription_grace_period_message'.tr;
-    } else {
-      return 'subscription_expired_message'.tr + ' ' + 'subscription_activate_to_continue'.tr;
     }
+    return '${'subscription_expired_message'.tr} ${'subscription_activate_to_continue'.tr}';
   }
 
   String _getSubscriptionTypeLabel(SubscriptionType type) {

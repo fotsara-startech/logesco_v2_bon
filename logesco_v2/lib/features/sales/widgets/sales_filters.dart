@@ -96,6 +96,7 @@ class _SalesFiltersState extends State<SalesFilters> {
               if (!isAdmin) return const SizedBox.shrink();
               final vendeurs = controller.vendeurs;
               if (vendeurs.isEmpty) return const SizedBox.shrink();
+
               return Column(
                 children: [
                   const SizedBox(height: 12),
@@ -104,32 +105,89 @@ class _SalesFiltersState extends State<SalesFilters> {
                       const Icon(Icons.person_outline, size: 18, color: Colors.blueGrey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: DropdownButtonFormField<int>(
-                          value: controller.vendeurIdFilter > 0 ? controller.vendeurIdFilter : null,
-                          decoration: InputDecoration(
-                            labelText: 'sales_filter_by_seller'.tr,
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            isDense: true,
-                            suffixIcon: controller.vendeurIdFilter > 0
-                                ? IconButton(
-                                    icon: const Icon(Icons.close, size: 18),
-                                    onPressed: () => controller.setVendeurFilter(0),
-                                  )
-                                : null,
-                          ),
-                          hint: Text('sales_filter_all_sellers'.tr),
-                          items: [
-                            DropdownMenuItem<int>(
-                              value: 0,
-                              child: Text('sales_filter_all_sellers'.tr),
-                            ),
-                            ...vendeurs.map((v) => DropdownMenuItem<int>(
-                                  value: v['id'] as int,
-                                  child: Text(v['nomUtilisateur'] as String),
-                                )),
-                          ],
-                          onChanged: (value) => controller.setVendeurFilter(value ?? 0),
+                        child: Autocomplete<Map<String, dynamic>>(
+                          initialValue: controller.vendeurIdFilter > 0
+                              ? TextEditingValue(
+                                  text: vendeurs.firstWhere(
+                                    (v) => v['id'] == controller.vendeurIdFilter,
+                                    orElse: () => {'nomUtilisateur': ''},
+                                  )['nomUtilisateur'] as String,
+                                )
+                              : const TextEditingValue(),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return vendeurs;
+                            }
+                            return vendeurs.where((vendeur) {
+                              final nom = (vendeur['nomUtilisateur'] as String).toLowerCase();
+                              final query = textEditingValue.text.toLowerCase();
+                              return nom.contains(query);
+                            });
+                          },
+                          displayStringForOption: (vendeur) => vendeur['nomUtilisateur'] as String,
+                          fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                            return TextFormField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                labelText: 'sales_filter_by_seller'.tr,
+                                hintText: 'sales_filter_all_sellers'.tr,
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                                prefixIcon: const Icon(Icons.search, size: 20),
+                                suffixIcon: textEditingController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close, size: 18),
+                                        onPressed: () {
+                                          textEditingController.clear();
+                                          controller.setVendeurFilter(0);
+                                        },
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+                          onSelected: (vendeur) {
+                            controller.setVendeurFilter(vendeur['id'] as int);
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length + 1,
+                                    itemBuilder: (context, index) {
+                                      if (index == 0) {
+                                        return ListTile(
+                                          dense: true,
+                                          title: Text(
+                                            'sales_filter_all_sellers'.tr,
+                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                          onTap: () {
+                                            controller.setVendeurFilter(0);
+                                            onSelected({'id': 0, 'nomUtilisateur': ''});
+                                          },
+                                        );
+                                      }
+                                      final vendeur = options.elementAt(index - 1);
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(vendeur['nomUtilisateur'] as String),
+                                        onTap: () => onSelected(vendeur),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

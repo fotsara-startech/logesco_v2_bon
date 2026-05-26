@@ -344,6 +344,10 @@ const Map<String, String> frTranslations = {
   'roles_add_role': 'Ajouter un rôle',
   'roles_loading_error': 'Erreur de chargement',
   'roles_retry': 'Réessayer',
+  'roles_search_hint': 'Rechercher un rôle...',
+  'roles_no_results': 'Aucun rôle trouvé',
+  'roles_user_singular': 'utilisateur',
+  'roles_user_plural': 'utilisateurs',
 
   // Statistiques
   'roles_stats_total': 'Total',
@@ -889,6 +893,17 @@ const Map<String, String> frTranslations = {
   'sales_customer_credit': 'Crédit',
   'sales_customer_balance': '@amount F',
   'sales_clear_customer': 'Retirer le client',
+
+  // View modes
+  'sales_table_view': 'Vue tableau',
+  'sales_list_view': 'Vue liste',
+  'sales_details_view': 'Vue détaillée',
+  'sales_client': 'Client',
+  'sales_amount': 'Montant',
+  'sales_paid': 'Payé',
+  'sales_view_details': 'Voir les détails',
+  'sales_no_client': 'Sans client',
+  'sales_product': 'Produit',
 
   // Product Selector
   'sales_search_product': 'Rechercher un produit',

@@ -5,25 +5,25 @@
  */
 
 async function recalculerCump(prisma, produitId) {
-  const rows = await prisma.$queryRawUnsafe(
-    'SELECT prix_achat, COALESCE(quantite, 1) as quantite FROM historique_prix_achat WHERE produit_id = ?',
-    produitId
-  );
+  const rows = await prisma.historiquePrixAchat.findMany({
+    where: { produitId: produitId },
+    select: { prixAchat: true, quantite: true }
+  });
 
   if (!rows || rows.length === 0) return null;
 
   const totalQte  = rows.reduce((s, r) => s + (r.quantite || 1), 0);
-  const totalCout = rows.reduce((s, r) => s + ((r.prix_achat || 0) * (r.quantite || 1)), 0);
+  const totalCout = rows.reduce((s, r) => s + ((r.prixAchat || 0) * (r.quantite || 1)), 0);
 
   if (totalQte === 0) return null;
 
   const cump = totalCout / totalQte;
 
-  await prisma.$executeRawUnsafe(
-    'UPDATE produits SET cump = ? WHERE id = ?',
-    cump,
-    produitId
-  );
+  // Utiliser Prisma ORM pour que le hook de sync soit déclenché
+  await prisma.produit.update({
+    where: { id: produitId },
+    data: { cump: cump }
+  });
 
   return cump;
 }
@@ -33,14 +33,16 @@ async function enregistrerPrixAchatEtRecalculerCump(prisma, produitId, prixAchat
 
   const qte = (quantite && quantite > 0) ? quantite : 1;
 
-  await prisma.$executeRawUnsafe(
-    'INSERT INTO historique_prix_achat (produit_id, prix_achat, quantite, source, reference_id) VALUES (?, ?, ?, ?, ?)',
-    produitId,
-    prixAchat,
-    qte,
-    source || 'manuel',
-    referenceId || null
-  );
+  // Utiliser Prisma ORM pour que le hook de sync soit déclenché
+  await prisma.historiquePrixAchat.create({
+    data: {
+      produitId: produitId,
+      prixAchat: prixAchat,
+      quantite: qte,
+      source: source || 'manuel',
+      referenceId: referenceId || null
+    }
+  });
 
   return await recalculerCump(prisma, produitId);
 }

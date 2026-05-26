@@ -17,7 +17,12 @@ function createRoleRouter(dependencies) {
       console.log('🔍 [RoleRouter] Récupération des rôles depuis la base de données...');
       
       const roles = await prisma.userRole.findMany({
-        orderBy: { id: 'asc' }
+        orderBy: { id: 'asc' },
+        include: {
+          _count: {
+            select: { utilisateurs: true }
+          }
+        }
       });
 
       console.log(`✅ [RoleRouter] ${roles.length} rôles trouvés`);
@@ -35,7 +40,8 @@ function createRoleRouter(dependencies) {
         }
         return {
           ...role,
-          privileges: privileges || {}
+          privileges: privileges || {},
+          userCount: role._count?.utilisateurs ?? 0
         };
       });
       

@@ -90,14 +90,11 @@ class SecureLicenseStorage {
   /// Récupère une licence stockée avec vérification d'intégrité
   Future<LicenseData?> retrieveLicense() async {
     try {
-      // 1. Vérifier la détection de manipulation
+      // 1. Vérifier la détection de manipulation (empreinte appareil uniquement)
       final tamperDetected = await _detectTampering();
       if (tamperDetected) {
-        await _handleTamperDetection();
-        throw LicenseException(
-          LicenseError.tamperingDetected,
-          'Manipulation des données de licence détectée',
-        );
+        // Log l'incident mais ne pas bloquer — laisser la vérification d'intégrité décider
+        await _logAccess('tamper_warning', 'system');
       }
 
       // 2. Récupérer les données principales
@@ -354,11 +351,14 @@ class SecureLicenseStorage {
   Future<bool> _detectTampering() async {
     try {
       final tamperDataJson = await _secureStorage.read(key: _tamperDetectionKey);
-      if (tamperDataJson == null) return true; // Pas de données = manipulation
+      if (tamperDataJson == null) return false; // Première utilisation, pas de manipulation
 
       final tamperData = jsonDecode(tamperDataJson) as Map<String, dynamic>;
 
-      // Vérifier l'empreinte d'appareil
+      // Vérifier l'empreinte d'appareil uniquement si une licence est stockée
+      final primaryData = await _secureStorage.read(key: _primaryStorageKey);
+      if (primaryData == null) return false; // Pas de licence stockée, rien à protéger
+
       final storedFingerprint = tamperData['deviceFingerprint'] as String?;
       if (storedFingerprint != null) {
         final currentFingerprint = await _deviceService.generateDeviceFingerprint();
@@ -367,22 +367,9 @@ class SecureLicenseStorage {
         }
       }
 
-      // Vérifier le hash de manipulation
-      final primaryData = await _secureStorage.read(key: _primaryStorageKey);
-      final backupData = await _secureStorage.read(key: _backupStorageKey);
-      final metadataJson = await _secureStorage.read(key: _metadataStorageKey);
-
-      if (primaryData == null || backupData == null || metadataJson == null) {
-        return true; // Données manquantes = manipulation
-      }
-
-      final combinedData = '$primaryData$backupData$metadataJson';
-      final currentHash = _cryptoService.generateHash(combinedData);
-      final expectedHash = tamperData['tamperHash'] as String?;
-
-      return expectedHash != null && currentHash != expectedHash;
+      return false;
     } catch (e) {
-      return true; // Erreur = manipulation présumée
+      return false; // En cas d'erreur, ne pas bloquer
     }
   }
 

@@ -31,6 +31,7 @@ import '../../features/subscription/services/implementations/subscription_manage
 import '../../features/subscription/services/implementations/license_service.dart';
 import '../../features/subscription/services/implementations/device_service.dart';
 import '../../features/subscription/services/implementations/crypto_service.dart';
+import '../../features/subscription/services/implementations/secure_time_service.dart';
 import '../../features/subscription/controllers/subscription_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
@@ -152,12 +153,15 @@ class InitialBindings extends Bindings {
       permanent: true,
     );
 
+    Get.put<SecureTimeService>(SecureTimeService(), permanent: true);
+
     Get.put<ISubscriptionManager>(
       SubscriptionManager(
         licenseService: Get.find<ILicenseService>(),
         deviceService: Get.find<IDeviceService>(),
         cryptoService: Get.find<CryptoService>(),
         secureStorage: Get.find<FlutterSecureStorage>(),
+        secureTimeService: Get.find<SecureTimeService>(),
       ),
       permanent: true,
     );

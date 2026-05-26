@@ -11,6 +11,7 @@ class RoleController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
   final Rx<UserRole?> selectedRole = Rx<UserRole?>(null);
+  final RxString searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -142,6 +143,13 @@ class RoleController extends GetxController {
     if (query.isEmpty) return roles;
 
     final lowerQuery = query.toLowerCase();
+    return roles.where((role) => role.nom.toLowerCase().contains(lowerQuery) || role.displayName.toLowerCase().contains(lowerQuery)).toList();
+  }
+
+  /// Rôles filtrés selon la recherche active
+  List<UserRole> get filteredRoles {
+    if (searchQuery.value.isEmpty) return roles;
+    final lowerQuery = searchQuery.value.toLowerCase();
     return roles.where((role) => role.nom.toLowerCase().contains(lowerQuery) || role.displayName.toLowerCase().contains(lowerQuery)).toList();
   }
 

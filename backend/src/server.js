@@ -203,6 +203,9 @@ class LogescoServer {
       // ── Migration des données existantes sans boutiqueId ────────────────
       await this._migrateExistingDataToBoutique(prisma, boutiquePrincipale.id);
 
+      // ── Migration stock → stock_boutiques (mise à jour depuis ancienne version) ──
+      await this._migrateStockToBoutique(prisma, boutiquePrincipale.id);
+
     } catch (err) {
       console.warn('⚠️  Auto-seed échoué (non bloquant):', err.message);
     }
@@ -247,6 +250,66 @@ class LogescoServer {
       console.log('✅ Migration des données existantes terminée');
     } catch (err) {
       console.warn('⚠️  Migration données existantes échouée (non bloquant):', err.message);
+    }
+  }
+
+  /**
+   * Migre les quantités de stock de l'ancienne table `stock` vers `stock_boutiques`.
+   * S'exécute uniquement si stock_boutiques est vide ET que stock contient des données.
+   * Cas typique : mise à jour depuis une version antérieure.
+   */
+  async _migrateStockToBoutique(prisma, boutiquePrincipaleId) {
+    try {
+      // Vérifier si stock_boutiques est déjà alimenté pour cette boutique
+      const stockBoutiqueCount = await prisma.stockBoutique.count({
+        where: { boutiqueId: boutiquePrincipaleId }
+      });
+
+      if (stockBoutiqueCount > 0) {
+        console.log(`✅ stock_boutiques déjà alimenté (${stockBoutiqueCount} entrées) - migration ignorée`);
+        return;
+      }
+
+      // Vérifier si l'ancienne table stock a des données
+      const ancienStocks = await prisma.stock.findMany();
+      if (ancienStocks.length === 0) {
+        console.log('ℹ️  Aucune donnée dans l\'ancienne table stock - migration ignorée');
+        return;
+      }
+
+      console.log(`🔄 Migration stock → stock_boutiques: ${ancienStocks.length} produit(s) à migrer...`);
+      let migrated = 0, skipped = 0;
+
+      for (const stock of ancienStocks) {
+        if (stock.quantiteDisponible <= 0 && stock.quantiteReservee <= 0) {
+          skipped++;
+          continue;
+        }
+        try {
+          await prisma.stockBoutique.upsert({
+            where: { boutiqueId_produitId: { boutiqueId: boutiquePrincipaleId, produitId: stock.produitId } },
+            update: {
+              quantiteDisponible: stock.quantiteDisponible,
+              quantiteReservee: stock.quantiteReservee,
+              derniereMaj: new Date()
+            },
+            create: {
+              boutiqueId: boutiquePrincipaleId,
+              produitId: stock.produitId,
+              quantiteDisponible: stock.quantiteDisponible,
+              quantiteReservee: stock.quantiteReservee,
+              derniereMaj: new Date()
+            }
+          });
+          migrated++;
+        } catch (e) {
+          console.warn(`  ⚠️  Produit ID ${stock.produitId}: ${e.message}`);
+        }
+      }
+
+      console.log(`✅ Migration stock terminée: ${migrated} migré(s), ${skipped} ignoré(s) (stock=0)`);
+    } catch (err) {
+      console.warn('⚠️  Migration stock→stock_boutiques échouée (non bloquant):', err.message);
     }
   }
 

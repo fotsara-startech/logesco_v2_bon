@@ -22,6 +22,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
   late SalesController _salesController;
   late CustomerController _customersController;
   TextEditingController? _autocompleteController;
+  int _autocompleteKey = 0; // Clé pour forcer la reconstruction de l'Autocomplete
 
   @override
   void initState() {
@@ -225,6 +226,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
 
   // Recherche client rapide et compacte
   Widget _buildQuickCustomerSearch() {
+    final createSentinel = Customer(id: -1, nom: '__CREATE__', dateCreation: DateTime(0), dateModification: DateTime(0));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: Colors.white,
@@ -234,55 +236,47 @@ class _CreateSalePageState extends State<CreateSalePage> {
           const SizedBox(width: 12),
           Expanded(
             child: Autocomplete<Customer>(
-              optionsBuilder: (TextEditingValue textEditingValue) {
-                if (textEditingValue.text.isEmpty) {
-                  return const Iterable<Customer>.empty();
-                }
-                return _customersController.customers.where((Customer option) {
-                  return (option.nom?.toLowerCase().contains(textEditingValue.text.toLowerCase()) ?? false);
-                });
+              key: ValueKey(_autocompleteKey), // Clé pour forcer la reconstruction
+              displayStringForOption: (c) => c.id == -1 ? '' : c.nom,
+              optionsBuilder: (TextEditingValue tv) {
+                if (tv.text.isEmpty) return const Iterable<Customer>.empty();
+                final query = tv.text.toLowerCase().trim();
+                final matches = _customersController.customers.where((c) => c.nom.toLowerCase().contains(query)).toList();
+                // Afficher l'option de création uniquement quand AUCUN client ne correspond
+                if (matches.isEmpty) matches.add(createSentinel);
+                return matches;
               },
               onSelected: (Customer selection) {
-                _salesController.setSelectedCustomer(selection);
+                if (selection.id == -1) {
+                  final query = _autocompleteController?.text ?? '';
+                  if (query.isNotEmpty) _createAndSelectCustomer(query);
+                } else {
+                  _salesController.setSelectedCustomer(selection);
+                }
               },
               fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-                // Sauvegarder la référence au contrôleur pour pouvoir le nettoyer
                 _autocompleteController = controller;
-
                 return TextField(
                   controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
                     hintText: 'sales_search_customer'.tr,
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.blue, width: 2)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
-                    suffixIcon: controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]),
-                            onPressed: _clearCustomerSearch,
-                          )
-                        : null,
+                    suffixIcon: controller.text.isNotEmpty ? IconButton(icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]), onPressed: _clearCustomerSearch) : null,
                   ),
                   style: const TextStyle(fontSize: 14),
-                  onChanged: (value) {
-                    setState(() {}); // Pour mettre à jour le suffixIcon
-                  },
+                  onChanged: (_) => setState(() {}),
                 );
               },
               optionsViewBuilder: (context, onSelected, options) {
+                final query = _autocompleteController?.text ?? '';
+                final realOptions = options.where((c) => c.id != -1).toList();
+                final showCreate = options.any((c) => c.id == -1);
                 return Align(
                   alignment: Alignment.topLeft,
                   child: Material(
@@ -291,72 +285,62 @@ class _CreateSalePageState extends State<CreateSalePage> {
                     child: Container(
                       width: 320,
                       constraints: const BoxConstraints(maxHeight: 300),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shrinkWrap: true,
-                        itemCount: options.length,
-                        separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[200]),
-                        itemBuilder: (context, index) {
-                          final option = options.elementAt(index);
-                          // Calculer le solde (négatif = dette)
-                          final solde = option.solde ?? 0.0;
-                          final aDette = solde < 0;
-                          final montantAffiche = aDette ? -solde : solde;
-
-                          return ListTile(
-                            dense: true,
-                            leading: CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Colors.blue[100],
-                              child: Text(
-                                (option.nom ?? 'C')[0].toUpperCase(),
-                                style: TextStyle(
-                                  color: Colors.blue[700],
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (realOptions.isNotEmpty)
+                            Flexible(
+                              child: ListView.separated(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                shrinkWrap: true,
+                                itemCount: realOptions.length,
+                                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
+                                itemBuilder: (_, i) {
+                                  final option = realOptions[i];
+                                  final solde = option.solde;
+                                  final aDette = solde < 0;
+                                  return ListTile(
+                                    dense: true,
+                                    leading: CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.blue[100],
+                                      child: Text(option.nom[0].toUpperCase(), style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)),
+                                    ),
+                                    title: Text(option.nom, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                    subtitle: option.telephone != null ? Text(option.telephone!, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+                                    trailing: solde != 0
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(color: aDette ? Colors.red[50] : Colors.green[50], borderRadius: BorderRadius.circular(4)),
+                                            child: Text(
+                                              '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${solde.abs().toStringAsFixed(0)}',
+                                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: aDette ? Colors.red[700] : Colors.green[700]),
+                                            ),
+                                          )
+                                        : null,
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          if (showCreate) ...[
+                            if (realOptions.isNotEmpty) Divider(height: 1, color: Colors.grey[200]),
+                            InkWell(
+                              onTap: () => _createAndSelectCustomer(query),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.person_add, size: 18, color: Colors.blue[700]),
+                                    const SizedBox(width: 10),
+                                    Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.blue[700], fontWeight: FontWeight.w500))),
+                                  ],
                                 ),
                               ),
                             ),
-                            title: Text(
-                              option.nom,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            subtitle: option.telephone != null
-                                ? Text(
-                                    option.telephone!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  )
-                                : null,
-                            trailing: (solde != 0)
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: aDette ? Colors.red[50] : Colors.green[50],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${'sales_customer_balance'.trParams({'amount': montantAffiche.toStringAsFixed(0)})}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: aDette ? Colors.red[700] : Colors.green[700],
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                            onTap: () => onSelected(option),
-                          );
-                        },
+                          ],
+                        ],
                       ),
                     ),
                   ),
@@ -369,32 +353,59 @@ class _CreateSalePageState extends State<CreateSalePage> {
     );
   }
 
-  // Bannière client sélectionné - Ultra compact
+  Future<void> _createAndSelectCustomer(String nom) async {
+    FocusScope.of(context).unfocus();
+    try {
+      final newCustomer = await _customersController.createCustomer(CustomerForm(nom: nom.trim()));
+      if (newCustomer != null) {
+        _salesController.setSelectedCustomer(newCustomer);
+        _autocompleteController?.text = newCustomer.nom;
+        // Incrémenter la clé pour forcer la reconstruction de l'Autocomplete
+        setState(() {
+          _autocompleteKey++;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la création du client: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // Bannière client sélectionné
   Widget _buildSelectedCustomerBanner() {
     return Obx(() {
       final customer = _salesController.selectedCustomer;
       if (customer == null) return const SizedBox.shrink();
 
-      // Calculer le solde (négatif = dette, positif = crédit)
-      final solde = customer.solde ?? 0.0;
+      final solde = customer.solde;
       final aDette = solde < 0;
-      final montantAffiche = aDette ? -solde : solde;
-      final labelSolde = aDette ? 'Dette' : 'Crédit';
+      final montantAffiche = solde.abs();
+      final labelSolde = aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr;
       final couleurSolde = aDette ? Colors.red : Colors.green;
 
       return Container(
-        margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [Colors.blue[600]!, Colors.blue[700]!],
           ),
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 18,
+              radius: 20,
               backgroundColor: Colors.white,
               child: Text(
                 (customer.nom ?? 'C')[0].toUpperCase(),

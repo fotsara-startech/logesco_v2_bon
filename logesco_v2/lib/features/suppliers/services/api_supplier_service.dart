@@ -340,4 +340,27 @@ class ApiSupplierService extends GetxService implements SupplierService {
       return true;
     }
   }
+
+  /// Récupère le total des achats d'un fournisseur
+  Future<Map<String, dynamic>> getSupplierPurchases(int supplierId) async {
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>('/suppliers/$supplierId/purchases');
+
+      if (response.isSuccess && response.data != null) {
+        final responseMap = response.data as Map<String, dynamic>;
+
+        if (responseMap.containsKey('data')) {
+          final data = responseMap['data'] as Map<String, dynamic>;
+          return {
+            'totalPurchases': (data['totalPurchases'] as num?)?.toDouble() ?? 0.0,
+            'totalOrders': (data['totalOrders'] as num?)?.toInt() ?? 0,
+          };
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la récupération des achats: $e');
+    }
+
+    return {'totalPurchases': 0.0, 'totalOrders': 0};
+  }
 }

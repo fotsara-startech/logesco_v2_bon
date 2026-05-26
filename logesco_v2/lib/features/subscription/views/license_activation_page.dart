@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/subscription_controller.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../models/license_errors.dart';
+import 'subscription_blocked_page.dart' as blocked;
 
 /// Page d'activation de licence
 class LicenseActivationPage extends StatefulWidget {
@@ -78,7 +79,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Retour à l'écran précédent
+              Navigator.of(context).pop();
             },
             child: Text('subscription_continue'.tr),
           ),
@@ -89,27 +90,15 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
 
   void _validateKeyFormat(String value) {
     if (value.isEmpty) {
-      setState(() {
-        _validationError = null;
-      });
+      setState(() => _validationError = null);
       return;
     }
-
-    // Validation basique du format de clé
-    // Format court: XXXX-XXXX-XXXX-XXXX (19 caractères)
-    // Format long: LOGESCO_V1_... (>20 caractères)
     if (value.length < 19) {
-      setState(() {
-        _validationError = 'subscription_license_key_min_length'.tr;
-      });
+      setState(() => _validationError = 'subscription_license_key_min_length'.tr);
     } else if (!RegExp(r'^[A-Za-z0-9+/=\-_]+$').hasMatch(value)) {
-      setState(() {
-        _validationError = 'subscription_license_key_invalid_format'.tr;
-      });
+      setState(() => _validationError = 'subscription_license_key_invalid_format'.tr);
     } else {
-      setState(() {
-        _validationError = null;
-      });
+      setState(() => _validationError = null);
     }
   }
 
@@ -122,7 +111,10 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
       canPop: canGoBack,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('subscription_activation_title'.tr),
+          title: InkWell(
+            onTap: () => Get.to(() => const blocked.SubscriptionBlockedPage()),
+            child: Text('subscription_activation_title'.tr),
+          ),
           centerTitle: true,
           automaticallyImplyLeading: canGoBack,
         ),
@@ -140,39 +132,28 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
   Widget _buildActivationForm(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // En-tête avec icône
-            _buildHeader(),
-
-            const SizedBox(height: 32),
-
-            // Instructions
-            _buildInstructions(),
-
-            const SizedBox(height: 24),
-
-            // Champ de saisie de clé
-            _buildLicenseKeyField(),
-
-            const SizedBox(height: 16),
-
-            // Message d'erreur de validation
-            if (_validationError != null) _buildValidationError(),
-
-            const SizedBox(height: 24),
-
-            // Bouton d'activation
-            _buildActivationButton(),
-
-            const SizedBox(height: 32),
-
-            // Aide et support
-            _buildHelpSection(),
-          ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 32),
+                _buildInstructions(),
+                const SizedBox(height: 24),
+                _buildLicenseKeyField(),
+                const SizedBox(height: 16),
+                if (_validationError != null) _buildValidationError(),
+                const SizedBox(height: 24),
+                _buildActivationButton(),
+                const SizedBox(height: 32),
+                _buildHelpSection(),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -185,7 +166,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
@@ -223,10 +204,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Theme.of(context).primaryColor,
-                ),
+                Icon(Icons.info_outline, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 8),
                 Text(
                   'subscription_instructions_title'.tr,
@@ -261,9 +239,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
                 icon: const Icon(Icons.clear),
                 onPressed: () {
                   _licenseKeyController.clear();
-                  setState(() {
-                    _validationError = null;
-                  });
+                  setState(() => _validationError = null);
                 },
               )
             : null,
@@ -294,17 +270,12 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: Theme.of(context).colorScheme.error,
-          ),
+          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               _validationError!,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -337,12 +308,8 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
   Widget _buildHelpSection() {
     return Column(
       children: [
-        // Section clé de l'appareil
         _buildDeviceKeySection(),
-
         const SizedBox(height: 16),
-
-        // Section aide
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -351,10 +318,7 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.help_outline,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                    Icon(Icons.help_outline, color: Theme.of(context).colorScheme.secondary),
                     const SizedBox(width: 8),
                     Text(
                       'subscription_need_help'.tr,
@@ -403,199 +367,90 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.fingerprint,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                Icon(Icons.fingerprint, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Clé de l\'appareil',
+                  'subscription_device_fingerprint'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Cette clé unique identifie votre appareil. Vous en aurez besoin pour obtenir votre licence d\'activation.',
+            const SizedBox(height: 8),
+            Text(
+              'subscription_device_fingerprint_info'.tr,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _showDeviceKey,
-                    icon: const Icon(Icons.visibility),
-                    label: Text('subscription_show_device_key'.tr),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Affiche la clé de l'appareil dans une boîte de dialogue
-  Future<void> _showDeviceKey() async {
-    if (!mounted) return;
-
-    try {
-      // Afficher un indicateur de chargement
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      // Récupérer la clé de l'appareil
-      final deviceKey = await _subscriptionController.getDeviceFingerprint();
-
-      // Fermer l'indicateur de chargement
-      if (mounted) {
-        Navigator.of(context).pop();
-
-        if (deviceKey != null && deviceKey.isNotEmpty) {
-          _showDeviceKeyDialog(deviceKey);
-        } else {
-          _showErrorDialog('Impossible de récupérer la clé de l\'appareil');
-        }
-      }
-    } catch (e) {
-      // Fermer l'indicateur de chargement si encore ouvert
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-        _showErrorDialog('Erreur lors de la récupération de la clé: ${e.toString()}');
-      }
-    }
-  }
-
-  /// Affiche la boîte de dialogue avec la clé de l'appareil
-  void _showDeviceKeyDialog(String deviceKey) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.fingerprint,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(width: 8),
-            Text('subscription_device_fingerprint'.tr),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('subscription_device_fingerprint_info'.tr + ':'),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                ),
-              ),
-              child: SelectableText(
-                deviceKey,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Appuyez longuement pour sélectionner et copier',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+            FutureBuilder<String?>(
+              future: _subscriptionController.getDeviceFingerprint(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  return Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'subscription_key_not_available'.tr,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ],
+                  );
+                }
+                final deviceKey = snapshot.data!;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                         ),
-                  ),
-                ),
-              ],
+                      ),
+                      child: SelectableText(
+                        deviceKey,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: deviceKey));
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('subscription_fingerprint_copied'.tr),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy, size: 18),
+                      label: Text('subscription_copy_key'.tr),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
-        actions: [
-          TextButton.icon(
-            onPressed: () async {
-              try {
-                await Clipboard.setData(ClipboardData(text: deviceKey));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('subscription_license_key_copied'.tr),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${'error'.tr}: ${e.toString()}'),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.copy),
-            label: Text('subscription_copy_key'.tr),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('close'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Affiche une boîte de dialogue d'erreur
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(width: 8),
-            Text('error'.tr),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('ok'.tr),
-          ),
-        ],
       ),
     );
   }

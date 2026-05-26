@@ -132,6 +132,18 @@ class CustomerController extends GetxController {
     }
   }
 
+  /// Crée un nouveau client directement (sans navigation)
+  Future<Customer?> createCustomer(CustomerForm form) async {
+    try {
+      final customer = await _customerService.createCustomer(form);
+      onCustomerSaved(customer);
+      return customer;
+    } catch (e) {
+      SnackbarHelper.error('Erreur lors de la création du client: $e');
+      return null;
+    }
+  }
+
   /// Navigue vers la création d'un client
   Future<void> goToCreateCustomer() async {
     print('🚀 Navigation vers création client');
@@ -295,6 +307,27 @@ class CustomerController extends GetxController {
 
     // Forcer la mise à jour de l'interface
     customers.refresh();
+  }
+
+  /// Récupère le chiffre d'affaires total d'un client
+  Future<Map<String, dynamic>> getCustomerRevenue(int customerId) async {
+    try {
+      print('📊 Récupération du chiffre d\'affaires pour le client $customerId...');
+
+      // Vérifier que le service est ApiCustomerService
+      if (_customerService is! ApiCustomerService) {
+        throw Exception('Service non supporté pour les statistiques');
+      }
+
+      final apiService = _customerService as ApiCustomerService;
+      final stats = await apiService.getCustomerRevenue(customerId);
+
+      print('✅ Chiffre d\'affaires: ${stats['totalRevenue']} FCFA, Ventes: ${stats['totalSales']}');
+      return stats;
+    } catch (e) {
+      print('❌ Erreur récupération chiffre d\'affaires: $e');
+      return {'totalRevenue': 0.0, 'totalSales': 0};
+    }
   }
 
   /// Charge l'historique des transactions d'un client

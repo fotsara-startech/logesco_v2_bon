@@ -51,4 +51,7 @@ abstract class SupplierService {
 
   /// Vérifie si un fournisseur peut être supprimé (pas de commandes en cours)
   Future<bool> canDeleteSupplier(int id);
+
+  /// Récupère le total des achats d'un fournisseur
+  Future<Map<String, dynamic>> getSupplierPurchases(int supplierId);
 }

@@ -28,6 +28,22 @@ const SYNC_TABLES = {
       'id', 'produit_id', 'quantite_disponible', 'quantite_reservee',
       'derniere_maj', 'date_modification'
     ]
+  },
+  historiquePrixAchat: {
+    table: 'historique_prix_achat',
+    columns: [
+      'id', 'produit_id', 'prix_achat', 'quantite', 'source',
+      'reference_id', 'date_creation'
+    ]
+  },
+  produit: {
+    table: 'produits',
+    columns: [
+      'id', 'reference', 'nom', 'description', 'prix_unitaire', 'prix_achat',
+      'cump', 'code_barre', 'categorie_id', 'seuil_stock_minimum', 'est_actif',
+      'est_service', 'remise_max_autorisee', 'gestion_peremption',
+      'date_creation', 'date_modification'
+    ]
   }
 };
 
@@ -203,6 +219,47 @@ function setupPrismaSyncHooks(prisma) {
             const result = await query(args);
             if (result?.id) {
               syncRecord('stock', 'DELETE', result.id, prisma);
+            }
+            return result;
+          }
+        },
+        // Hook pour historiquePrixAchat
+        historiquePrixAchat: {
+          async create({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('historiquePrixAchat', 'INSERT', result.id, prisma);
+            }
+            return result;
+          },
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('historiquePrixAchat', 'UPDATE', result.id, prisma);
+            }
+            return result;
+          },
+          async delete({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('historiquePrixAchat', 'DELETE', result.id, prisma);
+            }
+            return result;
+          }
+        },
+        // Hook pour produit (pour synchroniser le CUMP)
+        produit: {
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('produit', 'UPDATE', result.id, prisma);
+            }
+            return result;
+          },
+          async upsert({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('produit', 'UPDATE', result.id, prisma);
             }
             return result;
           }

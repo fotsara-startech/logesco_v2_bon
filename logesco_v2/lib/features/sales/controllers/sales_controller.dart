@@ -83,6 +83,16 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final RxString _searchQuery = ''.obs;
   final RxList<Sale> _filteredSales = <Sale>[].obs;
 
+  // Mode d'affichage (liste ou tableau)
+  final RxString _viewMode = 'list'.obs; // 'list', 'table' ou 'details'
+  String get viewMode => _viewMode.value;
+  void setViewMode(String mode) => _viewMode.value = mode;
+
+  // Visibilité des filtres
+  final RxBool _filtersVisible = true.obs;
+  bool get filtersVisible => _filtersVisible.value;
+  void toggleFiltersVisibility() => _filtersVisible.value = !_filtersVisible.value;
+
   // Getters
   List<Sale> get sales => _searchQuery.value.isEmpty ? _sales : _filteredSales;
   Sale? get currentSale => _currentSale.value;

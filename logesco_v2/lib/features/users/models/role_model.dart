@@ -9,6 +9,7 @@ class UserRole {
   final Map<String, List<String>> privileges;
   final DateTime? dateCreation;
   final DateTime? dateModification;
+  final int userCount;
 
   const UserRole({
     this.id,
@@ -18,6 +19,7 @@ class UserRole {
     this.privileges = const {},
     this.dateCreation,
     this.dateModification,
+    this.userCount = 0,
   });
 
   /// Crée un UserRole à partir d'un JSON
@@ -54,6 +56,7 @@ class UserRole {
       privileges: parsedPrivileges,
       dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,
       dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']) : null,
+      userCount: json['userCount'] ?? 0,
     );
   }
 
@@ -127,6 +130,7 @@ class UserRole {
     Map<String, List<String>>? privileges,
     DateTime? dateCreation,
     DateTime? dateModification,
+    int? userCount,
   }) {
     return UserRole(
       id: id ?? this.id,
@@ -136,6 +140,7 @@ class UserRole {
       privileges: privileges ?? this.privileges,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
+      userCount: userCount ?? this.userCount,
     );
   }
 

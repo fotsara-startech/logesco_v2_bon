@@ -37,8 +37,18 @@ class SalesService {
       if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
       if (statut != null) queryParams['statut'] = statut;
       if (modePaiement != null) queryParams['modePaiement'] = modePaiement;
-      if (dateDebut != null) queryParams['dateDebut'] = dateDebut.toIso8601String();
-      if (dateFin != null) queryParams['dateFin'] = dateFin.toIso8601String();
+      if (dateDebut != null) {
+        // Envoyer la date en format ISO sans timezone (sera traitée comme locale par le backend)
+        final dateStr = dateDebut.toIso8601String().replaceAll('Z', '');
+        queryParams['dateDebut'] = dateStr;
+        print('📅 [API] dateDebut envoyée: $dateStr (local)');
+      }
+      if (dateFin != null) {
+        // Envoyer la date en format ISO sans timezone (sera traitée comme locale par le backend)
+        final dateStr = dateFin.toIso8601String().replaceAll('Z', '');
+        queryParams['dateFin'] = dateStr;
+        print('📅 [API] dateFin envoyée: $dateStr (local)');
+      }
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}').replace(queryParameters: queryParams);
 

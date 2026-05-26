@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../../core/services/backend_service.dart';
+import '../../../core/services/backend_service.dart' if (dart.library.html) '../../../core/services/backend_service_stub.dart';
 import '../../../core/config/app_config.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 
@@ -25,8 +26,8 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _startupSequence() async {
-    // MODE CLIENT — pas de backend local, connexion directe au serveur distant
-    if (AppConfig.isClientMode) {
+    // MODE CLIENT ou WEB — pas de backend local, connexion directe au serveur distant
+    if (AppConfig.isClientMode || kIsWeb) {
       _setStatus('Connexion au serveur...');
       await Future.delayed(const Duration(milliseconds: 500));
       try {

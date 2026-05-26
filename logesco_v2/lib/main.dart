@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -6,7 +7,7 @@ import 'core/bindings/initial_bindings.dart';
 import 'core/routes/app_pages.dart';
 import 'core/config/app_config.dart';
 import 'core/services/app_initialization_service.dart';
-import 'core/services/backend_service.dart';
+import 'core/services/backend_service.dart' if (dart.library.html) 'core/services/backend_service_stub.dart';
 import 'core/utils/app_logger.dart';
 import 'core/utils/error_handler.dart';
 import 'core/translations/app_translations.dart';
@@ -22,8 +23,8 @@ void main() async {
   await GetStorage.init();
   AppLogger.info('GetStorage initialized');
 
-  // Démarre le backend embarqué uniquement en mode serveur
-  if (!AppConfig.isClientMode) {
+  // Démarre le backend embarqué uniquement en mode serveur (non disponible sur web)
+  if (!AppConfig.isClientMode && !kIsWeb) {
     final backendService = BackendService();
     final backendStarted = await backendService.initialize();
     if (backendStarted) {
@@ -63,7 +64,7 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
   }
 }
 
-/// Application principale LOGESCO v2  
+/// Application principale LOGESCO v2
 class LogescoApp extends StatelessWidget {
   const LogescoApp({super.key});
 

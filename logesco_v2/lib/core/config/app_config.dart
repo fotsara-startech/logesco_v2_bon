@@ -40,7 +40,7 @@ class AppConfig {
 
   /// Contrôle des licences activé
   /// Injecté via --dart-define=ENABLE_LICENSE_CONTROL=true
-  static const bool enableLicenseControl = bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: false);
+  static const bool enableLicenseControl = bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: true);
 
   // ============================================================================
   // 3. CONFIGURATION DE DÉVELOPPEMENT

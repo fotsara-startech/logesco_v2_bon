@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/sales_controller.dart';
 import '../widgets/sales_list_item.dart';
+import '../widgets/sales_table_view.dart';
+import '../widgets/sales_details_view.dart';
 import '../widgets/sales_filters.dart';
 import '../widgets/sales_search_bar.dart';
 import 'create_sale_page.dart';
@@ -11,22 +13,107 @@ import '../../printing/models/models.dart';
 import '../../printing/views/receipt_preview_page.dart';
 import '../../company_settings/controllers/company_settings_controller.dart';
 
-class SalesPage extends StatelessWidget {
+class SalesPage extends StatefulWidget {
   const SalesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
+  State<SalesPage> createState() => _SalesPageState();
+}
 
-    // Recharger les ventes avec le boutiqueId actuel à chaque ouverture de la page
+class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixin {
+  late SalesController controller;
+
+  @override
+  bool get wantKeepAlive => false; // Ne pas garder l'état en cache
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
+
+    // Charger les ventes au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadSales(refresh: true);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recharger les ventes à chaque fois que la page devient visible
+    // Mais seulement si ce n'est pas le premier chargement (déjà fait dans initState)
+    if (mounted) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          controller.loadSales(refresh: true);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Important pour AutomaticKeepAliveClientMixin
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('sales_title'.tr),
+        title: Obx(() {
+          String viewLabel;
+          switch (controller.viewMode) {
+            case 'table':
+              viewLabel = ' - ${'sales_table_view'.tr}';
+              break;
+            case 'details':
+              viewLabel = ' - ${'sales_details_view'.tr}';
+              break;
+            default:
+              viewLabel = '';
+          }
+          return Text('${'sales_title'.tr}$viewLabel');
+        }),
         actions: [
+          // Bouton pour masquer/afficher les filtres
+          Obx(() => IconButton(
+                onPressed: () => controller.toggleFiltersVisibility(),
+                icon: Icon(controller.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
+                tooltip: controller.filtersVisible ? 'Masquer les filtres' : 'Afficher les filtres',
+              )),
+
+          // Bouton pour basculer entre les vues (liste -> tableau -> détails -> liste)
+          Obx(() {
+            IconData icon;
+            String tooltip;
+            String nextMode;
+
+            switch (controller.viewMode) {
+              case 'list':
+                icon = Icons.table_chart;
+                tooltip = 'sales_table_view'.tr;
+                nextMode = 'table';
+                break;
+              case 'table':
+                icon = Icons.list_alt;
+                tooltip = 'sales_details_view'.tr;
+                nextMode = 'details';
+                break;
+              case 'details':
+                icon = Icons.view_list;
+                tooltip = 'sales_list_view'.tr;
+                nextMode = 'list';
+                break;
+              default:
+                icon = Icons.view_list;
+                tooltip = 'sales_list_view'.tr;
+                nextMode = 'list';
+            }
+
+            return IconButton(
+              onPressed: () => controller.setViewMode(nextMode),
+              icon: Icon(icon),
+              tooltip: tooltip,
+            );
+          }),
+
           // Bouton pour recharger les stocks réels
           IconButton(
             onPressed: () async {
@@ -51,9 +138,15 @@ class SalesPage extends StatelessWidget {
             const SalesSearchBar(),
             const SizedBox(height: 16),
 
-            // Filtres
-            const SalesFilters(),
-            const SizedBox(height: 16),
+            // Filtres (conditionnels)
+            Obx(() => controller.filtersVisible
+                ? Column(
+                    children: const [
+                      SalesFilters(),
+                      SizedBox(height: 16),
+                    ],
+                  )
+                : const SizedBox.shrink()),
 
             // Liste des ventes
             Expanded(
@@ -93,6 +186,26 @@ class SalesPage extends StatelessWidget {
                   );
                 }
 
+                // Basculer entre vue liste, tableau et détails
+                if (controller.viewMode == 'table') {
+                  return SalesTableView(
+                    sales: controller.sales,
+                    onTap: (sale) => _showSaleDetails(context, sale),
+                    hasMoreData: controller.hasMoreData,
+                    onLoadMore: () => controller.loadMoreSales(),
+                  );
+                }
+
+                if (controller.viewMode == 'details') {
+                  return SalesDetailsView(
+                    sales: controller.sales,
+                    onTap: (sale) => _showSaleDetails(context, sale),
+                    hasMoreData: controller.hasMoreData,
+                    onLoadMore: () => controller.loadMoreSales(),
+                  );
+                }
+
+                // Vue liste par défaut
                 return RefreshIndicator(
                   onRefresh: () => controller.loadSales(refresh: true),
                   child: ListView.builder(

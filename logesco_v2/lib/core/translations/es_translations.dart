@@ -325,6 +325,10 @@ const Map<String, String> esTranslations = {
   'roles_add_role': 'Agregar un rol',
   'roles_loading_error': 'Error de carga',
   'roles_retry': 'Reintentar',
+  'roles_search_hint': 'Buscar un rol...',
+  'roles_no_results': 'No se encontró ningún rol',
+  'roles_user_singular': 'usuario',
+  'roles_user_plural': 'usuarios',
 
   'roles_stats_total': 'Total',
   'roles_stats_admin': 'Admin',
