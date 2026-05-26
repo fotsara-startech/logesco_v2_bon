@@ -1,4 +1,4 @@
--- CreateTable
+﻿-- CreateTable
 CREATE TABLE "utilisateurs" (
     "id" SERIAL NOT NULL,
     "nom_utilisateur" TEXT NOT NULL,
@@ -1120,7 +1120,6 @@ CREATE TABLE IF NOT EXISTS "historique_prix_achat" (
     "quantite"     DOUBLE PRECISION NOT NULL DEFAULT 1,
     "source"       TEXT            NOT NULL DEFAULT 'manuel',
     "reference_id" INTEGER,
-    "date_creation" TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "date_creation" TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "historique_prix_achat_pkey" PRIMARY KEY ("id")
 );

@@ -90,46 +90,192 @@ function createSalesRouter({ prisma, authService }) {
     validatePagination,
     async (req, res) => {
       try {
-        const { page = 1, limit = 20, ...searchParams } = req.query;
+        const { page = 1, limit = 20, dateDebut, dateFin, ...otherParams } = req.query;
         const skip = (page - 1) * limit;
 
-        const conditions = buildSalesSearchConditions(searchParams);
-
-        const [ventes, total] = await Promise.all([
-          prisma.vente.findMany({
-            where: conditions,
-            include: {
-              client: {
-                select: { id: true, nom: true, prenom: true }
-              },
-              vendeur: {
-                select: { id: true, nomUtilisateur: true }
-              },
-              details: {
+        // Si on a des filtres de date, utiliser une requête SQL brute pour éviter les problèmes de timezone
+        if (dateDebut || dateFin) {
+          console.log('📅 [SALES ROUTE] Utilisation de requête SQL brute pour filtrage par date');
+          
+          // Construire les autres conditions
+          const conditions = buildSalesSearchConditions(otherParams);
+          
+          // Construire la clause WHERE SQL pour les dates
+          let dateWhereClause = '';
+          const params = [];
+          
+          if (dateDebut) {
+            // Le paramètre peut être une string ou un objet Date
+            let dateStr = String(dateDebut);
+            
+            // Si c'est un format ISO avec T, extraire les composants
+            const isoMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+            if (isoMatch) {
+              // SQLite stocke les dates en format ISO, donc on doit comparer avec ce format
+              // Convertir la date locale en ISO UTC pour la comparaison
+              const d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]), 
+                                parseInt(isoMatch[4]), parseInt(isoMatch[5]), parseInt(isoMatch[6]));
+              const dateISO = d.toISOString();
+              dateWhereClause += ' AND date_vente >= ?';
+              params.push(dateISO);
+              console.log('📅 [SQL] dateDebut (ISO):', dateISO);
+            } else {
+              // Sinon, essayer de parser comme Date et formater en ISO
+              const d = new Date(dateDebut);
+              const dateISO = d.toISOString();
+              dateWhereClause += ' AND date_vente >= ?';
+              params.push(dateISO);
+              console.log('📅 [SQL] dateDebut (parsed ISO):', dateISO);
+            }
+          }
+          
+          if (dateFin) {
+            let dateStr = String(dateFin);
+            
+            const isoMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+            if (isoMatch) {
+              const d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]), 
+                                parseInt(isoMatch[4]), parseInt(isoMatch[5]), parseInt(isoMatch[6]));
+              const dateISO = d.toISOString();
+              dateWhereClause += ' AND date_vente <= ?';
+              params.push(dateISO);
+              console.log('📅 [SQL] dateFin (ISO):', dateISO);
+            } else {
+              const d = new Date(dateFin);
+              const dateISO = d.toISOString();
+              dateWhereClause += ' AND date_vente <= ?';
+              params.push(dateISO);
+              console.log('📅 [SQL] dateFin (parsed ISO):', dateISO);
+            }
+          }
+          
+          // Construire la clause WHERE complète
+          let whereClause = '1=1' + dateWhereClause;
+          
+          // Ajouter les autres conditions (utiliser les noms de colonnes mappés)
+          if (conditions.clientId) {
+            whereClause += ' AND client_id = ?';
+            params.push(conditions.clientId);
+          }
+          if (conditions.vendeurId) {
+            whereClause += ' AND vendeur_id = ?';
+            params.push(conditions.vendeurId);
+          }
+          if (conditions.statut) {
+            whereClause += ' AND statut = ?';
+            params.push(conditions.statut);
+          }
+          if (conditions.modePaiement) {
+            whereClause += ' AND mode_paiement = ?';
+            params.push(conditions.modePaiement);
+          }
+          if (conditions.boutiqueId) {
+            whereClause += ' AND boutique_id = ?';
+            params.push(conditions.boutiqueId);
+          }
+          
+          console.log('📅 [SQL] WHERE clause:', whereClause);
+          console.log('📅 [SQL] Params:', params);
+          
+          // DEBUG: Voir toutes les dates de vente pour comprendre le format
+          const allDates = await prisma.$queryRawUnsafe(
+            `SELECT id, date_vente FROM ventes WHERE boutique_id = ? ORDER BY date_vente DESC LIMIT 5`,
+            conditions.boutiqueId || 7
+          );
+          console.log('📅 [DEBUG] Dernières dates de vente:', allDates);
+          
+          // Exécuter la requête SQL brute (table name: ventes)
+          const ventesRaw = await prisma.$queryRawUnsafe(
+            `SELECT * FROM ventes WHERE ${whereClause} ORDER BY date_vente DESC LIMIT ? OFFSET ?`,
+            ...params,
+            parseInt(limit),
+            skip
+          );
+          
+          const totalRaw = await prisma.$queryRawUnsafe(
+            `SELECT COUNT(*) as count FROM ventes WHERE ${whereClause}`,
+            ...params
+          );
+          
+          // SQLite retourne BigInt, il faut le convertir en Number
+          const total = Number(totalRaw[0].count);
+          
+          console.log('📅 [SQL] Résultats trouvés:', ventesRaw.length);
+          
+          // Enrichir les ventes avec les relations
+          const ventes = await Promise.all(
+            ventesRaw.map(async (vente) => {
+              return await prisma.vente.findUnique({
+                where: { id: vente.id },
                 include: {
-                  produit: {
-                    select: { id: true, nom: true, reference: true }
+                  client: {
+                    select: { id: true, nom: true, prenom: true }
+                  },
+                  vendeur: {
+                    select: { id: true, nomUtilisateur: true }
+                  },
+                  details: {
+                    include: {
+                      produit: {
+                        select: { id: true, nom: true, reference: true }
+                      }
+                    }
                   }
                 }
-              }
-            },
-            orderBy: { dateVente: 'desc' },
-            skip,
-            take: parseInt(limit)
-          }),
-          prisma.vente.count({ where: conditions })
-        ]);
+              });
+            })
+          );
+          
+          res.json({
+            success: true,
+            data: ventes,
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total,
+              pages: Math.ceil(total / limit)
+            }
+          });
+        } else {
+          // Pas de filtre de date, utiliser la méthode normale
+          const conditions = buildSalesSearchConditions(otherParams);
 
-        res.json({
-          success: true,
-          data: ventes,
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            pages: Math.ceil(total / limit)
-          }
-        });
+          const [ventes, total] = await Promise.all([
+            prisma.vente.findMany({
+              where: conditions,
+              include: {
+                client: {
+                  select: { id: true, nom: true, prenom: true }
+                },
+                vendeur: {
+                  select: { id: true, nomUtilisateur: true }
+                },
+                details: {
+                  include: {
+                    produit: {
+                      select: { id: true, nom: true, reference: true }
+                    }
+                  }
+                }
+              },
+              orderBy: { dateVente: 'desc' },
+              skip,
+              take: parseInt(limit)
+            }),
+            prisma.vente.count({ where: conditions })
+          ]);
+
+          res.json({
+            success: true,
+            data: ventes,
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total,
+              pages: Math.ceil(total / limit)
+            }
+          });
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des ventes:', error);
         res.status(500).json({

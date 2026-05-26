@@ -611,6 +611,7 @@ function createProcurementRouter(services) {
         // Traitement de la réception dans une transaction
         const result = await prisma.$transaction(async (tx) => {
           const mouvementsStock = [];
+          const cumpUpdates = []; // Collecter les mises à jour CUMP pour après la transaction
           let commandeComplete = true;
 
           // Traiter chaque détail de réception
@@ -638,37 +639,27 @@ function createProcurementRouter(services) {
             // Mettre à jour le stock si quantité reçue > 0
             if (quantiteRecue > 0) {
               if (commande.boutiqueId) {
-                // ── Mode multi-boutique : mettre à jour StockBoutique ──────────
-                await tx.stockBoutique.upsert({
-                  where: {
-                    boutiqueId_produitId: {
-                      boutiqueId: commande.boutiqueId,
-                      produitId: detailCommande.produitId
-                    }
-                  },
-                  create: {
-                    boutiqueId: commande.boutiqueId,
-                    produitId: detailCommande.produitId,
-                    quantiteDisponible: quantiteRecue,
-                    quantiteReservee: 0
-                  },
-                  update: {
-                    quantiteDisponible: { increment: quantiteRecue }
-                  }
-                });
+                // ── Mode multi-boutique : SQL brut pour éviter le deadlock avec les hooks Prisma ──
+                await tx.$executeRawUnsafe(`
+                  INSERT INTO stock_boutiques (boutique_id, produit_id, quantite_disponible, quantite_reservee, derniere_maj)
+                  VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
+                  ON CONFLICT(boutique_id, produit_id)
+                  DO UPDATE SET
+                    quantite_disponible = stock_boutiques.quantite_disponible + ?,
+                    derniere_maj = CURRENT_TIMESTAMP
+                `, commande.boutiqueId, detailCommande.produitId, quantiteRecue, quantiteRecue);
+                console.log(`📦 Stock boutique mis à jour: Produit ${detailCommande.produitId}, Boutique ${commande.boutiqueId}, +${quantiteRecue}`);
               } else {
-                // ── Mode classique : mettre à jour Stock global ────────────────
-                await tx.stock.upsert({
-                  where: { produitId: detailCommande.produitId },
-                  create: {
-                    produitId: detailCommande.produitId,
-                    quantiteDisponible: quantiteRecue,
-                    quantiteReservee: 0
-                  },
-                  update: {
-                    quantiteDisponible: { increment: quantiteRecue }
-                  }
-                });
+                // ── Mode classique : SQL brut pour éviter le deadlock avec les hooks Prisma ──
+                await tx.$executeRawUnsafe(`
+                  INSERT INTO stock (produit_id, quantite_disponible, quantite_reservee, derniere_maj)
+                  VALUES (?, ?, 0, CURRENT_TIMESTAMP)
+                  ON CONFLICT(produit_id)
+                  DO UPDATE SET
+                    quantite_disponible = stock.quantite_disponible + ?,
+                    derniere_maj = CURRENT_TIMESTAMP
+                `, detailCommande.produitId, quantiteRecue, quantiteRecue);
+                console.log(`📦 Stock global mis à jour: Produit ${detailCommande.produitId}, +${quantiteRecue}`);
               }
 
               // Enregistrer le mouvement de stock avec boutiqueId
@@ -681,16 +672,16 @@ function createProcurementRouter(services) {
                 typeReference: 'approvisionnement',
                 notes: `Réception commande ${commande.numeroCommande}`
               });
+              console.log(`📝 Mouvement de stock préparé: Produit ${detailCommande.produitId}, Quantité +${quantiteRecue}`);
 
-              // Enregistrer le prix d'achat dans l'historique et recalculer le CUMP
-              await enregistrerPrixAchatEtRecalculerCump(
-                tx,
-                detailCommande.produitId,
-                detailCommande.coutUnitaire,
-                'approvisionnement',
-                parseInt(id),
-                quantiteRecue  // quantité réellement reçue pour pondérer le CUMP
-              );
+              // Collecter pour recalcul CUMP après la transaction (évite deadlock)
+              cumpUpdates.push({
+                produitId: detailCommande.produitId,
+                prixAchat: detailCommande.coutUnitaire,
+                source: 'approvisionnement',
+                referenceId: parseInt(id),
+                quantite: quantiteRecue
+              });
             }
 
             // Vérifier si ce détail est complet
@@ -701,9 +692,13 @@ function createProcurementRouter(services) {
 
           // Créer tous les mouvements de stock
           if (mouvementsStock.length > 0) {
-            await tx.mouvementStock.createMany({
+            console.log(`📦 Création de ${mouvementsStock.length} mouvement(s) de stock...`);
+            const result = await tx.mouvementStock.createMany({
               data: mouvementsStock
             });
+            console.log(`✅ ${result.count} mouvement(s) de stock créé(s)`);
+          } else {
+            console.log(`⚠️  Aucun mouvement de stock à créer`);
           }
 
           // Déterminer le nouveau statut de la commande
@@ -832,8 +827,71 @@ function createProcurementRouter(services) {
             }
           }
 
-          return { nouveauStatut, mouvementsStock, montantReception, modePaiementFinal };
+          return { nouveauStatut, mouvementsStock, montantReception, modePaiementFinal, cumpUpdates };
         });
+
+        // Recalculer le CUMP APRÈS la transaction (évite les deadlocks)
+        for (const update of result.cumpUpdates) {
+          try {
+            const cump = await enregistrerPrixAchatEtRecalculerCump(
+              prisma,
+              update.produitId,
+              update.prixAchat,
+              update.source,
+              update.referenceId,
+              update.quantite
+            );
+            console.log(`💰 CUMP recalculé pour produit ${update.produitId}: ${cump}`);
+          } catch (e) {
+            console.warn(`⚠️  Erreur CUMP produit ${update.produitId}:`, e.message);
+          }
+        }
+
+        // Enqueue explicite des stocks vers Neon (les hooks tx ne déclenchent pas la sync)
+        const syncService = require('../services/sync-service');
+        for (const update of result.cumpUpdates) {
+          try {
+            if (commande.boutiqueId) {
+              const sb = await prisma.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: commande.boutiqueId, produitId: update.produitId } }
+              });
+              if (sb) {
+                await syncService.enqueue('stock_boutiques', 'UPDATE', sb);
+                console.log(`📤 stock_boutiques enqueued: Produit ${update.produitId}, Boutique ${commande.boutiqueId}, Qté ${sb.quantiteDisponible}`);
+              }
+            } else {
+              const sg = await prisma.stock.findUnique({ where: { produitId: update.produitId } });
+              if (sg) {
+                await syncService.enqueue('stock', 'UPDATE', sg);
+                console.log(`📤 stock enqueued: Produit ${update.produitId}, Qté ${sg.quantiteDisponible}`);
+              }
+            }
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue stock produit ${update.produitId}:`, e.message);
+          }
+        }
+
+        // Enqueue explicite des mouvements de stock (createMany dans tx ne déclenche pas les hooks)
+        for (const mvt of result.mouvementsStock) {
+          try {
+            // Récupérer l'ID du mouvement créé
+            const mvtCreated = await prisma.mouvementStock.findFirst({
+              where: {
+                produitId: mvt.produitId,
+                referenceId: mvt.referenceId,
+                typeReference: 'approvisionnement',
+                typeMouvement: 'achat'
+              },
+              orderBy: { id: 'desc' }
+            });
+            if (mvtCreated) {
+              await syncService.enqueue('mouvements_stock', 'INSERT', mvtCreated);
+              console.log(`📤 mouvements_stock enqueued: ID ${mvtCreated.id}, Produit ${mvt.produitId}, +${mvt.changementQuantite}`);
+            }
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue mouvement produit ${mvt.produitId}:`, e.message);
+          }
+        }
 
         // Récupérer la commande mise à jour
         const commandeMiseAJour = await prisma.commandeApprovisionnement.findUnique({

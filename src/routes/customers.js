@@ -478,6 +478,46 @@ function createCustomerRouter(models) {
   );
 
   /**
+   * GET /customers/:id/revenue
+   * Récupère le chiffre d'affaires total d'un client
+   */
+  router.get('/:id/revenue',
+    validateId,
+    async (req, res) => {
+      try {
+        const clientId = parseInt(req.params.id);
+
+        // Calculer le chiffre d'affaires total (somme des ventes terminées)
+        const stats = await models.prisma.vente.aggregate({
+          where: {
+            clientId,
+            statut: 'terminee', // Seulement les ventes terminées
+          },
+          _sum: {
+            montantTotal: true,
+          },
+          _count: {
+            id: true,
+          },
+        });
+
+        const response = {
+          totalRevenue: stats._sum.montantTotal || 0,
+          totalSales: stats._count.id || 0,
+        };
+
+        res.json(BaseResponseDTO.success(response, 'Chiffre d\'affaires récupéré'));
+
+      } catch (error) {
+        console.error('Erreur chiffre d\'affaires client:', error);
+        res.status(500).json(
+          BaseResponseDTO.error('Erreur lors de la récupération du chiffre d\'affaires')
+        );
+      }
+    }
+  );
+
+  /**
    * GET /customers/:id/statement
    * Génère un relevé de compte PDF pour un client
    */

@@ -380,6 +380,46 @@ function createSupplierRouter(models) {
     }
   );
 
+  /**
+   * GET /suppliers/:id/purchases
+   * Récupère le total des achats d'un fournisseur
+   */
+  router.get('/:id/purchases',
+    validateId,
+    async (req, res) => {
+      try {
+        const fournisseurId = parseInt(req.params.id);
+
+        // Calculer le total des achats (commandes terminées ou partiellement reçues)
+        const stats = await models.prisma.commandeApprovisionnement.aggregate({
+          where: {
+            fournisseurId,
+            statut: { in: ['terminee', 'partielle'] },
+          },
+          _sum: {
+            montantTotal: true,
+          },
+          _count: {
+            id: true,
+          },
+        });
+
+        const response = {
+          totalPurchases: stats._sum.montantTotal || 0,
+          totalOrders: stats._count.id || 0,
+        };
+
+        res.json(BaseResponseDTO.success(response, 'Total des achats récupéré'));
+
+      } catch (error) {
+        console.error('Erreur total achats fournisseur:', error);
+        res.status(500).json(
+          BaseResponseDTO.error('Erreur lors de la récupération du total des achats')
+        );
+      }
+    }
+  );
+
   return router;
 }
 
