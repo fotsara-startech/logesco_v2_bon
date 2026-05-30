@@ -19,7 +19,6 @@ class SalesDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Aplatir toutes les ventes en lignes de détails
     final List<_DetailRow> detailRows = [];
     for (final sale in sales) {
       if (sale.details.isNotEmpty) {
@@ -29,12 +28,91 @@ class SalesDetailsView extends StatelessWidget {
       }
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) return _buildMobileList(context, detailRows);
+        return _buildDesktopTable(context, detailRows);
+      },
+    );
+  }
+
+  Widget _buildMobileList(BuildContext context, List<_DetailRow> detailRows) {
+    if (detailRows.isEmpty) return Center(child: Text('sales_no_sales'.tr));
+    final totalQuantity = detailRows.fold<int>(0, (s, r) => s + r.detail.quantite);
+    final totalAmount = detailRows.fold<double>(0, (s, r) => s + r.detail.montantLigne);
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: detailRows.length + (hasMoreData ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == detailRows.length) {
+                return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
+              }
+              final row = detailRows[index];
+              final sale = row.sale;
+              final detail = row.detail;
+              final isCancelled = sale.statut.toLowerCase() == 'annulée';
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                color: isCancelled ? Colors.red[50] : Colors.white,
+                child: InkWell(
+                  onTap: () => onTap(sale),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text(sale.numeroVente, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700], fontSize: 13)),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(sale.client?.nom ?? 'sales_no_client'.tr, style: TextStyle(fontSize: 12, color: Colors.grey[600]), overflow: TextOverflow.ellipsis)),
+                        ]),
+                        const SizedBox(height: 6),
+                        Text(detail.produit?.nom ?? 'Produit ${detail.produitId}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        if (detail.produit?.reference != null) Text(detail.produit!.reference, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                        const SizedBox(height: 6),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(4)),
+                            child: Text('${detail.quantite} x ${detail.prixUnitaire.toStringAsFixed(0)} F', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.w600)),
+                          ),
+                          if (detail.remiseAppliquee > 0) Text('-${detail.remiseAppliquee.toStringAsFixed(0)} F', style: TextStyle(fontSize: 12, color: Colors.green[700])),
+                          Text('${detail.montantLigne.toStringAsFixed(0)} F', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(color: Colors.blue[50], border: Border(top: BorderSide(color: Colors.blue[200]!, width: 2))),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('sales_summary_total'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Row(children: [
+              Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.blue[100], borderRadius: BorderRadius.circular(4)),
+                  child: Text('$totalQuantity', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[900]))),
+              const SizedBox(width: 12),
+              Text('${totalAmount.toStringAsFixed(0)} F', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ]),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopTable(BuildContext context, List<_DetailRow> detailRows) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
       child: Column(
         children: [
           // En-tête du tableau
@@ -89,25 +167,18 @@ class SalesDetailsView extends StatelessWidget {
                   ...detailRows.map((row) => _buildDetailRow(context, row)),
                   if (hasMoreData)
                     TableRow(
-                      children: List.generate(
-                        7,
-                        (index) => Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: index == 3 ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink(),
-                        ),
-                      ),
+                      children:
+                          List.generate(7, (index) => Padding(padding: const EdgeInsets.all(16.0), child: index == 3 ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink())),
                     ),
                 ],
               ),
             ),
           ),
-
-          // Résumé en bas
           if (detailRows.isNotEmpty) _buildSummary(detailRows),
         ],
       ),
     );
-  }
+  } // fin _buildDesktopTable
 
   Widget _buildHeaderCell(String text) {
     return Padding(

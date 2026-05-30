@@ -29,62 +29,41 @@ class _SalesFiltersState extends State<SalesFilters> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Première ligne: Titre et boutons d'action
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
               children: [
-                Text(
-                  'sales_filters'.tr,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            controller.clearFilters();
-                            setState(() {
-                              _selectedStartDate = null;
-                              _selectedEndDate = null;
-                              _selectedPeriod = null;
-                            });
-                          },
-                          icon: const Icon(Icons.clear),
-                          label: Text('sales_clear_filters'.tr),
-                        ),
+                Text('sales_filters'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        controller.clearFilters();
+                        setState(() {
+                          _selectedStartDate = null;
+                          _selectedEndDate = null;
+                          _selectedPeriod = null;
+                        });
+                      },
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: Text('sales_clear_filters'.tr),
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), textStyle: const TextStyle(fontSize: 13)),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => setState(() => _showPeriodFilters = !_showPeriodFilters),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(_showPeriodFilters ? Icons.expand_less : Icons.expand_more, size: 20),
+                          const SizedBox(width: 4),
+                          Text('sales_filter_by_period'.tr, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Flexible(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _showPeriodFilters = !_showPeriodFilters),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _showPeriodFilters ? Icons.expand_less : Icons.expand_more,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'sales_filter_by_period'.tr,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),

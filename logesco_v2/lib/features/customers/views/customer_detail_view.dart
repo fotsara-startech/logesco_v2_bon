@@ -138,26 +138,35 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                     if (_isLoadingStats)
                       const Center(child: CircularProgressIndicator())
                     else
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Chiffre d\'affaires',
-                              _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
-                              Icons.attach_money,
-                              Colors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Nombre de ventes',
-                              _totalSales?.toString() ?? '0',
-                              Icons.shopping_cart,
-                              Colors.blue,
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isMobile = constraints.maxWidth < 400;
+                          if (isMobile) {
+                            return Column(
+                              children: [
+                                _buildStatCard(
+                                    'Chiffre d\'affaires',
+                                    _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
+                                    Icons.attach_money,
+                                    Colors.green),
+                                const SizedBox(height: 12),
+                                _buildStatCard('Nombre de ventes', _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Expanded(
+                                  child: _buildStatCard(
+                                      'Chiffre d\'affaires',
+                                      _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
+                                      Icons.attach_money,
+                                      Colors.green)),
+                              const SizedBox(width: 12),
+                              Expanded(child: _buildStatCard('Nombre de ventes', _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue)),
+                            ],
+                          );
+                        },
                       ),
                   ],
                 ),

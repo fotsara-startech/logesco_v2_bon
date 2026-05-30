@@ -19,12 +19,77 @@ class SalesTableView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) return _buildMobileList(context);
+        return _buildDesktopTable(context);
+      },
+    );
+  }
+
+  Widget _buildMobileList(BuildContext context) {
+    return ListView.builder(
+      itemCount: sales.length + (hasMoreData ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == sales.length) {
+          return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
+        }
+        final sale = sales[index];
+        final isCancelled = sale.statut.toLowerCase() == 'annulée';
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          color: isCancelled ? Colors.red[50] : Colors.white,
+          child: InkWell(
+            onTap: () => onTap(sale),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Expanded(child: Text(sale.numeroVente, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700], fontSize: 14))),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: _getStatusColor(sale.statut), borderRadius: BorderRadius.circular(12)),
+                      child: Text(sale.statut, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _getStatusTextColor(sale.statut))),
+                    ),
+                  ]),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                        child: Text(sale.client?.nom ?? 'sales_no_client'.tr,
+                            style: TextStyle(fontSize: 13, color: sale.client != null ? Colors.black87 : Colors.grey[500]), overflow: TextOverflow.ellipsis)),
+                    Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(DateFormat('dd/MM/yy').format(sale.dateCreation), style: const TextStyle(fontSize: 12)),
+                  ]),
+                  const SizedBox(height: 6),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('sales_amount'.tr, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                      Text('${sale.montantFinal.toStringAsFixed(0)} F', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    ]),
+                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text('sales_paid'.tr, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                      Text('${sale.montantPaye.toStringAsFixed(0)} F',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: sale.montantPaye >= sale.montantFinal ? Colors.green[700] : Colors.orange[700])),
+                    ]),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopTable(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
       child: Column(
         children: [
           // En-tête du tableau
@@ -94,7 +159,7 @@ class SalesTableView extends StatelessWidget {
         ],
       ),
     );
-  }
+  } // fin _buildDesktopTable
 
   Widget _buildHeaderCell(String text) {
     return Padding(

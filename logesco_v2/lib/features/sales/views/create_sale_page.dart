@@ -93,134 +93,255 @@ class _CreateSalePageState extends State<CreateSalePage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Row(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 700;
+          if (isMobile) return _buildMobileLayout();
+          return _buildDesktopLayout();
+        },
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
         children: [
-          // SECTION GAUCHE - Sélection produits (50%)
+          _buildQuickCustomerSearch(),
+          const Divider(height: 1),
+          Obx(() {
+            final itemCount = _salesController.cartItems.length;
+            return TabBar(
+              tabs: [
+                const Tab(icon: Icon(Icons.inventory_2), text: 'Produits'),
+                Tab(
+                  icon: Badge(isLabelVisible: itemCount > 0, label: Text('$itemCount'), child: const Icon(Icons.shopping_cart)),
+                  text: 'Panier',
+                ),
+              ],
+            );
+          }),
           Expanded(
-            flex: 5,
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  // Barre de recherche client - toujours visible en haut
-                  _buildQuickCustomerSearch(),
-
-                  const Divider(height: 1),
-
-                  // Sélecteur de produits
-                  Expanded(
-                    child: ProductSelector(
-                      onProductSelected: (product, quantity) async {
-                        await _salesController.addToCart(product, quantity: quantity);
-                      },
-                    ),
+            child: TabBarView(
+              children: [
+                ProductSelector(onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity)),
+                SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildSelectedCustomerBanner(),
+                      _buildBackdateSection(),
+                      _buildInlineCart(),
+                      _buildPaymentSection(),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // SECTION DROITE - Panier & Paiement (50%) - Entièrement scrollable
-          Expanded(
-            flex: 5,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                border: Border(
-                  left: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Client sélectionné - Compact
-                    _buildSelectedCustomerBanner(),
-
-                    // Section antidatage (si autorisé)
-                    _buildBackdateSection(),
-
-                    // Panier
-                    Container(
-                      color: Colors.white,
-                      margin: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Header panier
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(color: Colors.grey[200]!),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.shopping_cart_outlined, color: Colors.grey[700], size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'sales_cart'.tr,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Obx(() => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue[50],
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '${_salesController.cartItems.length}',
-                                        style: TextStyle(
-                                          color: Colors.blue[700],
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    )),
-                              ],
-                            ),
-                          ),
-
-                          // Liste panier - Hauteur dynamique
-                          Obx(() {
-                            final itemCount = _salesController.cartItems.length;
-                            // Calculer la hauteur nécessaire pour afficher tous les items
-                            // Chaque item fait environ 120px de hauteur
-                            final estimatedHeight = itemCount * 250.0;
-                            final mediaquery = MediaQuery.of(context).size.height * 0.5;
-
-                            return SizedBox(
-                              height: itemCount == 0 ? mediaquery : estimatedHeight,
-                              child: CartWidget(
-                                onQuantityChanged: (productId, quantity) {
-                                  _salesController.updateCartItemQuantity(productId, quantity);
-                                },
-                                onPriceChanged: (productId, price) {
-                                  _salesController.updateCartItemPrice(productId, price);
-                                },
-                                onRemoveItem: (productId) {
-                                  _salesController.removeFromCart(productId);
-                                },
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-
-                    // Section paiement - Plus fixe, fait partie du scroll
-                    _buildPaymentSection(),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInlineCart() {
+    return Container(
+      color: Colors.white,
+      margin: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[200]!))),
+            child: Row(
+              children: [
+                Icon(Icons.shopping_cart_outlined, color: Colors.grey[700], size: 20),
+                const SizedBox(width: 8),
+                Text('sales_cart'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Spacer(),
+                Obx(() => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12)),
+                      child: Text('${_salesController.cartItems.length}', style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)),
+                    )),
+              ],
+            ),
+          ),
+          Obx(() {
+            final controller = _salesController;
+            if (controller.cartItems.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                    child: Column(children: [
+                  Icon(Icons.shopping_cart_outlined, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text('sales_cart_empty'.tr, style: TextStyle(fontSize: 16, color: Colors.grey[600]))
+                ])),
+              );
+            }
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...controller.cartItems.map((item) => Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Expanded(child: Text(item.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                              IconButton(
+                                  onPressed: () => controller.removeFromCart(item.productId),
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  iconSize: 20,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints())
+                            ]),
+                            Text('Réf: ${item.productReference}', style: Theme.of(context).textTheme.bodySmall),
+                            const SizedBox(height: 8),
+                            Row(children: [
+                              IconButton(
+                                  onPressed: item.quantity > 1 ? () => controller.updateCartItemQuantity(item.productId, item.quantity - 1) : null, icon: const Icon(Icons.remove), iconSize: 20),
+                              SizedBox(width: 50, child: Text('${item.quantity}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+                              IconButton(onPressed: () => controller.updateCartItemQuantity(item.productId, item.quantity + 1), icon: const Icon(Icons.add), iconSize: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                  child: TextFormField(
+                                      initialValue: item.unitPrice.toStringAsFixed(2),
+                                      decoration: InputDecoration(labelText: 'sales_cart_unit_price'.tr, suffixText: 'FCFA', isDense: true),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (v) {
+                                        final p = double.tryParse(v);
+                                        if (p != null && p >= 0) controller.updateCartItemPrice(item.productId, p);
+                                      })),
+                            ]),
+                            const SizedBox(height: 4),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              Text('sales_cart_line_total'.tr),
+                              Text('${item.totalPrice.toStringAsFixed(0)} FCFA', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))
+                            ]),
+                          ],
+                        ),
+                      ),
+                    )),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(children: [
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [Text('sales_cart_subtotal'.tr), Text('${controller.cartSubtotal.toStringAsFixed(0)} FCFA', style: const TextStyle(fontWeight: FontWeight.bold))]),
+                    if (controller.discount > 0)
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [Text('sales_cart_discount'.tr), Text('-${controller.discount.toStringAsFixed(0)} FCFA', style: const TextStyle(color: Colors.green))]),
+                    const Divider(),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('sales_cart_total'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('${controller.cartTotal.toStringAsFixed(0)} FCFA', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue))
+                    ]),
+                  ]),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(title: Text('sales_cart_clear_confirm'.tr), content: Text('sales_cart_clear_message'.tr), actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text('cancel'.tr)),
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        controller.clearCart();
+                                      },
+                                      child: Text('sales_cart_clear_button'.tr))
+                                ])),
+                        icon: const Icon(Icons.clear_all),
+                        label: Text('sales_cart_clear'.tr),
+                      )),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                _buildQuickCustomerSearch(),
+                const Divider(height: 1),
+                Expanded(child: ProductSelector(onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity))),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 5,
+          child: Container(
+            decoration: BoxDecoration(color: Colors.grey[50], border: Border(left: BorderSide(color: Colors.grey[200]!, width: 1))),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildSelectedCustomerBanner(),
+                  _buildBackdateSection(),
+                  Container(
+                    color: Colors.white,
+                    margin: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[200]!))),
+                          child: Row(children: [
+                            Icon(Icons.shopping_cart_outlined, color: Colors.grey[700], size: 20),
+                            const SizedBox(width: 8),
+                            Text('sales_cart'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                            const Spacer(),
+                            Obx(() => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12)),
+                                child: Text('${_salesController.cartItems.length}', style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)))),
+                          ]),
+                        ),
+                        Obx(() {
+                          final itemCount = _salesController.cartItems.length;
+                          final estimatedHeight = itemCount * 250.0;
+                          final mediaquery = MediaQuery.of(context).size.height * 0.5;
+                          return SizedBox(
+                            height: itemCount == 0 ? mediaquery : estimatedHeight,
+                            child: CartWidget(
+                              onQuantityChanged: (productId, quantity) => _salesController.updateCartItemQuantity(productId, quantity),
+                              onPriceChanged: (productId, price) => _salesController.updateCartItemPrice(productId, price),
+                              onRemoveItem: (productId) => _salesController.removeFromCart(productId),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  _buildPaymentSection(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

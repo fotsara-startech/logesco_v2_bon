@@ -76,47 +76,32 @@ class ReceiptPreviewPage extends StatelessWidget {
 
   Widget _buildFormatSelector(PrintingController controller) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'preview_print_format'.tr,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Obx(() => SegmentedButton<PrintFormat>(
-                  segments: [
-                    ButtonSegment(
-                      value: PrintFormat.thermal,
-                      label: Text('preview_format_thermal'.tr),
-                      icon: const Icon(Icons.receipt),
-                    ),
-                    ButtonSegment(
-                      value: PrintFormat.a5,
-                      label: Text('preview_format_a5'.tr),
-                      icon: const Icon(Icons.description),
-                    ),
-                    ButtonSegment(
-                      value: PrintFormat.a4,
-                      label: Text('preview_format_a4'.tr),
-                      icon: const Icon(Icons.article),
-                    ),
-                  ],
-                  selected: {controller.selectedFormat},
-                  onSelectionChanged: (Set<PrintFormat> selection) {
-                    if (selection.isNotEmpty) {
-                      controller.setSelectedFormat(selection.first);
-                    }
-                  },
-                )),
-          ),
+          Text('preview_print_format'.tr, style: const TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Obx(() => SegmentedButton<PrintFormat>(
+                segments: [
+                  ButtonSegment(value: PrintFormat.thermal, label: Text('preview_format_thermal'.tr), icon: const Icon(Icons.receipt, size: 18)),
+                  ButtonSegment(value: PrintFormat.a5, label: Text('preview_format_a5'.tr), icon: const Icon(Icons.description, size: 18)),
+                  ButtonSegment(value: PrintFormat.a4, label: Text('preview_format_a4'.tr), icon: const Icon(Icons.article, size: 18)),
+                ],
+                selected: {controller.selectedFormat},
+                onSelectionChanged: (Set<PrintFormat> selection) {
+                  if (selection.isNotEmpty) controller.setSelectedFormat(selection.first);
+                },
+                style: ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+              )),
         ],
       ),
     );

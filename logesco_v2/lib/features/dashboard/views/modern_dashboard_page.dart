@@ -201,7 +201,10 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
         child: RefreshIndicator(
           onRefresh: dashboardController.refresh,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 600 ? 12 : 20,
+              vertical: 16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -234,29 +237,45 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                 const SizedBox(height: 24),
 
                 // Graphique et activités récentes
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Graphique des ventes (60% de la largeur)
-                    Expanded(
-                      flex: 3,
-                      child: Obx(() => SalesChartWidget(
-                            chartData: dashboardController.salesChartData.toList(),
-                            isLoading: dashboardController.isLoadingChart.value,
-                          )),
-                    ),
-
-                    const SizedBox(width: 20),
-
-                    // Activités récentes (40% de la largeur)
-                    Expanded(
-                      flex: 2,
-                      child: Obx(() => RecentActivitiesWidget(
-                            activities: dashboardController.recentActivities.toList(),
-                            isLoading: dashboardController.isLoadingActivities.value,
-                          )),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 700;
+                    if (isMobile) {
+                      return Column(
+                        children: [
+                          Obx(() => SalesChartWidget(
+                                chartData: dashboardController.salesChartData.toList(),
+                                isLoading: dashboardController.isLoadingChart.value,
+                              )),
+                          const SizedBox(height: 20),
+                          Obx(() => RecentActivitiesWidget(
+                                activities: dashboardController.recentActivities.toList(),
+                                isLoading: dashboardController.isLoadingActivities.value,
+                              )),
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Obx(() => SalesChartWidget(
+                                chartData: dashboardController.salesChartData.toList(),
+                                isLoading: dashboardController.isLoadingChart.value,
+                              )),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          flex: 2,
+                          child: Obx(() => RecentActivitiesWidget(
+                                activities: dashboardController.recentActivities.toList(),
+                                isLoading: dashboardController.isLoadingActivities.value,
+                              )),
+                        ),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),
@@ -429,74 +448,47 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
     return Obx(() {
       final user = authController.currentUser.value;
       return Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-          ),
+          gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF0D47A1)]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 500;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'dashboard_title'.tr,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                if (isMobile) ...[
+                  Text('dashboard_title'.tr, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text('dashboard_welcome'.tr + ', ${user?.nomUtilisateur ?? 'Utilisateur'} !', style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.9))),
+                  const SizedBox(height: 12),
+                  SizedBox(width: double.infinity, child: _buildHeaderButton('+ ${'dashboard_new_sale'.tr}', Colors.green, () => Get.toNamed(AppRoutes.createSale))),
+                ] else ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('dashboard_title'.tr, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const SizedBox(height: 4),
+                            Text('dashboard_welcome_message'.tr, style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'dashboard_welcome_message'.tr,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    _buildHeaderButton(
-                      '+ ${'dashboard_new_sale'.tr}',
-                      Colors.green,
-                      () => Get.toNamed(AppRoutes.createSale),
-                    ),
-                    // const SizedBox(width: 12),
-                    // _buildHeaderButton(
-                    //   'Importer Données',
-                    //   Colors.white.withOpacity(0.2),
-                    //   () {},
-                    //   textColor: Colors.white,
-                    // ),
-                  ],
-                ),
+                      _buildHeaderButton('+ ${'dashboard_new_sale'.tr}', Colors.green, () => Get.toNamed(AppRoutes.createSale)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text('dashboard_welcome'.tr + ', ${user?.nomUtilisateur ?? 'Utilisateur'} !', style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9))),
+                ],
               ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'dashboard_welcome'.tr + ', ${user?.nomUtilisateur ?? 'Utilisateur'} !',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       );
     });
@@ -655,46 +647,56 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
           final stats = controller.generalStats;
           final isLoading = controller.isLoadingStats.value;
 
-          return GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            childAspectRatio: 1.4,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            children: [
-              ModernStatCard(
-                title: 'dashboard_total_products'.tr,
-                value: '${stats['totalProducts'] ?? 0}',
-                subtitle: 'dashboard_in_stock'.tr,
-                icon: Icons.inventory_2,
-                color: const Color(0xFF4CAF50),
-                isLoading: isLoading,
-                onTap: () => Get.toNamed(AppRoutes.products),
-                trailing: const TrendIndicator(
-                  percentage: 12.5,
-                  isPositive: true,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              final crossAxisCount = isMobile ? 2 : 4;
+              final mainAxisExtent = isMobile ? 150.0 : 160.0;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: mainAxisExtent,
                 ),
-              ),
-              ModernStatCard(
-                title: 'dashboard_completed_sales'.tr,
-                value: '${stats['totalSales'] ?? 0}',
-                subtitle: 'dashboard_this_month'.tr,
-                icon: Icons.trending_up,
-                color: const Color(0xFF2196F3),
-                isLoading: isLoading,
-                onTap: () => Get.toNamed(AppRoutes.sales),
-              ),
-              ModernStatCard(
-                title: 'dashboard_pending_sales'.tr,
-                value: '${stats['pendingOrders'] ?? 0}',
-                subtitle: 'dashboard_to_process'.tr,
-                icon: Icons.pending_actions,
-                color: const Color(0xFFFF9800),
-                isLoading: isLoading,
-              ),
-              const ProfitabilityStatCard(),
-            ],
+                itemCount: 4,
+                itemBuilder: (context, index) {
+                  final items = [
+                    ModernStatCard(
+                      title: 'dashboard_total_products'.tr,
+                      value: '${stats['totalProducts'] ?? 0}',
+                      subtitle: 'dashboard_in_stock'.tr,
+                      icon: Icons.inventory_2,
+                      color: const Color(0xFF4CAF50),
+                      isLoading: isLoading,
+                      onTap: () => Get.toNamed(AppRoutes.products),
+                      trailing: const TrendIndicator(percentage: 12.5, isPositive: true),
+                    ),
+                    ModernStatCard(
+                      title: 'dashboard_completed_sales'.tr,
+                      value: '${stats['totalSales'] ?? 0}',
+                      subtitle: 'dashboard_this_month'.tr,
+                      icon: Icons.trending_up,
+                      color: const Color(0xFF2196F3),
+                      isLoading: isLoading,
+                      onTap: () => Get.toNamed(AppRoutes.sales),
+                    ),
+                    ModernStatCard(
+                      title: 'dashboard_pending_sales'.tr,
+                      value: '${stats['pendingOrders'] ?? 0}',
+                      subtitle: 'dashboard_to_process'.tr,
+                      icon: Icons.pending_actions,
+                      color: const Color(0xFFFF9800),
+                      isLoading: isLoading,
+                    ),
+                    const ProfitabilityStatCard(),
+                  ];
+                  return items[index];
+                },
+              );
+            },
           );
         }),
       ],
@@ -718,41 +720,69 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
           final stats = controller.salesStats;
           final isLoading = controller.isLoadingSales.value;
 
-          return Row(
-            children: [
-              Expanded(
-                child: ModernStatCard(
-                  title: 'dashboard_today_sales_count'.tr,
-                  value: '${stats['todaySales'] ?? 0}',
-                  subtitle: '${(stats['todayRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
-                  icon: Icons.today,
-                  color: const Color(0xFF4CAF50),
-                  isLoading: isLoading,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ModernStatCard(
-                  title: 'dashboard_week_sales'.tr,
-                  value: '${stats['weekSales'] ?? 0}',
-                  subtitle: '${(stats['weekRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
-                  icon: Icons.date_range,
-                  color: const Color(0xFF2196F3),
-                  isLoading: isLoading,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ModernStatCard(
-                  title: 'dashboard_month_sales'.tr,
-                  value: '${stats['monthSales'] ?? 0}',
-                  subtitle: '${(stats['monthRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
-                  icon: Icons.calendar_month,
-                  color: const Color(0xFFFF9800),
-                  isLoading: isLoading,
-                ),
-              ),
-            ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              if (isMobile) {
+                return Column(
+                  children: [
+                    ModernStatCard(
+                        title: 'dashboard_today_sales_count'.tr,
+                        value: '${stats['todaySales'] ?? 0}',
+                        subtitle: '${(stats['todayRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                        icon: Icons.today,
+                        color: const Color(0xFF4CAF50),
+                        isLoading: isLoading),
+                    const SizedBox(height: 12),
+                    ModernStatCard(
+                        title: 'dashboard_week_sales'.tr,
+                        value: '${stats['weekSales'] ?? 0}',
+                        subtitle: '${(stats['weekRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                        icon: Icons.date_range,
+                        color: const Color(0xFF2196F3),
+                        isLoading: isLoading),
+                    const SizedBox(height: 12),
+                    ModernStatCard(
+                        title: 'dashboard_month_sales'.tr,
+                        value: '${stats['monthSales'] ?? 0}',
+                        subtitle: '${(stats['monthRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                        icon: Icons.calendar_month,
+                        color: const Color(0xFFFF9800),
+                        isLoading: isLoading),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                      child: ModernStatCard(
+                          title: 'dashboard_today_sales_count'.tr,
+                          value: '${stats['todaySales'] ?? 0}',
+                          subtitle: '${(stats['todayRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                          icon: Icons.today,
+                          color: const Color(0xFF4CAF50),
+                          isLoading: isLoading)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: ModernStatCard(
+                          title: 'dashboard_week_sales'.tr,
+                          value: '${stats['weekSales'] ?? 0}',
+                          subtitle: '${(stats['weekRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                          icon: Icons.date_range,
+                          color: const Color(0xFF2196F3),
+                          isLoading: isLoading)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: ModernStatCard(
+                          title: 'dashboard_month_sales'.tr,
+                          value: '${stats['monthSales'] ?? 0}',
+                          subtitle: '${(stats['monthRevenue'] as num? ?? 0).toDouble().toStringAsFixed(2)} FCFA',
+                          icon: Icons.calendar_month,
+                          color: const Color(0xFFFF9800),
+                          isLoading: isLoading)),
+                ],
+              );
+            },
           );
         }),
       ],

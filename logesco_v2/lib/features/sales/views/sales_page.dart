@@ -72,66 +72,69 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
           return Text('${'sales_title'.tr}$viewLabel');
         }),
         actions: [
-          // Bouton pour masquer/afficher les filtres
-          Obx(() => IconButton(
-                onPressed: () => controller.toggleFiltersVisibility(),
-                icon: Icon(controller.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
-                tooltip: controller.filtersVisible ? 'Masquer les filtres' : 'Afficher les filtres',
-              )),
-
-          // Bouton pour basculer entre les vues (liste -> tableau -> détails -> liste)
-          Obx(() {
-            IconData icon;
-            String tooltip;
-            String nextMode;
-
-            switch (controller.viewMode) {
-              case 'list':
-                icon = Icons.table_chart;
-                tooltip = 'sales_table_view'.tr;
-                nextMode = 'table';
-                break;
-              case 'table':
-                icon = Icons.list_alt;
-                tooltip = 'sales_details_view'.tr;
-                nextMode = 'details';
-                break;
-              case 'details':
-                icon = Icons.view_list;
-                tooltip = 'sales_list_view'.tr;
-                nextMode = 'list';
-                break;
-              default:
-                icon = Icons.view_list;
-                tooltip = 'sales_list_view'.tr;
-                nextMode = 'list';
+          Builder(builder: (context) {
+            final isMobile = MediaQuery.of(context).size.width < 600;
+            if (isMobile) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(onPressed: () => Get.to(() => const CreateSalePage()), icon: const Icon(Icons.add), tooltip: 'sales_new'.tr),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'filter') controller.toggleFiltersVisibility();
+                      if (value == 'view') {
+                        final next = controller.viewMode == 'list'
+                            ? 'table'
+                            : controller.viewMode == 'table'
+                                ? 'details'
+                                : 'list';
+                        controller.setViewMode(next);
+                      }
+                      if (value == 'refresh') controller.refreshStocks();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                          value: 'filter',
+                          child: ListTile(
+                              leading: Icon(controller.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
+                              title: Text(controller.filtersVisible ? 'Masquer filtres' : 'Afficher filtres'),
+                              contentPadding: EdgeInsets.zero)),
+                      PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.view_list), title: Text('sales_table_view'.tr), contentPadding: EdgeInsets.zero)),
+                      PopupMenuItem(value: 'refresh', child: ListTile(leading: const Icon(Icons.refresh), title: Text('sales_refresh_stocks'.tr), contentPadding: EdgeInsets.zero)),
+                    ],
+                  ),
+                ],
+              );
             }
-
-            return IconButton(
-              onPressed: () => controller.setViewMode(nextMode),
-              icon: Icon(icon),
-              tooltip: tooltip,
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Obx(() => IconButton(onPressed: () => controller.toggleFiltersVisibility(), icon: Icon(controller.filtersVisible ? Icons.filter_list_off : Icons.filter_list))),
+                Obx(() {
+                  final next = controller.viewMode == 'list'
+                      ? 'table'
+                      : controller.viewMode == 'table'
+                          ? 'details'
+                          : 'list';
+                  final icon = controller.viewMode == 'list'
+                      ? Icons.table_chart
+                      : controller.viewMode == 'table'
+                          ? Icons.list_alt
+                          : Icons.view_list;
+                  return IconButton(onPressed: () => controller.setViewMode(next), icon: Icon(icon));
+                }),
+                IconButton(onPressed: () async => await controller.refreshStocks(), icon: const Icon(Icons.refresh)),
+                ElevatedButton.icon(onPressed: () => Get.to(() => const CreateSalePage()), icon: const Icon(Icons.add), label: Text('sales_new'.tr)),
+              ],
             );
           }),
-
-          // Bouton pour recharger les stocks réels
-          IconButton(
-            onPressed: () async {
-              await controller.refreshStocks();
-            },
-            icon: const Icon(Icons.refresh),
-            tooltip: 'sales_refresh_stocks'.tr,
-          ),
-
-          ElevatedButton.icon(
-            onPressed: () => Get.to(() => const CreateSalePage()),
-            icon: const Icon(Icons.add),
-            label: Text('sales_new'.tr),
-          ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 16,
+          vertical: 16,
+        ),
         child: Column(
           children: [
             // Barre de recherche

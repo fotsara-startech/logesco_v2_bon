@@ -118,118 +118,81 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           ),
         ],
       ),
-      body: Row(
-        children: [
-          // Navigation verticale à gauche
-          Container(
-            width: 80,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.inversePrimary.withOpacity(0.1),
-              border: Border(
-                right: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
-                _buildVerticalTab(
-                  icon: Icons.inventory,
-                  label: 'stock_tab_stocks'.tr,
-                  index: 0,
-                  controller: _tabController,
-                ),
-                _buildVerticalTab(
-                  icon: Icons.warning,
-                  label: 'stock_tab_alerts'.tr,
-                  index: 1,
-                  controller: _tabController,
-                ),
-                _buildVerticalTab(
-                  icon: Icons.history,
-                  label: 'stock_tab_movements'.tr,
-                  index: 2,
-                  controller: _tabController,
-                ),
-                _buildVerticalTab(
-                  icon: Icons.event_busy,
-                  label: 'stock_tab_expiration'.tr,
-                  index: 3,
-                  controller: _tabController,
-                ),
-              ],
-            ),
-          ),
-
-          // Contenu principal
-          Expanded(
-            child: Column(
-              children: [
-                // Barre de recherche contextuelle
-                ListenableBuilder(
-                  listenable: _tabController,
-                  builder: (context, child) {
-                    return InventorySearchBar(
-                      currentTabIndex: _tabController.index,
-                    );
-                  },
-                ),
-
-                // Barre de filtres (affichée seulement si des filtres sont actifs)
-                const InventoryFilterBar(),
-
-                // Barre de tri (affichée seulement pour les onglets Stocks et Alertes)
-                ListenableBuilder(
-                  listenable: _tabController,
-                  builder: (context, child) {
-                    return _tabController.index != 2 ? const StockSortBar() : const SizedBox.shrink();
-                  },
-                ),
-
-                // Contenu des onglets
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: const [
-                      StockListGetxView(),
-                      StockAlertsGetxView(),
-                      StockMovementsGetxView(),
-                      ExpirationTabView(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Résumé du stock à droite (vertical)
-          Container(
-            width: 280,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                left: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(-2, 0),
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildVerticalSummary(controller),
-            ),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 700;
+          if (isMobile) return _buildMobileInventoryLayout(context, controller);
+          return _buildDesktopInventoryLayout(context, controller);
+        },
       ),
+    );
+  }
+
+  Widget _buildMobileInventoryLayout(BuildContext context, InventoryGetxController controller) {
+    return Column(
+      children: [
+        ListenableBuilder(listenable: _tabController, builder: (context, child) => InventorySearchBar(currentTabIndex: _tabController.index)),
+        const InventoryFilterBar(),
+        ListenableBuilder(listenable: _tabController, builder: (context, child) => _tabController.index != 2 ? const StockSortBar() : const SizedBox.shrink()),
+        TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: [
+            Tab(icon: const Icon(Icons.inventory, size: 18), text: 'stock_tab_stocks'.tr),
+            Tab(icon: const Icon(Icons.warning, size: 18), text: 'stock_tab_alerts'.tr),
+            Tab(icon: const Icon(Icons.history, size: 18), text: 'stock_tab_movements'.tr),
+            Tab(icon: const Icon(Icons.event_busy, size: 18), text: 'stock_tab_expiration'.tr),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [StockListGetxView(), StockAlertsGetxView(), StockMovementsGetxView(), ExpirationTabView()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopInventoryLayout(BuildContext context, InventoryGetxController controller) {
+    return Row(
+      children: [
+        Container(
+          width: 80,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.inversePrimary.withOpacity(0.1),
+            border: Border(right: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              _buildVerticalTab(icon: Icons.inventory, label: 'stock_tab_stocks'.tr, index: 0, controller: _tabController),
+              _buildVerticalTab(icon: Icons.warning, label: 'stock_tab_alerts'.tr, index: 1, controller: _tabController),
+              _buildVerticalTab(icon: Icons.history, label: 'stock_tab_movements'.tr, index: 2, controller: _tabController),
+              _buildVerticalTab(icon: Icons.event_busy, label: 'stock_tab_expiration'.tr, index: 3, controller: _tabController),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              ListenableBuilder(listenable: _tabController, builder: (context, child) => InventorySearchBar(currentTabIndex: _tabController.index)),
+              const InventoryFilterBar(),
+              ListenableBuilder(listenable: _tabController, builder: (context, child) => _tabController.index != 2 ? const StockSortBar() : const SizedBox.shrink()),
+              Expanded(child: TabBarView(controller: _tabController, children: const [StockListGetxView(), StockAlertsGetxView(), StockMovementsGetxView(), ExpirationTabView()])),
+            ],
+          ),
+        ),
+        Container(
+          width: 280,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(left: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(-2, 0))],
+          ),
+          child: SingleChildScrollView(padding: const EdgeInsets.all(16.0), child: _buildVerticalSummary(controller)),
+        ),
+      ],
     );
   }
 
