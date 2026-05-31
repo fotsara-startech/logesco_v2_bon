@@ -146,12 +146,17 @@ class EnvironmentConfig {
     // Désactiver le rate limiting si en mode test
     const isTestMode = process.env.NODE_ENV === 'test' || process.env.TEST_MODE === 'true';
     
+    // CORS: accepter toutes les origines si CORS_ORIGIN=*
+    const corsOrigin = this.corsOrigin === '*' 
+      ? (origin, callback) => callback(null, true)  // Accepte tout
+      : this.corsOrigin;
+    
     return {
       cors: {
-        origin: this.corsOrigin,
+        origin: corsOrigin,
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization']
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
       },
       rateLimit: {
         windowMs: 15 * 60 * 1000, // 15 minutes
