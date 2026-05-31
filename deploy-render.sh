@@ -28,6 +28,10 @@ npx prisma migrate resolve --rolled-back 20251217123620_add_cash_sessions --sche
 
 # Deploy migrations
 echo "🗄️ Deploying migrations..."
-npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma || {
+  echo "⚠️ Migration failed, trying to baseline existing database..."
+  npx prisma migrate resolve --applied 20260423221732_init_postgresql --schema=prisma/schema.postgresql.prisma
+  npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+}
 
 echo "✅ Deployment complete!"
