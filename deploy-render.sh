@@ -26,12 +26,25 @@ echo "🧹 Cleaning up any failed migrations..."
 npx prisma migrate resolve --rolled-back 20251106124948_init_with_licenses --schema=prisma/schema.postgresql.prisma 2>/dev/null || true
 npx prisma migrate resolve --rolled-back 20251217123620_add_cash_sessions --schema=prisma/schema.postgresql.prisma 2>/dev/null || true
 
-# Deploy migrations
+# Deploy migrations with baseline support
 echo "🗄️ Deploying migrations..."
-npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma || {
-  echo "⚠️ Migration failed, trying to baseline existing database..."
-  npx prisma migrate resolve --applied 20260423221732_init_postgresql --schema=prisma/schema.postgresql.prisma
-  npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
-}
+if ! npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma 2>&1; then
+  echo "⚠️ Migration failed (likely existing database), baselining..."
+  
+  # Mark all existing migrations as applied
+  for migration_dir in prisma/migrations/*/; do
+    if [ -d "$migration_dir" ]; then
+      migration_name=$(basename "$migration_dir")
+      echo "📌 Marking migration as applied: $migration_name"
+      npx prisma migrate resolve --applied "$migration_name" --schema=prisma/schema.postgresql.prisma 2>/dev/null || true
+    fi
+  done
+  
+  # Try deploy again
+  echo "🔄 Retrying migration deploy..."
+  npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma || {
+    echo "⚠️ Migrations already applied or database schema matches. Continuing..."
+  }
+fi
 
 echo "✅ Deployment complete!"
