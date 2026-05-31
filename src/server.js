@@ -402,7 +402,9 @@ class LogescoServer {
       await this._runAutoSeed(prisma);
 
       // Initialiser le service de synchronisation cloud (uniquement si SQLite local)
-      const isCloudOnly = process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.CLOUD_DB_URL;
+      // En mode cloud pur (Render, etc.), DATABASE_URL pointe vers PostgreSQL et il n'y a pas de SQLite
+      const databaseUrl = process.env.DATABASE_URL || '';
+      const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
       let syncService = null;
       
       if (!isCloudOnly) {
@@ -411,7 +413,7 @@ class LogescoServer {
         const syncStatus = syncService.getStatus();
         console.log(`🔄 Mode sync: ${syncStatus.mode}`);
       } else {
-        console.log(`🔄 Mode sync: disabled (cloud-only deployment)`);
+        console.log(`🔄 Mode sync: disabled (cloud-only PostgreSQL deployment)`);
       }
       
       this.syncService = syncService;
