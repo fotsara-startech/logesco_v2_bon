@@ -284,6 +284,12 @@ class StockModel extends BaseModel {
    */
   async adjustStock(produitId, changement, typeReference, referenceId = null, notes = null) {
     return await this.prisma.$transaction(async (tx) => {
+      // 1. Récupérer le stock AVANT le mouvement
+      const stockInitial = await tx.stock.findUnique({
+        where: { produitId }
+      });
+      const stockInitialValue = stockInitial?.quantiteDisponible || 0;
+
       // Mettre à jour le stock
       const stock = await tx.stock.update({
         where: { produitId },
@@ -294,12 +300,17 @@ class StockModel extends BaseModel {
         }
       });
 
-      // Enregistrer le mouvement
+      // 2. Calculer le stock APRÈS le mouvement
+      const stockFinal = stock.quantiteDisponible;
+
+      // Enregistrer le mouvement avec snapshots
       await tx.mouvementStock.create({
         data: {
           produitId,
           typeMouvement: changement > 0 ? 'achat' : 'vente',
           changementQuantite: changement,
+          stockInitial: stockInitialValue,
+          stockFinal,
           typeReference,
           referenceId,
           notes
@@ -402,6 +413,12 @@ class VenteModel extends BaseModel {
           }
         });
 
+        // 1. Récupérer le stock AVANT le mouvement
+        const stock = await tx.stock.findUnique({
+          where: { produitId: detail.produitId }
+        });
+        const stockInitial = stock?.quantiteDisponible || 0;
+
         // Mettre à jour le stock
         await tx.stock.update({
           where: { produitId: detail.produitId },
@@ -412,12 +429,17 @@ class VenteModel extends BaseModel {
           }
         });
 
-        // Enregistrer le mouvement de stock
+        // 2. Calculer le stock APRÈS le mouvement
+        const stockFinal = stockInitial - detail.quantite;
+
+        // Enregistrer le mouvement de stock avec snapshots
         await tx.mouvementStock.create({
           data: {
             produitId: detail.produitId,
             typeMouvement: 'vente',
             changementQuantite: -detail.quantite,
+            stockInitial,
+            stockFinal,
             typeReference: 'vente',
             referenceId: vente.id
           }
@@ -570,12 +592,21 @@ class CommandeApprovisionnementModel extends BaseModel {
           }
         });
 
-        // Enregistrer le mouvement de stock
+        // 1. Récupérer le stock AVANT le mouvement (avant l'update)
+        const stock = await tx.stock.findUnique({
+          where: { produitId: detail.produitId }
+        });
+        const stockInitial = (stock?.quantiteDisponible || 0) - reception.quantiteRecue;
+        const stockFinal = stock?.quantiteDisponible || reception.quantiteRecue;
+
+        // Enregistrer le mouvement de stock avec snapshots
         await tx.mouvementStock.create({
           data: {
             produitId: detail.produitId,
             typeMouvement: 'achat',
             changementQuantite: reception.quantiteRecue,
+            stockInitial,
+            stockFinal,
             typeReference: 'approvisionnement',
             referenceId: commandeId
           }

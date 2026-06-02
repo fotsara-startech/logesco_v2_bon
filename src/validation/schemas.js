@@ -342,7 +342,7 @@ const paginationSchema = Joi.object({
 const parametresEntrepriseSchemas = {
   create: Joi.object({
     nomEntreprise: Joi.string().min(1).max(100).required(),
-    adresse: Joi.string().min(1).max(500).required(),
+    adresse: Joi.string().max(500).allow('', null),
     localisation: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
@@ -355,7 +355,7 @@ const parametresEntrepriseSchemas = {
 
   update: Joi.object({
     nomEntreprise: Joi.string().min(1).max(100),
-    adresse: Joi.string().min(1).max(500),
+    adresse: Joi.string().max(500).allow('', null),
     localisation: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),

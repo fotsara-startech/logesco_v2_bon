@@ -36,32 +36,76 @@ L'app fonctionne même sans internet (mode offline-fallback).
 
 ## ÉTAPE 2 — Initialiser la base de données sur Neon
 
-Sur ta machine de développement, ouvre un terminal dans le dossier `backend/` :
+Sur ta machine de développement, ouvre PowerShell **en tant qu'administrateur** dans le dossier `backend/` :
+
+### 2.1 — Sauvegarder les migrations SQLite et basculer vers PostgreSQL
 
 ```powershell
-# Windows PowerShell
-$env:DATABASE_URL="[COLLE ICI LA CONNECTION STRING NEON]"
+# 1. Renommer les migrations SQLite actuelles
+Rename-Item -Path "prisma\migrations" -NewName "migrations_sqlite_bak"
 
-# Swap migrations SQLite → PostgreSQL
-Move-Item -Path "prisma\migrations" -Destination "prisma\migrations_sqlite_bak"
-Copy-Item -Path "prisma\migrations_pg" -Destination "prisma\migrations" -Recurse
+# 2. Copier les migrations PostgreSQL à la place
+Copy-Item -Path "prisma\migrations_pg\*" -Destination "prisma\migrations" -Recurse -Force
 
-# Déployer le schema
-npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
-
-# Remettre les migrations SQLite
-Remove-Item -Recurse -Force "prisma\migrations"
-Move-Item -Path "prisma\migrations_sqlite_bak" -Destination "prisma\migrations"
+# 3. Nettoyer le sous-dossier imbriqué parasites (si présent)
+Remove-Item -Recurse -Force "prisma\migrations\migrations" -ErrorAction SilentlyContinue
 ```
 
-✅ Si tu vois `All migrations have been successfully applied` → la BD est prête.
+### 2.2 — Déployer le schéma PostgreSQL sur Neon
+
+```powershell
+# Définir la connection string Neon du client
+$env:DATABASE_URL="[COLLE ICI LA CONNECTION STRING NEON]"
+
+# Exemple :
+# $env:DATABASE_URL="postgresql://neondb_owner:npg_2AqZ4TJDMzSu@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
+# Déployer
+npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+```
+
+Tu dois voir : `No pending migrations to apply` ✅
+
+### 2.3 — Restaurer les migrations SQLite
+
+```powershell
+# Restaurer pour la prochaine utilisation locale
+Remove-Item -Recurse -Force "prisma\migrations"
+Rename-Item -Path "prisma\migrations_sqlite_bak" -NewName "migrations"
+```
+
+### ⚠️ Dépannage des migrations PostgreSQL
+
+Si tu vois des erreurs lors du déploiement, voici comment les résoudre :
+
+**Erreur : "syntax error at or near AUTOINCREMENT"**
+→ Tu as copié les migrations SQLite au lieu de PostgreSQL. Recommence à l'étape 2.1.
+
+**Erreur : "column 'date_creation' specified more than once"**
+→ Il y a un doublon dans la migration. Ouvre `prisma/migrations/20260423221732_init_postgresql/migration.sql` et cherche les lignes dupliquées (ex: deux fois `"date_creation" TIMESTAMP(3)`). Supprime l'une des deux, puis relance.
+
+**Erreur : "Could not find the migration file at migration.sql"**
+→ Le sous-dossier `migrations/migrations` imbriqué interfère. Exécute :
+```powershell
+Remove-Item -Recurse -Force "prisma\migrations\migrations"
+npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+```
+
+**Erreur : "migrate found failed migrations"**
+→ Une migration précédente a échoué et bloque le déploiement. Marque-la comme annulée :
+```powershell
+npx prisma migrate resolve --rolled-back "20251106124948_init_with_licenses" --schema=prisma/schema.postgresql.prisma
+npx prisma migrate resolve --rolled-back "20260423221732_init_postgresql" --schema=prisma/schema.postgresql.prisma
+npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+```
 
 ---
 
 ## ÉTAPE 3 — Préparer le fichier .env du client
 
-Dans le dossier `backend/`, crée ou modifie le fichier `.env` avec les valeurs
-spécifiques à ce client :
+⚠️ **IMPORTANT** : Ne modifie **pas** le `.env` de ta machine de développement. Prépare un nouveau fichier `.env` destiné à la machine du client.
+
+Sur la machine du **client**, dans le dossier `backend/`, crée ou modifie le fichier `.env` :
 
 ```env
 # Environnement
@@ -73,10 +117,12 @@ DATABASE_PROVIDER="sqlite"
 DATABASE_URL="file:./database/logesco.db"
 
 # Base de données cloud (Neon — sync en ligne)
-CLOUD_DB_URL="postgresql://neondb_owner:MOT_DE_PASSE@ep-xxx.aws.neon.tech/neondb?sslmode=require"
+# ⚠️ REMPLACE PAR LA CONNECTION STRING NEON DU CLIENT
+CLOUD_DB_URL="postgresql://neondb_owner:npg_2AqZ4TJDMzSu@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
-# JWT — CHANGE cette valeur pour chaque client !
-JWT_SECRET=logesco-[nom-client]-secret-[année]-[random]
+# JWT — CHANGE cette valeur pour chaque client
+# Format : logesco-[nom-client]-secret-[année]-[random]
+JWT_SECRET=logesco-pharmacie-centrale-secret-2026-ax7k9mq2
 JWT_EXPIRES_IN=365d
 JWT_REFRESH_EXPIRES_IN=365d
 
@@ -86,10 +132,12 @@ CORS_ORIGIN=*
 LOG_LEVEL=info
 ```
 
-⚠️ **Important** :
-- Remplace `CLOUD_DB_URL` par la connection string Neon du client
-- Change `JWT_SECRET` — utilise une valeur unique par client
-- Ne partage jamais ce fichier `.env` publiquement
+### Points importants :
+
+- **`CLOUD_DB_URL`** : doit pointer vers **la BD Neon du client** (celle créée à l'étape 1)
+- **`JWT_SECRET`** : doit être unique et complexe pour chaque client (change la partie `[random]`)
+- **`NODE_ENV`** : doit être `production` sur la machine du client
+- **Garde ce fichier sécurisé** : ne le partage jamais publiquement (il contient le mot de passe Neon)
 
 ---
 
@@ -117,24 +165,31 @@ LOG_LEVEL=info
 
 ## ÉTAPE 5 — Vérifier la synchronisation initiale
 
-Au premier démarrage, le backend détecte que Neon est vide et envoie
-automatiquement toutes les données locales vers Neon.
+Au premier démarrage du backend sur la machine du client, il va :
 
-Dans les logs du backend, tu dois voir :
+1. Détecter que Neon est vide
+2. Charger toutes les données locales (SQLite) 
+3. Envoyer tout vers Neon automatiquement
+
+### Logs attendus au démarrage
 
 ```
 ☁️  Connexion Neon établie — mode hybride actif
 📦 Neon vide — démarrage de la sync initiale...
-  ✓ user_roles: X enregistrements
-  ✓ utilisateurs: X enregistrements
-  ✓ produits: X enregistrements
+  ✓ user_roles: 12 enregistrements
+  ✓ utilisateurs: 3 enregistrements
+  ✓ produits: 147 enregistrements
+  ✓ ventes: 89 enregistrements
   ...
-✅ Sync initiale terminée — X enregistrements envoyés vers Neon
+✅ Sync initiale terminée — 1247 enregistrements envoyés vers Neon
 🔄 Mode sync: hybrid
 ```
 
-Si tu vois `Mode sync: local-only` → vérifie que `CLOUD_DB_URL` est bien défini dans `.env`.
-Si tu vois `Mode sync: offline-fallback` → internet indisponible, la sync reprendra automatiquement.
+### Diagnostic
+
+- **Tu vois `Mode sync: local-only`** → `CLOUD_DB_URL` est absent ou vide dans `.env`. Ajoute-la et redémarre.
+- **Tu vois `Mode sync: offline-fallback`** → Problème de connexion internet ou URL Neon incorrecte. Vérifie la connexion et l'URL.
+- **Les logs montrent des erreurs de sync** → Vérifie que `CLOUD_DB_URL` est correct et que ta BD Neon est bien initialisée (étape 2).
 
 ---
 
@@ -178,26 +233,71 @@ Le client ne paie que la licence LOGESCO.
 
 ---
 
+## Checklist finale avant de remettre les clés au client
+
+- [ ] BD Neon créée et initialisée (étape 1-2)
+- [ ] `.env` du client préparé avec `CLOUD_DB_URL` correct (étape 3)
+- [ ] Backend installé et démarre sans erreur (étape 4)
+- [ ] Logs affichent `Mode sync: hybrid` (étape 5)
+- [ ] Une vente test créée dans l'app Flutter
+- [ ] La vente apparaît dans Neon après ~30 secondes
+- [ ] L'app fonctionne sans internet (mode offline)
+- [ ] L'app re-synchronise après reconnexion internet
+- [ ] Plusieurs utilisateurs voient les mêmes données en temps réel
+
+---
+
 ## En cas de problème
 
-### "Mode sync: offline-fallback" en permanence
-→ Vérifie la connexion internet de la machine
-→ Vérifie que `CLOUD_DB_URL` est correct dans `.env`
-→ Teste la connexion Neon depuis [console.neon.tech](https://console.neon.tech)
+### Mode sync persistant "offline-fallback" ou "local-only"
 
-### "Mode sync: local-only"
-→ `CLOUD_DB_URL` est absent ou vide dans `.env`
-→ Ajoute la variable et redémarre le backend
+**Causes possibles :**
+1. `CLOUD_DB_URL` absent ou vide dans `.env`
+2. Connection string Neon incorrecte
+3. Pas d'accès internet
 
-### Les données ne se voient pas entre utilisateurs
-→ Vérifie que tous les backends pointent vers la **même** `CLOUD_DB_URL`
-→ Attends 30 secondes (cycle de sync)
-→ Vérifie les logs pour des erreurs de sync
+**Solutions :**
+```powershell
+# Vérifie que CLOUD_DB_URL est définie
+Get-Content "backend\.env" | Select-String CLOUD_DB_URL
 
-### Réinitialiser la sync (cas extrême)
-Sur [console.neon.tech](https://console.neon.tech) → SQL Editor :
-```sql
--- Vider toutes les tables (ATTENTION : irréversible)
-TRUNCATE TABLE ventes, produits, utilisateurs CASCADE;
+# Redémarre le backend après correction
 ```
-Puis redémarre le backend — la sync initiale se relancera automatiquement.
+
+### Les données ne se synchronisent pas entre utilisateurs
+
+**Causes possibles :**
+1. Tous les backends ne pointent pas vers la **même** `CLOUD_DB_URL`
+2. BD Neon non initialisée correctement
+3. Erreurs de sync dans les logs
+
+**Solutions :**
+- Vérifie que tous les `.env` utilisent la même `CLOUD_DB_URL`
+- Attends 30-60 secondes (cycle de sync automatique)
+- Consulte les logs du backend pour des erreurs détaillées
+- Relance le backend
+
+### Erreur "AUTOINCREMENT" ou "date_creation specified more than once"
+
+→ Les migrations SQLite sont en place au lieu de PostgreSQL
+→ Refais l'étape 2.1 en copiant correctement les migrations PostgreSQL
+
+### Réinitialiser complètement la synchronisation (cas extrême)
+
+**⚠️ ATTENTION : Cette opération efface TOUTES les données Neon**
+
+1. Accède à [console.neon.tech](https://console.neon.tech)
+2. Va dans le SQL Editor
+3. Exécute (à tes risques) :
+```sql
+TRUNCATE TABLE ventes, ventes_detail, ventes_proforma CASCADE;
+TRUNCATE TABLE produits, categories_produits CASCADE;
+TRUNCATE TABLE utilisateurs, user_roles CASCADE;
+TRUNCATE TABLE fournisseurs, approvisionnements CASCADE;
+TRUNCATE TABLE historique_stock, stock_inventories CASCADE;
+TRUNCATE TABLE cash_movements, cash_sessions CASCADE;
+TRUNCATE TABLE financial_movements CASCADE;
+TRUNCATE TABLE comptes_clients CASCADE;
+TRUNCATE TABLE transferts_stock CASCADE;
+```
+4. Redémarre le backend — la sync initiale se relancera automatiquement

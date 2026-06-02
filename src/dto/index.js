@@ -536,6 +536,8 @@ class MouvementStockDTO {
     this.boutiqueId = mouvement.boutiqueId;
     this.typeMouvement = mouvement.typeMouvement;
     this.changementQuantite = mouvement.changementQuantite;
+    this.stockInitial = mouvement.stockInitial || 0;
+    this.stockFinal = mouvement.stockFinal || 0;
     this.referenceId = mouvement.referenceId;
     this.typeReference = mouvement.typeReference;
     this.dateMouvement = mouvement.dateMouvement;

@@ -873,26 +873,34 @@ function createSalesRouter({ prisma, authService }) {
               continue;
             }
 
-            // Mettre à jour StockBoutique ou Stock global selon le contexte
+            // 1. Récupérer le stock AVANT le mouvement
+            let stockInitial = 0;
             if (stock._isBoutiqueStock) {
+              stockInitial = stock.quantiteDisponible;
               await tx.stockBoutique.update({
                 where: { id: stock.id },
                 data: { quantiteDisponible: stock.quantiteDisponible - detail.quantite }
               });
             } else {
+              stockInitial = stock.quantiteDisponible;
               await tx.stock.update({
                 where: { id: stock.id },
                 data: { quantiteDisponible: stock.quantiteDisponible - detail.quantite }
               });
             }
 
-            // Créer le mouvement de stock avec boutiqueId
+            // 2. Calculer le stock APRÈS le mouvement
+            const stockFinal = stockInitial - detail.quantite;
+
+            // Créer le mouvement de stock avec snapshots
             await tx.mouvementStock.create({
               data: {
                 produitId: detail.produitId,
                 boutiqueId: boutiqueId ? parseInt(boutiqueId) : null,
                 typeMouvement: 'vente',
                 changementQuantite: -detail.quantite,
+                stockInitial,
+                stockFinal,
                 notes: `Vente ${numeroVente}`,
                 referenceId: nouvelleVente.id,
                 typeReference: 'vente'
@@ -1506,11 +1514,13 @@ function createSalesRouter({ prisma, authService }) {
               continue;
             }
 
-            // Restaurer StockBoutique ou Stock global selon le boutiqueId de la vente
+            // 1. Récupérer le stock AVANT le mouvement
+            let stockInitial = 0;
             if (vente.boutiqueId) {
               const stockBoutique = await tx.stockBoutique.findUnique({
                 where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId: detail.produitId } }
               });
+              stockInitial = stockBoutique?.quantiteDisponible || 0;
               if (stockBoutique) {
                 await tx.stockBoutique.update({
                   where: { id: stockBoutique.id },
@@ -1518,19 +1528,28 @@ function createSalesRouter({ prisma, authService }) {
                 });
               }
             } else {
+              const stock = await tx.stock.findUnique({
+                where: { produitId: detail.produitId }
+              });
+              stockInitial = stock?.quantiteDisponible || 0;
               await tx.stock.update({
                 where: { produitId: detail.produitId },
                 data: { quantiteDisponible: { increment: detail.quantite } }
               });
             }
 
-            // Créer le mouvement de stock d'annulation avec boutiqueId
+            // 2. Calculer le stock APRÈS le mouvement
+            const stockFinal = stockInitial + detail.quantite;
+
+            // Créer le mouvement de stock d'annulation avec snapshots
             await tx.mouvementStock.create({
               data: {
                 produitId: detail.produitId,
                 boutiqueId: vente.boutiqueId || null,
                 typeMouvement: 'retour',
                 changementQuantite: detail.quantite,
+                stockInitial,
+                stockFinal,
                 notes: `Annulation vente ${vente.numeroVente}`,
                 referenceId: parseInt(id),
                 typeReference: 'vente_annulee'

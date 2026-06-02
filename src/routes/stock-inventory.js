@@ -384,11 +384,47 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
                 where: { boutiqueId_produitId: { boutiqueId: inventory.boutiqueId, produitId: item.produitId } },
                 data: { quantiteDisponible: nouvelleQte, derniereMaj: new Date() }
               });
+              // 1. Stock AVANT le mouvement
+              const stockInitial = parseFloat(stockBoutique.quantiteDisponible);
+              const stockFinal = nouvelleQte;
+
+              // Créer le mouvement avec snapshots
+              await tx.mouvementStock.create({
+                data: {
+                  produitId: item.produitId,
+                  boutiqueId: inventory.boutiqueId || null,
+                  typeMouvement: ecart > 0 ? 'entree' : 'sortie',
+                  changementQuantite: ecart,
+                  stockInitial,
+                  stockFinal,
+                  referenceId: inventory.id,
+                  typeReference: 'inventaire',
+                  notes: `Ajustement inventaire: ${inventory.nom}`
+                }
+              });
             } else {
               // Creer l'entree stock boutique si elle n'existe pas
               const qteSysteme = Math.max(0, parseFloat(item.quantiteSysteme) + ecart);
               await tx.stockBoutique.create({
                 data: { boutiqueId: inventory.boutiqueId, produitId: item.produitId, quantiteDisponible: qteSysteme }
+              });
+              // 1. Stock AVANT = 0 (création)
+              const stockInitial = 0;
+              const stockFinal = qteSysteme;
+
+              // Créer le mouvement avec snapshots
+              await tx.mouvementStock.create({
+                data: {
+                  produitId: item.produitId,
+                  boutiqueId: inventory.boutiqueId || null,
+                  typeMouvement: ecart > 0 ? 'entree' : 'sortie',
+                  changementQuantite: ecart,
+                  stockInitial,
+                  stockFinal,
+                  referenceId: inventory.id,
+                  typeReference: 'inventaire',
+                  notes: `Ajustement inventaire: ${inventory.nom}`
+                }
               });
             }
           } else {
@@ -400,21 +436,26 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
                 where: { produitId: item.produitId },
                 data: { quantiteDisponible: nouvelleQte }
               });
+              // 1. Stock AVANT le mouvement
+              const stockInitial = parseFloat(stock.quantiteDisponible);
+              const stockFinal = nouvelleQte;
+
+              // Créer le mouvement avec snapshots
+              await tx.mouvementStock.create({
+                data: {
+                  produitId: item.produitId,
+                  boutiqueId: inventory.boutiqueId || null,
+                  typeMouvement: ecart > 0 ? 'entree' : 'sortie',
+                  changementQuantite: ecart,
+                  stockInitial,
+                  stockFinal,
+                  referenceId: inventory.id,
+                  typeReference: 'inventaire',
+                  notes: `Ajustement inventaire: ${inventory.nom}`
+                }
+              });
             }
           }
-
-          // Creer un mouvement de stock pour traçabilite
-          await tx.mouvementStock.create({
-            data: {
-              produitId: item.produitId,
-              boutiqueId: inventory.boutiqueId || null,
-              typeMouvement: ecart > 0 ? 'entree' : 'sortie',
-              changementQuantite: ecart,
-              referenceId: inventory.id,
-              typeReference: 'inventaire',
-              notes: `Ajustement inventaire: ${inventory.nom}`
-            }
-          });
         }
 
         // Marquer l'inventaire comme cloture
