@@ -178,7 +178,7 @@ class CompanySettingsPage extends StatelessWidget {
               controller: controller.addressController,
               label: 'company_settings_address'.tr,
               icon: Icons.location_on,
-              validator: (value) => controller.validateField('address', value ?? ''),
+              validator: null,
               fieldKey: 'address',
               settingsController: controller,
               maxLines: 2,

@@ -111,13 +111,8 @@ class CompanySettingsModel {
       });
     }
 
-    // Validation de l'adresse
-    if (!data.adresse || data.adresse.trim().length === 0) {
-      errors.push({
-        field: 'adresse',
-        message: 'L\'adresse est requise'
-      });
-    } else if (data.adresse.length > 500) {
+    // Validation de l'adresse (optionnelle)
+    if (data.adresse && data.adresse.length > 500) {
       errors.push({
         field: 'adresse',
         message: 'L\'adresse ne peut pas dépasser 500 caractères'

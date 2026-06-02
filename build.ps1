@@ -69,9 +69,13 @@ Write-Host ""
 Write-Host "1. Mode de deploiement" -ForegroundColor Yellow
 Write-Host "   [1] Serveur local  - setup complet (frontend + backend) - defaut"
 Write-Host "   [2] Client reseau  - setup leger (frontend uniquement, se connecte a un serveur)"
+Write-Host "   [3] Web (Flutter)  - compile pour le web avec API Render"
 $modeInput = Read-Host "   Choix"
 $isClientMode = ($modeInput -eq "2")
-if ($isClientMode) {
+$isWebMode = ($modeInput -eq "3")
+if ($isWebMode) {
+    Write-Host "   -> Mode WEB (Flutter Web)" -ForegroundColor Green
+} elseif ($isClientMode) {
     Write-Host "   -> Mode CLIENT RESEAU" -ForegroundColor Green
 } else {
     Write-Host "   -> Mode SERVEUR LOCAL" -ForegroundColor Green
@@ -79,7 +83,26 @@ if ($isClientMode) {
 Write-Host ""
 
 # --- 2. IP (mode client uniquement) ---
-if ($isClientMode) {
+if ($isWebMode) {
+    Write-Host "2. URL de l'API backend (mode Web)" -ForegroundColor Yellow
+    Write-Host "   Exemple: https://logesco-smart-energy.onrender.com"
+    Write-Host "   Exemple: https://api.mondomaine.com"
+    $apiUrlInput = Read-Host "   URL de l'API"
+    if ([string]::IsNullOrWhiteSpace($apiUrlInput)) {
+        Fail "L'URL de l'API est obligatoire en mode web."
+    }
+    # Nettoyer l'URL (enlever le trailing slash si présent)
+    $apiUrlInput = $apiUrlInput.TrimEnd('/')
+    # Ajouter /api/v1 si pas déjà présent
+    if (-not $apiUrlInput.EndsWith('/api/v1')) {
+        $baseUrl = "$apiUrlInput/api/v1"
+    } else {
+        $baseUrl = $apiUrlInput
+    }
+    $ipInput = "web"
+    Write-Host "   -> $baseUrl" -ForegroundColor Green
+    Write-Host ""
+} elseif ($isClientMode) {
     Write-Host "2. Adresse IP du serveur backend" -ForegroundColor Yellow
     Write-Host "   Exemple: 192.168.1.50"
     $ipInput = Read-Host "   IP du serveur"
@@ -95,18 +118,32 @@ if ($isClientMode) {
 }
 
 # --- 3. LICENCE ---
-Write-Host "3. Activer le controle de licence" -ForegroundColor Yellow
-Write-Host "   [o] = active  |  [n] = desactive (defaut)"
-$licenseInput = Read-Host "   ENABLE_LICENSE_CONTROL (o/n)"
-$enableLicense = ($licenseInput -eq "o" -or $licenseInput -eq "O" -or $licenseInput -eq "y" -or $licenseInput -eq "Y")
-Write-Host "   -> $enableLicense" -ForegroundColor Green
-Write-Host ""
+if (-not $isWebMode) {
+    Write-Host "3. Activer le controle de licence" -ForegroundColor Yellow
+    Write-Host "   [o] = active  |  [n] = desactive (defaut)"
+    $licenseInput = Read-Host "   ENABLE_LICENSE_CONTROL (o/n)"
+    $enableLicense = ($licenseInput -eq "o" -or $licenseInput -eq "O" -or $licenseInput -eq "y" -or $licenseInput -eq "Y")
+    Write-Host "   -> $enableLicense" -ForegroundColor Green
+    Write-Host ""
+} else {
+    # Pas de contrôle de licence pour le web
+    $enableLicense = $false
+}
 
 # --- Nommage ---
-$clientSuffix  = if ($isClientMode) { "client" } else { "local" }
-$licenseSuffix = if ($enableLicense) { "license-on" } else { "license-off" }
-$ipSlug        = $ipInput -replace "\.", "-"
-$setupName     = "LOGESCO-v2-${clientSuffix}-${licenseSuffix}-${ipSlug}-Setup"
+if ($isWebMode) {
+    $clientSuffix = "web"
+    $licenseSuffix = ""
+    # Extraire un slug du domaine pour le nom du build
+    $domainSlug = ($baseUrl -replace 'https?://', '' -replace '/.*', '' -replace '\.', '-')
+    $ipSlug = $domainSlug
+    $setupName = "LOGESCO-v2-web-${domainSlug}"
+} else {
+    $clientSuffix  = if ($isClientMode) { "client" } else { "local" }
+    $licenseSuffix = if ($enableLicense) { "license-on" } else { "license-off" }
+    $ipSlug        = $ipInput -replace "\.", "-"
+    $setupName     = "LOGESCO-v2-${clientSuffix}-${licenseSuffix}-${ipSlug}-Setup"
+}
 
 $issFile  = if ($isClientMode) { "installer-setup-client-network.iss" } else { "installer-setup.iss" }
 
@@ -114,13 +151,19 @@ $issFile  = if ($isClientMode) { "installer-setup-client-network.iss" } else { "
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "   Resume" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Mode                   : $clientSuffix"
-if ($isClientMode) {
+if ($isWebMode) {
+    Write-Host "   Mode                   : WEB (Flutter Web)"
     Write-Host "   BASE_URL               : $baseUrl"
+    Write-Host "   Output                 : logesco_v2\build\web\"
+} else {
+    Write-Host "   Mode                   : $clientSuffix"
+    if ($isClientMode) {
+        Write-Host "   BASE_URL               : $baseUrl"
+    }
+    Write-Host "   ENABLE_LICENSE_CONTROL : $enableLicense"
+    Write-Host "   Script InnoSetup       : $issFile"
+    Write-Host "   Setup final            : release\${setupName}.exe"
 }
-Write-Host "   ENABLE_LICENSE_CONTROL : $enableLicense"
-Write-Host "   Script InnoSetup       : $issFile"
-Write-Host "   Setup final            : release\${setupName}.exe"
 Write-Host ""
 
 $confirm = Read-Host "Lancer le build ? (o/n)"
@@ -134,13 +177,13 @@ $dartDefines = "--dart-define=BASE_URL=$baseUrl " +
                "--dart-define=IS_CLIENT_MODE=$($isClientMode.ToString().ToLower()) " +
                "--dart-define=ENABLE_LICENSE_CONTROL=$($enableLicense.ToString().ToLower())"
 
-$totalSteps = if ($isClientMode) { 3 } else { 4 }
+$totalSteps = if ($isWebMode) { 1 } elseif ($isClientMode) { 3 } else { 4 }
 
 # =============================================================================
 # ETAPE 1 (mode local uniquement) : BUILD BACKEND
 # =============================================================================
 
-if (-not $isClientMode) {
+if (-not $isClientMode -and -not $isWebMode) {
 
     Write-Step 1 4 "Compilation du backend (node.exe portable)"
 
@@ -175,8 +218,50 @@ if (-not $isClientMode) {
 }
 
 # =============================================================================
-# ETAPE 2 (local) / ETAPE 1 (client) : BUILD FLUTTER
+# ETAPE 2 (local) / ETAPE 1 (client/web) : BUILD FLUTTER
 # =============================================================================
+
+if ($isWebMode) {
+    Write-Step 1 1 "Build Flutter Web"
+    
+    Set-Location logesco_v2
+    
+    Write-Host "Nettoyage Flutter..."
+    & flutter clean 2>$null | Out-Null
+    
+    Write-Host "Recuperation des dependances..."
+    & flutter pub get
+    if ($LASTEXITCODE -ne 0) { Set-Location ..; Fail "flutter pub get echoue" }
+    
+    Write-Host "Build Web release..."
+    Write-Host "  flutter build web --release $dartDefines" -ForegroundColor DarkGray
+    Invoke-Expression "flutter build web --release $dartDefines"
+    if ($LASTEXITCODE -ne 0) { Set-Location ..; Fail "flutter build web echoue" }
+    
+    Set-Location ..
+    
+    $webOutput = "logesco_v2\build\web"
+    if (-not (Test-Path "$webOutput\index.html")) {
+        Fail "index.html introuvable apres build web. Verifiez: $webOutput"
+    }
+    
+    Write-Host ""
+    Write-Host "OK Flutter Web build: $webOutput" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Green
+    Write-Host "   BUILD WEB TERMINE AVEC SUCCES" -ForegroundColor Green
+    Write-Host "============================================================" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "   Dossier de sortie : $webOutput" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "   Pour deployer :" -ForegroundColor DarkGray
+    Write-Host "     1. Uploadez le contenu de $webOutput sur votre hebergeur web" -ForegroundColor DarkGray
+    Write-Host "     2. Configurez votre serveur web (Nginx, Apache, etc.)" -ForegroundColor DarkGray
+    Write-Host "     3. L'app se connectera automatiquement a: $baseUrl" -ForegroundColor DarkGray
+    Write-Host ""
+    Read-Host "Appuyez sur Entree pour quitter"
+    exit 0
+}
 
 $flutterStep = if ($isClientMode) { 1 } else { 2 }
 Write-Step $flutterStep $totalSteps "Build Flutter Windows"

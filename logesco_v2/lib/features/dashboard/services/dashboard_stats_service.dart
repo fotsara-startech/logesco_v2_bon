@@ -56,10 +56,13 @@ class DashboardStatsService extends GetxService {
         return {
           'todaySales': stats['todaySales'] ?? 0,
           'todayRevenue': (stats['todayRevenue'] as num? ?? 0).toDouble(),
+          'yesterdayRevenue': (stats['yesterdayRevenue'] as num? ?? 0).toDouble(),
           'weekSales': stats['weekSales'] ?? 0,
           'weekRevenue': (stats['weekRevenue'] as num? ?? 0).toDouble(),
           'monthSales': stats['monthSales'] ?? 0,
           'monthRevenue': (stats['monthRevenue'] as num? ?? 0).toDouble(),
+          'cashAmount': (stats['cashAmount'] as num? ?? 0).toDouble(),
+          'creditAmount': (stats['creditAmount'] as num? ?? 0).toDouble(),
           'topProducts': stats['topProducts'] ?? <Map<String, dynamic>>[],
         };
       }

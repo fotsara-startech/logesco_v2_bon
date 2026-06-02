@@ -413,6 +413,11 @@ class SubscriptionManager implements ISubscriptionManager {
       else if (status.isInGracePeriod) {
         shouldBlock = false;
       }
+      // Vérifier si on est en mode offline avec licence valide
+      else if (await _secureTimeService.getFirstActivation() != null && _secureTimeService.isOfflineMode) {
+        // Mode offline: on laisse travailler si une licence a déjà été activée
+        shouldBlock = false;
+      }
       // Bloquer si aucun abonnement actif et pas de période de grâce
       else {
         shouldBlock = true;
@@ -423,9 +428,9 @@ class SubscriptionManager implements ISubscriptionManager {
 
       return shouldBlock;
     } catch (e) {
-      // En cas d'erreur, bloquer par sécurité mais ne pas mettre en cache
-      print(' [SubscriptionManager] Erreur shouldBlockApplication: $e');
-      return true;
+      // En cas d'erreur, laisser travailler plutôt que de bloquer
+      // C'est plus user-friendly, la validation se fera à la prochaine connexion
+      return false;
     }
   }
 
@@ -935,13 +940,10 @@ class SubscriptionManager implements ISubscriptionManager {
 
   /// Vérifie si une entrée de cache est valide
   bool _isValidCacheEntry(String key, int validitySeconds) {
-    if (!_validationCache.containsKey(key) || !_cacheTimestamps.containsKey(key)) {
-      return false;
-    }
+    if (!_cacheTimestamps.containsKey(key)) return false;
 
-    final timestamp = _cacheTimestamps[key]!;
-    final age = DateTime.now().difference(timestamp);
-    return age.inSeconds < validitySeconds;
+    final age = DateTime.now().difference(_cacheTimestamps[key]!).inSeconds;
+    return age < validitySeconds;
   }
 
   /// Définit une entrée dans le cache
@@ -950,7 +952,6 @@ class SubscriptionManager implements ISubscriptionManager {
     _cacheTimestamps[key] = DateTime.now();
   }
 
-  /// Nettoie les entrées de cache expirées
   void _cleanupExpiredCacheEntries() {
     final now = DateTime.now();
     final expiredKeys = <String>[];
@@ -974,30 +975,6 @@ class SubscriptionManager implements ISubscriptionManager {
     _cacheTimestamps.clear();
     _cachedStatus = null;
     _lastCacheUpdate = null;
-  }
-
-  /// Optimise les opérations cryptographiques avec mise en cache
-  Future<bool> _optimizedCryptoValidation(String data, String signature, String publicKey) async {
-    final cacheKey = 'crypto_validation_${data.hashCode}_${signature.hashCode}_${publicKey.hashCode}';
-
-    // Vérifier le cache pour éviter les recalculs coûteux
-    if (_isValidCacheEntry(cacheKey, _cacheValidityMinutes * 60)) {
-      return _validationCache[cacheKey] as bool;
-    }
-
-    try {
-      // Effectuer la validation cryptographique
-      // Cette opération est coûteuse, donc on la met en cache
-      final isValid = _cryptoService.verifySignature(data, signature, publicKey);
-
-      // Mettre en cache le résultat
-      _setCacheEntry(cacheKey, isValid);
-
-      return isValid;
-    } catch (e) {
-      print(' [SubscriptionManager] Erreur validation crypto: $e');
-      return false;
-    }
   }
 
   /// Gestion robuste des erreurs avec récupération automatique

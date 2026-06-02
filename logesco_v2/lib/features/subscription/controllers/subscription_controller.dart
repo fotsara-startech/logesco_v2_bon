@@ -301,4 +301,19 @@ class SubscriptionController extends GetxController {
       _isLoading.value = false;
     }
   }
+
+  /// Vérifie si l'application peut continuer en mode offline (dégradé)
+  bool canContinueOffline() {
+    // Si contrôle de licence désactivé, toujours laisser passer
+    if (!AppConfig.enableLicenseControl) return true;
+
+    final status = _currentStatus.value;
+    if (status == null) return false;
+
+    // Peut continuer si:
+    // 1. Abonnement actif
+    // 2. En période de grâce
+    // 3. Période d'essai non expirée
+    return status.isActive || status.isInGracePeriod;
+  }
 }

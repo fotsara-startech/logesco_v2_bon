@@ -137,12 +137,11 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
       stockActuel = movement.produit?.stockActuel ?? 0;
     }
 
-    // Calculer le stock initial (avant le mouvement) et final (après le mouvement)
-    // Note: stockActuel est le stock ACTUEL (maintenant), pas au moment du mouvement
-    // Pour afficher correctement, on ne peut pas calculer le stock historique sans données supplémentaires
-    // On affiche donc juste le changement
-    final stockInitial = stockActuel - movement.changementQuantite;
-    final stockFinal = stockActuel;
+    // Utiliser directement les snapshots stockInitial et stockFinal du mouvement
+    // Si non disponibles (mouvements historiques), calculer par fallback
+    final stockInitial = movement.stockInitial > 0 || movement.stockFinal > 0 ? movement.stockInitial : (stockActuel - movement.changementQuantite);
+
+    final stockFinal = movement.stockInitial > 0 || movement.stockFinal > 0 ? movement.stockFinal : stockActuel;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

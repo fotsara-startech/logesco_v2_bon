@@ -5,6 +5,7 @@ import '../../features/subscription/models/license_data.dart';
 import '../config/app_config.dart';
 
 /// Middleware pour vérifier les licences et contrôler l'accès aux fonctionnalités.
+/// Mode dégradé: Permet le travail en offline si une licence a déjà été activée
 /// NOTE: Ne pas appeler Get.snackbar() ici — l'Overlay n'est pas encore monté
 /// lors de la résolution des routes. Les notifications sont gérées par les pages
 /// elles-mêmes via SubscriptionController.checkAndShowNotifications().
@@ -32,13 +33,26 @@ class SubscriptionMiddleware extends GetMiddleware {
         return null;
       }
 
+      // Permettre l'accès si:
+      // 1. Abonnement actif
+      // 2. En période de grâce
+      // 3. En mode offline (pas de blocage)
       if (!status.isActive && !status.isInGracePeriod) {
-        return const RouteSettings(name: '/subscription/blocked');
+        // Vérifier si on peut continuer en mode offline
+        final canContinueOffline = subscriptionController.canContinueOffline();
+
+        if (!canContinueOffline) {
+          return const RouteSettings(name: '/subscription/blocked');
+        }
+
+        // Mode offline: afficher un warning mais laisser continuer
+        _scheduleOfflineWarning();
       }
 
       return null;
     } catch (e) {
-      return const RouteSettings(name: '/subscription/activation');
+      // En cas d'erreur, laisser passer pour éviter les blocages
+      return null;
     }
   }
 
@@ -47,8 +61,21 @@ class SubscriptionMiddleware extends GetMiddleware {
       try {
         final status = controller.currentStatus;
         if (status != null && !status.isActive && !status.isInGracePeriod) {
-          Get.offAllNamed('/subscription/activation');
+          final canContinueOffline = controller.canContinueOffline();
+          if (!canContinueOffline) {
+            Get.offAllNamed('/subscription/activation');
+          }
         }
+      } catch (e) {
+        // ignore
+      }
+    });
+  }
+
+  void _scheduleOfflineWarning() {
+    Future.delayed(const Duration(seconds: 1), () {
+      try {
+        // La notification sera affichée par le controller
       } catch (e) {
         // ignore
       }

@@ -91,9 +91,8 @@ class CompanyProfile {
       errors['name'] = 'Le nom de l\'entreprise doit contenir au moins 2 caractères';
     }
 
-    if (address.trim().isEmpty) {
-      errors['address'] = 'L\'adresse est requise';
-    } else if (address.trim().length < 5) {
+    // Adresse est optionnelle
+    if (address.trim().isNotEmpty && address.trim().length < 5) {
       errors['address'] = 'L\'adresse doit contenir au moins 5 caractères';
     }
 

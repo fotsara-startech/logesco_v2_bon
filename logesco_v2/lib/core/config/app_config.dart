@@ -1,4 +1,7 @@
-﻿/// Configuration centralisée de l'application LOGESCO
+﻿import 'dart:io';
+import 'package:flutter/foundation.dart';
+
+/// Configuration centralisée de l'application LOGESCO
 /// Les paramètres de déploiement sont injectés via --dart-define au moment du build.
 /// Utiliser le script build.ps1 pour construire l'application.
 class AppConfig {
@@ -11,7 +14,20 @@ class AppConfig {
   static const bool isClientMode = bool.fromEnvironment('IS_CLIENT_MODE', defaultValue: false);
 
   // ============================================================================
-  // 2. CONFIGURATION DU SERVEUR
+  // 2. DÉTECTION PLATEFORME
+  // ============================================================================
+
+  /// Retourne true si la version web
+  static bool get isWeb => kIsWeb;
+
+  /// Retourne true si la version desktop (Windows, Mac, Linux)
+  static bool get isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
+  /// Retourne true si la version mobile (iOS, Android)
+  static bool get isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+  // ============================================================================
+  // 3. CONFIGURATION DU SERVEUR
   // ============================================================================
 
   static const String _localhostUrl = 'http://localhost:8080/api/v1';
@@ -38,12 +54,22 @@ class AppConfig {
     _customBaseUrl = _definedBaseUrl;
   }
 
-  /// Contrôle des licences activé
-  /// Injecté via --dart-define=ENABLE_LICENSE_CONTROL=true
-  static const bool enableLicenseControl = bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: true);
+  /// Contrôle des licences activé UNIQUEMENT sur desktop
+  /// Web: toujours désactivé (freemium)
+  /// Desktop: activé par défaut (peut être override via --dart-define=ENABLE_LICENSE_CONTROL=false)
+  /// Mobile: activé par défaut
+  static bool get enableLicenseControl {
+    // Sur web: licence toujours désactivée
+    if (isWeb) {
+      return false;
+    }
+
+    // Sur desktop/mobile: activée par défaut (peut être override)
+    return bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: true);
+  }
 
   // ============================================================================
-  // 3. CONFIGURATION DE DÉVELOPPEMENT
+  // 4. CONFIGURATION DE DÉVELOPPEMENT
   // ============================================================================
 
   static const bool isDevelopmentMode = bool.fromEnvironment('DEV_MODE', defaultValue: false);
@@ -53,7 +79,7 @@ class AppConfig {
   static const bool useTestData = false;
 
   // ============================================================================
-  // 4. TIMEOUTS
+  // 5. TIMEOUTS
   // ============================================================================
 
   static const Duration connectTimeout = Duration(seconds: 30);
@@ -61,7 +87,7 @@ class AppConfig {
   static const Duration requestTimeout = Duration(seconds: 30);
 
   // ============================================================================
-  // 5. ENDPOINTS API
+  // 6. ENDPOINTS API
   // ============================================================================
 
   static const String authEndpoint = '/auth';
@@ -78,27 +104,27 @@ class AppConfig {
   static const String proformaEndpoint = '/proformas';
 
   // ============================================================================
-  // 6. PAGINATION
+  // 7. PAGINATION
   // ============================================================================
 
   static const int defaultPageSize = 20;
   static const int maxPageSize = 100;
 
   // ============================================================================
-  // 7. RECHERCHE
+  // 8. RECHERCHE
   // ============================================================================
 
   static const Duration searchDebounceDelay = Duration(milliseconds: 500);
 
   // ============================================================================
-  // 8. MESSAGES
+  // 9. MESSAGES
   // ============================================================================
 
   static const String defaultErrorMessage = 'Une erreur inattendue s\'est produite';
   static const String noInternetMessage = 'Pas de connexion internet';
 
   // ============================================================================
-  // 9. HEADERS HTTP
+  // 10. HEADERS HTTP
   // ============================================================================
 
   static Map<String, String> get defaultHeaders => {
@@ -108,13 +134,13 @@ class AppConfig {
       };
 
   // ============================================================================
-  // 10. LOGGING
+  // 11. LOGGING
   // ============================================================================
 
   static const bool isDevelopment = bool.fromEnvironment('DEV_MODE', defaultValue: false);
 
   // ============================================================================
-  // 11. ROUTES
+  // 12. ROUTES
   // ============================================================================
 
   static String get initialRoute {

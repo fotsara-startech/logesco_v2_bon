@@ -239,6 +239,8 @@ class StockMovement {
   final int? boutiqueId;
   final String typeMouvement;
   final int changementQuantite;
+  final int stockInitial;
+  final int stockFinal;
   final DateTime dateMouvement;
   final String? notes;
   final Product? produit;
@@ -249,6 +251,8 @@ class StockMovement {
     this.boutiqueId,
     required this.typeMouvement,
     required this.changementQuantite,
+    required this.stockInitial,
+    required this.stockFinal,
     required this.dateMouvement,
     this.notes,
     this.produit,
@@ -261,6 +265,8 @@ class StockMovement {
       boutiqueId: json['boutiqueId'] != null ? _safeExtractInt(json, ['boutiqueId', 'boutique_id']) : null,
       typeMouvement: json['typeMouvement'] as String? ?? '',
       changementQuantite: _safeExtractInt(json, ['changementQuantite', 'changement_quantite', 'quantityChange']),
+      stockInitial: _safeExtractInt(json, ['stockInitial', 'stock_initial']),
+      stockFinal: _safeExtractInt(json, ['stockFinal', 'stock_final']),
       dateMouvement: json['dateMouvement'] != null ? DateTime.parse(json['dateMouvement'] as String) : DateTime.now(),
       notes: json['notes'] as String?,
       produit: json['produit'] != null ? Product.fromJson(json['produit'] as Map<String, dynamic>) : null,
@@ -294,6 +300,8 @@ class StockMovement {
       'produitId': produitId,
       'typeMouvement': typeMouvement,
       'changementQuantite': changementQuantite,
+      'stockInitial': stockInitial,
+      'stockFinal': stockFinal,
       'dateMouvement': dateMouvement.toIso8601String(),
       'notes': notes,
       'produit': produit?.toJson(),

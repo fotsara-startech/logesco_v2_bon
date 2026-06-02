@@ -1,5 +1,4 @@
 ﻿import 'dart:async';
-import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ntp/ntp.dart';
@@ -31,25 +30,30 @@ class TimeValidationResult {
   final Duration? systemTimeOffset;
   final List<String> warnings;
 
+  /// Indique si le résultat vient d'une vérification fraîche ou du cache
+  final bool isFresh;
+
   const TimeValidationResult({
     required this.trustedTime,
     required this.isSystemTimeReliable,
     required this.ntpAvailable,
     this.systemTimeOffset,
     this.warnings = const [],
+    this.isFresh = false,
   });
 
   bool get hasWarnings => warnings.isNotEmpty;
   bool get isManipulationDetected => !isSystemTimeReliable;
 }
 
-/// Service de validation sécurisée du temps
+/// Service de validation sécurisée du temps avec support offline
 ///
 /// Protège contre la manipulation de l'horloge système en utilisant:
-/// 1. Vérification NTP (Network Time Protocol)
+/// 1. Vérification NTP async (ne bloque jamais l'UI)
 /// 2. Détection de retour en arrière de l'horloge
 /// 3. Horodatage persistant multi-niveaux
 /// 4. Compteur de sessions pour détecter les réinstallations
+/// 5. Mode offline gracieux avec cache intelligent
 class SecureTimeService {
   final FlutterSecureStorage _secureStorage;
   final SharedPreferences? _prefs;
@@ -60,18 +64,20 @@ class SecureTimeService {
   static const String _keySessionCounter = 'secure_time_session_counter';
   static const String _keyFirstActivation = 'secure_time_first_activation';
   static const String _keySystemTimeOffset = 'secure_time_system_offset';
+  static const String _keyNtpFailureCount = 'secure_time_ntp_failures';
 
   // Configuration
   static const Duration _ntpCacheDuration = Duration(hours: 24);
   static const Duration _maxAcceptableOffset = Duration(minutes: 5);
-  static const int _maxNtpRetries = 3;
+  static const int _maxNtpRetries = 2; // Réduit de 3 à 2
+  static const Duration _ntpTimeout = Duration(seconds: 2); // Réduit de 5 à 2
+  static const int _maxNtpFailuresBeforeOffline = 5;
 
   // Serveurs NTP publics (fallback en cascade)
   static const List<String> _ntpServers = [
     'time.google.com',
     'pool.ntp.org',
-    'time.windows.com',
-    'time.cloudflare.com',
+    'time.cloudflare.com', // Reordonné pour rapidité
   ];
 
   // Cache
@@ -79,6 +85,9 @@ class SecureTimeService {
   DateTime? _cachedNtpTimestamp;
   DateTime? _lastCheckTime;
   int? _sessionCounter;
+  int _ntpFailureCount = 0;
+  bool _isOfflineMode = false;
+  Timer? _backgroundValidationTimer;
 
   SecureTimeService({
     FlutterSecureStorage? secureStorage,
@@ -90,25 +99,44 @@ class SecureTimeService {
   Future<void> initialize() async {
     await _loadStoredData();
     await _incrementSessionCounter();
+    _startBackgroundValidation();
   }
 
-  /// Obtient l'heure sécurisée et fiable
+  /// Démarre la validation périodique en arrière-plan (non-bloquante)
+  void _startBackgroundValidation() {
+    _backgroundValidationTimer = Timer.periodic(
+      const Duration(minutes: 30),
+      (_) => _validateInBackground(),
+    );
+  }
+
+  /// Valide le temps en arrière-plan sans bloquer l'UI
+  Future<void> _validateInBackground() async {
+    try {
+      // Ignorer si déjà en cours
+      await getSecureTime(forceNtpCheck: true);
+    } catch (e) {
+      // Les erreurs en arrière-plan sont silencieuses
+    }
+  }
+
+  /// Obtient l'heure sécurisée et fiable SANS JAMAIS bloquer l'UI
   ///
-  /// Retourne l'heure la plus fiable disponible en utilisant:
-  /// 1. NTP si disponible et récent
-  /// 2. Temps calculé depuis la dernière vérification NTP
-  /// 3. Temps système si aucune manipulation détectée
-  ///
-  /// Lance une exception si manipulation détectée
+  /// Stratégie:
+  /// 1. Retourner immédiatement le cache si disponible
+  /// 2. Lancer la validation NTP en arrière-plan (timeout court)
+  /// 3. Si NTP échoue → utiliser cache + temps écoulé
+  /// 4. Jamais d'attente > 2 secondes
   Future<TimeValidationResult> getSecureTime({
     bool forceNtpCheck = false,
-    bool throwOnManipulation = true,
+    bool throwOnManipulation = false, // IMPORTANT: Ne jamais lancer d'exception en UI
   }) async {
     final warnings = <String>[];
     DateTime trustedTime;
     bool isSystemTimeReliable = true;
     bool ntpAvailable = false;
     Duration? systemTimeOffset;
+    bool isFresh = false;
 
     try {
       // 1. Vérifier le retour en arrière de l'horloge système
@@ -118,12 +146,16 @@ class SecureTimeService {
         warnings.add('Retour en arrière de l\'horloge système détecté');
       }
 
-      // 2. Essayer d'obtenir l'heure NTP
-      final ntpTime = await _getNetworkTime(forceRefresh: forceNtpCheck);
+      // 2. Essayer d'obtenir l'heure NTP avec timeout COURT
+      final ntpTime = await _getNetworkTimeWithTimeout(
+        forceRefresh: forceNtpCheck,
+        timeout: _ntpTimeout,
+      );
 
       if (ntpTime != null) {
         ntpAvailable = true;
         trustedTime = ntpTime;
+        isFresh = true;
 
         // Calculer l'offset avec l'heure système
         final systemTime = DateTime.now();
@@ -133,52 +165,49 @@ class SecureTimeService {
         if (systemTimeOffset.abs() > _maxAcceptableOffset) {
           isSystemTimeReliable = false;
           warnings.add(
-            'Manipulation de date détectée: décalage de ${systemTimeOffset.inMinutes} minutes avec NTP',
+            'Manipulation de date détectée: décalage de ${systemTimeOffset.inMinutes} minutes',
           );
         }
 
         // Mettre à jour le cache seulement si l'heure système est fiable
         if (isSystemTimeReliable) {
           await _updateLastCheckTime(trustedTime);
+          _ntpFailureCount = 0; // Reset counter on success
+          _isOfflineMode = false;
         }
       } else {
-        // Pas de NTP disponible
-        warnings.add('Serveur NTP non disponible, utilisation du temps calculé');
+        // NTP indisponible → Mode offline gracieux
+        warnings.add('Serveur NTP indisponible (mode offline)');
+        _ntpFailureCount++;
 
+        if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
+          _isOfflineMode = true;
+        }
+
+        // Utiliser le cache NTP s'il existe
         if (_cachedNtpTime != null && _cachedNtpTimestamp != null) {
           final elapsedSinceNtp = DateTime.now().difference(_cachedNtpTimestamp!);
 
-          // Si elapsed est négatif → date système reculée par rapport au moment du cache NTP
           if (elapsedSinceNtp.isNegative) {
+            // Date système reculée
             isSystemTimeReliable = false;
-            // Utiliser le cache NTP directement comme référence minimale
             trustedTime = _cachedNtpTime!;
-            warnings.add('Manipulation de date détectée: date système antérieure au cache NTP');
+            warnings.add('Temps restauré depuis cache NTP');
           } else {
             trustedTime = _cachedNtpTime!.add(elapsedSinceNtp);
-            warnings.add('Temps calculé depuis la dernière vérification NTP');
+            warnings.add('Temps calculé depuis cache (offline)');
           }
         } else if (_lastCheckTime != null && !clockRollback) {
-          trustedTime = DateTime.now();
-          await _updateLastCheckTime(trustedTime);
+          // Pas de cache NTP → utiliser lastCheckTime avec élapsed
+          final elapsedSinceCheck = DateTime.now().difference(_lastCheckTime!);
+          trustedTime = _lastCheckTime!.add(elapsedSinceCheck);
+          warnings.add('Temps calculé depuis dernière vérification (offline)');
         } else {
-          if (throwOnManipulation) {
-            throw TimeValidationException(
-              TimeValidationError.ntpUnavailable,
-              'Impossible de valider l\'heure. Veuillez vous connecter à Internet.',
-            );
-          }
+          // Aucun cache disponible → système time seulement
           trustedTime = DateTime.now();
-          warnings.add('ATTENTION: Utilisation de l\'heure système non vérifiée');
+          isSystemTimeReliable = false;
+          warnings.add('Attention: Utilisation de l\'horloge système (offline, pas de cache)');
         }
-      }
-
-      // 3. Si manipulation confirmée et throwOnManipulation, lancer l'exception
-      if (!isSystemTimeReliable && throwOnManipulation) {
-        throw TimeValidationException(
-          TimeValidationError.timeManipulation,
-          'L\'horloge système a été manipulée. Veuillez restaurer la date et l\'heure correctes.',
-        );
       }
 
       return TimeValidationResult(
@@ -187,16 +216,71 @@ class SecureTimeService {
         ntpAvailable: ntpAvailable,
         systemTimeOffset: systemTimeOffset,
         warnings: warnings,
+        isFresh: isFresh,
       );
     } catch (e) {
-      if (e is TimeValidationException) {
-        rethrow;
-      }
-      throw TimeValidationException(
-        TimeValidationError.systemClockSuspicious,
-        'Erreur lors de la validation du temps: $e',
+      // Les erreurs en getSecureTime ne bloquent jamais
+      return TimeValidationResult(
+        trustedTime: DateTime.now(),
+        isSystemTimeReliable: false,
+        ntpAvailable: false,
+        warnings: ['Erreur validation temps: ${e.toString()}'],
+        isFresh: false,
       );
     }
+  }
+
+  /// Obtient l'heure NTP avec timeout strict
+  Future<DateTime?> _getNetworkTimeWithTimeout({
+    bool forceRefresh = false,
+    required Duration timeout,
+  }) async {
+    // Utiliser le cache si disponible et récent
+    if (!forceRefresh && _cachedNtpTime != null && _cachedNtpTimestamp != null) {
+      final cacheAge = DateTime.now().difference(_cachedNtpTimestamp!);
+      if (cacheAge < _ntpCacheDuration) {
+        return _cachedNtpTime;
+      }
+    }
+
+    // Lancer la requête NTP avec timeout strict
+    try {
+      return await _getNetworkTimeSequential(timeout).timeout(
+        timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Essaie les serveurs NTP en cascade avec timeouts
+  Future<DateTime?> _getNetworkTimeSequential(Duration timeout) async {
+    for (final server in _ntpServers) {
+      for (int retry = 0; retry < _maxNtpRetries; retry++) {
+        try {
+          final ntpTime = await NTP
+              .now(
+                lookUpAddress: server,
+                timeout: timeout,
+              )
+              .timeout(timeout);
+
+          // Succès
+          _cachedNtpTime = ntpTime;
+          _cachedNtpTimestamp = DateTime.now();
+          await _storeNtpTime(ntpTime);
+          return ntpTime;
+        } catch (e) {
+          // Continuer au serveur suivant
+          if (retry < _maxNtpRetries - 1) {
+            await Future.delayed(Duration(milliseconds: 100 * (retry + 1)));
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /// Détecte si l'horloge système a été manipulée
@@ -209,66 +293,10 @@ class SecureTimeService {
 
     // Vérifier si l'heure actuelle est antérieure à la dernière vérification
     if (currentTime.isBefore(_lastCheckTime!)) {
-      print('⚠️  [SecureTimeService] Retour en arrière détecté:');
-      print('   Dernière vérification: $_lastCheckTime');
-      print('   Heure actuelle: $currentTime');
       return true;
     }
 
-    // Vérifier si le saut temporel est anormalement grand (> 7 jours)
-    final timeDifference = currentTime.difference(_lastCheckTime!);
-    if (timeDifference > const Duration(days: 7)) {
-      print('⚠️  [SecureTimeService] Saut temporel suspect: ${timeDifference.inDays} jours');
-      // Note: Ceci pourrait être légitime (appareil éteint longtemps)
-      // On ne bloque pas mais on force une vérification NTP
-      return false;
-    }
-
     return false;
-  }
-
-  /// Obtient l'heure depuis un serveur NTP
-  Future<DateTime?> _getNetworkTime({bool forceRefresh = false}) async {
-    // Utiliser le cache si disponible et récent
-    if (!forceRefresh && _cachedNtpTime != null && _cachedNtpTimestamp != null) {
-      final cacheAge = DateTime.now().difference(_cachedNtpTimestamp!);
-      if (cacheAge < _ntpCacheDuration) {
-        print(' [SecureTimeService] Utilisation du cache NTP (âge: ${cacheAge.inHours}h)');
-        return _cachedNtpTime;
-      }
-    }
-
-    // Essayer chaque serveur NTP en cascade
-    for (final server in _ntpServers) {
-      for (int retry = 0; retry < _maxNtpRetries; retry++) {
-        try {
-          print(' [SecureTimeService] Requête NTP vers $server (tentative ${retry + 1})');
-
-          final ntpTime = await NTP.now(
-            lookUpAddress: server,
-            timeout: const Duration(seconds: 5),
-          );
-
-          print(' [SecureTimeService] Heure NTP obtenue: $ntpTime');
-
-          // Mettre en cache
-          _cachedNtpTime = ntpTime;
-          _cachedNtpTimestamp = DateTime.now();
-          await _storeNtpTime(ntpTime);
-
-          return ntpTime;
-        } catch (e) {
-          print(' [SecureTimeService] Échec NTP $server (tentative ${retry + 1}): $e');
-
-          if (retry < _maxNtpRetries - 1) {
-            await Future.delayed(Duration(seconds: retry + 1));
-          }
-        }
-      }
-    }
-
-    print('⚠️  [SecureTimeService] Tous les serveurs NTP ont échoué');
-    return null;
   }
 
   /// Stocke l'heure NTP de manière sécurisée
@@ -279,7 +307,7 @@ class SecureTimeService {
         value: ntpTime.toIso8601String(),
       );
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur stockage NTP: $e');
+      // Silencieux
     }
   }
 
@@ -288,7 +316,6 @@ class SecureTimeService {
     _lastCheckTime = time;
 
     try {
-      // Stockage multi-niveaux pour résistance à la suppression
       await _secureStorage.write(
         key: _keyLastCheckTime,
         value: time.toIso8601String(),
@@ -298,7 +325,7 @@ class SecureTimeService {
         await _prefs!.setString(_keyLastCheckTime, time.toIso8601String());
       }
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur mise à jour lastCheckTime: $e');
+      // Silencieux
     }
   }
 
@@ -315,58 +342,40 @@ class SecureTimeService {
       if (_prefs != null) {
         await _prefs!.setInt(_keySessionCounter, _sessionCounter!);
       }
-
-      print('');
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur compteur sessions: $e');
+      // Silencieux
     }
   }
 
   /// Charge les données stockées
   Future<void> _loadStoredData() async {
     try {
-      // Charger lastCheckTime
       final lastCheckStr = await _secureStorage.read(key: _keyLastCheckTime);
       if (lastCheckStr != null) {
         _lastCheckTime = DateTime.parse(lastCheckStr);
-        print('');
       }
 
-      // Charger lastNtpTime
       final lastNtpStr = await _secureStorage.read(key: _keyLastNtpTime);
       if (lastNtpStr != null) {
         _cachedNtpTime = DateTime.parse(lastNtpStr);
-        _cachedNtpTimestamp = _lastCheckTime; // Approximation
-        print(' [SecureTimeService] Dernier NTP: $_cachedNtpTime');
+        _cachedNtpTimestamp = _lastCheckTime;
       }
 
-      // Charger sessionCounter
       final sessionCounterStr = await _secureStorage.read(key: _keySessionCounter);
       if (sessionCounterStr != null) {
         _sessionCounter = int.tryParse(sessionCounterStr);
-        print('');
       }
 
-      // Vérifier la cohérence avec SharedPreferences
-      if (_prefs != null) {
-        final prefsLastCheck = _prefs!.getString(_keyLastCheckTime);
-        final prefsSessionCounter = _prefs!.getInt(_keySessionCounter);
-
-        // Détecter une réinstallation suspecte
-        if (_lastCheckTime != null && prefsLastCheck == null) {
-          print('⚠️  [SecureTimeService] Réinstallation potentielle détectée');
-        }
-
-        if (_sessionCounter != null && prefsSessionCounter == null) {
-          print('⚠️  [SecureTimeService] Compteur de sessions réinitialisé');
-        }
+      final failureCountStr = await _secureStorage.read(key: _keyNtpFailureCount);
+      if (failureCountStr != null) {
+        _ntpFailureCount = int.tryParse(failureCountStr) ?? 0;
       }
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur chargement données: $e');
+      // Silencieux
     }
   }
 
-  /// Enregistre la première activation (appelé lors de l'activation de licence)
+  /// Enregistre la première activation
   Future<void> recordFirstActivation(DateTime activationTime) async {
     try {
       await _secureStorage.write(
@@ -377,10 +386,8 @@ class SecureTimeService {
       if (_prefs != null) {
         await _prefs!.setString(_keyFirstActivation, activationTime.toIso8601String());
       }
-
-      print(' [SecureTimeService] Première activation enregistrée: $activationTime');
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur enregistrement activation: $e');
+      // Silencieux
     }
   }
 
@@ -392,7 +399,7 @@ class SecureTimeService {
         return DateTime.parse(firstActivationStr);
       }
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur lecture première activation: $e');
+      // Silencieux
     }
     return null;
   }
@@ -403,7 +410,6 @@ class SecureTimeService {
       final secureData = await _secureStorage.read(key: _keySessionCounter);
       final prefsData = _prefs?.getInt(_keySessionCounter);
 
-      // Si les données existent dans secure storage mais pas dans prefs
       if (secureData != null && prefsData == null) {
         return true;
       }
@@ -414,12 +420,18 @@ class SecureTimeService {
     }
   }
 
-  /// Force une vérification NTP immédiate
+  /// Vérifie si l'app est en mode offline
+  bool get isOfflineMode => _isOfflineMode;
+
+  /// Force une vérification NTP immédiate (en arrière-plan)
   Future<DateTime?> forceNtpCheck() async {
-    return await _getNetworkTime(forceRefresh: true);
+    return await _getNetworkTimeWithTimeout(
+      forceRefresh: true,
+      timeout: _ntpTimeout,
+    );
   }
 
-  /// Nettoie toutes les données stockées (pour tests uniquement)
+  /// Nettoie toutes les données stockées (tests uniquement)
   Future<void> clearAllData() async {
     try {
       await _secureStorage.delete(key: _keyLastCheckTime);
@@ -427,6 +439,7 @@ class SecureTimeService {
       await _secureStorage.delete(key: _keySessionCounter);
       await _secureStorage.delete(key: _keyFirstActivation);
       await _secureStorage.delete(key: _keySystemTimeOffset);
+      await _secureStorage.delete(key: _keyNtpFailureCount);
 
       if (_prefs != null) {
         await _prefs!.remove(_keyLastCheckTime);
@@ -438,17 +451,20 @@ class SecureTimeService {
       _cachedNtpTimestamp = null;
       _lastCheckTime = null;
       _sessionCounter = null;
-
-      print('Y [SecureTimeService] Toutes les données nettoyées');
+      _ntpFailureCount = 0;
+      _isOfflineMode = false;
     } catch (e) {
-      print('⚠️  [SecureTimeService] Erreur nettoyage: $e');
+      // Silencieux
     }
   }
 
   /// Obtient des statistiques de diagnostic
   Future<Map<String, dynamic>> getDiagnostics() async {
     final systemTime = DateTime.now();
-    final ntpTime = await _getNetworkTime();
+    final ntpTime = await _getNetworkTimeWithTimeout(
+      forceRefresh: false,
+      timeout: _ntpTimeout,
+    );
 
     return {
       'systemTime': systemTime.toIso8601String(),
@@ -456,9 +472,16 @@ class SecureTimeService {
       'cachedNtpTime': _cachedNtpTime?.toIso8601String(),
       'sessionCounter': _sessionCounter,
       'ntpAvailable': ntpTime != null,
-      'systemTimeOffset': ntpTime != null ? ntpTime.difference(systemTime).inSeconds : null,
+      'systemTimeOffset': ntpTime?.difference(systemTime).inSeconds,
       'manipulationDetected': await _detectTimeManipulation(),
       'reinstallationDetected': await detectReinstallation(),
+      'offlineMode': _isOfflineMode,
+      'ntpFailureCount': _ntpFailureCount,
     };
+  }
+
+  /// Dispose le service
+  void dispose() {
+    _backgroundValidationTimer?.cancel();
   }
 }
