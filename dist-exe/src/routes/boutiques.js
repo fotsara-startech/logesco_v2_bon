@@ -311,6 +311,17 @@ function createBoutiquesRouter({ prisma, authService }) {
 
       // Transaction atomique
       const result = await prisma.$transaction(async (tx) => {
+        // 1. Récupérer les stocks AVANT les mouvements
+        const stockSource = await tx.stockBoutique.findUnique({
+          where: { boutiqueId_produitId: { boutiqueId: srcId, produitId: prdId } }
+        });
+        const stockDest = await tx.stockBoutique.findUnique({
+          where: { boutiqueId_produitId: { boutiqueId: dstId, produitId: prdId } }
+        });
+
+        const stockSourceInitial = stockSource?.quantiteDisponible || 0;
+        const stockDestInitial = stockDest?.quantiteDisponible || 0;
+
         // Décrémenter stock source
         await tx.stockBoutique.update({
           where: { boutiqueId_produitId: { boutiqueId: srcId, produitId: prdId } },
@@ -324,25 +335,33 @@ function createBoutiquesRouter({ prisma, authService }) {
           create: { boutiqueId: dstId, produitId: prdId, quantiteDisponible: qty, quantiteReservee: 0 }
         });
 
-        // Mouvement stock sortie (source)
+        // 2. Calculer les stocks APRÈS les mouvements
+        const stockSourceFinal = stockSourceInitial - qty;
+        const stockDestFinal = stockDestInitial + qty;
+
+        // Mouvement stock sortie (source) avec snapshots
         await tx.mouvementStock.create({
           data: {
             produitId: prdId,
             boutiqueId: srcId,
             typeMouvement: 'TRANSFERT_SORTIE',
             changementQuantite: -qty,
+            stockInitial: stockSourceInitial,
+            stockFinal: stockSourceFinal,
             typeReference: 'transfert',
             notes: `Transfert vers boutique #${dstId}${notes ? ' - ' + notes : ''}`
           }
         });
 
-        // Mouvement stock entrée (destination)
+        // Mouvement stock entrée (destination) avec snapshots
         await tx.mouvementStock.create({
           data: {
             produitId: prdId,
             boutiqueId: dstId,
             typeMouvement: 'TRANSFERT_ENTREE',
             changementQuantite: qty,
+            stockInitial: stockDestInitial,
+            stockFinal: stockDestFinal,
             typeReference: 'transfert',
             notes: `Transfert depuis boutique #${srcId}${notes ? ' - ' + notes : ''}`
           }

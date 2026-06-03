@@ -897,6 +897,19 @@ function createProcurementRouter(services) {
           }
         }
 
+        // Enqueue des détails de commande mis à jour lors de la réception
+        const detailsMisAJour = await prisma.detailCommandeApprovisionnement.findMany({
+          where: { commandeId: parseInt(id) }
+        });
+        for (const detail of detailsMisAJour) {
+          try {
+            await syncService.enqueue('details_commandes_approvisionnement', 'UPDATE', detail);
+            console.log(`📤 details_commandes_approvisionnement enqueued: ID ${detail.id}, quantiteRecue=${detail.quantiteRecue}`);
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue detail commande ${detail.id}:`, e.message);
+          }
+        }
+
         // Récupérer la commande mise à jour
         const commandeMiseAJour = await prisma.commandeApprovisionnement.findUnique({
           where: { id: parseInt(id) },

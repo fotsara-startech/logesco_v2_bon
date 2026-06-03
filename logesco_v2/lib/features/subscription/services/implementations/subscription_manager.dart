@@ -51,8 +51,7 @@ class SubscriptionManager implements ISubscriptionManager {
   // Contrôleurs de stream
   final StreamController<SubscriptionStatus> _statusController = StreamController<SubscriptionStatus>.broadcast();
 
-  // Timer pour les validations périodiques
-  Timer? _periodicValidationTimer;
+  // PLUS de timer périodique - tout fonctionne avec le cache
 
   // Cache du statut actuel avec optimisations
   SubscriptionStatus? _cachedStatus;
@@ -81,9 +80,13 @@ class SubscriptionManager implements ISubscriptionManager {
   @override
   Stream<SubscriptionStatus> get statusStream => _statusController.stream;
 
+  /// Initie le service - NTP check uniquement ici
   @override
   Future<void> initialize() async {
     try {
+      // Initialiser le SecureTimeService (NTP check au démarrage UNIQUEMENT)
+      await _secureTimeService.initialize();
+
       // Vérifier si c'est le premier lancement
       final isFirstLaunch = await _isFirstLaunch();
 
@@ -95,11 +98,12 @@ class SubscriptionManager implements ISubscriptionManager {
         await updateTrialStatus();
       }
 
-      // Effectuer une validation initiale
-      await performPeriodicValidation();
+      // Effectuer une validation initiale (avec les données mises en cache)
+      final status = await getCurrentStatus();
+      _updateStatus(status);
 
-      // Démarrer les validations périodiques
-      _startPeriodicValidation();
+      // NE PAS démarrer de validations périodiques
+      // Tout fonctionne avec le cache
     } catch (e) {
       // En cas d'erreur, créer un statut d'erreur
       final errorStatus = SubscriptionStatus(
@@ -799,7 +803,6 @@ class SubscriptionManager implements ISubscriptionManager {
 
   @override
   Future<void> dispose() async {
-    _periodicValidationTimer?.cancel();
     await _statusController.close();
   }
 
@@ -813,10 +816,8 @@ class SubscriptionManager implements ISubscriptionManager {
   }
 
   void _startPeriodicValidation() {
-    _periodicValidationTimer = Timer.periodic(
-      Duration(minutes: _validationIntervalMinutes),
-      (_) => performPeriodicValidation(),
-    );
+    // DÉSACTIVÉ - Plus de validations périodiques
+    // Tout fonctionne avec le cache depuis l'initialization
   }
 
   Future<SubscriptionStatus> _getSubscriptionStatus(LicenseData license) async {

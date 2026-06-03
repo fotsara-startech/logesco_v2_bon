@@ -67,11 +67,14 @@ class SecureTimeService {
   static const String _keyNtpFailureCount = 'secure_time_ntp_failures';
 
   // Configuration
-  static const Duration _ntpCacheDuration = Duration(hours: 24);
+  static const Duration _ntpCacheDuration = Duration(days: 30); // Cache très long (30 jours)
   static const Duration _maxAcceptableOffset = Duration(minutes: 5);
   static const int _maxNtpRetries = 2; // Réduit de 3 à 2
   static const Duration _ntpTimeout = Duration(seconds: 2); // Réduit de 5 à 2
   static const int _maxNtpFailuresBeforeOffline = 5;
+
+  // Flags pour contrôler les validations
+  bool _manipulationCheckEnabled = true; // Désactivé après démarrage
 
   // Serveurs NTP publics (fallback en cascade)
   static const List<String> _ntpServers = [
@@ -87,7 +90,6 @@ class SecureTimeService {
   int? _sessionCounter;
   int _ntpFailureCount = 0;
   bool _isOfflineMode = false;
-  Timer? _backgroundValidationTimer;
 
   SecureTimeService({
     FlutterSecureStorage? secureStorage,
@@ -99,24 +101,39 @@ class SecureTimeService {
   Future<void> initialize() async {
     await _loadStoredData();
     await _incrementSessionCounter();
-    _startBackgroundValidation();
+
+    // NTP check UNIQUEMENT à l'initialisation
+    await _performInitialNtpCheck();
+
+    // Après démarrage: désactiver les checks de manipulation horloge
+    _manipulationCheckEnabled = false;
   }
 
-  /// Démarre la validation périodique en arrière-plan (non-bloquante)
-  void _startBackgroundValidation() {
-    _backgroundValidationTimer = Timer.periodic(
-      const Duration(minutes: 30),
-      (_) => _validateInBackground(),
-    );
-  }
-
-  /// Valide le temps en arrière-plan sans bloquer l'UI
-  Future<void> _validateInBackground() async {
+  /// Effectue UNE SEULE vérification NTP au démarrage
+  Future<void> _performInitialNtpCheck() async {
     try {
-      // Ignorer si déjà en cours
-      await getSecureTime(forceNtpCheck: true);
+      final ntpTime = await _getNetworkTimeWithTimeout(
+        forceRefresh: true,
+        timeout: _ntpTimeout,
+      );
+
+      if (ntpTime != null) {
+        _cachedNtpTime = ntpTime;
+        _cachedNtpTimestamp = DateTime.now();
+        await _storeNtpTime(ntpTime);
+        _ntpFailureCount = 0;
+        _isOfflineMode = false;
+      } else {
+        _ntpFailureCount++;
+        if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
+          _isOfflineMode = true;
+        }
+      }
     } catch (e) {
-      // Les erreurs en arrière-plan sont silencieuses
+      _ntpFailureCount++;
+      if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
+        _isOfflineMode = true;
+      }
     }
   }
 
@@ -124,12 +141,12 @@ class SecureTimeService {
   ///
   /// Stratégie:
   /// 1. Retourner immédiatement le cache si disponible
-  /// 2. Lancer la validation NTP en arrière-plan (timeout court)
-  /// 3. Si NTP échoue → utiliser cache + temps écoulé
+  /// 2. NTP check UNIQUEMENT au démarrage (initialize())
+  /// 3. Pendant session: utiliser cache + temps écoulé
   /// 4. Jamais d'attente > 2 secondes
   Future<TimeValidationResult> getSecureTime({
     bool forceNtpCheck = false,
-    bool throwOnManipulation = false, // IMPORTANT: Ne jamais lancer d'exception en UI
+    bool throwOnManipulation = false, // IMPORTANT: Jamais vrai pendant session
   }) async {
     final warnings = <String>[];
     DateTime trustedTime;
@@ -140,17 +157,25 @@ class SecureTimeService {
 
     try {
       // 1. Vérifier le retour en arrière de l'horloge système
-      final clockRollback = await _detectTimeManipulation();
+      // UNIQUEMENT si manipulation check est activé (démarrage uniquement)
+      final clockRollback = _manipulationCheckEnabled ? await _detectTimeManipulation() : false;
       if (clockRollback) {
         isSystemTimeReliable = false;
         warnings.add('Retour en arrière de l\'horloge système détecté');
       }
 
-      // 2. Essayer d'obtenir l'heure NTP avec timeout COURT
-      final ntpTime = await _getNetworkTimeWithTimeout(
-        forceRefresh: forceNtpCheck,
-        timeout: _ntpTimeout,
-      );
+      // 2. NTP check UNIQUEMENT si forceNtpCheck ET manipulation enabled
+      // (i.e., uniquement au démarrage ou si explicitement forcé)
+      DateTime? ntpTime;
+      if (forceNtpCheck && _manipulationCheckEnabled) {
+        ntpTime = await _getNetworkTimeWithTimeout(
+          forceRefresh: true,
+          timeout: _ntpTimeout,
+        );
+      } else {
+        // Pendant session: utiliser cache uniquement
+        ntpTime = null;
+      }
 
       if (ntpTime != null) {
         ntpAvailable = true;
@@ -162,27 +187,23 @@ class SecureTimeService {
         systemTimeOffset = ntpTime.difference(systemTime);
 
         // Offset > 5 minutes = manipulation de date système confirmée
-        if (systemTimeOffset.abs() > _maxAcceptableOffset) {
+        // Mais UNIQUEMENT si check activé
+        if (_manipulationCheckEnabled && systemTimeOffset.abs() > _maxAcceptableOffset) {
           isSystemTimeReliable = false;
           warnings.add(
             'Manipulation de date détectée: décalage de ${systemTimeOffset.inMinutes} minutes',
           );
         }
 
-        // Mettre à jour le cache seulement si l'heure système est fiable
+        // Mettre à jour le cache
         if (isSystemTimeReliable) {
           await _updateLastCheckTime(trustedTime);
-          _ntpFailureCount = 0; // Reset counter on success
+          _ntpFailureCount = 0;
           _isOfflineMode = false;
         }
       } else {
         // NTP indisponible → Mode offline gracieux
-        warnings.add('Serveur NTP indisponible (mode offline)');
-        _ntpFailureCount++;
-
-        if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
-          _isOfflineMode = true;
-        }
+        warnings.add('Serveur NTP indisponible (cache utilisé)');
 
         // Utiliser le cache NTP s'il existe
         if (_cachedNtpTime != null && _cachedNtpTimestamp != null) {
@@ -195,18 +216,18 @@ class SecureTimeService {
             warnings.add('Temps restauré depuis cache NTP');
           } else {
             trustedTime = _cachedNtpTime!.add(elapsedSinceNtp);
-            warnings.add('Temps calculé depuis cache (offline)');
+            warnings.add('Temps calculé depuis cache');
           }
         } else if (_lastCheckTime != null && !clockRollback) {
           // Pas de cache NTP → utiliser lastCheckTime avec élapsed
           final elapsedSinceCheck = DateTime.now().difference(_lastCheckTime!);
           trustedTime = _lastCheckTime!.add(elapsedSinceCheck);
-          warnings.add('Temps calculé depuis dernière vérification (offline)');
+          warnings.add('Temps calculé depuis dernière vérification');
         } else {
           // Aucun cache disponible → système time seulement
           trustedTime = DateTime.now();
           isSystemTimeReliable = false;
-          warnings.add('Attention: Utilisation de l\'horloge système (offline, pas de cache)');
+          warnings.add('Attention: Utilisation de l\'horloge système (cache indisponible)');
         }
       }
 
@@ -482,6 +503,6 @@ class SecureTimeService {
 
   /// Dispose le service
   void dispose() {
-    _backgroundValidationTimer?.cancel();
+    // Plus de timer à annuler (validations périodiques désactivées)
   }
 }

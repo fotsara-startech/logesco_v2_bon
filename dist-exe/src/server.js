@@ -401,12 +401,22 @@ class LogescoServer {
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
 
-      // Initialiser le service de synchronisation cloud (si CLOUD_DB_URL défini)
-      const syncService = require('./services/sync-service');
-      await syncService.initialize(prisma);
+      // Initialiser le service de synchronisation cloud (uniquement si SQLite local)
+      // En mode cloud pur (Render, etc.), DATABASE_URL pointe vers PostgreSQL et il n'y a pas de SQLite
+      const databaseUrl = process.env.DATABASE_URL || '';
+      const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
+      let syncService = null;
+      
+      if (!isCloudOnly) {
+        syncService = require('./services/sync-service');
+        await syncService.initialize(prisma);
+        const syncStatus = syncService.getStatus();
+        console.log(`🔄 Mode sync: ${syncStatus.mode}`);
+      } else {
+        console.log(`🔄 Mode sync: disabled (cloud-only PostgreSQL deployment)`);
+      }
+      
       this.syncService = syncService;
-      const syncStatus = syncService.getStatus();
-      console.log(`🔄 Mode sync: ${syncStatus.mode}`);
 
       // Exposer prisma dans app.locals pour le sync middleware
       this.app.locals.prisma = prisma;

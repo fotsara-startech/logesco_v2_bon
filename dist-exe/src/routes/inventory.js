@@ -748,13 +748,29 @@ function createInventoryRouter(models) {
         const typesAffectantStock = ['achat', 'vente', 'ajustement', 'retour', 'correction', 'transfert'];
 
         await models.prisma.$transaction(async (tx) => {
-          // Créer le mouvement de stock avec boutiqueId
+          // 1. Récupérer le stock AVANT le mouvement
+          let stockInitial = 0;
+          if (boutiqueIdInt) {
+            const stockBoutique = await tx.stockBoutique.findUnique({
+              where: { boutiqueId_produitId: { boutiqueId: boutiqueIdInt, produitId } }
+            });
+            stockInitial = stockBoutique?.quantiteDisponible || 0;
+          } else {
+            stockInitial = produit.stock?.quantiteDisponible || 0;
+          }
+
+          // 2. Calculer le stock APRÈS le mouvement
+          const stockFinal = stockInitial + changementQuantite;
+
+          // 3. Créer le mouvement avec les snapshots
           const mouvement = await tx.mouvementStock.create({
             data: {
               produitId,
               boutiqueId: boutiqueIdInt,
               typeMouvement,
               changementQuantite,
+              stockInitial,
+              stockFinal,
               notes: notes || `Mouvement ${typeMouvement}`,
               referenceId,
               typeReference

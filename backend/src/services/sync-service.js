@@ -332,19 +332,24 @@ class SyncService {
          WHEN 'categories' THEN 4
          WHEN 'produits' THEN 5
          WHEN 'cash_registers' THEN 6
-         WHEN 'cash_sessions' THEN 7
+         WHEN 'fournisseurs' THEN 7
          WHEN 'clients' THEN 8
-         WHEN 'fournisseurs' THEN 9
-         WHEN 'movement_categories' THEN 10
-         WHEN 'cash_movements' THEN 11
-         WHEN 'financial_movements' THEN 12
-         WHEN 'ventes' THEN 13
-         WHEN 'ventes_proforma' THEN 14
-         WHEN 'details_ventes' THEN 15
-         WHEN 'details_ventes_proforma' THEN 16
-         WHEN 'stock_inventories' THEN 17
-         WHEN 'inventory_items' THEN 18
-         ELSE 20
+         WHEN 'movement_categories' THEN 9
+         WHEN 'stock' THEN 10
+         WHEN 'stock_boutiques' THEN 11
+         WHEN 'cash_sessions' THEN 12
+         WHEN 'cash_movements' THEN 13
+         WHEN 'financial_movements' THEN 14
+         WHEN 'commandes_approvisionnement' THEN 15
+         WHEN 'details_commandes_approvisionnement' THEN 16
+         WHEN 'mouvements_stock' THEN 17
+         WHEN 'ventes' THEN 18
+         WHEN 'ventes_proforma' THEN 19
+         WHEN 'details_ventes' THEN 20
+         WHEN 'details_ventes_proforma' THEN 21
+         WHEN 'stock_inventories' THEN 22
+         WHEN 'inventory_items' THEN 23
+         ELSE 30
        END, id ASC LIMIT 100`
     );
 
@@ -601,6 +606,12 @@ class SyncService {
     const isInitialPull = lastSync === '1970-01-01T00:00:00.000Z';
     const limitClause = isInitialPull ? '' : 'LIMIT 500';
 
+    // Récupérer les IDs en attente de push (ne pas écraser avec le pull)
+    const pendingInQueue = await this.localPrisma.$queryRawUnsafe(
+      `SELECT table_name, record_id FROM sync_queue WHERE synced = 0`
+    );
+    const pendingSet = new Set(pendingInQueue.map(r => `${r.table_name}:${r.record_id}`));
+
     // Désactiver les FK SQLite pendant le pull pour éviter les erreurs en cascade
     await this.localPrisma.$executeRawUnsafe('PRAGMA foreign_keys = OFF');
 
@@ -664,6 +675,10 @@ class SyncService {
           const localCols = await getLocalColumns(table);
 
           for (const row of result.rows) {
+            // Ne pas écraser un enregistrement en attente de push vers Neon
+            // (la version locale est plus récente que la version Neon)
+            if (pendingSet.has(`${table}:${row.id}`)) continue;
+
             // Filtrer uniquement les colonnes qui existent en SQLite local
             const entries = Object.entries(row).filter(([k]) => localCols.has(k));
             if (entries.length === 0) continue;
@@ -693,7 +708,9 @@ class SyncService {
               console.warn(`  ⚠️  ${table} INSERT échoué (id=${row.id}): ${insertErr.message}`);
             }
           }
-          console.log(`  📥 ${table}: ${result.rows.length} récupéré(s), ${pulled} inséré(s) au total`);
+          if (result.rows.length > 0) {
+            console.log(`  📥 ${table}: ${result.rows.length} récupéré(s), ${pulled} inséré(s) au total`);
+          }
         } catch (e) {
           console.warn(`  ❌ ${table}: erreur pull — ${e.message}`);
         }

@@ -610,7 +610,6 @@ function createProcurementRouter(services) {
 
         // Traitement de la réception dans une transaction
         const result = await prisma.$transaction(async (tx) => {
-          const mouvementsStock = [];
           const cumpUpdates = []; // Collecter les mises à jour CUMP pour après la transaction
           let commandeComplete = true;
 
@@ -638,8 +637,15 @@ function createProcurementRouter(services) {
 
             // Mettre à jour le stock si quantité reçue > 0
             if (quantiteRecue > 0) {
+              // 1. Récupérer le stock AVANT le mouvement
+              let stockInitial = 0;
               if (commande.boutiqueId) {
                 // ── Mode multi-boutique : SQL brut pour éviter le deadlock avec les hooks Prisma ──
+                const stockBoutique = await tx.stockBoutique.findUnique({
+                  where: { boutiqueId_produitId: { boutiqueId: commande.boutiqueId, produitId: detailCommande.produitId } }
+                });
+                stockInitial = stockBoutique?.quantiteDisponible || 0;
+
                 await tx.$executeRawUnsafe(`
                   INSERT INTO stock_boutiques (boutique_id, produit_id, quantite_disponible, quantite_reservee, derniere_maj)
                   VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
@@ -651,6 +657,11 @@ function createProcurementRouter(services) {
                 console.log(`📦 Stock boutique mis à jour: Produit ${detailCommande.produitId}, Boutique ${commande.boutiqueId}, +${quantiteRecue}`);
               } else {
                 // ── Mode classique : SQL brut pour éviter le deadlock avec les hooks Prisma ──
+                const stock = await tx.stock.findUnique({
+                  where: { produitId: detailCommande.produitId }
+                });
+                stockInitial = stock?.quantiteDisponible || 0;
+
                 await tx.$executeRawUnsafe(`
                   INSERT INTO stock (produit_id, quantite_disponible, quantite_reservee, derniere_maj)
                   VALUES (?, ?, 0, CURRENT_TIMESTAMP)
@@ -662,17 +673,24 @@ function createProcurementRouter(services) {
                 console.log(`📦 Stock global mis à jour: Produit ${detailCommande.produitId}, +${quantiteRecue}`);
               }
 
-              // Enregistrer le mouvement de stock avec boutiqueId
-              mouvementsStock.push({
-                produitId: detailCommande.produitId,
-                boutiqueId: commande.boutiqueId || null,
-                typeMouvement: 'achat',
-                changementQuantite: quantiteRecue,
-                referenceId: parseInt(id),
-                typeReference: 'approvisionnement',
-                notes: `Réception commande ${commande.numeroCommande}`
+              // 2. Calculer le stock APRÈS le mouvement
+              const stockFinal = stockInitial + quantiteRecue;
+
+              // Créer le mouvement de stock avec snapshots
+              await tx.mouvementStock.create({
+                data: {
+                  produitId: detailCommande.produitId,
+                  boutiqueId: commande.boutiqueId || null,
+                  typeMouvement: 'achat',
+                  changementQuantite: quantiteRecue,
+                  stockInitial,
+                  stockFinal,
+                  referenceId: parseInt(id),
+                  typeReference: 'approvisionnement',
+                  notes: `Réception commande ${commande.numeroCommande}`
+                }
               });
-              console.log(`📝 Mouvement de stock préparé: Produit ${detailCommande.produitId}, Quantité +${quantiteRecue}`);
+              console.log(`📝 Mouvement de stock créé: Produit ${detailCommande.produitId}, Quantité +${quantiteRecue}, Stock: ${stockInitial} → ${stockFinal}`);
 
               // Collecter pour recalcul CUMP après la transaction (évite deadlock)
               cumpUpdates.push({
@@ -688,17 +706,6 @@ function createProcurementRouter(services) {
             if (nouvelleQuantiteRecue < detailCommande.quantiteCommandee) {
               commandeComplete = false;
             }
-          }
-
-          // Créer tous les mouvements de stock
-          if (mouvementsStock.length > 0) {
-            console.log(`📦 Création de ${mouvementsStock.length} mouvement(s) de stock...`);
-            const result = await tx.mouvementStock.createMany({
-              data: mouvementsStock
-            });
-            console.log(`✅ ${result.count} mouvement(s) de stock créé(s)`);
-          } else {
-            console.log(`⚠️  Aucun mouvement de stock à créer`);
           }
 
           // Déterminer le nouveau statut de la commande
@@ -827,7 +834,7 @@ function createProcurementRouter(services) {
             }
           }
 
-          return { nouveauStatut, mouvementsStock, montantReception, modePaiementFinal, cumpUpdates };
+          return { nouveauStatut, montantReception, modePaiementFinal, cumpUpdates };
         });
 
         // Recalculer le CUMP APRÈS la transaction (évite les deadlocks)
@@ -871,23 +878,20 @@ function createProcurementRouter(services) {
           }
         }
 
-        // Enqueue explicite des mouvements de stock (createMany dans tx ne déclenche pas les hooks)
-        for (const mvt of result.mouvementsStock) {
+        // Enqueue des mouvements de stock créés dans la transaction
+        // Les mouvements sont créés individuellement, on les récupère par référence
+        const mvtCreated = await prisma.mouvementStock.findMany({
+          where: {
+            referenceId: parseInt(id),
+            typeReference: 'approvisionnement',
+            typeMouvement: 'achat'
+          }
+        });
+
+        for (const mvt of mvtCreated) {
           try {
-            // Récupérer l'ID du mouvement créé
-            const mvtCreated = await prisma.mouvementStock.findFirst({
-              where: {
-                produitId: mvt.produitId,
-                referenceId: mvt.referenceId,
-                typeReference: 'approvisionnement',
-                typeMouvement: 'achat'
-              },
-              orderBy: { id: 'desc' }
-            });
-            if (mvtCreated) {
-              await syncService.enqueue('mouvements_stock', 'INSERT', mvtCreated);
-              console.log(`📤 mouvements_stock enqueued: ID ${mvtCreated.id}, Produit ${mvt.produitId}, +${mvt.changementQuantite}`);
-            }
+            await syncService.enqueue('mouvements_stock', 'INSERT', mvt);
+            console.log(`📤 mouvements_stock enqueued: ID ${mvt.id}, Produit ${mvt.produitId}, +${mvt.changementQuantite}`);
           } catch (e) {
             console.warn(`⚠️  Erreur enqueue mouvement produit ${mvt.produitId}:`, e.message);
           }
@@ -911,7 +915,6 @@ function createProcurementRouter(services) {
           data: transformers.commandeApprovisionnement(commandeMiseAJour),
           message: `Réception enregistrée avec succès. Statut: ${result.nouveauStatut}, Mode: ${result.modePaiementFinal}`,
           meta: {
-            mouvementsStock: result.mouvementsStock.length,
             statut: result.nouveauStatut,
             modePaiement: result.modePaiementFinal
           }
