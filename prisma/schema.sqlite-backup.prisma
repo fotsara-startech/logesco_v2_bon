@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -221,6 +221,7 @@ model Produit {
   stock              Stock?
   stocksBoutiques    StockBoutique[]
   transferts         TransfertStock[]
+  historiquePrixAchat HistoriquePrixAchat[]
 
   @@index([seuilStockMinimum], map: "idx_produits_stock_minimum")
   @@index([nom, estActif], map: "idx_produits_nom_actif")
@@ -230,6 +231,21 @@ model Produit {
   @@index([estService], map: "idx_produits_service")
   @@index([gestionPeremption], map: "idx_produits_gestion_peremption")
   @@map("produits")
+}
+
+model HistoriquePrixAchat {
+  id           Int      @id @default(autoincrement())
+  produitId    Int      @map("produit_id")
+  prixAchat    Float    @map("prix_achat")
+  quantite     Float    @default(1)
+  source       String   @default("manuel")
+  referenceId  Int?     @map("reference_id")
+  dateCreation DateTime @default(now()) @map("date_creation")
+  produit      Produit  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+
+  @@index([produitId], map: "idx_historique_prix_achat_produit")
+  @@index([dateCreation], map: "idx_historique_prix_achat_date")
+  @@map("historique_prix_achat")
 }
 
 model Stock {

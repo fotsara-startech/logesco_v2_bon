@@ -66,6 +66,22 @@ npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
 
 Tu dois voir : `No pending migrations to apply` ✅
 
+### 2.3 — Appliquer les tables manquantes et date_modification
+
+⚠️ **Étape obligatoire** — le schéma initial ne crée pas `historique_prix_achat` et plusieurs tables manquent de `date_modification` (nécessaire pour la sync incrémentale).
+
+```powershell
+node -e "
+const { Pool } = require('pg');
+const fs = require('fs');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const sql = fs.readFileSync('prisma/migrations_pg/add_missing_tables_and_date_modification.sql', 'utf8');
+pool.query(sql).then(() => { console.log('✅ Migration appliquée'); pool.end(); }).catch(e => { console.error('❌', e.message); pool.end(); });
+"
+```
+
+Tu dois voir : `✅ Migration appliquée`
+
 ### 2.3 — Restaurer les migrations SQLite
 
 ```powershell
