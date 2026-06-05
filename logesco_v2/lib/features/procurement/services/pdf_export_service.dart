@@ -1,10 +1,7 @@
-﻿import 'dart:io';
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 
@@ -13,6 +10,7 @@ import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/pdf_save_helper.dart';
 
 class ProcurementPdfExportService {
   static final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
@@ -99,20 +97,10 @@ class ProcurementPdfExportService {
       ),
     );
 
-    // Sauvegarder le fichier
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/commande_${commande.numeroCommande}.pdf');
-    await file.writeAsBytes(await pdf.save());
-
-    // Ouvrir automatiquement le fichier PDF
-    try {
-      await OpenFile.open(file.path);
-      print(' PDF ouvert automatiquement: ${file.path}');
-    } catch (e) {
-      print('⚠️ Impossible d\'ouvrir le PDF automatiquement: $e');
-    }
-
-    return file.path;
+    // Sauvegarder et ouvrir (web: download, desktop: Documents + ouverture auto)
+    final fileName = 'commande_${commande.numeroCommande}.pdf';
+    final bytes = await pdf.save();
+    return savePdfAndOpen(bytes, fileName);
   }
 
   /// Construit l'en-tête du document

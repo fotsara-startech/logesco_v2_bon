@@ -201,6 +201,7 @@ model Produit {
   description        String?
   prixUnitaire       Float                             @map("prix_unitaire")
   prixAchat          Float?                            @map("prix_achat")
+  cump               Float?                            @map("cump")
   codeBarre          String?                           @map("code_barre")
   categorieId        Int?                              @map("categorie_id")
   seuilStockMinimum  Int                               @default(0) @map("seuil_stock_minimum")
@@ -360,6 +361,8 @@ model MouvementStock {
   boutiqueId         Int?      @map("boutique_id")
   typeMouvement      String    @map("type_mouvement")
   changementQuantite Int       @map("changement_quantite")
+  stockInitial       Int       @default(0) @map("stock_initial")
+  stockFinal         Int       @default(0) @map("stock_final")
   referenceId        Int?      @map("reference_id")
   typeReference      String?   @map("type_reference")
   dateMouvement      DateTime  @default(now()) @map("date_mouvement")

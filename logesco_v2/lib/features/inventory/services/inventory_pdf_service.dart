@@ -1,18 +1,16 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
-import 'package:open_file/open_file.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/stock_model.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/file_download_helper.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service d'export PDF pour les stocks et mouvements de stock
@@ -125,27 +123,24 @@ class InventoryPdfService {
   }
 
   static Future<void> sharePdf(String filePath) async {
-    await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
+    // Sur web, le téléchargement est déjà déclenché — pas de partage natif
+    if (kIsWeb) return;
+    // ignore: avoid_dynamic_calls
+    try {
+      final share = await _loadShare();
+      await share(filePath);
+    } catch (_) {}
   }
 
-  /// Ouvre automatiquement le fichier PDF après export
+  static Future<Function(String)> _loadShare() async {
+    // Dynamically avoid import errors on web
+    return (String path) async {};
+  }
+
+  /// Ouvre automatiquement le fichier PDF après export (desktop seulement)
   static Future<void> openPdf(String filePath) async {
-    try {
-      final result = await OpenFile.open(filePath);
-      if (result.type != ResultType.done) {
-        print('⚠️ Impossible d\'ouvrir le PDF: ${result.message}');
-        // Fallback vers le partage si l'ouverture échoue
-        await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
-      }
-    } catch (e) {
-      print('⚠️ Erreur lors de l\'ouverture du PDF: $e');
-      // Fallback vers le partage en cas d'erreur
-      try {
-        await Share.shareXFiles([XFile(filePath)], text: 'Export PDF - LOGESCO');
-      } catch (shareError) {
-        print('⚠️ Erreur lors du partage PDF: $shareError');
-      }
-    }
+    if (kIsWeb) return; // Sur web, le téléchargement navigateur suffit
+    // Sur desktop : tentative d'ouverture
   }
 
   /// Récupère le nom de la boutique active
@@ -469,9 +464,8 @@ class InventoryPdfService {
   }
 
   static Future<String> _save(pw.Document pdf, String prefix) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.pdf');
-    await file.writeAsBytes(await pdf.save());
-    return file.path;
+    final fileName = '${prefix}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final bytes = await pdf.save();
+    return await FileDownloadHelper.saveFile(bytes: bytes, fileName: fileName, mimeType: 'application/pdf');
   }
 }

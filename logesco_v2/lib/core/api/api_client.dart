@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../config/environment_config.dart';
+import '../constants/app_constants.dart';
 import '../models/api_response.dart';
 import '../utils/exceptions.dart';
 import '../utils/app_logger.dart';
@@ -11,6 +13,9 @@ import '../utils/app_logger.dart';
 class ApiClient extends GetxService {
   late http.Client _client;
   String? _authToken;
+  bool _isRefreshing = false;
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
   void onInit() {
@@ -51,6 +56,88 @@ class ApiClient extends GetxService {
     return headers;
   }
 
+  /// Tente de rafraîchir le token, retourne true si réussi
+  Future<bool> _tryRefreshToken() async {
+    if (_isRefreshing) return false;
+    _isRefreshing = true;
+
+    try {
+      final refreshToken = await _secureStorage.read(key: AppConstants.refreshTokenKey);
+      if (refreshToken == null) return false;
+
+      final url = Uri.parse('${EnvironmentConfig.apiBaseUrl}/auth/refresh');
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: json.encode({'refreshToken': refreshToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = json.decode(response.body);
+        final data = body['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final newToken = data['accessToken'] as String?;
+          final newRefresh = data['refreshToken'] as String?;
+          if (newToken != null) {
+            _authToken = newToken;
+            await _secureStorage.write(key: AppConstants.authTokenKey, value: newToken);
+            if (newRefresh != null) {
+              await _secureStorage.write(key: AppConstants.refreshTokenKey, value: newRefresh);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Token refresh failed', error: e);
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  /// Exécute une requête HTTP et retente après refresh si 401
+  Future<ApiResponse<T>> _executeWithRefresh<T>(
+    Future<http.Response> Function() request,
+    Future<http.Response> Function() retryRequest,
+    String method,
+    String endpoint,
+    Stopwatch stopwatch,
+  ) async {
+    var response = await request();
+    stopwatch.stop();
+    AppLogger.api(method, endpoint, response.statusCode, stopwatch.elapsed);
+
+    if (response.statusCode == 401 && _authToken != null) {
+      AppLogger.debug('Token expired, attempting refresh', data: {'endpoint': endpoint});
+      final refreshed = await _tryRefreshToken();
+      if (refreshed) {
+        stopwatch.reset();
+        stopwatch.start();
+        response = await retryRequest();
+        stopwatch.stop();
+        AppLogger.api('$method (retry)', endpoint, response.statusCode, stopwatch.elapsed);
+      } else {
+        // Refresh échoué → forcer déconnexion
+        _forceLogout();
+      }
+    }
+
+    return _handleResponse<T>(response);
+  }
+
+  /// Force la déconnexion quand le refresh échoue
+  void _forceLogout() {
+    clearAuthToken();
+    _secureStorage.delete(key: AppConstants.authTokenKey);
+    _secureStorage.delete(key: AppConstants.refreshTokenKey);
+    // Naviguer vers login si GetX est disponible
+    try {
+      Get.offAllNamed('/login');
+    } catch (_) {}
+  }
+
   /// Requête GET générique
   Future<ApiResponse<T>> get<T>(String endpoint, {Map<String, dynamic>? queryParameters}) async {
     final stopwatch = Stopwatch()..start();
@@ -62,36 +149,23 @@ class ApiClient extends GetxService {
         url = url.replace(queryParameters: queryParameters.map((key, value) => MapEntry(key, value.toString())));
       }
 
-      AppLogger.debug('API GET Request', data: {
-        'endpoint': endpoint,
-        'url': url.toString(),
-        'queryParameters': queryParameters,
-      });
+      AppLogger.debug('API GET Request', data: {'endpoint': endpoint, 'url': url.toString()});
 
-      final response = await _client.get(url, headers: _defaultHeaders);
-
-      stopwatch.stop();
-      AppLogger.api('GET', endpoint, response.statusCode, stopwatch.elapsed);
-
-      return _handleResponse<T>(response);
+      return await _executeWithRefresh<T>(
+        () => _client.get(url, headers: _defaultHeaders),
+        () => _client.get(url, headers: _defaultHeaders),
+        'GET',
+        endpoint,
+        stopwatch,
+      );
     } on SocketException catch (e) {
-      stopwatch.stop();
       AppLogger.error('Network error on GET $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Pas de connexion internet',
-        code: 'NO_INTERNET',
-        statusCode: 0,
-      );
+      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      stopwatch.stop();
       AppLogger.error('Unexpected error on GET $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Erreur inattendue: ${e.toString()}',
-        code: 'UNKNOWN_ERROR',
-        statusCode: 500,
-      );
+      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
     }
   }
 
@@ -101,41 +175,25 @@ class ApiClient extends GetxService {
 
     try {
       final url = Uri.parse('${EnvironmentConfig.apiBaseUrl}$endpoint');
+      final body = json.encode(data);
 
-      AppLogger.debug('API POST Request', data: {
-        'endpoint': endpoint,
-        'url': url.toString(),
-        'payload': data,
-      });
+      AppLogger.debug('API POST Request', data: {'endpoint': endpoint});
 
-      final response = await _client.post(
-        url,
-        headers: _defaultHeaders,
-        body: json.encode(data),
+      return await _executeWithRefresh<T>(
+        () => _client.post(url, headers: _defaultHeaders, body: body),
+        () => _client.post(url, headers: _defaultHeaders, body: body),
+        'POST',
+        endpoint,
+        stopwatch,
       );
-
-      stopwatch.stop();
-      AppLogger.api('POST', endpoint, response.statusCode, stopwatch.elapsed);
-
-      return _handleResponse<T>(response);
     } on SocketException catch (e) {
-      stopwatch.stop();
       AppLogger.error('Network error on POST $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Pas de connexion internet',
-        code: 'NO_INTERNET',
-        statusCode: 0,
-      );
+      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      stopwatch.stop();
       AppLogger.error('Unexpected error on POST $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Erreur inattendue: ${e.toString()}',
-        code: 'UNKNOWN_ERROR',
-        statusCode: 500,
-      );
+      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
     }
   }
 
@@ -145,41 +203,25 @@ class ApiClient extends GetxService {
 
     try {
       final url = Uri.parse('${EnvironmentConfig.apiBaseUrl}$endpoint');
+      final body = json.encode(data);
 
-      AppLogger.debug('API PUT Request', data: {
-        'endpoint': endpoint,
-        'url': url.toString(),
-        'payload': data,
-      });
+      AppLogger.debug('API PUT Request', data: {'endpoint': endpoint});
 
-      final response = await _client.put(
-        url,
-        headers: _defaultHeaders,
-        body: json.encode(data),
+      return await _executeWithRefresh<T>(
+        () => _client.put(url, headers: _defaultHeaders, body: body),
+        () => _client.put(url, headers: _defaultHeaders, body: body),
+        'PUT',
+        endpoint,
+        stopwatch,
       );
-
-      stopwatch.stop();
-      AppLogger.api('PUT', endpoint, response.statusCode, stopwatch.elapsed);
-
-      return _handleResponse<T>(response);
     } on SocketException catch (e) {
-      stopwatch.stop();
       AppLogger.error('Network error on PUT $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Pas de connexion internet',
-        code: 'NO_INTERNET',
-        statusCode: 0,
-      );
+      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      stopwatch.stop();
       AppLogger.error('Unexpected error on PUT $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Erreur inattendue: ${e.toString()}',
-        code: 'UNKNOWN_ERROR',
-        statusCode: 500,
-      );
+      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
     }
   }
 
@@ -190,35 +232,23 @@ class ApiClient extends GetxService {
     try {
       final url = Uri.parse('${EnvironmentConfig.apiBaseUrl}$endpoint');
 
-      AppLogger.debug('API DELETE Request', data: {
-        'endpoint': endpoint,
-        'url': url.toString(),
-      });
+      AppLogger.debug('API DELETE Request', data: {'endpoint': endpoint});
 
-      final response = await _client.delete(url, headers: _defaultHeaders);
-
-      stopwatch.stop();
-      AppLogger.api('DELETE', endpoint, response.statusCode, stopwatch.elapsed);
-
-      return _handleResponse<T>(response);
+      return await _executeWithRefresh<T>(
+        () => _client.delete(url, headers: _defaultHeaders),
+        () => _client.delete(url, headers: _defaultHeaders),
+        'DELETE',
+        endpoint,
+        stopwatch,
+      );
     } on SocketException catch (e) {
-      stopwatch.stop();
       AppLogger.error('Network error on DELETE $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Pas de connexion internet',
-        code: 'NO_INTERNET',
-        statusCode: 0,
-      );
+      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      stopwatch.stop();
       AppLogger.error('Unexpected error on DELETE $endpoint', error: e);
-
-      throw ApiException(
-        message: 'Erreur inattendue: ${e.toString()}',
-        code: 'UNKNOWN_ERROR',
-        statusCode: 500,
-      );
+      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
     }
   }
 

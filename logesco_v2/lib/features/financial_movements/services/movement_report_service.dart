@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/file_download_helper.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service dédié aux rapports et analyses des mouvements financiers
@@ -207,15 +207,12 @@ class MovementReportService {
         final pdfResponse = await http.get(Uri.parse(downloadUrl));
 
         if (pdfResponse.statusCode == 200) {
-          // Sauvegarder le fichier localement
-          final directory = await getApplicationDocumentsDirectory();
           final fileName = 'rapport_mouvements_${DateTime.now().millisecondsSinceEpoch}.pdf';
-          final filePath = '${directory.path}/$fileName';
-
-          final file = File(filePath);
-          await file.writeAsBytes(pdfResponse.bodyBytes);
-
-          print('✅ Rapport PDF exporté avec succès: $filePath');
+          final filePath = await FileDownloadHelper.saveFile(
+            bytes: pdfResponse.bodyBytes,
+            fileName: fileName,
+            mimeType: 'application/pdf',
+          );
           return filePath;
         } else {
           throw Exception('Erreur lors du téléchargement du PDF');
@@ -270,15 +267,12 @@ class MovementReportService {
         final excelResponse = await http.get(Uri.parse(fullDownloadUrl));
 
         if (excelResponse.statusCode == 200) {
-          // Sauvegarder le fichier localement
-          final directory = await getApplicationDocumentsDirectory();
           final fileName = 'rapport_mouvements_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-          final filePath = '${directory.path}/$fileName';
-
-          final file = File(filePath);
-          await file.writeAsBytes(excelResponse.bodyBytes);
-
-          print('✅ Rapport Excel exporté avec succès: $filePath');
+          final filePath = await FileDownloadHelper.saveFile(
+            bytes: Uint8List.fromList(excelResponse.bodyBytes),
+            fileName: fileName,
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          );
           return filePath;
         } else {
           throw Exception('Erreur lors du téléchargement du fichier Excel');

@@ -145,6 +145,16 @@ function createCustomerRouter(models) {
         // Enqueue pour sync vers Neon
         if (syncService) {
           await syncService.enqueue('clients', 'INSERT', client);
+          // Récupérer le compte directement depuis la BD pour être sûr
+          const compte = client.compte || await models.prisma.compteClient.findUnique({
+            where: { clientId: client.id }
+          });
+          if (compte) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+            console.log(`✅ Compte client synchronisé vers Neon (ID: ${compte.id})`);
+          } else {
+            console.warn(`⚠️ Aucun compte trouvé pour le client ${client.id}`);
+          }
         }
         
         const clientDTO = ClientDTO.fromEntity(client);
@@ -564,6 +574,11 @@ function createCustomerRouter(models) {
             }
           });
           console.log(`✅ Compte créé avec succès (ID: ${compte.id})`);
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+          }
         }
 
         // Récupérer les informations de l'entreprise
@@ -740,6 +755,11 @@ function createCustomerRouter(models) {
               limiteCredit: 0
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+          }
         }
 
         // Calculer le nouveau solde
@@ -753,9 +773,9 @@ function createCustomerRouter(models) {
         console.log(`  - Nouveau solde: ${nouveauSolde}`);
 
         // Mettre à jour le compte et créer la transaction
-        await models.prisma.$transaction(async (tx) => {
+        const txResult = await models.prisma.$transaction(async (tx) => {
           // Mettre à jour le solde
-          await tx.compteClient.update({
+          const compteUpdated = await tx.compteClient.update({
             where: { clientId: parseInt(id) },
             data: { soldeActuel: nouveauSolde }
           });
@@ -845,6 +865,9 @@ function createCustomerRouter(models) {
 
             console.log(`✅ [Payment] Mouvement de caisse créé (ID: ${mouvement.id})`);
             console.log('✅ [Payment] Solde de la caisse mis à jour avec succès');
+
+            // Retourner le mouvement pour sync après transaction
+            return { mouvement, compteClient: compteUpdated };
           } else {
             console.log('⚠️ [Payment] Aucune caisse active trouvée');
             console.log('⚠️ [Payment] Critères de recherche:');
@@ -852,8 +875,38 @@ function createCustomerRouter(models) {
             console.log('  - dateOuverture: not null');
             console.log('  - dateFermeture: null');
             console.log('⚠️ [Payment] Le paiement est enregistré mais le solde de caisse n\'est pas mis à jour');
+            return { mouvement: null, compteClient: compteUpdated };
           }
         });
+
+        // Sync vers Neon après la transaction
+        if (syncService && (txResult.mouvement || txResult.compteClient)) {
+          setImmediate(async () => {
+            try {
+              if (txResult.mouvement) {
+                await syncService.enqueue('cash_movements', 'INSERT', txResult.mouvement);
+                console.log('✅ [Payment] Mouvement de caisse synchronisé vers Neon');
+              }
+              if (txResult.compteClient) {
+                await syncService.enqueue('comptes_clients', 'UPDATE', txResult.compteClient);
+                console.log('✅ [Payment] Compte client synchronisé vers Neon');
+
+                // Syncer la transaction de compte créée
+                const txComptes = await models.prisma.transactionCompte.findMany({
+                  where: { compteId: txResult.compteClient.id },
+                  orderBy: { id: 'desc' },
+                  take: 1
+                });
+                for (const txC of txComptes) {
+                  await syncService.enqueue('transactions_comptes', 'INSERT', txC);
+                }
+                console.log('✅ [Payment] Transaction compte synchronisée vers Neon');
+              }
+            } catch (syncErr) {
+              console.error('❌ [Payment] Erreur sync:', syncErr.message);
+            }
+          });
+        }
 
         res.json({
           success: true,

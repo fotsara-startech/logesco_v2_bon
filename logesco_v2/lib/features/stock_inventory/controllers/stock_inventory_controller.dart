@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/inventory_model.dart';
@@ -8,6 +9,7 @@ import '../services/inventory_print_service.dart';
 import '../../../core/config/app_config.dart';
 import '../../products/services/category_service.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
+import '../../sync/controllers/sync_controller.dart';
 
 /// Contrôleur pour la gestion de l'inventaire de stock
 class StockInventoryController extends GetxController {
@@ -149,6 +151,20 @@ class StockInventoryController extends GetxController {
       inventories.add(newInventory);
 
       SnackbarHelper.success('Inventaire créé avec succès');
+
+      // Déclencher la synchronisation automatiquement après création
+      try {
+        final syncController = Get.find<SyncController>();
+        if (syncController.isType3) {
+          await syncController.triggerSync();
+        }
+      } catch (e) {
+        // Si le SyncController n'est pas disponible, continuer sans erreur
+        if (kDebugMode) {
+          print('Sync non disponible après création inventaire: $e');
+        }
+      }
+
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de créer l\'inventaire: $e');
@@ -170,6 +186,19 @@ class StockInventoryController extends GetxController {
       }
 
       SnackbarHelper.success('Inventaire mis à jour avec succès');
+
+      // Déclencher la synchronisation après mise à jour
+      try {
+        final syncController = Get.find<SyncController>();
+        if (syncController.isType3) {
+          await syncController.triggerSync();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Sync non disponible après mise à jour inventaire: $e');
+        }
+      }
+
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de mettre à jour l\'inventaire: $e');
@@ -186,6 +215,19 @@ class StockInventoryController extends GetxController {
       inventories.removeWhere((inventory) => inventory.id == inventoryId);
 
       SnackbarHelper.success('Inventaire supprimé avec succès');
+
+      // Déclencher la synchronisation après suppression
+      try {
+        final syncController = Get.find<SyncController>();
+        if (syncController.isType3) {
+          await syncController.triggerSync();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Sync non disponible après suppression inventaire: $e');
+        }
+      }
+
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de supprimer l\'inventaire: $e');
@@ -263,6 +305,19 @@ class StockInventoryController extends GetxController {
       }
 
       SnackbarHelper.success('Inventaire terminé avec succès');
+
+      // Déclencher la synchronisation après fin d'inventaire
+      try {
+        final syncController = Get.find<SyncController>();
+        if (syncController.isType3) {
+          await syncController.triggerSync();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Sync non disponible après fin inventaire: $e');
+        }
+      }
+
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de terminer l\'inventaire: $e');
@@ -301,6 +356,19 @@ class StockInventoryController extends GetxController {
       if (selectedInventory.value?.id == inventoryId) selectedInventory.value = updatedInventory;
 
       SnackbarHelper.success('Inventaire clôturé - Stock boutique équilibré');
+
+      // Déclencher la synchronisation après clôture (très important car modifie le stock)
+      try {
+        final syncController = Get.find<SyncController>();
+        if (syncController.isType3) {
+          await syncController.triggerSync();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Sync non disponible après clôture inventaire: $e');
+        }
+      }
+
       return true;
     } catch (e) {
       SnackbarHelper.error('Impossible de clôturer l\'inventaire: $e');
@@ -325,11 +393,22 @@ class StockInventoryController extends GetxController {
       final filePath = await InventoryPrintService.printCountingSheet(inventory, currentInventoryItems);
 
       if (filePath != null) {
-        SnackbarHelper.success('Feuille de comptage exportée et ouverte');
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+        if (kIsWeb) {
+          SnackbarHelper.success(
+            'Feuille de comptage téléchargée: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          SnackbarHelper.success('Feuille de comptage exportée et ouverte');
+        }
       } else {
         SnackbarHelper.error('Impossible de générer la feuille de comptage');
       }
     } catch (e) {
+      print('❌ Erreur export feuille de comptage: $e');
       SnackbarHelper.error('Impossible de générer la feuille de comptage: $e');
     }
   }
@@ -347,11 +426,22 @@ class StockInventoryController extends GetxController {
       final filePath = await InventoryPrintService.printInventoryReport(inventory, currentInventoryItems);
 
       if (filePath != null) {
-        SnackbarHelper.success('Rapport d\'inventaire exporté et ouvert');
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+        if (kIsWeb) {
+          SnackbarHelper.success(
+            'Rapport d\'inventaire téléchargé: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          SnackbarHelper.success('Rapport d\'inventaire exporté et ouvert');
+        }
       } else {
         SnackbarHelper.error('Impossible de générer le rapport d\'inventaire');
       }
     } catch (e) {
+      print('❌ Erreur export rapport inventaire: $e');
       SnackbarHelper.error('Impossible de générer le rapport d\'inventaire: $e');
     }
   }

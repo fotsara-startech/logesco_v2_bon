@@ -405,10 +405,21 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                IconButton(
-                  onPressed: () => widget.controller.supprimerProduit(detail.produit.id),
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  iconSize: 20,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () => _modifierProduit(detail),
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      iconSize: 20,
+                      tooltip: 'procurement_edit_product'.tr,
+                    ),
+                    IconButton(
+                      onPressed: () => widget.controller.supprimerProduit(detail.produit.id),
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      iconSize: 20,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -416,6 +427,19 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
         ),
       ),
     );
+  }
+
+  void _modifierProduit(DetailCommandeCreation detail) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _EditProductDialog(detail: detail),
+    );
+
+    if (result != null) {
+      final quantity = result['quantity'] as int;
+      final unitCost = result['unitCost'] as double;
+      widget.controller.ajouterProduit(detail.produit, quantity, unitCost);
+    }
   }
 
   void _selectionnerFournisseur() async {
@@ -1077,5 +1101,131 @@ class _SupplierSearchDialogState extends State<_SupplierSearchDialog> {
         ),
       ],
     );
+  }
+}
+
+/// Dialogue pour modifier la quantité et le prix d'un produit déjà ajouté
+class _EditProductDialog extends StatefulWidget {
+  final DetailCommandeCreation detail;
+
+  const _EditProductDialog({required this.detail});
+
+  @override
+  State<_EditProductDialog> createState() => _EditProductDialogState();
+}
+
+class _EditProductDialogState extends State<_EditProductDialog> {
+  late TextEditingController _quantityController;
+  late TextEditingController _unitCostController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: widget.detail.quantite.toString());
+    _unitCostController = TextEditingController(text: widget.detail.coutUnitaire.toStringAsFixed(0));
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _unitCostController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.edit, color: Colors.blue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'procurement_edit_product'.tr,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ),
+        ],
+      ),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nom du produit
+            Text(
+              widget.detail.produit.nom,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              '${'procurement_ref'.tr}: ${widget.detail.produit.reference}',
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+
+            // Quantité
+            TextFormField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'procurement_qty'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.numbers),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'procurement_qty_required'.tr;
+                final qty = int.tryParse(value);
+                if (qty == null || qty <= 0) return 'procurement_qty_invalid'.tr;
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Prix unitaire
+            TextFormField(
+              controller: _unitCostController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'procurement_price'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.attach_money),
+                suffixText: 'FCFA',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'procurement_price_required'.tr;
+                final price = double.tryParse(value.replaceAll(',', '.'));
+                if (price == null || price < 0) return 'procurement_price_invalid'.tr;
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('cancel'.tr),
+        ),
+        ElevatedButton(
+          onPressed: _confirmer,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
+          child: Text('save'.tr),
+        ),
+      ],
+    );
+  }
+
+  void _confirmer() {
+    if (_formKey.currentState?.validate() ?? false) {
+      Navigator.of(context).pop({
+        'quantity': int.parse(_quantityController.text),
+        'unitCost': double.parse(_unitCostController.text.replaceAll(',', '.')),
+      });
+    }
   }
 }

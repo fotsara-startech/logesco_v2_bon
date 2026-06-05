@@ -58,6 +58,26 @@ const Map<String, String> esTranslations = {
   'menu_printing': 'Impresiones',
   'menu_subscription': 'Suscripción',
 
+  // Sincronización Neon (Tipo 3)
+  'sync_title': 'Sincronización Cloud',
+  'sync_refresh': 'Actualizar',
+  'sync_loading': 'Cargando...',
+  'sync_neon_connected': 'Neon conectado',
+  'sync_neon_offline': 'Neon sin conexión',
+  'sync_last_sync': 'Última sync',
+  'sync_pending_count': 'Pendiente',
+  'sync_failed_label': 'error(es)',
+  'sync_items': 'elemento(s)',
+  'sync_pending_short': 'pendiente',
+  'sync_up_to_date': 'Al día',
+  'sync_now': 'Sincronizar ahora',
+  'sync_in_progress': 'Sincronizando...',
+  'sync_success': 'Sincronización exitosa',
+  'sync_failed': 'Error de sincronización',
+  'sync_mode_hybrid': 'Modo híbrido (en línea)',
+  'sync_mode_offline': 'Modo sin conexión',
+  'sync_mode_local': 'Solo modo local',
+
   // ============================================================================
   // PROVEEDORES
   // ============================================================================
@@ -2074,6 +2094,11 @@ const Map<String, String> esTranslations = {
   'procurement_products_required': 'Productos *',
   'procurement_add_product': 'Agregar',
   'procurement_no_products_added': 'Sin productos agregados',
+  'procurement_edit_product': 'Editar producto',
+  'procurement_qty_required': 'La cantidad es requerida',
+  'procurement_qty_invalid': 'Cantidad inválida (debe ser > 0)',
+  'procurement_price_required': 'El precio es requerido',
+  'procurement_price_invalid': 'Precio inválido',
   'procurement_total': 'Total',
   'procurement_create_order': 'Crear pedido',
   'procurement_creating': 'Creando...',

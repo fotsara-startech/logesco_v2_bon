@@ -419,30 +419,6 @@ class _ProcurementPageState extends State<ProcurementPage> {
 
   /// Exporte une commande en PDF
   void _exportCommandeToPdf(BuildContext context, CommandeApprovisionnement commande, ProcurementController controller) async {
-    try {
-      final filePath = await controller.exportCommandeToPdf(commande);
-      if (filePath != null) {
-        // Afficher un message de succès avec option d'ouvrir le fichier
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('procurement_export_success'.tr.replaceAll('@filename', filePath.split('/').last)),
-            action: SnackBarAction(
-              label: 'procurement_export_open'.tr,
-              onPressed: () {
-                // TODO: Implémenter l'ouverture du fichier PDF
-                // Utiliser un package comme open_file ou url_launcher
-              },
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('procurement_export_error'.tr.replaceAll('@error', e.toString())),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    await controller.exportCommandeToPdf(commande);
   }
 }

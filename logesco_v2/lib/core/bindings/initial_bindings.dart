@@ -38,6 +38,7 @@ import '../config/app_config.dart';
 import '../../features/boutiques/services/boutique_service.dart';
 import '../../features/boutiques/controllers/boutique_controller.dart';
 import '../../features/dashboard/controllers/dashboard_controller.dart';
+import '../../features/sync/controllers/sync_controller.dart';
 
 /// Bindings initiaux pour l'injection de dépendances avec GetX
 class InitialBindings extends Bindings {
@@ -125,6 +126,9 @@ class InitialBindings extends Bindings {
 
     // Dashboard controller permanent (pour le rechargement lors du switch de boutique)
     Get.put<DashboardController>(DashboardController(), permanent: true);
+
+    // Contrôleur de synchronisation cloud (Type 3 — Neon)
+    Get.put<SyncController>(SyncController(), permanent: true);
 
     // Services d'abonnement
     _configureSubscriptionServices();

@@ -3,6 +3,7 @@
  */
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/features/suppliers/models/supplier.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
@@ -310,10 +311,21 @@ class ProcurementController extends GetxController {
     try {
       final filePath = await ProcurementPdfExportService.exportCommandeToPdf(commande);
 
-      SnackbarHelper.success('Commande exportée en PDF');
+      final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+      if (kIsWeb) {
+        SnackbarHelper.success(
+          'Commande exportée en PDF: $filename',
+          title: 'Export réussi',
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        SnackbarHelper.success('Commande exportée en PDF: $filename');
+      }
 
       return filePath;
     } catch (e) {
+      print('❌ Erreur export commande PDF: $e');
       SnackbarHelper.error('Impossible d\'exporter la commande: $e');
       return null;
     }

@@ -885,18 +885,18 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
           return { compte: compteUpdated, transaction, mouvementFinancier, mouvementFinancierRecord, updatedSession, updatedCaisse };
         }, { timeout: 15000 });
 
-        // Sync vers Neon
+        // Log vers operation_log (Event Sourcing V2)
         if (syncService) {
-          await syncService.enqueue('comptes_fournisseurs', 'UPDATE', result.compte);
-          await syncService.enqueue('transactions_comptes', 'INSERT', result.transaction);
-          if (result.updatedSession) {
-            await syncService.enqueue('cash_sessions', 'UPDATE', result.updatedSession);
+          await syncService.logOperation('comptes_fournisseurs', 'UPDATE', result.compte, req.user.id);
+          await syncService.logOperation('transactions_comptes', 'INSERT', result.transaction, req.user.id);
+          if (result.updatedCommande) {
+            await syncService.logOperation('commandes_approvisionnement', 'UPDATE', result.updatedCommande, req.user.id);
           }
-          if (result.updatedCaisse) {
-            await syncService.enqueue('cash_registers', 'UPDATE', result.updatedCaisse);
+          if (result.updatedSession) {
+            await syncService.logOperation('cash_sessions', 'UPDATE', result.updatedSession, req.user.id);
           }
           if (result.mouvementFinancier) {
-            await syncService.enqueue('cash_movements', 'INSERT', result.mouvementFinancier);
+            await syncService.logOperation('cash_movements', 'INSERT', result.mouvementFinancier, req.user.id);
           }
           if (result.mouvementFinancierRecord) {
             await syncService.enqueue('financial_movements', 'INSERT', result.mouvementFinancierRecord);

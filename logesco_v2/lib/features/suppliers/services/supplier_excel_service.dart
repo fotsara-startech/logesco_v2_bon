@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import '../models/supplier.dart';
+import '../../../core/utils/file_download_helper.dart';
+import '../../../core/utils/file_reader_helper.dart';
 
 /// Service pour l'import/export Excel des fournisseurs
 class SupplierExcelService {
@@ -52,15 +52,17 @@ class SupplierExcelService {
       }
 
       // Sauvegarder le fichier
-      final directory = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final filePath = '${directory.path}/fournisseurs_$timestamp.xlsx';
+      final fileName = 'fournisseurs_$timestamp.xlsx';
+      final bytes = excel.encode();
+      if (bytes == null) return null;
 
-      File(filePath)
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(excel.encode()!);
+      final filePath = await FileDownloadHelper.saveFile(
+        bytes: Uint8List.fromList(bytes),
+        fileName: fileName,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
 
-      print('✅ Export Excel réussi: $filePath');
       return filePath;
     } catch (e) {
       print('❌ Erreur lors de l\'export Excel: $e');
@@ -93,10 +95,13 @@ class SupplierExcelService {
         print('✅ Bytes du fichier (Web): ${bytes.length} octets');
       } else if (result.files.single.path != null) {
         // Desktop: lire le fichier depuis le path
-        final file = File(result.files.single.path!);
-        bytes = await file.readAsBytes();
-        print('✅ Bytes du fichier (Desktop): ${bytes.length} octets');
-      } else {
+        bytes = await readFileFromPath(result.files.single.path!);
+        if (bytes != null) {
+          print('✅ Bytes du fichier (Desktop): ${bytes.length} octets');
+        }
+      }
+
+      if (bytes == null) {
         print('❌ Impossible de lire le fichier (ni bytes ni path disponible)');
         return null;
       }
@@ -226,15 +231,13 @@ class SupplierExcelService {
       }
 
       // Sauvegarder le fichier
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/template_fournisseurs.xlsx';
-
-      File(filePath)
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(excel.encode()!);
-
-      print('✅ Template généré: $filePath');
-      return filePath;
+      final bytes = excel.encode();
+      if (bytes == null) return null;
+      return FileDownloadHelper.saveFile(
+        bytes: Uint8List.fromList(bytes),
+        fileName: 'template_fournisseurs.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
     } catch (e) {
       print('❌ Erreur lors de la génération du template: $e');
       return null;

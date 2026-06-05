@@ -1,12 +1,10 @@
-﻿import 'dart:io';
-import 'package:pdf/pdf.dart';
+﻿import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 import '../models/inventory_model.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/pdf_save_helper.dart';
 import 'package:get/get.dart';
 
 /// Service d'impression pour les feuilles d'inventaire
@@ -90,13 +88,10 @@ class InventoryPrintService {
   /// Sauvegarde le PDF sur le disque et l'ouvre automatiquement
   static Future<String?> _savePdfAndOpen(pw.Document pdf, String baseName) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final filePath = '${dir.path}/${baseName}_$timestamp.pdf';
+      final fileName = '${baseName}_$timestamp.pdf';
       final bytes = await pdf.save();
-      await File(filePath).writeAsBytes(bytes);
-      await OpenFile.open(filePath);
-      return filePath;
+      return await savePdfAndOpen(bytes, fileName);
     } catch (e) {
       return null;
     }

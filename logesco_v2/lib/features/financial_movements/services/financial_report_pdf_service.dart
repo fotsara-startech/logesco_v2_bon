@@ -1,16 +1,14 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_file/open_file.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../services/movement_report_service.dart';
+import '../../../core/utils/pdf_save_helper.dart';
 
 /// Service pour générer les PDF de rapports financiers
 class FinancialReportPdfService {
@@ -753,16 +751,8 @@ class FinancialReportPdfService {
 
   /// Sauvegarde et ouvre le PDF
   static Future<String> _saveAndOpenPDF(Uint8List pdfBytes, DateTime startDate, DateTime endDate) async {
-    final directory = await getApplicationDocumentsDirectory();
     final fileName = 'Rapport_Financier_${_formatDateForFile(startDate)}_${_formatDateForFile(endDate)}.pdf';
-    final file = File('${directory.path}/$fileName');
-
-    await file.writeAsBytes(pdfBytes);
-
-    // Ouvrir automatiquement le PDF
-    await OpenFile.open(file.path);
-
-    return file.path;
+    return savePdfAndOpen(pdfBytes, fileName);
   }
 
   /// Formate une date pour l'affichage

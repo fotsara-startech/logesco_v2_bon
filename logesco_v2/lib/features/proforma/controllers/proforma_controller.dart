@@ -211,6 +211,8 @@ class ProformaController extends GetxController {
     required String modePaiement,
     required double montantPaye,
     DateTime? dateVente,
+    double? montantTva,
+    double? tauxTva,
   }) async {
     try {
       final cashCtrl = Get.find<CashSessionController>();
@@ -229,6 +231,8 @@ class ProformaController extends GetxController {
         modePaiement: modePaiement,
         montantPaye: montantPaye,
         dateVente: dateVente,
+        montantTva: montantTva,
+        tauxTva: tauxTva,
       );
 
       final response = await _service.validateProforma(proforma.id, request);

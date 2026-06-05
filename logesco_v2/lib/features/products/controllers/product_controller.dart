@@ -246,8 +246,12 @@ class ProductController extends GetxController {
   }
 
   /// Navigue vers la création d'un produit
-  void goToCreateProduct() {
-    Get.toNamed('/products/create');
+  Future<void> goToCreateProduct() async {
+    final result = await Get.toNamed('/products/create');
+    if (result != null && result is Product) {
+      products.insert(0, result);
+      products.refresh();
+    }
   }
 
   /// Navigue vers l'édition d'un produit

@@ -33,6 +33,8 @@ class SecureLicenseStorage {
 
   /// Initialise le système de stockage sécurisé
   Future<void> initialize() async {
+    // Idempotent : ne réinitialise pas si les clés sont déjà générées
+    if (_primaryEncryptionKey != null && _backupEncryptionKey != null) return;
     await _generateEncryptionKeys();
     await _initializeTamperDetection();
   }

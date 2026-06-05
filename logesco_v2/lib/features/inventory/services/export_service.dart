@@ -1,9 +1,8 @@
-﻿import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:open_file/open_file.dart';
+﻿import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:excel/excel.dart';
 import 'package:get/get.dart';
+import '../../../core/utils/file_download_helper.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 
 /// Service pour gérer les exports de fichiers Excel
@@ -13,6 +12,8 @@ class ExportService {
   /// Même comportement que ExcelService.exportProductsToExcel()
   static Future<String?> exportStocksToExcel(List<Map<String, dynamic>> stocks, {String? boutiqueName}) async {
     try {
+      print('📊 Début export stocks vers Excel (${stocks.length} produits)');
+
       // Récupérer le nom de la boutique active si non fourni
       final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
 
@@ -90,22 +91,28 @@ class ExportService {
         sheet.setColumnWidth(i, 20);
       }
 
+      print('📝 Génération du fichier Excel...');
       // Sauvegarder le fichier
-      final directory = await getApplicationDocumentsDirectory();
       final fileName = 'stocks_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final filePath = '${directory.path}/$fileName';
+      final List<int>? fileBytes = excel.save();
 
-      List<int>? fileBytes = excel.save();
-      if (fileBytes != null) {
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(fileBytes);
-
-        return filePath;
+      if (fileBytes == null || fileBytes.isEmpty) {
+        print('❌ Erreur: impossible de générer le fichier Excel');
+        return null;
       }
 
-      return null;
-    } catch (e) {
+      print('💾 Taille du fichier: ${fileBytes.length} octets');
+      final result = await FileDownloadHelper.saveFile(
+        bytes: Uint8List.fromList(fileBytes),
+        fileName: fileName,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+
+      print('✅ Export Excel réussi: $result');
+      return result;
+    } catch (e, stackTrace) {
+      print('❌ Erreur lors de l\'export Excel: $e');
+      print('Stack trace: $stackTrace');
       return null;
     }
   }
@@ -113,6 +120,8 @@ class ExportService {
   /// Exporte les mouvements vers un fichier Excel
   static Future<String?> exportMovementsToExcel(List<Map<String, dynamic>> movements, {String? boutiqueName}) async {
     try {
+      print('📊 Début export mouvements vers Excel (${movements.length} mouvements)');
+
       // Récupérer le nom de la boutique active si non fourni
       final activeBoutiqueName = boutiqueName ?? await _getActiveBoutiqueName();
 
@@ -184,53 +193,40 @@ class ExportService {
         sheet.setColumnWidth(i, 20);
       }
 
+      print('📝 Génération du fichier Excel...');
       // Sauvegarder le fichier
-      final directory = await getApplicationDocumentsDirectory();
       final fileName = 'mouvements_stock_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final filePath = '${directory.path}/$fileName';
+      final List<int>? fileBytes = excel.save();
 
-      List<int>? fileBytes = excel.save();
-      if (fileBytes != null) {
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(fileBytes);
-
-        return filePath;
+      if (fileBytes == null || fileBytes.isEmpty) {
+        print('❌ Erreur: impossible de générer le fichier Excel');
+        return null;
       }
 
-      return null;
-    } catch (e) {
+      print('💾 Taille du fichier: ${fileBytes.length} octets');
+      final result = await FileDownloadHelper.saveFile(
+        bytes: Uint8List.fromList(fileBytes),
+        fileName: fileName,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+
+      print('✅ Export Excel réussi: $result');
+      return result;
+    } catch (e, stackTrace) {
+      print('❌ Erreur lors de l\'export Excel: $e');
+      print('Stack trace: $stackTrace');
       return null;
     }
   }
 
-  /// Partage le fichier Excel exporté (même que ExcelService.shareExcelFile())
+  /// Partage le fichier Excel exporté
   static Future<void> shareExcelFile(String filePath) async {
-    try {
-      await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
-    } catch (e) {
-      // Erreur silencieuse
-    }
+    if (kIsWeb) return; // Sur web, le téléchargement navigateur suffit
   }
 
-  /// Ouvre automatiquement le fichier Excel après export
+  /// Ouvre automatiquement le fichier Excel après export (desktop seulement)
   static Future<void> openExcelFile(String filePath) async {
-    try {
-      final result = await OpenFile.open(filePath);
-      if (result.type != ResultType.done) {
-        print('⚠️ Impossible d\'ouvrir le fichier Excel: ${result.message}');
-        // Fallback vers le partage si l'ouverture échoue
-        await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
-      }
-    } catch (e) {
-      print('⚠️ Erreur lors de l\'ouverture du fichier Excel: $e');
-      // Fallback vers le partage en cas d'erreur
-      try {
-        await Share.shareXFiles([XFile(filePath)], text: 'Export Excel - LOGESCO');
-      } catch (shareError) {
-        print('⚠️ Erreur lors du partage Excel: $shareError');
-      }
-    }
+    if (kIsWeb) return;
   }
 
   /// Récupère le nom de la boutique active
@@ -336,11 +332,5 @@ class ExportService {
   static String generateFilename(String prefix) {
     final now = DateTime.now();
     return '${prefix}_${now.millisecondsSinceEpoch}.xlsx';
-  }
-
-  /// Obtient le chemin du dossier Documents (même que le module produits)
-  static Future<String> getDocumentsDirectory() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
   }
 }

@@ -253,16 +253,22 @@ class ValidateProformaRequest {
   final String modePaiement;
   final double montantPaye;
   final DateTime? dateVente;
+  final double? montantTva;
+  final double? tauxTva;
 
   ValidateProformaRequest({
     required this.modePaiement,
     required this.montantPaye,
     this.dateVente,
+    this.montantTva,
+    this.tauxTva,
   });
 
   Map<String, dynamic> toJson() => {
         'modePaiement': modePaiement,
         'montantPaye': montantPaye,
         'dateVente': dateVente?.toIso8601String(),
+        if (montantTva != null) 'montantTva': montantTva,
+        if (tauxTva != null) 'tauxTva': tauxTva,
       };
 }

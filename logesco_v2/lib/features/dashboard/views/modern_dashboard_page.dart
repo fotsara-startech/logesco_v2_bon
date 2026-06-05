@@ -16,6 +16,7 @@ import '../../cash_registers/widgets/cash_session_indicator.dart';
 import '../../boutiques/widgets/boutique_selector_widget.dart';
 import '../../boutiques/widgets/boutique_context_indicator.dart';
 import '../../boutiques/views/boutiques_management_page.dart';
+import '../../sync/widgets/sync_indicator_widget.dart';
 import '../../../debug_boutique_context.dart';
 import '../../../test_boutique_injection.dart';
 
@@ -61,6 +62,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
           BoutiqueContextIndicator(compact: true),
           SizedBox(width: 8),
           CashSessionIndicator(),
+          SyncIndicatorWidget(),
           SubscriptionAppBarWidget(),
           // IconButton(
           //   icon: const Icon(Icons.bug_report),
@@ -175,6 +177,8 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                       Get.to(() => const SubscriptionStatusPage());
                     }),
                   ]),
+                  // Menu synchronisation cloud (Type 3 uniquement — s'auto-masque si non applicable)
+                  const SyncDrawerMenuItem(),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),

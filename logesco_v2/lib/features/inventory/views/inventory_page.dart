@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import 'package:logesco_v2/features/inventory/views/stock_movement_page.dart';
@@ -181,38 +182,48 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
-        // Afficher un message d'ouverture
-        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+        // En mode web, filePath est juste le nom du fichier, pas un chemin complet
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Ouvrir automatiquement le fichier
-        await ExportService.openExcelFile(filePath);
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'Fichier téléchargé: $filename',
+            title: 'stock_export_success'.tr,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          await ExportService.openExcelFile(filePath);
 
-        // Afficher le dialog de confirmation
-        final filename = filePath.split('/').last;
-        Get.dialog(
-          AlertDialog(
-            title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('close'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Get.back();
-                  await ExportService.shareExcelFile(filePath);
-                },
-                child: Text('stock_export_share'.tr),
-              ),
-            ],
-          ),
-        );
+          // Afficher le dialog de confirmation
+          Get.dialog(
+            AlertDialog(
+              title: Text('stock_export_success'.tr),
+              content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('close'.tr),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back();
+                    await ExportService.shareExcelFile(filePath);
+                  },
+                  child: Text('stock_export_share'.tr),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('stock_export_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+      print('❌ Erreur export: $e');
+      SnackbarHelper.error('Erreur lors de l\'exportation: ${e.toString()}');
     }
   }
 
@@ -225,38 +236,48 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
-        // Afficher un message d'ouverture
-        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+        // En mode web, filePath est juste le nom du fichier, pas un chemin complet
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Ouvrir automatiquement le fichier
-        await ExportService.openExcelFile(filePath);
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'Fichier téléchargé: $filename',
+            title: 'stock_export_success'.tr,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          await ExportService.openExcelFile(filePath);
 
-        // Afficher le dialog de confirmation
-        final filename = filePath.split('/').last;
-        Get.dialog(
-          AlertDialog(
-            title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('close'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Get.back();
-                  await ExportService.shareExcelFile(filePath);
-                },
-                child: Text('stock_export_share'.tr),
-              ),
-            ],
-          ),
-        );
+          // Afficher le dialog de confirmation
+          Get.dialog(
+            AlertDialog(
+              title: Text('stock_export_success'.tr),
+              content: Text('${'stock_export_success_message'.tr}\nFichier: $filename\nLe fichier a été ouvert automatiquement.\n${'stock_export_share_question'.tr}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('close'.tr),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back();
+                    await ExportService.shareExcelFile(filePath);
+                  },
+                  child: Text('stock_export_share'.tr),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('stock_export_movements_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+      print('❌ Erreur export mouvements: $e');
+      SnackbarHelper.error('Erreur lors de l\'exportation des mouvements: ${e.toString()}');
     }
   }
 

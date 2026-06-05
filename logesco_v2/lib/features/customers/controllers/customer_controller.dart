@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
@@ -457,6 +458,8 @@ class CustomerController extends GetxController {
   /// Exporte tous les clients vers Excel
   Future<void> exportToExcel() async {
     try {
+      SnackbarHelper.info('Récupération des clients...', title: 'Export en cours');
+
       // Récupérer tous les clients par pagination
       List<Customer> allCustomers = [];
       int currentPage = 1;
@@ -485,28 +488,40 @@ class CustomerController extends GetxController {
         return;
       }
 
+      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
       final filePath = await _excelService.exportCustomersToExcel(allCustomers);
 
       if (filePath != null) {
-        Get.dialog(
-          AlertDialog(
-            title: Text('customers_export_success'.tr),
-            content: Text(
-              '${'customers_export_count'.tr.replaceAll('@count', allCustomers.length.toString())}\n'
-              '${'customers_export_file'.tr.replaceAll('@filename', filePath.split('/').last)}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('common_close'.tr),
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+        if (kIsWeb) {
+          SnackbarHelper.success(
+            '${allCustomers.length} clients exportés.\nFichier: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 4),
+          );
+        } else {
+          Get.dialog(
+            AlertDialog(
+              title: Text('customers_export_success'.tr),
+              content: Text(
+                '${'customers_export_count'.tr.replaceAll('@count', allCustomers.length.toString())}\n'
+                '${'customers_export_file'.tr.replaceAll('@filename', filename)}',
               ),
-            ],
-          ),
-        );
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('common_close'.tr),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('customers_export_error'.tr);
       }
     } catch (e) {
+      print('❌ Erreur export clients: $e');
       SnackbarHelper.error('customers_export_error'.tr);
     }
   }
@@ -611,7 +626,7 @@ class CustomerController extends GetxController {
         Get.dialog(
           AlertDialog(
             title: Text('customers_template_success'.tr),
-            content: Text('customers_template_generated'.tr.replaceAll('@filename', filePath.split('/').last)),
+            content: Text('customers_template_generated'.tr.replaceAll('@filename', kIsWeb ? filePath : filePath.split('/').last)),
             actions: [TextButton(onPressed: () => Get.back(), child: Text('common_close'.tr))],
           ),
         );

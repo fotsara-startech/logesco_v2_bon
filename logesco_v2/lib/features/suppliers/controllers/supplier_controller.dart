@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/exceptions.dart';
@@ -496,25 +497,36 @@ class SupplierController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (filePath != null) {
-        Get.dialog(
-          AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text(
-              'Export de ${allSuppliers.length} fournisseur(s) réussi.\n'
-              'Fichier: ${filePath.split('/').last}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+        if (kIsWeb) {
+          SnackbarHelper.success(
+            'Export de ${allSuppliers.length} fournisseur(s) réussi.\nFichier: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 4),
+          );
+        } else {
+          Get.dialog(
+            AlertDialog(
+              title: const Text('Export réussi'),
+              content: Text(
+                'Export de ${allSuppliers.length} fournisseur(s) réussi.\n'
+                'Fichier: $filename',
               ),
-            ],
-          ),
-        );
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Fermer'),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('Erreur lors de l\'export des fournisseurs');
       }
     } catch (e) {
+      print('❌ Erreur export fournisseurs: $e');
       // Fermer le snackbar de progression en cas d'erreur
       try {
         if (Get.isSnackbarOpen == true) {
@@ -635,7 +647,7 @@ class SupplierController extends GetxController {
             title: const Text('Template généré'),
             content: Text(
               'Template d\'import généré avec succès.\n'
-              'Fichier: ${filePath.split('/').last}',
+              'Fichier: ${kIsWeb ? filePath : filePath.split('/').last}',
             ),
             actions: [
               TextButton(

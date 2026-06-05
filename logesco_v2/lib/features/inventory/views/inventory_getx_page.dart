@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/inventory_getx_controller.dart';
@@ -134,6 +135,8 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         ListenableBuilder(listenable: _tabController, builder: (context, child) => InventorySearchBar(currentTabIndex: _tabController.index)),
         const InventoryFilterBar(),
         ListenableBuilder(listenable: _tabController, builder: (context, child) => _tabController.index != 2 ? const StockSortBar() : const SizedBox.shrink()),
+        // Résumé de stock horizontal (mobile)
+        _buildMobileSummaryBanner(controller),
         TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -152,6 +155,70 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         ),
       ],
     );
+  }
+
+  Widget _buildMobileSummaryBanner(InventoryGetxController controller) {
+    return Obx(() {
+      final summary = controller.summary.value;
+      if (summary == null) return const SizedBox.shrink();
+
+      final items = [
+        (label: 'stock_summary_products'.tr, value: summary.totalProduits.toString(), icon: Icons.inventory_2, color: Colors.blue),
+        (label: 'stock_summary_purchases'.tr, value: _formatValue(summary.valeurStockAchat), icon: Icons.shopping_cart, color: Colors.green),
+        (label: 'stock_summary_sales'.tr, value: _formatValue(summary.valeurStockVente ?? summary.valeurTotaleStock), icon: Icons.sell, color: Colors.teal),
+        (label: 'stock_summary_alerts'.tr, value: summary.produitsEnAlerte.toString(), icon: Icons.warning, color: summary.produitsEnAlerte > 0 ? Colors.orange : Colors.grey),
+        (label: 'stock_summary_ruptures'.tr, value: summary.produitsEnRupture.toString(), icon: Icons.error, color: summary.produitsEnRupture > 0 ? Colors.red : Colors.grey),
+        (label: 'stock_summary_in_stock'.tr, value: '${summary.pourcentageEnStock}%', icon: Icons.check_circle, color: Colors.indigo),
+      ];
+
+      return Container(
+        height: 80,
+        color: Colors.grey[50],
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemCount: items.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final item = items[i];
+            return Container(
+              width: 110,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: item.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: item.color.withOpacity(0.3)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(item.icon, size: 13, color: item.color),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.value,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: item.color),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 
   Widget _buildDesktopInventoryLayout(BuildContext context, InventoryGetxController controller) {
@@ -274,40 +341,51 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
       final filePath = await controller.exportStockToExcel();
       if (filePath != null) {
-        // Afficher un message d'ouverture
-        SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+        // En mode web, filePath est juste le nom du fichier, pas un chemin complet
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Ouvrir automatiquement le fichier
-        await ExportService.openExcelFile(filePath);
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'Fichier téléchargé: $filename',
+            title: 'stock_export_success'.tr,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          await ExportService.openExcelFile(filePath);
 
-        // Afficher le dialog de confirmation
-        Get.dialog(
-          AlertDialog(
-            title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\n'
-                'Fichier: ${filePath.split('/').last}\n'
-                'Le fichier a été ouvert automatiquement.\n'
-                '${'stock_export_share_question'.tr}'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('close'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Get.back();
-                  await ExportService.shareExcelFile(filePath);
-                },
-                child: Text('stock_export_share'.tr),
-              ),
-            ],
-          ),
-        );
+          // Afficher le dialog de confirmation
+          Get.dialog(
+            AlertDialog(
+              title: Text('stock_export_success'.tr),
+              content: Text('${'stock_export_success_message'.tr}\n'
+                  'Fichier: $filename\n'
+                  'Le fichier a été ouvert automatiquement.\n'
+                  '${'stock_export_share_question'.tr}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('close'.tr),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back();
+                    await ExportService.shareExcelFile(filePath);
+                  },
+                  child: Text('stock_export_share'.tr),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('stock_export_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+      print('❌ Erreur export: $e');
+      SnackbarHelper.error('Erreur lors de l\'exportation des stocks: ${e.toString()}');
     }
   }
 
@@ -320,36 +398,49 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
 
       final filePath = await controller.exportMovementsToExcel();
       if (filePath != null) {
-        // Ouvrir automatiquement le fichier
-        await ExportService.openExcelFile(filePath);
+        // En mode web, filePath est juste le nom du fichier, pas un chemin complet
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Afficher le dialog de confirmation
-        Get.dialog(
-          AlertDialog(
-            title: Text('stock_export_success'.tr),
-            content: Text('${'stock_export_success_message'.tr}\n'
-                'Fichier: ${filePath.split('/').last}\n'
-                '${'stock_export_share_question'.tr}'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('close'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Get.back();
-                  await ExportService.shareExcelFile(filePath);
-                },
-                child: Text('stock_export_share'.tr),
-              ),
-            ],
-          ),
-        );
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'Fichier téléchargé: $filename',
+            title: 'stock_export_success'.tr,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          await ExportService.openExcelFile(filePath);
+
+          // Afficher le dialog de confirmation
+          Get.dialog(
+            AlertDialog(
+              title: Text('stock_export_success'.tr),
+              content: Text('${'stock_export_success_message'.tr}\n'
+                  'Fichier: $filename\n'
+                  '${'stock_export_share_question'.tr}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('close'.tr),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back();
+                    await ExportService.shareExcelFile(filePath);
+                  },
+                  child: Text('stock_export_share'.tr),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         SnackbarHelper.error('stock_export_movements_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+      print('❌ Erreur export mouvements: $e');
+      SnackbarHelper.error('Erreur lors de l\'exportation des mouvements: ${e.toString()}');
     }
   }
 
@@ -363,17 +454,28 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
       final filePath = await controller.exportStockToPdf();
       if (filePath != null) {
-        // Afficher un message d'ouverture
-        SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+        // En mode web, filePath est juste le nom du fichier
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Ouvrir automatiquement le fichier PDF
-        await InventoryPdfService.openPdf(filePath);
-        _showExportSuccessDialog(filePath, isPdf: true);
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'PDF téléchargé: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+          await InventoryPdfService.openPdf(filePath);
+          _showExportSuccessDialog(filePath, isPdf: true);
+        }
       } else {
         SnackbarHelper.error('stock_export_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('stock_export_error_message'.trParams({'error': e.toString()}));
+      print('❌ Erreur export PDF: $e');
+      SnackbarHelper.error('Erreur lors de l\'export PDF: ${e.toString()}');
     }
   }
 
@@ -383,12 +485,22 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       SnackbarHelper.info('Génération du PDF des mouvements...', duration: const Duration(seconds: 2));
       final filePath = await controller.exportMovementsToPdf();
       if (filePath != null) {
-        // Afficher un message d'ouverture
-        SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+        // En mode web, filePath est juste le nom du fichier
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
 
-        // Ouvrir automatiquement le fichier PDF
-        await InventoryPdfService.openPdf(filePath);
-        _showExportSuccessDialog(filePath, isPdf: true);
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+          SnackbarHelper.success(
+            'PDF téléchargé: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Sur desktop/mobile, ouvrir le fichier
+          SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+          await InventoryPdfService.openPdf(filePath);
+          _showExportSuccessDialog(filePath, isPdf: true);
+        }
       } else {
         SnackbarHelper.error('stock_export_movements_error'.tr);
       }
@@ -401,7 +513,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
     Get.dialog(
       AlertDialog(
         title: Text('stock_export_success'.tr),
-        content: Text('Fichier: ${filePath.split('/').last}'),
+        content: Text('Fichier: ${kIsWeb ? filePath : filePath.split('/').last}'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),

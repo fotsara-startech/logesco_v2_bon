@@ -184,50 +184,51 @@ class _InventoryFormViewState extends State<InventoryFormView> {
               ],
             ),
             const SizedBox(height: 16),
-            Obx(() {
-              final categories = _controller.categories;
-              // Nom de la catégorie sélectionnée
-              final selectedName = _selectedCategoryId != null ? (categories.firstWhereOrNull((c) => c['id'] == _selectedCategoryId)?['nom'] as String? ?? '') : '';
+            GetBuilder<StockInventoryController>(
+              builder: (ctrl) {
+                final categories = ctrl.categories;
+                final selectedName = _selectedCategoryId != null ? (categories.firstWhereOrNull((c) => c['id'] == _selectedCategoryId)?['nom'] as String? ?? '') : '';
 
-              return GestureDetector(
-                onTap: () async {
-                  final result = await showDialog<Map<String, dynamic>>(
-                    context: context,
-                    builder: (_) => _CategorySearchDialog(
-                      categories: categories.toList(),
-                      selectedId: _selectedCategoryId,
+                return GestureDetector(
+                  onTap: () async {
+                    final result = await showDialog<Map<String, dynamic>>(
+                      context: context,
+                      builder: (_) => _CategorySearchDialog(
+                        categories: categories.toList(),
+                        selectedId: _selectedCategoryId,
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() => _selectedCategoryId = result['id'] as int?);
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'inventory_form_category'.tr,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.folder),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_selectedCategoryId != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () => setState(() => _selectedCategoryId = null),
+                              padding: EdgeInsets.zero,
+                            ),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                      errorText: _selectedType == InventoryType.PARTIEL && _selectedCategoryId == null ? 'inventory_form_category_required'.tr : null,
                     ),
-                  );
-                  if (result != null) {
-                    setState(() => _selectedCategoryId = result['id'] as int?);
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'inventory_form_category'.tr,
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.folder),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_selectedCategoryId != null)
-                          IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => setState(() => _selectedCategoryId = null),
-                            padding: EdgeInsets.zero,
-                          ),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
+                    child: Text(
+                      selectedName,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    errorText: _selectedType == InventoryType.PARTIEL && _selectedCategoryId == null ? 'inventory_form_category_required'.tr : null,
                   ),
-                  child: Text(
-                    selectedName.isEmpty ? '' : selectedName,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              );
-            }),
+                );
+              },
+            ),
           ],
         ),
       ),

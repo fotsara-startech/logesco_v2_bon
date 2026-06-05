@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
  */
 function createUserRouter(dependencies) {
   const router = express.Router();
-  const { authService } = dependencies;
+  const { authService, syncService } = dependencies;
 
   // GET /users - Récupérer tous les utilisateurs depuis la base de données
   router.get('/', async (req, res) => {
@@ -233,6 +233,21 @@ function createUserRouter(dependencies) {
         success: true,
         data: transformedUser
       });
+
+      // Enqueue pour sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('utilisateurs', 'INSERT', {
+          id: newUser.id,
+          nomUtilisateur: newUser.nomUtilisateur,
+          email: newUser.email,
+          motDePasseHash: newUser.motDePasseHash,
+          roleId: newUser.roleId,
+          isActive: newUser.isActive,
+          dateCreation: newUser.dateCreation,
+          dateModification: newUser.dateModification,
+          dateDerniereConnexion: newUser.dateDerniereConnexion
+        });
+      }
     } catch (error) {
       console.error('❌ [UserRouter] Erreur lors de la création de l\'utilisateur:', error);
       res.status(500).json({
@@ -368,6 +383,21 @@ function createUserRouter(dependencies) {
         success: true,
         data: transformedUser
       });
+
+      // Enqueue pour sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('utilisateurs', 'UPDATE', {
+          id: updatedUser.id,
+          nomUtilisateur: updatedUser.nomUtilisateur,
+          email: updatedUser.email,
+          motDePasseHash: updatedUser.motDePasseHash,
+          roleId: updatedUser.roleId,
+          isActive: updatedUser.isActive,
+          dateCreation: updatedUser.dateCreation,
+          dateModification: updatedUser.dateModification,
+          dateDerniereConnexion: updatedUser.dateDerniereConnexion
+        });
+      }
     } catch (error) {
       console.error('❌ [UserRouter] Erreur lors de la mise à jour de l\'utilisateur:', error);
       res.status(500).json({
@@ -654,6 +684,25 @@ function createUserRouter(dependencies) {
       }
 
       res.json({ success: true, message: 'Assignations mises à jour avec succès' });
+
+      // Enqueue pour sync vers Neon - récupérer toutes les assignations de l'utilisateur
+      if (syncService) {
+        const allAssignments = await prisma.userBoutiqueAssignment.findMany({
+          where: { utilisateurId: id }
+        });
+        for (const assignment of allAssignments) {
+          // Utiliser INSERT pour toutes (nouvelles et existantes), le service gère les doublons
+          await syncService.enqueue('user_boutique_assignments', 'INSERT', {
+            id: assignment.id,
+            utilisateurId: assignment.utilisateurId,
+            boutiqueId: assignment.boutiqueId,
+            roleId: assignment.roleId,
+            isActive: assignment.isActive,
+            dateCreation: assignment.dateCreation,
+            dateModification: assignment.dateModification
+          });
+        }
+      }
     } catch (error) {
       res.status(500).json({ success: false, error: { message: error.message, code: 'USER_BOUTIQUES_UPDATE_ERROR' } });
     }

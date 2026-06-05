@@ -327,7 +327,81 @@ CREATE TRIGGER update_user_boutique_assignments_date_modification
     EXECUTE FUNCTION update_date_modification();
 
 -- ============================================================
--- SECTION 7: VÉRIFICATION FINALE
+-- SECTION 7: COLONNES MANQUANTES SUR TABLES EXISTANTES
+-- ============================================================
+
+-- produits : cump (Coût Unitaire Moyen Pondéré)
+ALTER TABLE produits ADD COLUMN IF NOT EXISTS cump DOUBLE PRECISION;
+
+-- mouvements_stock : stock_initial et stock_final
+ALTER TABLE mouvements_stock ADD COLUMN IF NOT EXISTS stock_initial INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE mouvements_stock ADD COLUMN IF NOT EXISTS stock_final INTEGER NOT NULL DEFAULT 0;
+
+-- ============================================================
+-- SECTION 8: TABLE MANQUANTE historique_prix_achat
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS "historique_prix_achat" (
+    "id"                SERIAL NOT NULL,
+    "produit_id"        INTEGER NOT NULL,
+    "prix_achat"        DOUBLE PRECISION NOT NULL,
+    "quantite"          DOUBLE PRECISION NOT NULL DEFAULT 1,
+    "source"            TEXT NOT NULL DEFAULT 'manuel',
+    "reference_id"      INTEGER,
+    "date_creation"     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "date_modification" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "historique_prix_achat_pkey" PRIMARY KEY ("id")
+);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'historique_prix_achat_produit_id_fkey'
+    ) THEN
+        ALTER TABLE "historique_prix_achat"
+            ADD CONSTRAINT "historique_prix_achat_produit_id_fkey"
+            FOREIGN KEY ("produit_id") REFERENCES "produits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END$$;
+
+CREATE INDEX IF NOT EXISTS "idx_historique_prix_achat_produit" ON "historique_prix_achat"("produit_id");
+CREATE INDEX IF NOT EXISTS "idx_historique_prix_achat_date"    ON "historique_prix_achat"("date_creation");
+
+DROP TRIGGER IF EXISTS update_historique_prix_achat_date_modification ON historique_prix_achat;
+CREATE TRIGGER update_historique_prix_achat_date_modification
+    BEFORE UPDATE ON historique_prix_achat
+    FOR EACH ROW EXECUTE FUNCTION update_date_modification();
+
+-- ============================================================
+-- SECTION 9: PEUPLER stock_boutiques depuis stock (si vide)
+-- ============================================================
+DO $$
+DECLARE
+  v_boutique_id INTEGER;
+  v_stock_count INTEGER;
+  v_sb_count    INTEGER;
+BEGIN
+  SELECT id INTO v_boutique_id FROM boutiques WHERE est_principale = true LIMIT 1;
+  IF v_boutique_id IS NULL THEN SELECT id INTO v_boutique_id FROM boutiques LIMIT 1; END IF;
+  IF v_boutique_id IS NULL THEN RAISE NOTICE 'Aucune boutique trouvée, skip'; RETURN; END IF;
+
+  SELECT COUNT(*) INTO v_stock_count FROM stock;
+  SELECT COUNT(*) INTO v_sb_count    FROM stock_boutiques WHERE boutique_id = v_boutique_id;
+
+  IF v_stock_count > 0 AND v_sb_count = 0 THEN
+    INSERT INTO stock_boutiques (boutique_id, produit_id, quantite_disponible, quantite_reservee, derniere_maj)
+    SELECT v_boutique_id, s.produit_id, s.quantite_disponible, s.quantite_reservee, s.derniere_maj
+    FROM stock s
+    ON CONFLICT (boutique_id, produit_id) DO NOTHING;
+    RAISE NOTICE 'stock_boutiques peuplé depuis stock pour boutique %', v_boutique_id;
+  ELSE
+    RAISE NOTICE 'stock_boutiques déjà peuplé (% entrées)', v_sb_count;
+  END IF;
+END$$;
+
+-- ============================================================
+-- SECTION 10: VÉRIFICATION FINALE
 -- ============================================================
 
 -- Afficher un résumé des tables avec date_modification

@@ -20,7 +20,7 @@ const {
  * @param {Object} params.authService - Service d'authentification
  * @returns {Object} Routeur Express
  */
-function createAccountRouter({ prisma, authService, ...models }) {
+function createAccountRouter({ prisma, authService, syncService, ...models }) {
   const router = express.Router();
 
   /**
@@ -284,6 +284,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
               }
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+          }
           console.log(`✅ Compte créé avec succès (ID: ${compte.id})`);
         }
 
@@ -356,6 +361,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
               }
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_fournisseurs', 'INSERT', compte);
+          }
         }
 
         const compteFormatted = {
@@ -503,6 +513,7 @@ function createAccountRouter({ prisma, authService, ...models }) {
         });
 
         if (!compte) {
+          console.log(`📝 Création automatique du compte pour le client ${clientId}`);
           compte = await prisma.compteClient.create({
             data: {
               clientId,
@@ -510,6 +521,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
               limiteCredit: 0
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+          }
         }
 
         // Calculer le nouveau solde selon le type de transaction
@@ -571,10 +587,15 @@ function createAccountRouter({ prisma, authService, ...models }) {
           return { compte: compteUpdated, transaction };
         });
 
+        // Sync vers Neon
+        if (syncService) {
+          await syncService.enqueue('comptes_clients', 'UPDATE', result.compte);
+          await syncService.enqueue('transactions_comptes', 'INSERT', result.transaction);
+        }
+
         const compteFormatted = {
           id: result.compte.id,
-          clientId: result.compte.clientId,
-          soldeActuel: parseFloat(result.compte.soldeActuel),
+          clientId: result.compte.clientId,          soldeActuel: parseFloat(result.compte.soldeActuel),
           limiteCredit: parseFloat(result.compte.limiteCredit),
           creditDisponible: parseFloat(result.compte.limiteCredit) - parseFloat(result.compte.soldeActuel),
           estEnDepassement: parseFloat(result.compte.soldeActuel) > parseFloat(result.compte.limiteCredit),
@@ -701,6 +722,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
               limiteCredit: 0
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_fournisseurs', 'INSERT', compte);
+          }
         }
 
         // Calculer le nouveau solde selon le type de transaction
@@ -729,6 +755,7 @@ function createAccountRouter({ prisma, authService, ...models }) {
         }
 
         // Transaction atomique pour mettre à jour le compte, créer l'historique et le mouvement financier
+        // Augmenter le timeout à 15 secondes pour permettre toutes les opérations de base de données
         const result = await prisma.$transaction(async (prisma) => {
           // Mettre à jour le compte
           const compteUpdated = await prisma.compteFournisseur.update({
@@ -791,6 +818,8 @@ function createAccountRouter({ prisma, authService, ...models }) {
 
           let mouvementFinancier = null;
           let mouvementFinancierRecord = null;
+          let updatedSession = null;
+          let updatedCaisse = null;
 
           // Créer le mouvement financier si demandé
           if (createFinancialMovement && sessionCaisse) {
@@ -822,13 +851,13 @@ function createAccountRouter({ prisma, authService, ...models }) {
               : parseFloat(sessionCaisse.soldeOuverture);
             const newSoldeAttendu = currentSoldeAttendu - parseFloat(montant);
 
-            await prisma.cashSession.update({
+            updatedSession = await prisma.cashSession.update({
               where: { id: sessionCaisse.id },
               data: { soldeAttendu: newSoldeAttendu }
             });
 
             // Décrémenter aussi le solde réel de la caisse
-            await prisma.cashRegister.update({
+            updatedCaisse = await prisma.cashRegister.update({
               where: { id: sessionCaisse.caisseId },
               data: { soldeActuel: { decrement: parseFloat(montant) } }
             });
@@ -853,8 +882,26 @@ function createAccountRouter({ prisma, authService, ...models }) {
             });
           }
 
-          return { compte: compteUpdated, transaction, mouvementFinancier, mouvementFinancierRecord };
-        });
+          return { compte: compteUpdated, transaction, mouvementFinancier, mouvementFinancierRecord, updatedSession, updatedCaisse };
+        }, { timeout: 15000 });
+
+        // Log vers operation_log (Event Sourcing V2)
+        if (syncService) {
+          await syncService.logOperation('comptes_fournisseurs', 'UPDATE', result.compte, req.user.id);
+          await syncService.logOperation('transactions_comptes', 'INSERT', result.transaction, req.user.id);
+          if (result.updatedCommande) {
+            await syncService.logOperation('commandes_approvisionnement', 'UPDATE', result.updatedCommande, req.user.id);
+          }
+          if (result.updatedSession) {
+            await syncService.logOperation('cash_sessions', 'UPDATE', result.updatedSession, req.user.id);
+          }
+          if (result.mouvementFinancier) {
+            await syncService.logOperation('cash_movements', 'INSERT', result.mouvementFinancier, req.user.id);
+          }
+          if (result.mouvementFinancierRecord) {
+            await syncService.enqueue('financial_movements', 'INSERT', result.mouvementFinancierRecord);
+          }
+        }
 
         const compteFormatted = {
           id: result.compte.id,
@@ -932,6 +979,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
             }
           });
           console.log(`✅ Compte créé avec succès (ID: ${compte.id})`);
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_clients', 'INSERT', compte);
+          }
         }
 
         const options = buildPrismaQuery({ page, limit });
@@ -1091,6 +1143,11 @@ function createAccountRouter({ prisma, authService, ...models }) {
               limiteCredit: 0
             }
           });
+
+          // Synchroniser le nouveau compte vers Neon
+          if (syncService) {
+            await syncService.enqueue('comptes_fournisseurs', 'INSERT', compte);
+          }
         }
 
         // Récupérer toutes les transactions (sans pagination pour le relevé)

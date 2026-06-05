@@ -184,6 +184,8 @@ class LicenseService implements ILicenseService {
   @override
   Future<void> storeLicense(LicenseData license) async {
     try {
+      // S'assurer que les clés de chiffrement sont initialisées avant de stocker
+      await _secureStorage.initialize();
       // Utiliser le stockage sécurisé avec chiffrement et redondance
       await _secureStorage.storeLicense(license);
 
@@ -201,6 +203,8 @@ class LicenseService implements ILicenseService {
   @override
   Future<LicenseData?> getStoredLicense() async {
     try {
+      // S'assurer que les clés de chiffrement sont initialisées avant de lire
+      await _secureStorage.initialize();
       // Utiliser le stockage sécurisé avec vérification d'intégrité
       final license = await _secureStorage.retrieveLicense();
 

@@ -1,13 +1,12 @@
-﻿import 'dart:io';
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/product.dart';
 import '../../inventory/services/inventory_service.dart';
-import '../../../core/services/auth_service.dart';
 import 'category_management_service.dart';
+import '../../../core/utils/file_download_helper.dart';
+import '../../../core/utils/file_reader_helper.dart';
 
 /// Service pour l'import/export Excel des produits
 class ExcelService {
@@ -100,16 +99,15 @@ class ExcelService {
       }
 
       // Sauvegarder le fichier
-      final directory = await getApplicationDocumentsDirectory();
       final fileName = 'produits_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final filePath = '${directory.path}/$fileName';
 
-      List<int>? fileBytes = excel.save();
+      final List<int>? fileBytes = excel.save();
       if (fileBytes != null) {
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(fileBytes);
-
+        final filePath = await FileDownloadHelper.saveFile(
+          bytes: Uint8List.fromList(fileBytes),
+          fileName: fileName,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
         return filePath;
       }
 
@@ -143,9 +141,10 @@ class ExcelService {
         Uint8List bytes = result.files.single.bytes!;
         return await _parseExcelBytes(bytes);
       } else if (result != null && result.files.single.path != null) {
-        File file = File(result.files.single.path!);
-        Uint8List bytes = await file.readAsBytes();
-        return await _parseExcelBytes(bytes);
+        Uint8List? bytes = await readFileFromPath(result.files.single.path!);
+        if (bytes != null) {
+          return await _parseExcelBytes(bytes);
+        }
       }
 
       return null;
@@ -387,17 +386,15 @@ class ExcelService {
       }
 
       // Sauvegarder le template
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'template_import_produits.xlsx';
-      final filePath = '${directory.path}/$fileName';
+      const fileName = 'template_import_produits.xlsx';
 
-      List<int>? fileBytes = excel.save();
+      final List<int>? fileBytes = excel.save();
       if (fileBytes != null) {
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(fileBytes);
-
-        return filePath;
+        return FileDownloadHelper.saveFile(
+          bytes: Uint8List.fromList(fileBytes),
+          fileName: fileName,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
       }
 
       return null;

@@ -348,6 +348,11 @@ function createProductRouter(models) {
           BaseResponseDTO.success(produitDTO, 'Produit créé avec succès')
         );
 
+        // Synchronisation cloud
+        if (models.syncService) {
+          await models.syncService.logOperation('produits', 'INSERT', produit, req.user?.id);
+        }
+
       } catch (error) {
         console.error('Erreur création produit:', error.message);
 
@@ -475,10 +480,18 @@ function createProductRouter(models) {
             include: { stock: true, categorie: true }
           });
           const produitDTO = ProduitDTO.fromEntity(produitAvecCump);
+          // Synchronisation cloud
+          if (models.syncService) {
+            await models.syncService.logOperation('produits', 'UPDATE', produitAvecCump, req.user?.id);
+          }
           return res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
         }
 
         const produitDTO = ProduitDTO.fromEntity(produitUpdated);
+        // Synchronisation cloud
+        if (models.syncService) {
+          await models.syncService.logOperation('produits', 'UPDATE', produitUpdated, req.user?.id);
+        }
         res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
 
       } catch (error) {
@@ -643,6 +656,10 @@ function createProductRouter(models) {
 
           const produitDTO = ProduitDTO.fromEntity(produitDeactivated);
           console.log('✅ Produit désactivé (soft delete)');
+          // Synchronisation cloud
+          if (models.syncService) {
+            await models.syncService.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
+          }
           return res.json(
             BaseResponseDTO.success(
               produitDTO,
@@ -657,6 +674,10 @@ function createProductRouter(models) {
             where: { id: produitId }
           });
           console.log('✅ Produit supprimé définitivement');
+          // Synchronisation cloud
+          if (models.syncService) {
+            await models.syncService.logOperation('produits', 'DELETE', { id: produitId }, req.user?.id);
+          }
           res.json(BaseResponseDTO.success(null, 'Produit supprimé avec succès'));
         } catch (deleteError) {
           // Si la suppression échoue à cause d'une contrainte, faire un soft delete
@@ -668,6 +689,10 @@ function createProductRouter(models) {
             });
 
             const produitDTO = ProduitDTO.fromEntity(produitDeactivated);
+            // Synchronisation cloud
+            if (models.syncService) {
+              await models.syncService.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
+            }
             return res.json(
               BaseResponseDTO.success(
                 produitDTO,

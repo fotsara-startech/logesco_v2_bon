@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/financial_balance.dart';
@@ -12,6 +9,8 @@ import '../../company_settings/models/company_profile.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/pdf_save_helper.dart';
+import '../../../core/utils/file_download_helper.dart';
 
 /// Service d'export PDF et Excel pour le module comptabilite
 class AccountingExportService {
@@ -175,12 +174,10 @@ class AccountingExportService {
       ),
     );
 
-    final dir = await getApplicationDocumentsDirectory();
     final period = balance.periodFormatted.replaceAll('/', '-').replaceAll(' ', '_');
-    final filePath = '${dir.path}/Bilan_Comptable_$period.pdf';
+    final fileName = 'Bilan_Comptable_$period.pdf';
     final bytes = await pdf.save();
-    await File(filePath).writeAsBytes(bytes);
-    await OpenFile.open(filePath);
+    await savePdfAndOpen(bytes, fileName);
   }
 
   static pw.Widget _pdfCompanyHeader(CompanyProfile? company, Uint8List? logoBytes, String? boutiqueName) {
@@ -286,14 +283,16 @@ class AccountingExportService {
     _buildDailySheet(excel, balance);
     _buildCategorySheet(excel, balance);
 
-    final dir = await getApplicationDocumentsDirectory();
     final period = balance.periodFormatted.replaceAll('/', '-').replaceAll(' ', '_');
-    final filePath = '${dir.path}/Bilan_Comptable_$period.xlsx';
+    final fileName = 'Bilan_Comptable_$period.xlsx';
     final bytes = excel.encode();
     if (bytes == null) return null;
 
-    await File(filePath).writeAsBytes(bytes);
-    await OpenFile.open(filePath);
+    final filePath = await FileDownloadHelper.saveFile(
+      bytes: Uint8List.fromList(bytes),
+      fileName: fileName,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
     return filePath;
   }
 

@@ -283,11 +283,16 @@ class AuthController extends GetxController {
       });
 
       if (response.isSuccess) {
-        final data = response.data as Map<String, dynamic>;
-        final newToken = data['token'] as String;
+        final data = response.data['data'] as Map<String, dynamic>;
+        final newToken = data['accessToken'] as String;
+        final newRefreshToken = data['refreshToken'] as String?;
 
         await _secureStorage.write(key: AppConstants.authTokenKey, value: newToken);
         _apiClient.setAuthToken(newToken);
+
+        if (newRefreshToken != null) {
+          await _secureStorage.write(key: AppConstants.refreshTokenKey, value: newRefreshToken);
+        }
 
         return true;
       }

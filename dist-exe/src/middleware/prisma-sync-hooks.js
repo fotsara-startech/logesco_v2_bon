@@ -11,8 +11,7 @@ const SYNC_TABLES = {
     table: 'mouvements_stock',
     columns: [
       'id', 'produit_id', 'boutique_id', 'type_mouvement', 'changement_quantite',
-      'reference_id', 'type_reference', 'date_mouvement', 'notes'
-      // Note: mouvements_stock n'a PAS de date_modification
+      'stock_initial', 'stock_final', 'reference_id', 'type_reference', 'date_mouvement', 'notes'
     ]
   },
   stockBoutique: {
@@ -43,6 +42,21 @@ const SYNC_TABLES = {
       'cump', 'code_barre', 'categorie_id', 'seuil_stock_minimum', 'est_actif',
       'est_service', 'remise_max_autorisee', 'gestion_peremption',
       'date_creation', 'date_modification'
+    ]
+  },
+  commandeApprovisionnement: {
+    table: 'commandes_approvisionnement',
+    columns: [
+      'id', 'numero_commande', 'fournisseur_id', 'boutique_id', 'statut',
+      'date_commande', 'date_livraison_prevue', 'montant_total', 'montant_paye',
+      'montant_restant', 'mode_paiement', 'notes', 'date_modification'
+    ]
+  },
+  detailCommandeApprovisionnement: {
+    table: 'details_commandes_approvisionnement',
+    columns: [
+      'id', 'commande_id', 'produit_id', 'quantite_commandee',
+      'quantite_recue', 'cout_unitaire', 'date_modification'
     ]
   }
 };
@@ -260,6 +274,62 @@ function setupPrismaSyncHooks(prisma) {
             const result = await query(args);
             if (result?.id) {
               syncRecord('produit', 'UPDATE', result.id, prisma);
+            }
+            return result;
+          }
+        },
+        // Hook pour commandeApprovisionnement
+        commandeApprovisionnement: {
+          async create({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('commandeApprovisionnement', 'INSERT', result.id, prisma);
+              // Enqueuer aussi les détails créés dans la relation imbriquée
+              setImmediate(async () => {
+                try {
+                  const details = await prisma.detailCommandeApprovisionnement.findMany({
+                    where: { commandeId: result.id }
+                  });
+                  for (const detail of details) {
+                    const syncConfig = SYNC_TABLES['detailCommandeApprovisionnement'];
+                    const syncData = prepareDataForSync('detailCommandeApprovisionnement', detail, syncConfig.columns);
+                    await syncService.enqueue(syncConfig.table, 'INSERT', syncData);
+                  }
+                } catch(e) {
+                  console.error('❌ Erreur sync details commande:', e.message);
+                }
+              });
+            }
+            return result;
+          },
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('commandeApprovisionnement', 'UPDATE', result.id, prisma);
+            }
+            return result;
+          }
+        },
+        // Hook pour detailCommandeApprovisionnement
+        detailCommandeApprovisionnement: {
+          async create({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('detailCommandeApprovisionnement', 'INSERT', result.id, prisma);
+            }
+            return result;
+          },
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('detailCommandeApprovisionnement', 'UPDATE', result.id, prisma);
+            }
+            return result;
+          },
+          async delete({ args, query }) {
+            const result = await query(args);
+            if (result?.id) {
+              syncRecord('detailCommandeApprovisionnement', 'DELETE', result.id, prisma);
             }
             return result;
           }

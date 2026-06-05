@@ -1,12 +1,10 @@
-﻿import 'dart:io';
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_file/open_file.dart';
 import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/pdf_save_helper.dart';
 
 /// Service pour générer les PDF de relevés de compte
 class StatementPdfService {
@@ -490,15 +488,7 @@ class StatementPdfService {
   /// Sauvegarde et ouvre le PDF
   static Future<String> saveAndOpenPDF(Uint8List pdfBytes, String filename) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$filename');
-
-      await file.writeAsBytes(pdfBytes);
-
-      // Ouvrir automatiquement le PDF
-      await OpenFile.open(file.path);
-
-      return file.path;
+      return savePdfAndOpen(pdfBytes, filename);
     } catch (e) {
       throw Exception('Erreur lors de la sauvegarde du PDF: $e');
     }

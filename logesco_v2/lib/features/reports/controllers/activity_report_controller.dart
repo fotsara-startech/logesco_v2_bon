@@ -1,11 +1,10 @@
-﻿import 'dart:io';
+﻿import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/activity_report.dart';
 import '../services/activity_report_service.dart';
 import '../services/pdf_export_service.dart';
-import '../../../core/services/auth_service.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -180,14 +179,24 @@ class ActivityReportController extends GetxController {
     try {
       _isGeneratingPdf.value = true;
 
-      final pdfFile = await _pdfService.generateActivityReportPdf(_currentReport.value!);
+      final pdfPath = await _pdfService.generateActivityReportPdf(_currentReport.value!);
 
-      SnackbarHelper.success('PDF généré avec succès: ${pdfFile.path}', duration: const Duration(seconds: 4));
+      // En mode web, pdfPath est juste le nom du fichier
+      final filename = kIsWeb ? pdfPath : pdfPath.split('/').last;
 
-      // Proposer d'ouvrir le fichier
-      _showPdfActions(pdfFile);
+      if (kIsWeb) {
+        // Sur le web, le fichier est automatiquement téléchargé par le navigateur
+        SnackbarHelper.success(
+          'PDF téléchargé: $filename',
+          duration: const Duration(seconds: 4),
+        );
+      } else {
+        // Sur desktop/mobile, afficher les actions
+        SnackbarHelper.success('PDF généré avec succès: $filename', duration: const Duration(seconds: 4));
+        _showPdfActions(pdfPath);
+      }
     } catch (e) {
-      print(' Erreur lors de l\'export PDF: $e');
+      print('❌ Erreur lors de l\'export PDF: $e');
       SnackbarHelper.error('Erreur lors de l\'export PDF: $e');
     } finally {
       _isGeneratingPdf.value = false;
@@ -195,7 +204,7 @@ class ActivityReportController extends GetxController {
   }
 
   /// Affiche les actions disponibles pour le PDF
-  void _showPdfActions(File pdfFile) {
+  void _showPdfActions(String pdfPath) {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
@@ -221,7 +230,7 @@ class ActivityReportController extends GetxController {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       Get.back();
-                      await _openPdf(pdfFile);
+                      await _openPdf(pdfPath);
                     },
                     icon: const Icon(Icons.open_in_new),
                     label: const Text('Ouvrir'),
@@ -236,7 +245,7 @@ class ActivityReportController extends GetxController {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       Get.back();
-                      await _sharePdf(pdfFile);
+                      await _sharePdf(pdfPath);
                     },
                     icon: const Icon(Icons.share),
                     label: const Text('Partager'),
@@ -260,23 +269,33 @@ class ActivityReportController extends GetxController {
   }
 
   /// Ouvre le PDF avec l'application par défaut
-  Future<void> _openPdf(File pdfFile) async {
+  Future<void> _openPdf(String pdfPath) async {
+    if (kIsWeb) {
+      SnackbarHelper.info('Le PDF a été téléchargé. Consultez votre dossier de téléchargements.', duration: const Duration(seconds: 3));
+      return;
+    }
+
     try {
-      final result = await OpenFile.open(pdfFile.path);
+      final result = await OpenFile.open(pdfPath);
       if (result.type != ResultType.done) {
-        SnackbarHelper.info('Impossible d\'ouvrir le PDF automatiquement. Fichier sauvegardé dans: ${pdfFile.path}', title: 'Information', duration: const Duration(seconds: 5));
+        SnackbarHelper.info('Impossible d\'ouvrir le PDF automatiquement. Fichier sauvegardé dans: $pdfPath', title: 'Information', duration: const Duration(seconds: 5));
       }
     } catch (e) {
-      print(' Erreur lors de l\'ouverture du PDF: $e');
+      print('❌ Erreur lors de l\'ouverture du PDF: $e');
       SnackbarHelper.error('Impossible d\'ouvrir le PDF: $e');
     }
   }
 
   /// Partage le PDF
-  Future<void> _sharePdf(File pdfFile) async {
+  Future<void> _sharePdf(String pdfPath) async {
+    if (kIsWeb) {
+      SnackbarHelper.info('Le partage n\'est pas disponible sur le web.', duration: const Duration(seconds: 3));
+      return;
+    }
+
     try {
       await Share.shareXFiles(
-        [XFile(pdfFile.path)],
+        [XFile(pdfPath)],
         text: 'Bilan comptable d\'activités - ${_currentReport.value?.reportPeriod}',
         subject: 'Bilan comptable - ${_currentReport.value?.companyName}',
       );

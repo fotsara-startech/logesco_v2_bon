@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../models/product.dart';
@@ -69,32 +70,44 @@ class ExcelController extends GetxController {
       if (filePath != null) {
         exportStatus.value = 'Export terminé avec succès';
 
-        // Proposer de partager le fichier
-        Get.dialog(
-          AlertDialog(
-            title: const Text('Export réussi'),
-            content: Text('${products.length} produits exportés avec succès.\nVoulez-vous partager le fichier ?'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: const Text('Fermer'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Get.back();
-                  await _excelService.shareExcelFile(filePath);
-                },
-                child: const Text('Partager'),
-              ),
-            ],
-          ),
-        );
+        final filename = kIsWeb ? filePath : filePath.split('/').last;
+
+        if (kIsWeb) {
+          // Sur le web, le fichier est automatiquement téléchargé
+          SnackbarHelper.success(
+            '${products.length} produits exportés.\nFichier: $filename',
+            title: 'Export réussi',
+            duration: const Duration(seconds: 4),
+          );
+        } else {
+          // Sur desktop/mobile, proposer de partager
+          Get.dialog(
+            AlertDialog(
+              title: const Text('Export réussi'),
+              content: Text('${products.length} produits exportés avec succès.\nFichier: $filename\nVoulez-vous partager le fichier ?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Fermer'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back();
+                    await _excelService.shareExcelFile(filePath);
+                  },
+                  child: const Text('Partager'),
+                ),
+              ],
+            ),
+          );
+        }
       } else {
         exportStatus.value = 'Erreur lors de l\'export';
         SnackbarHelper.error('Impossible d\'exporter les produits');
       }
     } catch (e) {
       exportStatus.value = 'Erreur: $e';
+      print('❌ Erreur export produits: $e');
       SnackbarHelper.error('Erreur lors de l\'export: $e');
     } finally {
       isExporting.value = false;

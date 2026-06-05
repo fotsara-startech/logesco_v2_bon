@@ -205,14 +205,13 @@
 //   }
 // }
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/pdf_save_helper.dart';
 
 /// Service pour générer les PDF de relevés de compte fournisseur
 class SupplierStatementPdfService {
@@ -278,7 +277,7 @@ class SupplierStatementPdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              //  En-tête : logo + infos entreprise 
+              //  En-tête : logo + infos entreprise
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: pw.BoxDecoration(
@@ -355,7 +354,7 @@ class SupplierStatementPdfService {
 
               pw.SizedBox(height: 12),
 
-                    //  Bannière fusionnée : titre + infos fournisseur + solde 
+              //  Bannière fusionnée : titre + infos fournisseur + solde
               pw.Container(
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.blue700, width: 1.5),
@@ -397,7 +396,7 @@ class SupplierStatementPdfService {
                       ),
                     ),
 
-                    //  Infos fournisseur + solde côte à côte 
+                    //  Infos fournisseur + solde côte à côte
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: pw.Row(
@@ -566,7 +565,7 @@ class SupplierStatementPdfService {
 
               pw.Spacer(),
 
-              //  Pied de page 
+              //  Pied de page
               pw.Divider(),
               pw.SizedBox(height: 8),
               pw.Row(
@@ -625,11 +624,7 @@ class SupplierStatementPdfService {
 
   /// Sauvegarde et ouvre le PDF
   static Future<String> saveAndOpenPDF(Uint8List pdfBytes, String filename) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$filename');
-    await file.writeAsBytes(pdfBytes);
-    print('✅ PDF sauvegardé: ${file.path}');
-    return file.path;
+    return savePdfAndOpen(pdfBytes, filename);
   }
 
   /// Obtient une traduction basée sur la langue actuelle

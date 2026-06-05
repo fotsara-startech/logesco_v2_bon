@@ -1,14 +1,13 @@
-﻿import 'dart:io';
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../models/activity_report.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/file_download_helper.dart';
 
 /// Service pour exporter les bilans comptables en PDF
 class PdfExportService {
@@ -24,7 +23,7 @@ class PdfExportService {
       );
 
   /// Génère un PDF du bilan comptable
-  Future<File> generateActivityReportPdf(ActivityReport report) async {
+  Future<String> generateActivityReportPdf(ActivityReport report) async {
     final pdf = pw.Document();
 
     // Configuration par défaut pour éviter les problèmes de police
@@ -113,12 +112,9 @@ class PdfExportService {
     );
 
     // Sauvegarder le PDF
-    final output = await getApplicationDocumentsDirectory();
     final fileName = 'bilan_comptable_${_formatDateForFile(report.startDate)}_${_formatDateForFile(report.endDate)}.pdf';
-    final file = File('${output.path}/$fileName');
-    await file.writeAsBytes(await pdf.save());
-
-    return file;
+    final bytes = await pdf.save();
+    return await FileDownloadHelper.saveFile(bytes: bytes, fileName: fileName, mimeType: 'application/pdf');
   }
 
   /// En-tête du document

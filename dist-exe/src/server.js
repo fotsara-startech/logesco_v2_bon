@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 // ── Logging vers fichier dès le démarrage ─────────────────────────────────
 const fs   = require('fs');
@@ -60,6 +60,7 @@ const licensesRouter = require('./routes/licenses');
 const { createExpirationDatesRouter } = require('./routes/expiration-dates');
 const { createProformaRouter } = require('./routes/proformas');
 const { createBoutiquesRouter } = require('./routes/boutiques');
+const { createSyncRouter } = require('./routes/sync');
 
 /**
  * Serveur principal LOGESCO API
@@ -206,8 +207,82 @@ class LogescoServer {
       // ── Migration stock → stock_boutiques (mise à jour depuis ancienne version) ──
       await this._migrateStockToBoutique(prisma, boutiquePrincipale.id);
 
+      // ── S'assurer que operation_log a bien AUTOINCREMENT sur id ─────────
+      await this._fixOperationLogSchema(prisma);
+
     } catch (err) {
       console.warn('⚠️  Auto-seed échoué (non bloquant):', err.message);
+    }
+  }
+
+  /**
+   * Recrée la table operation_log si son id n'est pas AUTOINCREMENT.
+   * Problème fréquent sur les installations existantes créées avant la migration.
+   */
+  async _fixOperationLogSchema(prisma) {
+    try {
+      // Vérifier le schéma de la table
+      const tableInfo = await prisma.$queryRawUnsafe(`PRAGMA table_info(operation_log)`);
+      if (!tableInfo || tableInfo.length === 0) {
+        // Table absente — elle sera créée par prisma db push, rien à faire
+        return;
+      }
+
+      // Vérifier si la table existe dans sqlite_master avec AUTOINCREMENT
+      const schema = await prisma.$queryRawUnsafe(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name='operation_log'`
+      );
+      const tableSql = schema[0]?.sql || '';
+      if (tableSql.toUpperCase().includes('AUTOINCREMENT')) {
+        // Déjà correct
+        return;
+      }
+
+      console.log('🔧 Correction du schéma operation_log (ajout AUTOINCREMENT)...');
+
+      // Sauvegarder les données existantes
+      const existing = await prisma.$queryRawUnsafe(`SELECT * FROM operation_log`);
+
+      // Recréer la table avec le bon schéma
+      await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS operation_log`);
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE "operation_log" (
+          "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          "operation_id" TEXT NOT NULL UNIQUE,
+          "operation_type" TEXT NOT NULL,
+          "table_name" TEXT NOT NULL,
+          "record_id" INTEGER,
+          "data" TEXT,
+          "timestamp" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "synced_at" DATETIME,
+          "status" TEXT NOT NULL DEFAULT 'pending',
+          "error_message" TEXT,
+          "device_id" TEXT,
+          "user_id" INTEGER
+        )
+      `);
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "operation_log_status_timestamp" ON "operation_log"("status", "timestamp")`);
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "operation_log_table_timestamp" ON "operation_log"("table_name", "timestamp")`);
+      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "operation_log_operation_id" ON "operation_log"("operation_id")`);
+
+      // Réinsérer les données sauvegardées (statut 'synced' seulement pour ne pas re-syncer)
+      let restored = 0;
+      for (const row of existing) {
+        try {
+          await prisma.$executeRawUnsafe(
+            `INSERT OR IGNORE INTO operation_log (operation_id, operation_type, table_name, record_id, data, timestamp, synced_at, status, error_message, device_id, user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            row.operation_id, row.operation_type, row.table_name, row.record_id,
+            row.data, row.timestamp, row.synced_at, row.status,
+            row.error_message, row.device_id, row.user_id
+          );
+          restored++;
+        } catch (_) {}
+      }
+
+      console.log(`✅ operation_log recréé avec AUTOINCREMENT (${restored}/${existing.length} entrées restaurées)`);
+    } catch (err) {
+      console.warn('⚠️  _fixOperationLogSchema échoué (non bloquant):', err.message);
     }
   }
 
@@ -451,8 +526,22 @@ class LogescoServer {
       console.log('📊 Statistiques de la base de données:', stats);
 
     } catch (error) {
-      console.error('❌ Erreur lors du démarrage du serveur:', error.message);
-      process.exit(1);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${environment.port} occupé. Nouvelle tentative dans 3 secondes...`);
+        setTimeout(async () => {
+          try {
+            await this.listen();
+            console.log('🚀 Serveur LOGESCO API démarré avec succès (après retry)');
+          } catch (retryErr) {
+            console.error('❌ Échec du retry. Arrêtez manuellement le process qui occupe le port:', environment.port);
+            console.error('   Windows: netstat -aon | findstr :' + environment.port + '  puis: taskkill /f /pid <PID>');
+            process.exit(1);
+          }
+        }, 3000);
+      } else {
+        console.error('❌ Erreur lors du démarrage du serveur:', error.message);
+        process.exit(1);
+      }
     }
   }
 
@@ -535,23 +624,27 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/products`, createProductRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/categories`, categoriesRouter);
     this.app.use(`/api/${apiVersion}/suppliers`, createSupplierRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/customers`, createCustomerRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/accounts`, createAccountRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/procurement`, createProcurementRouter({ 
       ...this.models, 
@@ -561,7 +654,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/sales`, createSalesRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
       prisma: this.models.prisma,
@@ -612,7 +706,8 @@ class LogescoServer {
 
     // Routes pour les utilisateurs et rôles
     this.app.use(`/api/${apiVersion}/users`, createUserRouter({
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
     
     this.app.use(`/api/${apiVersion}/roles`, createRoleRouter({
@@ -626,12 +721,14 @@ class LogescoServer {
     // Routes pour les caisses et sessions
     this.app.use(`/api/${apiVersion}/cash-registers`, createCashRegistersRouter({
       prisma: this.models.prisma,
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
     
     this.app.use(`/api/${apiVersion}/cash-sessions`, createCashSessionsRouter({
       prisma: this.models.prisma,
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
 
     // Routes pour les licences
@@ -646,6 +743,12 @@ class LogescoServer {
     // Routes multi-boutique
     this.app.use(`/api/${apiVersion}/boutiques`, createBoutiquesRouter({
       prisma: this.models.prisma,
+      authService: this.authService,
+      syncService: this.syncService
+    }));
+
+    // Routes de synchronisation (Type 3 — hybride local + Neon)
+    this.app.use(`/api/${apiVersion}/sync`, createSyncRouter({
       authService: this.authService
     }));
 
@@ -712,6 +815,29 @@ class LogescoServer {
           console.log(`📡 API disponible sur: http://localhost:${environment.port}/api/${environment.apiVersion}`);
           console.log(`🏥 Health check: http://localhost:${environment.port}/health`);
           resolve();
+        }
+      });
+
+      this.server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`❌ Port ${environment.port} déjà utilisé. Tentative de libération...`);
+          // Tenter de tuer le process occupant le port via une commande système
+          const { exec } = require('child_process');
+          const isWin = process.platform === 'win32';
+          const killCmd = isWin
+            ? `for /f "tokens=5" %a in ('netstat -aon ^| findstr :${environment.port}') do taskkill /f /pid %a`
+            : `fuser -k ${environment.port}/tcp`;
+
+          exec(killCmd, (killErr) => {
+            if (killErr) {
+              console.error(`⚠️  Impossible de libérer le port automatiquement. Relancez le backend manuellement après avoir arrêté l'ancien process.`);
+            } else {
+              console.log(`✅ Port libéré, nouvelle tentative de démarrage dans 2s...`);
+            }
+            reject(err);
+          });
+        } else {
+          reject(err);
         }
       });
     });

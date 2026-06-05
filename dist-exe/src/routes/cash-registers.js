@@ -5,7 +5,7 @@ const express = require('express');
  * @param {Object} dependencies - Dépendances injectées
  * @returns {Router}
  */
-function createCashRegistersRouter({ prisma, authService }) {
+function createCashRegistersRouter({ prisma, authService, syncService }) {
   const router = express.Router();
 
   // GET /api/v1/cash-registers - Récupérer toutes les caisses
@@ -348,7 +348,7 @@ function createCashRegistersRouter({ prisma, authService }) {
       });
       
       // Créer un mouvement de caisse
-      await prisma.cashMovement.create({
+      const movement = await prisma.cashMovement.create({
         data: {
           caisseId: parseInt(id),
           type: movementType,
@@ -357,6 +357,11 @@ function createCashRegistersRouter({ prisma, authService }) {
           utilisateurId: 1 // TODO: Récupérer l'utilisateur connecté
         }
       });
+
+      // Sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('cash_movements', 'INSERT', movement);
+      }
       
       const formattedCashRegister = {
         id: updatedCashRegister.id,
@@ -487,6 +492,11 @@ function createCashRegistersRouter({ prisma, authService }) {
           utilisateur: true
         }
       });
+
+      // Sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('cash_movements', 'INSERT', movement);
+      }
       
       // Mettre à jour le solde de la caisse
       const newBalance = type === 'entree' 
