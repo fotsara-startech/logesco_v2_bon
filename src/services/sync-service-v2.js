@@ -18,13 +18,6 @@ const PULL_TABLES = [
   'stock_inventories', 'inventory_items', 'historique_recus', 'parametres_entreprise',
 ];
 
-// Tables that DO NOT have date_modification column
-// NOTE: All tables should now have date_modification after migrations
-// This is kept for backward compatibility with older installations
-const TABLES_WITHOUT_DATE_MODIFICATION = [
-  // Legacy list - all these tables now have date_modification column
-];
-
 class SyncServiceV2 {
   constructor() {
     this.localPrisma = null;
@@ -164,14 +157,13 @@ class SyncServiceV2 {
               [since]
             );
           } catch (colErr) {
-            // Fallback pour les tables sans date_modification (legacy, all tables should now have it)
+            // Fallback pour les tables sans date_modification
             const altCols = {
+              'historique_prix_achat': 'date_creation',
               'mouvements_stock': 'date_mouvement',
               'cash_movements': 'date_creation',
               'historique_recus': 'date_generation',
-              'transactions_comptes': 'date_transaction',
-              'stock_inventories': 'date_creation',
-              'inventory_items': 'date_comptage'
+              'transactions_comptes': 'date_transaction'
             };
             const altCol = altCols[table];
             if (altCol) {
@@ -284,6 +276,17 @@ class SyncServiceV2 {
       if (!row.date_modification) row.date_modification = now;
     }
 
+    // Note: comptes_fournisseurs et comptes_clients n'ont pas besoin de date_creation
+    if (tableName === 'comptes_fournisseurs' || tableName === 'comptes_clients') {
+      // Auto-managed par date_derniere_maj
+    }
+
+    if (tableName === 'stock_inventories') {
+      if (!row.type) row.type = 'COMPLET';
+      if (!row.nom) row.nom = `Inventaire ${row.id}`;
+      if (!row.utilisateur_id) row.utilisateur_id = 1;
+    }
+
     if (tableName === 'user_boutique_assignments') {
       const now = new Date().toISOString();
       if (!row.date_creation) row.date_creation = now;
@@ -295,11 +298,6 @@ class SyncServiceV2 {
       const now = new Date().toISOString();
       if (!row.date_creation) row.date_creation = now;
       if (!row.date_modification) row.date_modification = now;
-    }
-
-    // Remove date_modification for tables that don't have it
-    if (TABLES_WITHOUT_DATE_MODIFICATION.includes(tableName)) {
-      delete row.date_modification;
     }
 
     const keys = Object.keys(row).filter(k => {
@@ -336,7 +334,7 @@ class SyncServiceV2 {
     } else if (operation === 'UPDATE') {
       const nonIdKeys = keys.filter(k => k !== 'id');
       if (nonIdKeys.length === 0) return;
-      const sets = nonIdKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+      const sets = nonIdKeys.map((k, i) => `"${k}" = $` + (i + 1)).join(', ');
       const vals = nonIdKeys.map(k => row[k]);
       vals.push(row.id);
       const whereId = '$' + vals.length;
@@ -360,22 +358,6 @@ class SyncServiceV2 {
     const operationId = uuidv4();
     
     try {
-      // Safely serialize data, avoiding circular references
-      let dataStr;
-      try {
-        dataStr = JSON.stringify(data);
-      } catch (jsonErr) {
-        console.warn(`⚠️  JSON stringify failed for ${tableName}, using safe serialization`);
-        // Fallback: serialize only safe properties
-        const safeData = {};
-        for (const [k, v] of Object.entries(data || {})) {
-          if (typeof v !== 'object' || v instanceof Date) {
-            safeData[k] = v;
-          }
-        }
-        dataStr = JSON.stringify(safeData);
-      }
-
       await this.localPrisma.$executeRawUnsafe(
         `INSERT INTO operation_log (operation_id, operation_type, table_name, record_id, data, user_id, status) 
          VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
@@ -383,7 +365,7 @@ class SyncServiceV2 {
         operation,
         tableName,
         data.id || null,
-        dataStr,
+        JSON.stringify(data),
         userId
       );
 
@@ -395,16 +377,7 @@ class SyncServiceV2 {
       }
     } catch (e) {
       console.warn('⚠️  Erreur logOperation:', e.message);
-      // Don't throw - let operations continue even if sync fails
     }
-  }
-
-  /**
-   * BACKWARD COMPATIBILITY: enqueue() → logOperation()
-   * Routes anciennes utilisent .enqueue(), on redirige vers logOperation()
-   */
-  async enqueue(tableName, operation, data, userId = null) {
-    return this.logOperation(tableName, operation, data, userId);
   }
 
   getStatus() {

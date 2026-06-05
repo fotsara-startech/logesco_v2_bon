@@ -66,14 +66,15 @@ class AuthService {
    */
   async refreshToken(refreshToken) {
     try {
-      // Vérifier que le refresh token existe
-      if (!this.refreshTokens.has(refreshToken)) {
-        throw new Error('Refresh token invalide');
+      // Vérifier et décoder le refresh token (la signature JWT suffit comme validation)
+      // On ne vérifie plus le Set en mémoire pour résister aux redémarrages du serveur
+      let decoded;
+      try {
+        decoded = jwt.verify(refreshToken, this.jwtSecret);
+      } catch (jwtError) {
+        throw new Error('Refresh token invalide ou expiré');
       }
 
-      // Vérifier et décoder le refresh token
-      const decoded = jwt.verify(refreshToken, this.jwtSecret);
-      
       // Trouver l'utilisateur
       const utilisateur = await this.userModel.findById(decoded.userId);
       
@@ -81,13 +82,11 @@ class AuthService {
         throw new Error('Utilisateur non trouvé');
       }
 
-      // Supprimer l'ancien refresh token
-      this.refreshTokens.delete(refreshToken);
-
       // Générer de nouveaux tokens
       const tokens = this.generateTokens(utilisateur);
       
-      // Stocker le nouveau refresh token
+      // Mettre à jour le Set en mémoire (best-effort)
+      this.refreshTokens.delete(refreshToken);
       this.refreshTokens.add(tokens.refreshToken);
 
       return {

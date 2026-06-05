@@ -12,7 +12,7 @@ function createSyncRouter({ authService }) {
 
   /**
    * GET /sync/status
-   * Retourne l'état de la sync_queue et le mode de connexion
+   * Retourne l'état de l'operation_log (Event Sourcing V2)
    */
   router.get('/status', authenticateToken(authService), async (req, res) => {
     try {
@@ -34,21 +34,17 @@ function createSyncRouter({ authService }) {
         });
       }
 
-      // Lire la queue en attente depuis la BD locale
+      // Lire l'operation_log en attente depuis la BD locale (V2 Event Sourcing)
       const pending = await syncService.localPrisma.$queryRawUnsafe(
         `SELECT table_name, COUNT(*) as count
-         FROM sync_queue
-         WHERE synced = 0
+         FROM operation_log
+         WHERE status IN ('pending', 'failed')
          GROUP BY table_name
          ORDER BY count DESC`
       );
 
       const failed = await syncService.localPrisma.$queryRawUnsafe(
-        `SELECT COUNT(*) as count FROM sync_queue WHERE error IS NOT NULL AND synced = 0`
-      );
-
-      const lastPullMeta = await syncService.localPrisma.$queryRawUnsafe(
-        `SELECT value FROM sync_meta WHERE key = 'last_pull' LIMIT 1`
+        `SELECT COUNT(*) as count FROM operation_log WHERE status = 'failed'`
       );
 
       const pendingByTable = {};
@@ -72,11 +68,11 @@ function createSyncRouter({ authService }) {
           pendingCount: totalPending,
           pendingByTable,
           failedCount,
-          lastSync: lastPullMeta[0]?.value || null,
+          lastSync: new Date().toISOString(),
         }
       });
     } catch (e) {
-      console.error('Erreur GET /sync/status:', e.message);
+      console.error('⚠️  Erreur GET /sync/status:', e.message);
       res.status(500).json({ success: false, message: 'Erreur lecture statut sync: ' + e.message });
     }
   });
@@ -100,9 +96,9 @@ function createSyncRouter({ authService }) {
       // Déclencher le cycle de sync
       await syncService._syncCycle();
 
-      // Relire le statut après sync
+      // Relire le statut après sync (V2 Event Sourcing)
       const pendingAfter = await syncService.localPrisma.$queryRawUnsafe(
-        `SELECT COUNT(*) as count FROM sync_queue WHERE synced = 0`
+        `SELECT COUNT(*) as count FROM operation_log WHERE status IN ('pending', 'failed')`
       );
       const remainingCount = typeof pendingAfter[0]?.count === 'bigint'
         ? Number(pendingAfter[0].count)

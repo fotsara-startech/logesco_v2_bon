@@ -68,7 +68,7 @@ Tu dois voir : `No pending migrations to apply` ✅
 
 ### 2.3 — Appliquer les tables manquantes et date_modification
 
-⚠️ **Étape obligatoire** — le schéma initial ne crée pas `historique_prix_achat` et plusieurs tables manquent de `date_modification` (nécessaire pour la sync incrémentale).
+⚠️ **Étape obligatoire** — le schéma initial ne crée pas `historique_prix_achat` et plusieurs tables manquent de `date_modification` (nécessaire pour la sync incrémentale Event Sourcing V2).
 
 ```powershell
 node -e "
@@ -82,7 +82,35 @@ pool.query(sql).then(() => { console.log('✅ Migration appliquée'); pool.end()
 
 Tu dois voir : `✅ Migration appliquée`
 
-### 2.3 — Restaurer les migrations SQLite
+### 2.4 — Appliquer les migrations Event Sourcing V2 (SQLite local)
+
+⚠️ **IMPORTANT** — Cette étape initialise les colonnes `date_modification` sur la BD locale SQLite du client. Cela est nécessaire pour que la synchronisation Event Sourcing V2 fonctionne correctement.
+
+```powershell
+# Basculer vers la BD SQLite locale (sur la machine du client)
+$env:DATABASE_URL="file:./database/logesco.db?timeout=60000"
+
+# Appliquer les migrations
+npx prisma migrate deploy
+
+# Tu verras un message comme :
+# ✅ 1 migration successfully applied
+```
+
+**Ce que font ces migrations :**
+- Ajoute `date_modification` à `transactions_comptes` (nécessaire pour le pull delta)
+- Ajoute `date_modification` à `stock_inventories` (nécessaire pour le pull delta)
+- Ajoute `date_modification` à `inventory_items` (nécessaire pour le pull delta)
+- Crée les index pour optimiser les requêtes de sync
+
+**Vérification :**
+```powershell
+# Vérifier que les colonnes ont bien été ajoutées
+sqlite3 database/logesco.db ".schema transactions_comptes"
+# Devrait contenir : date_modification DATETIME
+```
+
+### 2.5 — Restaurer les migrations SQLite
 
 ```powershell
 # Restaurer pour la prochaine utilisation locale
@@ -113,6 +141,52 @@ npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
 npx prisma migrate resolve --rolled-back "20251106124948_init_with_licenses" --schema=prisma/schema.postgresql.prisma
 npx prisma migrate resolve --rolled-back "20260423221732_init_postgresql" --schema=prisma/schema.postgresql.prisma
 npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+```
+
+### ⚠️ Dépannage des migrations SQLite (Event Sourcing V2)
+
+**Erreur : "database schema is not empty"**
+→ La BD SQLite existe déjà mais n'a pas de record de migrations. Solution :
+```powershell
+# Marquer les 2 premières migrations comme appliquées
+npx prisma migrate resolve --applied "20260602145015_add_stock_snapshots"
+npx prisma migrate resolve --applied "add_operation_log"
+
+# Puis déployer
+npx prisma migrate deploy
+```
+
+**Erreur : "Cannot add a column with non-constant default"**
+→ SQLite ne supporte pas `DEFAULT CURRENT_TIMESTAMP` sur ALTER TABLE. La migration a été corrigée, assure-toi d'avoir la dernière version de `add_date_modification_columns/migration.sql`. Solution :
+```powershell
+# Réinitialiser la migration
+npx prisma migrate resolve --rolled-back add_date_modification_columns
+
+# Réappliquer
+npx prisma migrate deploy
+```
+
+**Erreur : "table operation_log already exists"**
+→ La table `operation_log` existe déjà mais n'est pas tracée. Solution :
+```powershell
+# Marquer comme appliquée
+npx prisma migrate resolve --applied add_operation_log
+
+# Puis continuer
+npx prisma migrate deploy
+```
+
+**Vérification : Les colonnes `date_modification` n'existent pas après migration**
+→ Vérifie que la migration s'est bien appliquée :
+```powershell
+sqlite3 database/logesco.db ".schema transactions_comptes"
+# Devrait contenir une ligne : date_modification DATETIME
+
+# Si absent, vérifier l'état des migrations
+npx prisma migrate status
+
+# Si besoin de forcer l'application
+npx prisma migrate deploy
 ```
 
 ---
@@ -164,18 +238,28 @@ LOG_LEVEL=info
 1. Lance l'installeur LOGESCO sur la machine du client
 2. L'installeur copie le backend dans `C:\Program Files\LOGESCO\backend\`
 3. **Remplace le fichier `.env`** dans ce dossier par celui préparé à l'étape 3
-4. Démarre le service LOGESCO
+4. **IMPORTANT — Appliquer les migrations SQLite** :
+   ```powershell
+   cd "C:\Program Files\LOGESCO\backend\"
+   npx prisma migrate deploy
+   ```
+   Cela ajoute les colonnes `date_modification` nécessaires pour la sync Event Sourcing V2.
+5. Démarre le service LOGESCO
 
 ### Option B — Installation manuelle
 
 1. Copie le dossier `backend/` sur la machine du client
 2. Ouvre un terminal dans ce dossier
-3. Lance :
+3. Lance les migrations :
+   ```bash
+   npx prisma migrate deploy
+   ```
+4. Puis démarre le backend :
    ```bash
    npm install
    npm start
    ```
-4. Vérifie que le serveur démarre avec `Mode sync: hybrid` dans les logs
+5. Vérifie que le serveur démarre avec `Mode sync: hybrid` dans les logs et pas d'erreur "date_modification"
 
 ---
 

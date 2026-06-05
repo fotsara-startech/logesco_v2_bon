@@ -181,9 +181,13 @@ function syncMiddleware(prisma) {
           prisma[modelName].findUnique({ where: { id: recordId } })
             .then(dbRecord => {
               if (!dbRecord) return;
-              syncService.enqueue(config.table, operation, dbRecord).catch(() => {});
+              syncService.enqueue(config.table, operation, dbRecord).catch(e => {
+                console.warn(`⚠️  Erreur sync ${config.table}:`, e.message);
+              });
             })
-            .catch(() => {});
+            .catch(e => {
+              console.warn(`⚠️  Erreur fetch DB ${config.model}:`, e.message);
+            });
           return;
         }
 
@@ -212,7 +216,9 @@ function syncMiddleware(prisma) {
           }
         }
 
-        syncService.enqueue(config.table, operation, dataToSync).catch(() => {});
+        syncService.enqueue(config.table, operation, dataToSync).catch(e => {
+          console.warn(`⚠️  Erreur sync ${config.table} (${operation}):`, e.message);
+        });
       }
     };
 
