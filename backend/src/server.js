@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 // ── Logging vers fichier dès le démarrage ─────────────────────────────────
 const fs   = require('fs');
@@ -60,6 +60,7 @@ const licensesRouter = require('./routes/licenses');
 const { createExpirationDatesRouter } = require('./routes/expiration-dates');
 const { createProformaRouter } = require('./routes/proformas');
 const { createBoutiquesRouter } = require('./routes/boutiques');
+const { createSyncRouter } = require('./routes/sync');
 
 /**
  * Serveur principal LOGESCO API
@@ -541,17 +542,20 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/suppliers`, createSupplierRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/customers`, createCustomerRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/accounts`, createAccountRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/procurement`, createProcurementRouter({ 
       ...this.models, 
@@ -561,7 +565,8 @@ class LogescoServer {
     this.app.use(`/api/${apiVersion}/sales`, createSalesRouter({ 
       ...this.models, 
       authService: this.authService,
-      prisma: this.models.prisma 
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
     this.app.use(`/api/${apiVersion}/proformas`, createProformaRouter({ 
       prisma: this.models.prisma,
@@ -612,7 +617,8 @@ class LogescoServer {
 
     // Routes pour les utilisateurs et rôles
     this.app.use(`/api/${apiVersion}/users`, createUserRouter({
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
     
     this.app.use(`/api/${apiVersion}/roles`, createRoleRouter({
@@ -626,12 +632,14 @@ class LogescoServer {
     // Routes pour les caisses et sessions
     this.app.use(`/api/${apiVersion}/cash-registers`, createCashRegistersRouter({
       prisma: this.models.prisma,
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
     
     this.app.use(`/api/${apiVersion}/cash-sessions`, createCashSessionsRouter({
       prisma: this.models.prisma,
-      authService: this.authService
+      authService: this.authService,
+      syncService: this.syncService
     }));
 
     // Routes pour les licences
@@ -646,6 +654,12 @@ class LogescoServer {
     // Routes multi-boutique
     this.app.use(`/api/${apiVersion}/boutiques`, createBoutiquesRouter({
       prisma: this.models.prisma,
+      authService: this.authService,
+      syncService: this.syncService
+    }));
+
+    // Routes de synchronisation (Type 3 — hybride local + Neon)
+    this.app.use(`/api/${apiVersion}/sync`, createSyncRouter({
       authService: this.authService
     }));
 

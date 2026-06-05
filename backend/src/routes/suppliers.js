@@ -20,6 +20,7 @@ const {
  */
 function createSupplierRouter(models) {
   const router = express.Router();
+  const syncService = models.syncService || null;
 
   /**
    * GET /suppliers
@@ -138,6 +139,17 @@ function createSupplierRouter(models) {
 
         // Créer le fournisseur avec son compte
         const fournisseur = await models.fournisseur.createWithAccount(fournisseurData);
+
+        // Sync vers Neon
+        if (syncService) {
+          await syncService.enqueue('fournisseurs', 'INSERT', fournisseur);
+          const compte = fournisseur.compte || await models.prisma.compteFournisseur.findUnique({
+            where: { fournisseurId: fournisseur.id }
+          });
+          if (compte) {
+            await syncService.enqueue('comptes_fournisseurs', 'INSERT', compte);
+          }
+        }
         
         const fournisseurDTO = FournisseurDTO.fromEntity(fournisseur);
         res.status(201).json(

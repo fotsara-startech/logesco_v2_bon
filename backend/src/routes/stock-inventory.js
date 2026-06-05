@@ -156,7 +156,7 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
           codeProduit: item.produit?.reference,
           categorieProduit: item.produit?.categorie?.nom,
           prixUnitaire: parseFloat(item.produit?.prixUnitaire) || 0,
-          prixAchat: parseFloat(item.produit?.prixAchat) || 0,
+          prixAchat: parseFloat(item.prixAchat) || 0, // Utilise le prixAchat de l'item (qui contient le CUMP au moment de la création)
           quantiteSysteme: parseFloat(item.quantiteSysteme),
           quantiteComptee: item.quantiteComptee ? parseFloat(item.quantiteComptee) : null,
           ecart: item.ecart ? parseFloat(item.ecart) : null,
@@ -167,9 +167,21 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
 
       res.status(201).json({ success: true, data: formattedInventory });
 
-      // Enqueue pour sync vers Neon (utiliser newInventory sans les relations imbriquées)
+      // Enqueue pour sync vers Neon (envoyer uniquement les champs scalaires, pas les relations)
       if (syncService) {
-        await syncService.enqueue('stock_inventories', 'INSERT', newInventory);
+        await syncService.enqueue('stock_inventories', 'INSERT', {
+          id: newInventory.id,
+          nom: newInventory.nom,
+          description: newInventory.description,
+          type: newInventory.type,
+          status: newInventory.status,
+          categorieId: newInventory.categorieId,
+          utilisateurId: newInventory.utilisateurId,
+          boutiqueId: newInventory.boutiqueId,
+          dateCreation: newInventory.dateCreation,
+          dateDebut: newInventory.dateDebut,
+          dateFin: newInventory.dateFin
+        });
         // Sync des items générés
         const items = await prisma.inventoryItem.findMany({
           where: { inventaireId: newInventory.id }
@@ -203,7 +215,7 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
         codeProduit: item.produit?.reference,
         categorieProduit: item.produit?.categorie?.nom,
         prixUnitaire: parseFloat(item.produit?.prixUnitaire) || 0,
-        prixAchat: parseFloat(item.produit?.prixAchat) || 0,
+        prixAchat: parseFloat(item.prixAchat) || 0, // Utilise le prixAchat de l'item (CUMP au moment de la création)
         quantiteSysteme: parseFloat(item.quantiteSysteme),
         quantiteComptee: item.quantiteComptee ? parseFloat(item.quantiteComptee) : null,
         ecart: item.ecart ? parseFloat(item.ecart) : null,
@@ -257,6 +269,23 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
           nomUtilisateurComptage: updatedItem.utilisateurComptage?.nomUtilisateur
         }
       });
+
+      // Enqueue pour sync vers Neon après comptage
+      if (syncService) {
+        await syncService.enqueue('inventory_items', 'UPDATE', {
+          id: updatedItem.id,
+          inventaireId: updatedItem.inventaireId,
+          produitId: updatedItem.produitId,
+          quantiteSysteme: updatedItem.quantiteSysteme,
+          quantiteComptee: updatedItem.quantiteComptee,
+          ecart: updatedItem.ecart,
+          prixUnitaire: updatedItem.prixUnitaire,
+          prixAchat: updatedItem.prixAchat,
+          commentaire: updatedItem.commentaire,
+          dateComptage: updatedItem.dateComptage,
+          utilisateurComptageId: updatedItem.utilisateurComptageId
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de la mise a jour de l item:', error);
       res.status(500).json({ success: false, error: { message: 'Erreur serveur', code: 'INVENTORY_ITEM_UPDATE_ERROR' } });
@@ -491,6 +520,23 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
           stats: { totalItems: 0, countedItems: 0, itemsWithVariance: 0, totalSystemQuantity: 0, totalCountedQuantity: 0, totalVariance: 0, positiveVariance: 0, negativeVariance: 0 }
         }
       });
+
+      // Enqueue pour sync vers Neon après clôture
+      if (syncService) {
+        await syncService.enqueue('stock_inventories', 'UPDATE', {
+          id: updatedInventory.id,
+          nom: updatedInventory.nom,
+          description: updatedInventory.description,
+          type: updatedInventory.type,
+          status: updatedInventory.status,
+          categorieId: updatedInventory.categorieId,
+          boutiqueId: updatedInventory.boutiqueId,
+          utilisateurId: updatedInventory.utilisateurId,
+          dateCreation: updatedInventory.dateCreation,
+          dateDebut: updatedInventory.dateDebut,
+          dateFin: updatedInventory.dateFin
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de la cloture:', error);
       res.status(500).json({ success: false, error: { message: 'Erreur serveur', code: 'INVENTORY_CLOSE_ERROR' } });
@@ -529,12 +575,16 @@ async function generateInventoryItems(prisma, inventoryId, type, categorieId, bo
         quantiteSysteme = parseFloat(product.stock.quantiteDisponible) || 0;
       }
 
+      // Utiliser le CUMP (Coût Unitaire Moyen Pondéré) pour la valorisation
+      // Fallback sur prixAchat si CUMP n'existe pas
+      const prixAchatValorisation = parseFloat(product.cump) || parseFloat(product.prixAchat) || 0;
+
       return {
         inventaireId: inventoryId,
         produitId: product.id,
         quantiteSysteme,
         prixUnitaire: parseFloat(product.prixUnitaire) || 0,
-        prixAchat: parseFloat(product.prixAchat) || 0
+        prixAchat: prixAchatValorisation
       };
     });
 
