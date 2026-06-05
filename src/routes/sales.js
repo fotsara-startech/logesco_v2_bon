@@ -11,7 +11,7 @@ const { buildSalesSearchConditions, generateSaleNumber } = require('../utils/tra
 const { updateExpirationDatesAfterSale } = require('../utils/expiration-manager');
 const { resolveBoutiqueId } = require('../utils/boutique-helper');
 
-function createSalesRouter({ prisma, authService }) {
+function createSalesRouter({ prisma, authService, syncService }) {
   const router = express.Router();
 
   // Middleware d'authentification pour toutes les routes
@@ -801,13 +801,14 @@ function createSalesRouter({ prisma, authService }) {
         const numeroVente = await generateSaleNumber(prisma);
 
         // Créer la vente dans une transaction avec timeout augmenté
-        const vente = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
           // Récupérer la session active de l'utilisateur connecté (filtrée par boutique)
           const sessionWhere = {
             utilisateurId: req.user.id,
             isActive: true,
             dateFermeture: null
           };
+          let compteClientToSync = null;
           if (boutiqueId) sessionWhere.boutiqueId = parseInt(boutiqueId);
 
           const activeSession = await tx.cashSession.findFirst({
@@ -1078,12 +1079,16 @@ function createSalesRouter({ prisma, authService }) {
             } else {
               console.log(`✅ Compte soldé (solde = 0)`);
             }
+
+            // Stocker pour sync après transaction
+            compteClientToSync = compteClientUpdated;
           }
 
           // CORRECTION: Créer un mouvement de caisse pour traçabilité (DANS la transaction)
+          let cashMovementCreated = null;
           if (sessionId && montantVerse > 0) {
             const clientInfo = nouvelleVente.client;
-            await tx.cashMovement.create({
+            cashMovementCreated = await tx.cashMovement.create({
               data: {
                 caisseId: activeSession.caisseId,
                 sessionId: sessionId,
@@ -1107,10 +1112,12 @@ function createSalesRouter({ prisma, authService }) {
             console.log(`✅ Mouvement de caisse créé pour la vente (${montantVerse} FCFA)`);
           }
 
-          return nouvelleVente;
+          return { vente: nouvelleVente, cashMovement: cashMovementCreated, compteClient: compteClientToSync };
         }, {
           timeout: 15000 // Augmenter le timeout à 15 secondes pour les transactions complexes
         });
+
+        const vente = result.vente;
 
         // Synchroniser manuellement les mouvements de stock et stock_boutiques vers Neon
         // (Les extensions Prisma ne s'appliquent pas aux transactions)
@@ -1121,7 +1128,90 @@ function createSalesRouter({ prisma, authService }) {
             try {
               console.log('🔧 [Sync] Début de la synchronisation manuelle...');
               console.log('🔧 [Sync] Nombre de détails à synchroniser:', details.length);
-              const syncService = require('../services/sync-service');
+              const syncSvc = syncService || require('../services/sync-service');
+              
+              // Synchroniser le cash_movement si créé
+              if (result.cashMovement) {
+                try {
+                  await syncSvc.enqueue('cash_movements', 'INSERT', result.cashMovement);
+                  console.log(`✅ [Manual Sync] Cash movement synchronisé: ${result.cashMovement.id}`);
+                } catch (syncError) {
+                  console.error('❌ Erreur sync cash_movement:', syncError.message);
+                }
+              }
+
+              // Synchroniser le compte client si mis à jour
+              if (result.compteClient) {
+                try {
+                  await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compteClient);
+                  console.log(`✅ [Manual Sync] Compte client synchronisé: ${result.compteClient.id}`);
+                } catch (syncError) {
+                  console.error('❌ Erreur sync compte client:', syncError.message);
+                }
+              }
+
+              // Synchroniser les transactions de compte créées
+              if (result.compteClient) {
+                try {
+                  const txComptes = await prisma.transactionCompte.findMany({
+                    where: { compteId: result.compteClient.id },
+                    orderBy: { id: 'desc' },
+                    take: 10
+                  });
+                  // Enqueue seulement les transactions liées à cette vente
+                  for (const txC of txComptes.filter(t => t.venteId === vente.id)) {
+                    await syncSvc.enqueue('transactions_comptes', 'INSERT', txC);
+                  }
+                  console.log(`✅ [Manual Sync] Transactions compte synchronisées`);
+                } catch (syncError) {
+                  console.error('❌ Erreur sync transactions_comptes:', syncError.message);
+                }
+              }
+              
+              // IMPORTANT: Synchroniser d'abord la vente principale
+              try {
+                await syncSvc.enqueue('ventes', 'INSERT', {
+                  id: vente.id,
+                  numero_vente: vente.numeroVente,
+                  client_id: vente.clientId,
+                  sous_total: vente.sousTotal,
+                  montant_remise: vente.montantRemise,
+                  montant_tva: vente.montantTva,
+                  taux_tva: vente.tauxTva,
+                  montant_total: vente.montantTotal,
+                  montant_paye: vente.montantPaye,
+                  montant_restant: vente.montantRestant,
+                  statut: vente.statut,
+                  date_vente: vente.dateVente,
+                  boutique_id: boutiqueId ? parseInt(boutiqueId) : null,
+                  vendeur_id: vente.utilisateurId,
+                  session_id: vente.sessionId,
+                  mode_paiement: vente.modePaiement,
+                });
+                console.log(`✅ [Manual Sync] Vente principale synchronisée: ${vente.id}`);
+              } catch (syncError) {
+                console.error('❌ Erreur sync vente principale:', syncError.message);
+              }
+
+              // IMPORTANT: Synchroniser les détails de vente
+              try {
+                for (const detail of vente.details) {
+                  await syncSvc.enqueue('details_ventes', 'INSERT', {
+                    id: detail.id,
+                    vente_id: detail.venteId,
+                    produit_id: detail.produitId,
+                    quantite: detail.quantite,
+                    prix_unitaire: detail.prixUnitaire,
+                    prix_affiche: detail.prixAffiche,
+                    remise_appliquee: detail.remiseAppliquee,
+                    justification_remise: detail.justificationRemise,
+                    prix_total: detail.prixTotal,
+                  });
+                  console.log(`✅ [Manual Sync] Détail de vente synchronisé: ${detail.id} (produit ${detail.produitId})`);
+                }
+              } catch (syncError) {
+                console.error('❌ Erreur sync détails vente:', syncError.message);
+              }
               
               // Synchroniser les mouvements de stock créés
               for (const detail of details) {
@@ -1140,7 +1230,7 @@ function createSalesRouter({ prisma, authService }) {
                 
                 if (mouvement) {
                   console.log(`🔄 [Manual Sync] mouvements_stock trouvé: ${mouvement.id}`);
-                  await syncService.enqueue('mouvements_stock', 'INSERT', {
+                  await syncSvc.enqueue('mouvements_stock', 'INSERT', {
                     id: mouvement.id,
                     produit_id: mouvement.produitId,
                     boutique_id: mouvement.boutiqueId,
@@ -1170,7 +1260,7 @@ function createSalesRouter({ prisma, authService }) {
                   
                   if (stockBoutique) {
                     console.log(`🔄 [Manual Sync] stock_boutiques trouvé: ${stockBoutique.id}`);
-                    await syncService.enqueue('stock_boutiques', 'UPDATE', {
+                    await syncSvc.enqueue('stock_boutiques', 'UPDATE', {
                       id: stockBoutique.id,
                       boutique_id: stockBoutique.boutiqueId,
                       produit_id: stockBoutique.produitId,
@@ -1191,7 +1281,7 @@ function createSalesRouter({ prisma, authService }) {
                   });
                   
                   if (stock) {
-                    await syncService.enqueue('stock', 'UPDATE', {
+                    await syncSvc.enqueue('stock', 'UPDATE', {
                       id: stock.id,
                       produit_id: stock.produitId,
                       quantite_disponible: stock.quantiteDisponible,
@@ -1558,11 +1648,12 @@ function createSalesRouter({ prisma, authService }) {
           }
 
           // CORRECTION 1: Déduire le montant payé de la session de caisse
+          let cancelMovementCreated = null;
           if (vente.sessionId && vente.montantPaye > 0) {
             console.log(`💰 Déduction de ${vente.montantPaye} FCFA de la session ${vente.sessionId}`);
             
             // Créer un mouvement de caisse d'annulation (négatif)
-            await tx.cashMovement.create({
+            cancelMovementCreated = await tx.cashMovement.create({
               data: {
                 caisseId: vente.session.caisseId,
                 sessionId: vente.sessionId,
@@ -1625,6 +1716,7 @@ function createSalesRouter({ prisma, authService }) {
           }
 
           // Si vente à crédit avec client, ajuster le compte
+          let compteClientAnnulation = null;
           if (vente.clientId) {
             console.log(`👤 Ajustement du compte client ${vente.clientId}`);
             
@@ -1638,7 +1730,7 @@ function createSalesRouter({ prisma, authService }) {
               // (car le solde est négatif quand il y a une dette)
               const nouveauSolde = compteClient.soldeActuel + vente.montantTotal;
               
-              await tx.compteClient.update({
+              compteClientAnnulation = await tx.compteClient.update({
                 where: { clientId: vente.clientId },
                 data: {
                   soldeActuel: nouveauSolde
@@ -1684,7 +1776,36 @@ function createSalesRouter({ prisma, authService }) {
               }
             }
           }
+
+          return { updatedVente, cancelMovement: cancelMovementCreated, compteClient: compteClientAnnulation };
         });
+
+        const updatedVente = result.updatedVente;
+
+        // Sync cash_movement d'annulation si créé
+        if (result.cancelMovement && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('cash_movements', 'INSERT', result.cancelMovement);
+              console.log(`✅ [Cancel Sync] Cash movement d'annulation synchronisé: ${result.cancelMovement.id}`);
+            } catch (syncError) {
+              console.error('❌ Erreur sync cash_movement annulation:', syncError.message);
+            }
+          });
+        }
+
+        if (result.compteClient && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compteClient);
+              console.log(`✅ [Cancel Sync] Compte client synchronisé après annulation: ${result.compteClient.id}`);
+            } catch (syncError) {
+              console.error('❌ Erreur sync compte client annulation:', syncError.message);
+            }
+          });
+        }
 
         res.json({
           success: true,

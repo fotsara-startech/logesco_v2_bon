@@ -6,7 +6,7 @@ const { authenticateToken } = require('../middleware/auth');
  * @param {Object} dependencies - Dépendances injectées
  * @returns {Router}
  */
-function createCashSessionsRouter({ prisma, authService }) {
+function createCashSessionsRouter({ prisma, authService, syncService }) {
   const router = express.Router();
 
   // Authentification requise pour toutes les routes
@@ -234,9 +234,11 @@ function createCashSessionsRouter({ prisma, authService }) {
       });
       
       // Créer un mouvement de caisse
-      await prisma.cashMovement.create({
+      const openingMovement = await prisma.cashMovement.create({
         data: {
           caisseId: parseInt(cashRegisterId),
+          sessionId: newSession.id,
+          boutiqueId: effectiveBoutiqueId,
           type: 'ouverture_session',
           montant: parseFloat(soldeInitial),
           description: 'Ouverture de session utilisateur',
@@ -244,6 +246,11 @@ function createCashSessionsRouter({ prisma, authService }) {
           metadata: JSON.stringify({ sessionId: newSession.id })
         }
       });
+
+      // Sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('cash_movements', 'INSERT', openingMovement);
+      }
       
       const formattedSession = {
         id: newSession.id,
@@ -425,9 +432,11 @@ function createCashSessionsRouter({ prisma, authService }) {
       });
       
       // Créer un mouvement de caisse pour tracer la fermeture
-      await prisma.cashMovement.create({
+      const closingMovement = await prisma.cashMovement.create({
         data: {
           caisseId: activeSession.caisseId,
+          sessionId: activeSession.id,
+          boutiqueId: activeSession.boutiqueId,
           type: 'fermeture_session',
           montant: soldeFermetureFloat,
           description: `Clôture session - Écart: ${ecart >= 0 ? '+' : ''}${ecart} FCFA`,
@@ -442,6 +451,11 @@ function createCashSessionsRouter({ prisma, authService }) {
           })
         }
       });
+
+      // Sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('cash_movements', 'INSERT', closingMovement);
+      }
       
       const formattedSession = {
         id: closedSession.id,

@@ -612,6 +612,8 @@ function createProcurementRouter(services) {
         const result = await prisma.$transaction(async (tx) => {
           const cumpUpdates = []; // Collecter les mises à jour CUMP pour après la transaction
           let commandeComplete = true;
+          let compteFournisseurToSync = null;
+          let compteFournisseurCreated = null;
 
           // Traiter chaque détail de réception
           for (const receptionDetail of details) {
@@ -763,6 +765,7 @@ function createProcurementRouter(services) {
                   limiteCredit: 0
                 }
               });
+              compteFournisseurCreated = compteFournisseur;
             }
 
             if (modePaiementFinal === 'credit') {
@@ -770,7 +773,7 @@ function createProcurementRouter(services) {
 
               const nouveauSolde = compteFournisseur.soldeActuel + montantReception;
 
-              await tx.compteFournisseur.update({
+              const compteFournisseurUpdated = await tx.compteFournisseur.update({
                 where: { id: compteFournisseur.id },
                 data: { soldeActuel: nouveauSolde }
               });
@@ -789,6 +792,9 @@ function createProcurementRouter(services) {
               });
 
               console.log(`✅ Compte fournisseur mis à jour: ${compteFournisseur.soldeActuel} → ${nouveauSolde} FCFA`);
+
+              // Stocker pour sync
+              compteFournisseurToSync = compteFournisseurUpdated;
 
             } else if (modePaiementFinal === 'comptant') {
               console.log(`💵 Commande comptant - Enregistrement achat + paiement immédiat`);
@@ -812,7 +818,7 @@ function createProcurementRouter(services) {
               // 2. Transaction de paiement immédiat (solde la dette)
               const soldeApresPaiement = soldeApresAchat - montantReception; // = solde initial
 
-              await tx.compteFournisseur.update({
+              const compteFournisseurUpdated2 = await tx.compteFournisseur.update({
                 where: { id: compteFournisseur.id },
                 data: { soldeActuel: soldeApresPaiement }
               });
@@ -831,10 +837,18 @@ function createProcurementRouter(services) {
               });
 
               console.log(`✅ Paiement comptant enregistré - Solde fournisseur inchangé: ${soldeApresPaiement} FCFA`);
+
+              // Stocker pour sync
+              compteFournisseurToSync = compteFournisseurUpdated2;
+            }
+
+            // Si le compte vient d'être créé, le syncer aussi
+            if (compteFournisseurCreated) {
+              compteFournisseurToSync = compteFournisseurToSync || compteFournisseurCreated;
             }
           }
 
-          return { nouveauStatut, montantReception, modePaiementFinal, cumpUpdates };
+          return { nouveauStatut, montantReception, modePaiementFinal, cumpUpdates, compteFournisseurToSync, compteFournisseurCreated };
         });
 
         // Recalculer le CUMP APRÈS la transaction (évite les deadlocks)
@@ -856,6 +870,44 @@ function createProcurementRouter(services) {
 
         // Enqueue explicite des stocks vers Neon (les hooks tx ne déclenchent pas la sync)
         const syncService = require('../services/sync-service');
+
+        // Sync du compte fournisseur si créé ou mis à jour
+        if (result.compteFournisseurCreated) {
+          try {
+            await syncService.enqueue('comptes_fournisseurs', 'INSERT', result.compteFournisseurCreated);
+            console.log(`📤 comptes_fournisseurs INSERT enqueued: ID ${result.compteFournisseurCreated.id}`);
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue compte fournisseur (create):`, e.message);
+          }
+        }
+        if (result.compteFournisseurToSync && (!result.compteFournisseurCreated || result.compteFournisseurToSync.id !== result.compteFournisseurCreated.id)) {
+          try {
+            await syncService.enqueue('comptes_fournisseurs', 'UPDATE', result.compteFournisseurToSync);
+            console.log(`📤 comptes_fournisseurs UPDATE enqueued: ID ${result.compteFournisseurToSync.id}`);
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue compte fournisseur (update):`, e.message);
+          }
+        }
+
+        // Sync des transactions de compte créées lors de la réception
+        if (result.compteFournisseurToSync || result.compteFournisseurCreated) {
+          const compteId = (result.compteFournisseurToSync || result.compteFournisseurCreated).id;
+          try {
+            const txComptes = await prisma.transactionCompte.findMany({
+              where: {
+                compteId,
+                referenceId: parseInt(id),
+                referenceType: 'commande_approvisionnement'
+              }
+            });
+            for (const txC of txComptes) {
+              await syncService.enqueue('transactions_comptes', 'INSERT', txC);
+            }
+            console.log(`📤 transactions_comptes enqueued: ${txComptes.length} enregistrement(s)`);
+          } catch (e) {
+            console.warn(`⚠️  Erreur enqueue transactions_comptes:`, e.message);
+          }
+        }
         for (const update of result.cumpUpdates) {
           try {
             if (commande.boutiqueId) {

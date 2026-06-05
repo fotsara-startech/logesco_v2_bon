@@ -275,7 +275,7 @@ function createProformaRouter({ prisma, authService, syncService }) {
   router.post('/:id/validate', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { modePaiement, montantPaye, dateVente } = req.body;
+      const { modePaiement, montantPaye, dateVente, montantTva, tauxTva } = req.body;
 
       const proforma = await prisma.venteProforma.findUnique({ where: { id }, include });
       if (!proforma) return res.status(404).json({ success: false, message: 'Proforma introuvable' });
@@ -337,23 +337,46 @@ function createProformaRouter({ prisma, authService, syncService }) {
       const numeroVente = `VNT-${year}${month}${day}-${String(seq).padStart(4, '0')}`;
 
       const paye = montantPaye || proforma.montantTotal;
-      const restant = Math.max(0, proforma.montantTotal - paye);
+
+      // Recalculer les montants TVA si le client a modifié la TVA depuis le dialog
+      const finalMontantTva = montantTva !== undefined ? Number(montantTva) : proforma.montantTva;
+      const finalTauxTva = tauxTva !== undefined ? Number(tauxTva) : proforma.tauxTva;
+      const finalMontantTotal = proforma.sousTotal - proforma.montantRemise + finalMontantTva;
+      const restant = Math.max(0, finalMontantTotal - paye);
 
       // Créer la vente dans une transaction
       const vente = await prisma.$transaction(async (tx) => {
+        // Récupérer la session active de l'utilisateur connecté (filtrée par boutique)
+        const sessionWhere = {
+          utilisateurId: req.user.id,
+          isActive: true,
+          dateFermeture: null,
+        };
+        if (proforma.boutiqueId) sessionWhere.boutiqueId = proforma.boutiqueId;
+
+        const activeSession = await tx.cashSession.findFirst({ where: sessionWhere });
+        const sessionId = activeSession ? activeSession.id : null;
+
+        if (!activeSession) {
+          console.log('⚠️ [PROFORMA VALIDATION] Aucune session active trouvée - vente créée sans session');
+        } else {
+          console.log(`✅ [PROFORMA VALIDATION] Session active trouvée: ID ${activeSession.id}`);
+        }
+
         // 1. Créer la vente
         const newVente = await tx.vente.create({
           data: {
             numeroVente,
             clientId: proforma.clientId,
             vendeurId: proforma.vendeurId,
-            boutiqueId: proforma.boutiqueId, // ← Ajouter le boutiqueId de la proforma
+            boutiqueId: proforma.boutiqueId,
+            ...(sessionId ? { sessionId } : {}),
             dateVente: dateVente ? new Date(dateVente) : proforma.dateVente || now,
             sousTotal: proforma.sousTotal,
             montantRemise: proforma.montantRemise,
-            montantTva: proforma.montantTva,
-            tauxTva: proforma.tauxTva,
-            montantTotal: proforma.montantTotal,
+            montantTva: finalMontantTva,
+            tauxTva: finalTauxTva,
+            montantTotal: finalMontantTotal,
             modePaiement: modePaiement || proforma.modePaiement,
             montantPaye: paye,
             montantRestant: restant,
@@ -435,6 +458,106 @@ function createProformaRouter({ prisma, authService, syncService }) {
       });
 
       res.status(201).json({ success: true, data: vente, message: `Vente ${numeroVente} créée depuis la proforma ${proforma.numeroProforma}` });
+
+      // ─── Synchroniser vers Neon (asynchrone) ───────────────────────────────────
+      if (process.env.CLOUD_DB_URL) {
+        setImmediate(async () => {
+          try {
+            console.log('🔧 [Sync] Synchronisation proforma → vente...');
+            
+            // 1. Sync vente principale
+            try {
+              await syncService.enqueue('ventes', 'INSERT', {
+                id: vente.id,
+                numero_vente: vente.numeroVente,
+                client_id: vente.clientId,
+                sous_total: vente.sousTotal,
+                montant_remise: vente.montantRemise,
+                montant_tva: vente.montantTva,
+                taux_tva: vente.tauxTva,
+                montant_total: vente.montantTotal,
+                montant_paye: vente.montantPaye,
+                montant_restant: vente.montantRestant,
+                statut: vente.statut,
+                date_vente: vente.dateVente,
+                boutique_id: vente.boutiqueId,
+                vendeur_id: vente.vendeurId,
+                mode_paiement: vente.modePaiement,
+                session_id: vente.sessionId || null,
+              });
+              console.log(`✅ [Sync] Vente synchronisée: ${vente.id}`);
+            } catch (syncErr) {
+              console.error('❌ Erreur sync vente:', syncErr.message);
+            }
+
+            // 2. Sync détails de vente
+            try {
+              for (const detail of vente.details) {
+                await syncService.enqueue('details_ventes', 'INSERT', {
+                  id: detail.id,
+                  vente_id: detail.venteId,
+                  produit_id: detail.produitId,
+                  quantite: detail.quantite,
+                  prix_unitaire: detail.prixUnitaire,
+                  prix_affiche: detail.prixAffiche,
+                  remise_appliquee: detail.remiseAppliquee,
+                  justification_remise: detail.justificationRemise,
+                  prix_total: detail.prixTotal,
+                });
+              }
+              console.log(`✅ [Sync] Détails synchronisés: ${vente.details.length} lignes`);
+            } catch (syncErr) {
+              console.error('❌ Erreur sync détails:', syncErr.message);
+            }
+
+            // 3. Sync mouvements de stock
+            try {
+              for (const detail of vente.details) {
+                const mouvement = await prisma.mouvementStock.findFirst({
+                  where: {
+                    produitId: detail.produitId,
+                    referenceId: vente.id,
+                    typeReference: 'vente'
+                  },
+                  orderBy: { id: 'desc' }
+                });
+                
+                if (mouvement) {
+                  await syncService.enqueue('mouvements_stock', 'INSERT', {
+                    id: mouvement.id,
+                    produit_id: mouvement.produitId,
+                    boutique_id: mouvement.boutiqueId,
+                    type_mouvement: mouvement.typeMouvement,
+                    changement_quantite: mouvement.changementQuantite,
+                    reference_id: mouvement.referenceId,
+                    type_reference: mouvement.typeReference,
+                    date_mouvement: mouvement.dateMouvement,
+                    notes: mouvement.notes
+                  });
+                }
+              }
+              console.log(`✅ [Sync] Mouvements de stock synchronisés`);
+            } catch (syncErr) {
+              console.error('❌ Erreur sync mouvements:', syncErr.message);
+            }
+
+            // 4. Sync proforma comme validée
+            try {
+              await syncService.enqueue('ventes_proforma', 'UPDATE', {
+                id: proforma.id,
+                statut: 'validee',
+              });
+              console.log(`✅ [Sync] Proforma marquée comme validée: ${proforma.id}`);
+            } catch (syncErr) {
+              console.error('❌ Erreur sync proforma:', syncErr.message);
+            }
+
+            console.log('✅ [Sync] Synchronisation proforma → vente terminée');
+          } catch (error) {
+            console.error('❌ Erreur sync global:', error.message);
+          }
+        });
+      }
     } catch (err) {
       console.error('POST /proformas/:id/validate error:', err);
       res.status(500).json({ success: false, message: err.message });

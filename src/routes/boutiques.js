@@ -7,7 +7,7 @@ const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO } = require('../dto');
 
-function createBoutiquesRouter({ prisma, authService }) {
+function createBoutiquesRouter({ prisma, authService, syncService }) {
   const router = express.Router();
   const auth = authenticateToken(authService);
 
@@ -184,6 +184,19 @@ function createBoutiquesRouter({ prisma, authService }) {
       });
 
       res.status(201).json(BaseResponseDTO.success(assignment, 'Utilisateur assigné à la boutique'));
+
+      // Enqueue pour sync vers Neon (toujours INSERT pour upsert, le service gère les doublons)
+      if (syncService) {
+        await syncService.enqueue('user_boutique_assignments', 'INSERT', {
+          id: assignment.id,
+          utilisateurId: assignment.utilisateurId,
+          boutiqueId: assignment.boutiqueId,
+          roleId: assignment.roleId,
+          isActive: assignment.isActive,
+          dateCreation: assignment.dateCreation,
+          dateModification: assignment.dateModification
+        });
+      }
     } catch (err) {
       res.status(500).json(BaseResponseDTO.error(err.message));
     }
@@ -198,12 +211,25 @@ function createBoutiquesRouter({ prisma, authService }) {
       const boutiqueId = parseInt(req.params.id);
       const utilisateurId = parseInt(req.params.userId);
 
-      await prisma.userBoutiqueAssignment.update({
+      const updatedAssignment = await prisma.userBoutiqueAssignment.update({
         where: { utilisateurId_boutiqueId: { utilisateurId, boutiqueId } },
         data: { isActive: false }
       });
 
       res.json(BaseResponseDTO.success(null, 'Utilisateur retiré de la boutique'));
+
+      // Enqueue pour sync vers Neon avec l'ID complet
+      if (syncService) {
+        await syncService.enqueue('user_boutique_assignments', 'UPDATE', {
+          id: updatedAssignment.id,
+          utilisateurId: updatedAssignment.utilisateurId,
+          boutiqueId: updatedAssignment.boutiqueId,
+          roleId: updatedAssignment.roleId,
+          isActive: updatedAssignment.isActive,
+          dateCreation: updatedAssignment.dateCreation,
+          dateModification: updatedAssignment.dateModification
+        });
+      }
     } catch (err) {
       if (err.code === 'P2025') return res.status(404).json(BaseResponseDTO.error('Assignation introuvable'));
       res.status(500).json(BaseResponseDTO.error(err.message));
@@ -388,6 +414,56 @@ function createBoutiquesRouter({ prisma, authService }) {
       });
 
       res.status(201).json(BaseResponseDTO.success(result, 'Transfert effectué avec succès'));
+
+      // ─── Sync vers Neon ───────────────────────────────────────────────────
+      try {
+        const syncService = require('../services/sync-service');
+
+        // 1. Enqueuer le transfert
+        await syncService.enqueue('transferts_stock', 'INSERT', {
+          id: result.id,
+          reference: result.reference,
+          source_boutique_id: result.sourceBoutiqueId,
+          dest_boutique_id: result.destBoutiqueId,
+          produit_id: result.produitId,
+          quantite: result.quantite,
+          notes: result.notes,
+          utilisateur_id: result.utilisateurId,
+          date_transfert: result.dateTransfert,
+        });
+
+        // 2. Enqueuer le stock_boutique source mis à jour
+        const sbSource = await prisma.stockBoutique.findUnique({
+          where: { boutiqueId_produitId: { boutiqueId: srcId, produitId: prdId } }
+        });
+        if (sbSource) {
+          await syncService.enqueue('stock_boutiques', 'UPDATE', {
+            id: sbSource.id,
+            boutique_id: sbSource.boutiqueId,
+            produit_id: sbSource.produitId,
+            quantite_disponible: sbSource.quantiteDisponible,
+            quantite_reservee: sbSource.quantiteReservee,
+          });
+        }
+
+        // 3. Enqueuer le stock_boutique destination mis à jour
+        const sbDest = await prisma.stockBoutique.findUnique({
+          where: { boutiqueId_produitId: { boutiqueId: dstId, produitId: prdId } }
+        });
+        if (sbDest) {
+          await syncService.enqueue('stock_boutiques', 'UPDATE', {
+            id: sbDest.id,
+            boutique_id: sbDest.boutiqueId,
+            produit_id: sbDest.produitId,
+            quantite_disponible: sbDest.quantiteDisponible,
+            quantite_reservee: sbDest.quantiteReservee,
+          });
+        }
+
+        console.log(`📤 Transfert ${result.reference} enqueued pour sync Neon`);
+      } catch (syncErr) {
+        console.warn('⚠️  Erreur enqueue transfert:', syncErr.message);
+      }
     } catch (err) {
       console.error('POST /transferts error:', err);
       res.status(500).json(BaseResponseDTO.error(err.message));
