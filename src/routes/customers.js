@@ -80,7 +80,7 @@ function createCustomerRouter(models) {
             compte: true,
             ventes: {
               take: 10,
-              orderBy: { dateVente: 'desc' },
+              orderBy: { id: 'desc' },
               include: {
                 details: {
                   include: { produit: true }
@@ -386,7 +386,7 @@ function createCustomerRouter(models) {
             include: { produit: true }
           }
         };
-        options.orderBy = { dateVente: 'desc' };
+        options.orderBy = { id: 'desc' };
 
         const [ventes, total] = await Promise.all([
           models.vente.findMany(options),

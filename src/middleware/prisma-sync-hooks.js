@@ -58,6 +58,20 @@ const SYNC_TABLES = {
       'id', 'commande_id', 'produit_id', 'quantite_commandee',
       'quantite_recue', 'cout_unitaire', 'date_modification'
     ]
+  },
+  movementCategory: {
+    table: 'movement_categories',
+    columns: [
+      'id', 'nom', 'display_name', 'color', 'icon', 'is_default', 'is_active',
+      'date_creation', 'date_modification'
+    ]
+  },
+  financialMovement: {
+    table: 'financial_movements',
+    columns: [
+      'id', 'reference', 'session_id', 'boutique_id', 'montant', 'categorie_id',
+      'description', 'date', 'utilisateur_id', 'notes', 'date_modification'
+    ]
   }
 };
 
@@ -348,6 +362,37 @@ function setupPrismaSyncHooks(prisma) {
             if (result?.id) {
               syncRecord('detailCommandeApprovisionnement', 'DELETE', result.id, prisma);
             }
+            return result;
+          }
+        },
+        // Hook pour movementCategory
+        movementCategory: {
+          async create({ args, query }) {
+            const result = await query(args);
+            if (result?.id) syncRecord('movementCategory', 'INSERT', result.id, prisma);
+            return result;
+          },
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) syncRecord('movementCategory', 'UPDATE', result.id, prisma);
+            return result;
+          },
+          async upsert({ args, query }) {
+            const result = await query(args);
+            if (result?.id) syncRecord('movementCategory', 'UPDATE', result.id, prisma);
+            return result;
+          }
+        },
+        // Hook pour financialMovement
+        financialMovement: {
+          async create({ args, query }) {
+            const result = await query(args);
+            if (result?.id) syncRecord('financialMovement', 'INSERT', result.id, prisma);
+            return result;
+          },
+          async update({ args, query }) {
+            const result = await query(args);
+            if (result?.id) syncRecord('financialMovement', 'UPDATE', result.id, prisma);
             return result;
           }
         }

@@ -15,49 +15,48 @@ class MovementReportService {
   }
 
   /**
+   * Converts any date value to a comparable string for SQLite
+   * SQLite stores dates inconsistently — this normalizes for raw SQL comparison
+   */
+  _toSqliteDate(dateInput) {
+    const d = new Date(dateInput);
+    return d.toISOString();
+  }
+
+  /**
    * Génère un résumé des mouvements pour une période
    */
   async getSummary(startDate, endDate, boutiqueId = null) {
     try {
-      const where = {
-        date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        },
-        ...(boutiqueId ? { boutiqueId } : {})
-      };
+      const start = this._toSqliteDate(startDate);
+      const end = this._toSqliteDate(endDate);
 
-      const [movements, aggregates] = await Promise.all([
-        this.prisma.financialMovement.findMany({
-          where,
-          select: {
-            montant: true,
-            date: true
-          }
-        }),
-        this.prisma.financialMovement.aggregate({
-          where,
-          _sum: { montant: true },
-          _avg: { montant: true },
-          _max: { montant: true },
-          _min: { montant: true },
-          _count: true
-        })
-      ]);
+      // Use raw SQL to handle both ISO and non-ISO date formats in SQLite
+      const boutiqueFilter = boutiqueId ? `AND boutique_id = ${parseInt(boutiqueId)}` : '';
+      const rows = await this.prisma.$queryRawUnsafe(
+        `SELECT montant, date FROM financial_movements 
+         WHERE datetime(date) >= datetime(?) AND datetime(date) <= datetime(?) ${boutiqueFilter}`,
+        start, end
+      );
 
-      const lastMovement = await this.prisma.financialMovement.findFirst({
-        where,
-        orderBy: { date: 'desc' },
-        select: { date: true }
-      });
+      const totalAmount = rows.reduce((sum, r) => sum + (parseFloat(r.montant) || 0), 0);
+      const totalCount = rows.length;
+      const avgAmount = totalCount > 0 ? totalAmount / totalCount : 0;
+      const amounts = rows.map(r => parseFloat(r.montant) || 0);
+      const maxAmount = amounts.length > 0 ? Math.max(...amounts) : 0;
+      const minAmount = amounts.length > 0 ? Math.min(...amounts) : 0;
+
+      const lastRow = rows.length > 0
+        ? rows.reduce((latest, r) => new Date(r.date) > new Date(latest.date) ? r : latest)
+        : null;
 
       return {
-        totalAmount: aggregates._sum.montant || 0,
-        totalCount: aggregates._count || 0,
-        averageAmount: aggregates._avg.montant || 0,
-        maxAmount: aggregates._max.montant || 0,
-        minAmount: aggregates._min.montant || 0,
-        lastMovementDate: lastMovement?.date || null
+        totalAmount,
+        totalCount,
+        averageAmount: avgAmount,
+        maxAmount,
+        minAmount,
+        lastMovementDate: lastRow ? new Date(lastRow.date) : null
       };
     } catch (error) {
       console.error('❌ Erreur getSummary:', error.message);
@@ -70,51 +69,47 @@ class MovementReportService {
    */
   async getCategorySummary(startDate, endDate, boutiqueId = null) {
     try {
-      const where = {
-        date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        },
-        ...(boutiqueId ? { boutiqueId } : {})
-      };
+      const start = this._toSqliteDate(startDate);
+      const end = this._toSqliteDate(endDate);
+      const boutiqueFilter = boutiqueId ? `AND fm.boutique_id = ${parseInt(boutiqueId)}` : '';
 
-      // Récupérer le total pour calculer les pourcentages
-      const totalAggregate = await this.prisma.financialMovement.aggregate({
-        where,
-        _sum: { montant: true }
-      });
-      const totalAmount = totalAggregate._sum.montant || 0;
-
-      // Grouper par catégorie
-      const categoryGroups = await this.prisma.financialMovement.groupBy({
-        by: ['categorieId'],
-        where,
-        _sum: { montant: true },
-        _count: true
-      });
-
-      // Enrichir avec les détails des catégories
-      const categorySummaries = await Promise.all(
-        categoryGroups.map(async (group) => {
-          const category = await this.prisma.movementCategory.findUnique({
-            where: { id: group.categorieId }
-          });
-
-          const amount = group._sum.montant || 0;
-          const percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-
-          return {
-            categoryId: group.categorieId,
-            categoryName: category?.name || 'Inconnue',
-            categoryDisplayName: category?.displayName || 'Catégorie inconnue',
-            categoryColor: category?.color || '#6B7280',
-            categoryIcon: category?.icon || 'category',
-            amount,
-            count: group._count,
-            percentage
-          };
-        })
+      const rows = await this.prisma.$queryRawUnsafe(
+        `SELECT fm.categorie_id, fm.montant, mc.nom, mc.display_name, mc.color, mc.icon
+         FROM financial_movements fm
+         LEFT JOIN movement_categories mc ON fm.categorie_id = mc.id
+         WHERE datetime(fm.date) >= datetime(?) AND datetime(fm.date) <= datetime(?) ${boutiqueFilter}`,
+        start, end
       );
+
+      // Group by category
+      const categoryMap = new Map();
+      let totalAmount = 0;
+
+      rows.forEach(r => {
+        const catId = typeof r.categorie_id === 'bigint' ? Number(r.categorie_id) : r.categorie_id;
+        const montant = parseFloat(r.montant) || 0;
+        totalAmount += montant;
+
+        if (!categoryMap.has(catId)) {
+          categoryMap.set(catId, {
+            categoryId: catId,
+            categoryName: r.nom || 'Inconnue',
+            categoryDisplayName: r.display_name || r.nom || 'Catégorie inconnue',
+            categoryColor: r.color || '#6B7280',
+            categoryIcon: r.icon || 'category',
+            amount: 0,
+            count: 0
+          });
+        }
+        const cat = categoryMap.get(catId);
+        cat.amount += montant;
+        cat.count += 1;
+      });
+
+      const categorySummaries = Array.from(categoryMap.values()).map(cat => ({
+        ...cat,
+        percentage: totalAmount > 0 ? (cat.amount / totalAmount) * 100 : 0
+      }));
 
       return categorySummaries.sort((a, b) => b.amount - a.amount);
     } catch (error) {
@@ -128,42 +123,32 @@ class MovementReportService {
    */
   async getDailySummary(startDate, endDate, boutiqueId = null) {
     try {
-      const movements = await this.prisma.financialMovement.findMany({
-        where: {
-          date: {
-            gte: new Date(startDate),
-            lte: new Date(endDate)
-          },
-          ...(boutiqueId ? { boutiqueId } : {})
-        },
-        select: {
-          date: true,
-          montant: true
-        },
-        orderBy: { date: 'asc' }
-      });
+      const start = this._toSqliteDate(startDate);
+      const end = this._toSqliteDate(endDate);
+      const boutiqueFilter = boutiqueId ? `AND boutique_id = ${parseInt(boutiqueId)}` : '';
 
-      // Grouper par jour
+      const rows = await this.prisma.$queryRawUnsafe(
+        `SELECT date, montant FROM financial_movements
+         WHERE datetime(date) >= datetime(?) AND datetime(date) <= datetime(?) ${boutiqueFilter}
+         ORDER BY datetime(date) ASC`,
+        start, end
+      );
+
       const dailyMap = new Map();
-      
-      movements.forEach(movement => {
-        const dateKey = movement.date.toISOString().split('T')[0];
-        if (!dailyMap.has(dateKey)) {
-          dailyMap.set(dateKey, { amount: 0, count: 0 });
-        }
+      rows.forEach(r => {
+        const d = new Date(r.date);
+        const dateKey = isNaN(d.getTime()) ? r.date.substring(0, 10) : d.toISOString().split('T')[0];
+        if (!dailyMap.has(dateKey)) dailyMap.set(dateKey, { amount: 0, count: 0 });
         const day = dailyMap.get(dateKey);
-        day.amount += movement.montant;
+        day.amount += parseFloat(r.montant) || 0;
         day.count += 1;
       });
 
-      // Convertir en tableau
-      const dailySummaries = Array.from(dailyMap.entries()).map(([dateStr, data]) => ({
+      return Array.from(dailyMap.entries()).map(([dateStr, data]) => ({
         date: dateStr,
         amount: data.amount,
         count: data.count
       }));
-
-      return dailySummaries;
     } catch (error) {
       console.error('❌ Erreur getDailySummary:', error.message);
       throw error;

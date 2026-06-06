@@ -518,7 +518,7 @@ function createBoutiquesRouter({ prisma, authService, syncService }) {
         const ventesRecentes = await prisma.vente.findMany({
           where: { boutiqueId: b.id },
           select: { id: true, numeroVente: true, dateVente: true, montantTotal: true, statut: true },
-          orderBy: { dateVente: 'desc' },
+          orderBy: { id: 'desc' },
           take: 3
         });
         console.log(`📊 Dernières ventes pour ${b.nom}:`, ventesRecentes);
