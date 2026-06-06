@@ -445,6 +445,8 @@ class SyncServiceV2 {
     const keys = Object.keys(row).filter(k => {
       if (row[k] === undefined) return false;
       if (row[k] === null) return false;
+      if (row[k] === 'undefined') return false;
+      if (row[k] === 'null') return false;
       if (k.startsWith('_')) return false;
       return true;
     });

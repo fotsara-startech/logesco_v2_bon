@@ -31,24 +31,18 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
     super.initState();
     controller = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
 
-    // Charger les ventes au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadSales(refresh: true);
+      // Recharger automatiquement quand une vente est créée depuis n'importe quelle page
+      ever(controller.saleCreatedTrigger, (_) {
+        if (mounted) controller.loadSales(refresh: true);
+      });
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recharger les ventes à chaque fois que la page devient visible
-    // Mais seulement si ce n'est pas le premier chargement (déjà fait dans initState)
-    if (mounted) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          controller.loadSales(refresh: true);
-        }
-      });
-    }
   }
 
   @override
@@ -78,7 +72,14 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(onPressed: () => Get.to(() => const CreateSalePage()), icon: const Icon(Icons.add), tooltip: 'sales_new'.tr),
+                  IconButton(
+                      onPressed: () async {
+                        await Get.to(() => const CreateSalePage());
+                        // Recharger la liste quand on revient de la page de création
+                        controller.loadSales(refresh: true);
+                      },
+                      icon: const Icon(Icons.add),
+                      tooltip: 'sales_new'.tr),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'filter') controller.toggleFiltersVisibility();
@@ -124,7 +125,13 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                   return IconButton(onPressed: () => controller.setViewMode(next), icon: Icon(icon));
                 }),
                 IconButton(onPressed: () async => await controller.refreshStocks(), icon: const Icon(Icons.refresh)),
-                ElevatedButton.icon(onPressed: () => Get.to(() => const CreateSalePage()), icon: const Icon(Icons.add), label: Text('sales_new'.tr)),
+                ElevatedButton.icon(
+                    onPressed: () async {
+                      await Get.to(() => const CreateSalePage());
+                      controller.loadSales(refresh: true);
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text('sales_new'.tr)),
               ],
             );
           }),

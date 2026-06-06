@@ -27,7 +27,8 @@ class _CreateSalePageState extends State<CreateSalePage> {
   @override
   void initState() {
     super.initState();
-    _salesController = Get.put(SalesController());
+    // Utiliser l'instance existante, ne pas en créer une nouvelle
+    _salesController = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
     _customersController = Get.isRegistered<CustomerController>() ? Get.find<CustomerController>() : Get.put(CustomerController());
   }
 

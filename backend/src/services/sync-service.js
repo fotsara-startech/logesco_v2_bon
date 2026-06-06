@@ -336,19 +336,19 @@ class SyncServiceV2 {
     }
 
     if (tableName === 'fournisseurs') {
-      if (!row.nom) row.nom = `Fournisseur ${row.id || 'Inconnu'}`;
-      if (!row.email) row.email = `fournisseur${row.id}@example.com`;
+      if (!row.nom || row.nom === 'undefined') row.nom = `Fournisseur ${row.id || 'Inconnu'}`;
+      if (!row.email || row.email === 'undefined' || row.email === 'null') row.email = `fournisseur${row.id}@example.com`;
       const now = new Date().toISOString();
-      if (!row.date_creation) row.date_creation = now;
-      if (!row.date_modification) row.date_modification = now;
+      if (!row.date_creation || row.date_creation === 'undefined') row.date_creation = now;
+      if (!row.date_modification || row.date_modification === 'undefined') row.date_modification = now;
     }
 
     if (tableName === 'clients') {
-      if (!row.nom) row.nom = `Client ${row.id || 'Inconnu'}`;
-      if (!row.prenom) row.prenom = '';
+      if (!row.nom || row.nom === 'undefined') row.nom = `Client ${row.id || 'Inconnu'}`;
+      if (!row.prenom || row.prenom === 'undefined') row.prenom = '';
       const now = new Date().toISOString();
-      if (!row.date_creation) row.date_creation = now;
-      if (!row.date_modification) row.date_modification = now;
+      if (!row.date_creation || row.date_creation === 'undefined') row.date_creation = now;
+      if (!row.date_modification || row.date_modification === 'undefined') row.date_modification = now;
     }
 
     if (tableName === 'user_boutique_assignments') {
@@ -372,6 +372,8 @@ class SyncServiceV2 {
     const keys = Object.keys(row).filter(k => {
       if (row[k] === undefined) return false;
       if (row[k] === null) return false;
+      if (row[k] === 'undefined') return false;
+      if (row[k] === 'null') return false;
       if (k.startsWith('_')) return false;
       return true;
     });

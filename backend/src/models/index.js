@@ -765,7 +765,7 @@ class ClientModel extends BaseModel {
           compte: true,
           ventes: {
             take: 5,
-            orderBy: { dateVente: 'desc' }
+            orderBy: { id: 'desc' }
           }
         },
         ...options

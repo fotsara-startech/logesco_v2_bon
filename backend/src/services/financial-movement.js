@@ -128,7 +128,7 @@ class FinancialMovementService {
           montant: parseFloat(data.montant),
           categorieId: data.categorieId,
           description: data.description.trim(),
-          date: data.date ? new Date(data.date) : new Date(),
+          date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
           utilisateurId: data.utilisateurId,
           notes: data.notes?.trim() || null
         },

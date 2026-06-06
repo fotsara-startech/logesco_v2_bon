@@ -36,6 +36,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final Rx<Sale?> _lastCreatedSale = Rx<Sale?>(null);
   final RxBool _isLoading = false.obs;
   final RxBool _isCreating = false.obs;
+  // Trigger de rafraîchissement — s'incrémente à chaque vente créée
+  final RxInt saleCreatedTrigger = 0.obs;
 
   // État des informations d'entreprise
   final Rx<CompanyProfile?> _companyProfile = Rx<CompanyProfile?>(null);
@@ -907,7 +909,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
         // SnackbarUtils.showSuccess(response.message ?? 'Vente créée avec succès');
         clearCart();
-        _searchQuery.value = ''; // Réinitialiser la recherche
+        _searchQuery.value = '';
+        saleCreatedTrigger.value++;
         await loadSales(refresh: true);
 
         // Recharger les stocks après la vente pour mettre à jour les quantités
