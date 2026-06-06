@@ -97,6 +97,16 @@ class SyncServiceV2 {
         return;
       }
 
+      // Trier les opérations par ordre de dépendances FK
+      pending.sort((a, b) => {
+        const orderA = PULL_TABLES.indexOf(a.table_name);
+        const orderB = PULL_TABLES.indexOf(b.table_name);
+        // Si les tables sont différentes, trier par ordre de dépendances
+        if (orderA !== orderB) return orderA - orderB;
+        // Même table : garder l'ordre chronologique
+        return 0;
+      });
+
       console.log(`📋 [V2] Replay de ${pending.length} opération(s) en attente...`);
       const client = await this.cloudPool.connect();
 
@@ -154,7 +164,17 @@ class SyncServiceV2 {
             table
           );
 
-          const since = lastSync[0]?.ts ? new Date(lastSync[0].ts).toISOString() : '1970-01-01T00:00:00Z';
+          const since = (() => {
+            const ts = lastSync[0]?.ts;
+            if (!ts) return '1970-01-01T00:00:00Z';
+            // Gérer BigInt et Number
+            const tsNum = typeof ts === 'bigint' ? Number(ts) : ts;
+            try {
+              return new Date(tsNum).toISOString();
+            } catch (e) {
+              return '1970-01-01T00:00:00Z';
+            }
+          })();
 
           // Pull UNIQUEMENT les nouveaux depuis Neon
           let result;
@@ -196,7 +216,12 @@ class SyncServiceV2 {
                 .filter(k => k !== 'id')
                 .map(k => `"${k}" = excluded."${k}"`)
                 .join(', ');
-              const vals = keys.map(k => row[k] instanceof Date ? row[k].toISOString() : row[k]);
+              const vals = keys.map(k => {
+                const val = row[k];
+                if (val instanceof Date) return val.toISOString();
+                if (typeof val === 'bigint') return Number(val);
+                return val;
+              });
 
               await this.localPrisma.$executeRawUnsafe(
                 `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) 
@@ -205,7 +230,10 @@ class SyncServiceV2 {
               );
               pulled++;
             } catch (insertErr) {
-              console.warn(`  ⚠️  ${table} merge échoué (id=${row.id}): ${insertErr.message}`);
+              // Ignorer silencieusement les erreurs UNIQUE constraint (normal en multi-boutique)
+              if (!insertErr.message.includes('UNIQUE constraint failed')) {
+                console.warn(`  ⚠️  ${table} merge échoué (id=${row.id}): ${insertErr.message}`);
+              }
             }
           }
 
@@ -239,19 +267,58 @@ class SyncServiceV2 {
     }
   }
 
+  _isTimestampField(snakeKey) {
+    // Explicit timestamp field patterns — must start or end with date-related words
+    return (
+      snakeKey === 'derniere_maj' ||
+      snakeKey === 'date_derniere_maj' ||
+      snakeKey.startsWith('date_') ||
+      snakeKey.endsWith('_date') ||
+      snakeKey.endsWith('_at') ||
+      snakeKey.endsWith('_maj') ||
+      snakeKey === 'timestamp' ||
+      snakeKey === 'created_at' ||
+      snakeKey === 'updated_at'
+    );
+  }
+
   _toSnakeCase(obj) {
     const result = {};
     for (const [key, value] of Object.entries(obj)) {
       if (Array.isArray(value)) continue;
       if (value !== null && typeof value === 'object' && !(value instanceof Date)) continue;
       const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      result[snakeKey] = value instanceof Date ? value.toISOString() : value;
+      if (value instanceof Date) {
+        result[snakeKey] = value.toISOString();
+      } else if (typeof value === 'bigint') {
+        result[snakeKey] = this._isTimestampField(snakeKey)
+          ? new Date(Number(value)).toISOString()
+          : Number(value);
+      } else if (typeof value === 'number' && this._isTimestampField(snakeKey) && value > 1000000000000) {
+        // Large integer that looks like a ms timestamp
+        result[snakeKey] = new Date(value).toISOString();
+      } else {
+        result[snakeKey] = value;
+      }
     }
     return result;
   }
 
   async _applyToCloud(client, tableName, operation, data) {
     const row = this._toSnakeCase(data);
+
+    // Ensure timestamp fields are proper ISO strings for PostgreSQL
+    for (const [key, val] of Object.entries(row)) {
+      if (val === null || val === undefined) continue;
+      if (this._isTimestampField(key)) {
+        if (typeof val === 'number' || typeof val === 'bigint') {
+          row[key] = new Date(Number(val)).toISOString();
+        } else if (typeof val === 'string') {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) row[key] = d.toISOString();
+        }
+      }
+    }
 
     if (operation === 'DELETE') {
       await client.query(`DELETE FROM "${tableName}" WHERE id = $1`, [row.id]);
@@ -334,18 +401,44 @@ class SyncServiceV2 {
         }
       }
     } else if (operation === 'UPDATE') {
-      const nonIdKeys = keys.filter(k => k !== 'id');
-      if (nonIdKeys.length === 0) return;
-      const sets = nonIdKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
-      const vals = nonIdKeys.map(k => row[k]);
-      vals.push(row.id);
-      const whereId = '$' + vals.length;
-      const query = `UPDATE "${tableName}" SET ${sets} WHERE id = ${whereId}`;
-      try {
-        await client.query(query, vals);
-      } catch (queryErr) {
-        console.error(`❌ Erreur SQL UPDATE ${tableName}:`, queryErr.message);
-        throw queryErr;
+      // Tables qui utilisent des upserts localement → doivent faire UPSERT dans Neon
+      const UPSERT_TABLES = ['stock_boutiques', 'mouvements_stock'];
+      
+      if (UPSERT_TABLES.includes(tableName)) {
+        // UPSERT : peut créer l'enregistrement s'il n'existe pas
+        const updateKeys = keys.filter(k => k !== 'id');
+        if (updateKeys.length === 0) return;
+        
+        const cols = keys.map(k => `"${k}"`).join(', ');
+        const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+        const updates = updateKeys.map(k => `"${k}" = EXCLUDED."${k}"`).join(', ');
+        const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`;
+        
+        try {
+          await client.query(query, values);
+        } catch (queryErr) {
+          console.error(`❌ Erreur SQL UPSERT ${tableName}:`, queryErr.message);
+          throw queryErr;
+        }
+      } else {
+        // UPDATE pur : ne crée pas l'enregistrement s'il n'existe pas
+        const nonIdKeys = keys.filter(k => k !== 'id');
+        if (nonIdKeys.length === 0) return;
+        const sets = nonIdKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        const vals = nonIdKeys.map(k => row[k]);
+        vals.push(row.id);
+        const whereId = '$' + vals.length;
+        const query = `UPDATE "${tableName}" SET ${sets} WHERE id = ${whereId}`;
+        
+        try {
+          const result = await client.query(query, vals);
+          if (result.rowCount === 0) {
+            console.log(`  Info: ${tableName} (id=${row.id}) pas encore dans Neon`);
+          }
+        } catch (queryErr) {
+          console.error(`❌ Erreur SQL UPDATE ${tableName}:`, queryErr.message);
+          throw queryErr;
+        }
       }
     }
   }
@@ -360,16 +453,33 @@ class SyncServiceV2 {
     const operationId = uuidv4();
     
     try {
-      // Safely serialize data, avoiding circular references
+      // Safely serialize data, handling BigInt and Date objects
       let dataStr;
       try {
-        dataStr = JSON.stringify(data);
+        dataStr = JSON.stringify(data, (key, value) => {
+          if (typeof value === 'bigint') {
+            // Only convert to ISO if it's a known timestamp field name
+            const snakeKey = key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`);
+            const isTs = snakeKey === 'derniere_maj' || snakeKey === 'date_derniere_maj' ||
+              snakeKey.startsWith('date_') || snakeKey.endsWith('_date') ||
+              snakeKey.endsWith('_at') || snakeKey.endsWith('_maj') ||
+              key === 'timestamp' || key === 'createdAt' || key === 'updatedAt';
+            return isTs ? new Date(Number(value)).toISOString() : Number(value);
+          }
+          if (value instanceof Date) return value.toISOString();
+          return value;
+        });
       } catch (jsonErr) {
         console.warn(`⚠️  JSON stringify failed for ${tableName}, using safe serialization`);
         // Fallback: serialize only safe properties
         const safeData = {};
         for (const [k, v] of Object.entries(data || {})) {
-          if (typeof v !== 'object' || v instanceof Date) {
+          if (typeof v === 'bigint') {
+            const isTs = k.includes('date') || k.includes('_maj') || k.includes('_at') || k.includes('Maj');
+            safeData[k] = isTs ? new Date(Number(v)).toISOString() : Number(v);
+          } else if (v instanceof Date) {
+            safeData[k] = v.toISOString();
+          } else if (typeof v !== 'object') {
             safeData[k] = v;
           }
         }

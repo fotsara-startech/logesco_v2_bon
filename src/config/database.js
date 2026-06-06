@@ -26,7 +26,7 @@ class DatabaseManager {
       }
 
       this.prisma = new PrismaClient({
-        log: environment.nodeEnv === 'development' ? ['error'] : ['error']
+        log: [] // Désactiver tous les logs Prisma (erreurs interceptées par catch)
       });
 
       // Test de connexion
