@@ -341,6 +341,42 @@ function createProductRouter(models) {
               quantiteReservee: 0
             }
           });
+
+          // Alimenter stock_boutiques pour la boutique de l'utilisateur connecté
+          const quantiteInitiale = produitData.quantiteInitiale || 0;
+          let boutiqueId = null;
+
+          // Chercher la boutique de l'utilisateur
+          if (req.user?.id) {
+            const assignment = await models.prisma.userBoutiqueAssignment.findFirst({
+              where: { utilisateurId: req.user.id, isActive: true },
+              orderBy: { id: 'desc' }
+            });
+            boutiqueId = assignment?.boutiqueId ?? null;
+          }
+
+          // Fallback : boutique principale
+          if (!boutiqueId) {
+            const boutiquePrincipale = await models.prisma.boutique.findFirst({
+              where: { estPrincipale: true }
+            });
+            boutiqueId = boutiquePrincipale?.id ?? null;
+          }
+
+          if (boutiqueId) {
+            await models.prisma.stockBoutique.upsert({
+              where: { boutiqueId_produitId: { boutiqueId, produitId: produit.id } },
+              update: { quantiteDisponible: quantiteInitiale },
+              create: {
+                boutiqueId,
+                produitId: produit.id,
+                quantiteDisponible: quantiteInitiale,
+                quantiteReservee: 0
+              }
+            });
+            // Note: le hook Prisma stockBoutique.upsert → syncRecord déclenche la sync automatiquement
+          }
+          // Note: le hook Prisma stock.create → syncRecord déclenche la sync automatiquement
         }
 
         const produitDTO = ProduitDTO.fromEntity(produit);

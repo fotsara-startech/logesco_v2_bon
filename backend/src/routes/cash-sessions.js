@@ -247,8 +247,19 @@ function createCashSessionsRouter({ prisma, authService, syncService }) {
         }
       });
 
-      // Sync vers Neon
+      // Sync vers Neon — pousser d'abord la caisse (dépendance FK), puis la session et le mouvement
       if (syncService) {
+        await syncService.enqueue('cash_registers', 'INSERT', cashRegister);
+        await syncService.enqueue('cash_sessions', 'INSERT', {
+          id: newSession.id,
+          caisse_id: newSession.caisseId,
+          utilisateur_id: newSession.utilisateurId,
+          boutique_id: newSession.boutiqueId,
+          solde_ouverture: newSession.soldeOuverture,
+          solde_attendu: newSession.soldeAttendu,
+          date_ouverture: newSession.dateOuverture,
+          is_active: newSession.isActive,
+        });
         await syncService.enqueue('cash_movements', 'INSERT', openingMovement);
       }
       
@@ -452,8 +463,23 @@ function createCashSessionsRouter({ prisma, authService, syncService }) {
         }
       });
 
-      // Sync vers Neon
+      // Sync vers Neon — caisse d'abord (FK), puis session mise à jour, puis mouvement
       if (syncService) {
+        const updatedCashRegister = await prisma.cashRegister.findUnique({ where: { id: activeSession.caisseId } });
+        if (updatedCashRegister) await syncService.enqueue('cash_registers', 'UPDATE', updatedCashRegister);
+        await syncService.enqueue('cash_sessions', 'UPDATE', {
+          id: closedSession.id,
+          caisse_id: closedSession.caisseId,
+          utilisateur_id: closedSession.utilisateurId,
+          boutique_id: closedSession.boutiqueId,
+          solde_ouverture: closedSession.soldeOuverture,
+          solde_fermeture: closedSession.soldeFermeture,
+          solde_attendu: closedSession.soldeAttendu,
+          ecart: closedSession.ecart,
+          date_ouverture: closedSession.dateOuverture,
+          date_fermeture: closedSession.dateFermeture,
+          is_active: closedSession.isActive,
+        });
         await syncService.enqueue('cash_movements', 'INSERT', closingMovement);
       }
       

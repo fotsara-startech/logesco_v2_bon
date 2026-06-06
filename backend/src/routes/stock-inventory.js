@@ -167,22 +167,8 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
 
       res.status(201).json({ success: true, data: formattedInventory });
 
-      // Enqueue pour sync vers Neon (envoyer uniquement les champs scalaires, pas les relations)
+      // Sync des inventory_items (non couverts par le middleware)
       if (syncService) {
-        await syncService.enqueue('stock_inventories', 'INSERT', {
-          id: newInventory.id,
-          nom: newInventory.nom,
-          description: newInventory.description,
-          type: newInventory.type,
-          status: newInventory.status,
-          categorieId: newInventory.categorieId,
-          utilisateurId: newInventory.utilisateurId,
-          boutiqueId: newInventory.boutiqueId,
-          dateCreation: newInventory.dateCreation,
-          dateDebut: newInventory.dateDebut,
-          dateFin: newInventory.dateFin
-        });
-        // Sync des items générés
         const items = await prisma.inventoryItem.findMany({
           where: { inventaireId: newInventory.id }
         });
@@ -348,22 +334,7 @@ function createStockInventoryRouter({ prisma, authService, syncService }) {
         }
       });
 
-      // Enqueue pour sync vers Neon
-      if (syncService) {
-        await syncService.enqueue('stock_inventories', 'UPDATE', {
-          id: updatedInventory.id,
-          nom: updatedInventory.nom,
-          description: updatedInventory.description,
-          type: updatedInventory.type,
-          status: updatedInventory.status,
-          categorieId: updatedInventory.categorieId,
-          boutiqueId: updatedInventory.boutiqueId,
-          utilisateurId: updatedInventory.utilisateurId,
-          dateCreation: updatedInventory.dateCreation,
-          dateDebut: updatedInventory.dateDebut,
-          dateFin: updatedInventory.dateFin
-        });
-      }
+      // Enqueue pour sync vers Neon — géré par le sync-middleware
     } catch (error) {
       console.error('Erreur lors de la mise a jour du statut:', error);
       res.status(500).json({ success: false, error: { message: 'Erreur serveur', code: 'INVENTORY_STATUS_UPDATE_ERROR' } });

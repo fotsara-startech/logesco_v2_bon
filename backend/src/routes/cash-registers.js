@@ -128,6 +128,11 @@ function createCashRegistersRouter({ prisma, authService, syncService }) {
         dateFermeture: newCashRegister.dateFermeture
       };
       
+      // Sync vers Neon
+      if (syncService) {
+        await syncService.enqueue('cash_registers', 'INSERT', newCashRegister);
+      }
+
       res.status(201).json({
         success: true,
         data: formattedCashRegister

@@ -80,6 +80,24 @@ function prepareDataForSync(modelName, data, columns) {
     }
   }
   
+  // CRITICAL FIX: Ensure timestamp fields are properly formatted
+  const timestampFields = ['derniere_maj', 'date_modification', 'date_creation', 'date_derniere_maj'];
+  timestampFields.forEach(field => {
+    if (syncData[field] !== null && syncData[field] !== undefined) {
+      if (syncData[field] instanceof Date) {
+        syncData[field] = syncData[field].toISOString();
+      } else if (typeof syncData[field] === 'number' || typeof syncData[field] === 'bigint') {
+        syncData[field] = new Date(Number(syncData[field])).toISOString();
+      } else if (typeof syncData[field] === 'string') {
+        try {
+          syncData[field] = new Date(syncData[field]).toISOString();
+        } catch (e) {
+          syncData[field] = new Date().toISOString();
+        }
+      }
+    }
+  });
+  
   return syncData;
 }
 
@@ -91,8 +109,6 @@ function syncRecord(modelName, operation, recordId, prisma) {
   const syncConfig = SYNC_TABLES[modelName];
   if (!syncConfig) return;
 
-  // Exécuter la synchronisation de manière asynchrone APRÈS la transaction
-  // Ne pas utiliser await ici pour ne pas bloquer la transaction
   setImmediate(async () => {
     try {
       if (operation !== 'DELETE') {
@@ -108,11 +124,12 @@ function syncRecord(modelName, operation, recordId, prisma) {
             console.log(`🔄 [Prisma Extension] ${syncConfig.table} (${operation}):`, syncData);
           }
           
-          await syncService.enqueue(syncConfig.table, operation, syncData);
+          // Use the V2 sync service logOperation method
+          await syncService.logOperation(syncConfig.table, operation, syncData);
         }
       } else {
         // Pour DELETE, utiliser l'ID
-        await syncService.enqueue(syncConfig.table, 'DELETE', { id: recordId });
+        await syncService.logOperation(syncConfig.table, 'DELETE', { id: recordId });
       }
     } catch (error) {
       // Ne pas bloquer l'opération principale en cas d'erreur de sync

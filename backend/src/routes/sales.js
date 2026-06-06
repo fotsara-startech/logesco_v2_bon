@@ -1092,6 +1092,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
               data: {
                 caisseId: activeSession.caisseId,
                 sessionId: sessionId,
+                boutiqueId: activeSession.boutiqueId || null,
                 type: 'vente',
                 montant: montantVerse,
                 description: `Vente ${nouvelleVente.numeroVente}${clientInfo ? ` - Client: ${clientInfo.nom} ${clientInfo.prenom || ''}` : ''}`,
@@ -1236,6 +1237,8 @@ function createSalesRouter({ prisma, authService, syncService }) {
                     boutique_id: mouvement.boutiqueId,
                     type_mouvement: mouvement.typeMouvement,
                     changement_quantite: mouvement.changementQuantite,
+                    stock_initial: mouvement.stockInitial,
+                    stock_final: mouvement.stockFinal,
                     reference_id: mouvement.referenceId,
                     type_reference: mouvement.typeReference,
                     date_mouvement: mouvement.dateMouvement,
@@ -1352,6 +1355,30 @@ function createSalesRouter({ prisma, authService, syncService }) {
               }
             });
             console.log(`✅ Solde caisse mis à jour: ${caisseUpdated.soldeActuel} FCFA`);
+
+            // Sync cash_session et cash_register vers Neon
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              const updatedSession = await prisma.cashSession.findUnique({ where: { id: activeSession.id } });
+              if (updatedSession) {
+                await syncSvc.enqueue('cash_sessions', 'UPDATE', {
+                  id: updatedSession.id,
+                  caisse_id: updatedSession.caisseId,
+                  utilisateur_id: updatedSession.utilisateurId,
+                  boutique_id: updatedSession.boutiqueId,
+                  solde_ouverture: updatedSession.soldeOuverture,
+                  solde_attendu: updatedSession.soldeAttendu,
+                  solde_fermeture: updatedSession.soldeFermeture,
+                  ecart: updatedSession.ecart,
+                  date_ouverture: updatedSession.dateOuverture,
+                  date_fermeture: updatedSession.dateFermeture,
+                  is_active: updatedSession.isActive,
+                });
+              }
+              await syncSvc.enqueue('cash_registers', 'UPDATE', caisseUpdated);
+            } catch (syncErr) {
+              console.warn('⚠️ Erreur sync session/caisse après vente:', syncErr.message);
+            }
           }
         } catch (error) {
           console.error('⚠️ Erreur lors de la mise à jour de la session de caisse:', error);
