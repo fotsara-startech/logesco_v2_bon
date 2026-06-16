@@ -850,6 +850,8 @@ function createInventoryRouter(models) {
                   boutique_id: mouvement.boutiqueId,
                   type_mouvement: mouvement.typeMouvement,
                   changement_quantite: mouvement.changementQuantite,
+                  stock_initial: mouvement.stockInitial,
+                  stock_final: mouvement.stockFinal,
                   reference_id: mouvement.referenceId,
                   type_reference: mouvement.typeReference,
                   date_mouvement: mouvement.dateMouvement,

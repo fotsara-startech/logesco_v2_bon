@@ -117,7 +117,7 @@ function createDiscountReportsRouter({ prisma, authService }) {
                                 }
                             }
                         },
-                        orderBy: { dateVente: 'desc' },
+                        orderBy: { id: 'desc' },
                         skip,
                         take: parseInt(limit)
                     }),

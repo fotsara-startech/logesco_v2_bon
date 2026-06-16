@@ -27,6 +27,18 @@ model OperationLog {
   @@map("operation_log")
 }
 
+model DeletedRecord {
+  id         BigInt   @id @default(autoincrement())
+  tableName  String   @map("table_name")
+  recordId   Int      @map("record_id")
+  deletedAt  DateTime @default(now()) @map("deleted_at")
+  deletedBy  Int?     @map("deleted_by")
+
+  @@index([deletedAt], map: "idx_deleted_records_deleted_at")
+  @@index([tableName, deletedAt], map: "idx_deleted_records_table_deleted_at")
+  @@map("deleted_records")
+}
+
 model Utilisateur {
   id                    Int                      @id @default(autoincrement())
   nomUtilisateur        String                   @unique @map("nom_utilisateur")

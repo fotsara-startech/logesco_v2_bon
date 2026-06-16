@@ -20,7 +20,12 @@ const {
  */
 function createCustomerRouter(models) {
   const router = express.Router();
-  const syncService = models.syncService;
+
+  // syncService est un singleton — on le lit à chaque usage pour s'assurer
+  // qu'il est bien initialisé (initialisé de façon différée après démarrage)
+  function getSyncService(req) {
+    return req.app.locals.syncService || models.syncService || null;
+  }
 
   /**
    * GET /customers
@@ -80,7 +85,7 @@ function createCustomerRouter(models) {
             compte: true,
             ventes: {
               take: 10,
-              orderBy: { dateVente: 'desc' },
+              orderBy: { id: 'desc' },
               include: {
                 details: {
                   include: { produit: true }
@@ -143,6 +148,7 @@ function createCustomerRouter(models) {
         const client = await models.client.createWithAccount(clientData);
         
         // Enqueue pour sync vers Neon
+        const syncService = getSyncService(req);
         if (syncService) {
           await syncService.enqueue('clients', 'INSERT', client);
           // Récupérer le compte directement depuis la BD pour être sûr
@@ -221,6 +227,7 @@ function createCustomerRouter(models) {
         });
 
         // Enqueue pour sync vers Neon
+        const syncService = getSyncService(req);
         if (syncService) {
           await syncService.enqueue('clients', 'UPDATE', clientUpdated);
         }
@@ -279,22 +286,28 @@ function createCustomerRouter(models) {
           );
         }
 
+        const parsedClientId = parseInt(clientId);
+
+        // Récupérer le compte client avant suppression (local ET Neon via sync)
+        const compteClient = await models.prisma.compteClient.findUnique({
+          where: { clientId: parsedClientId }
+        });
+
         // Supprimer le client et son compte
         await models.prisma.$transaction(async (tx) => {
-          // Supprimer le compte s'il existe
-          await tx.compteClient.deleteMany({
-            where: { clientId: parseInt(clientId) }
-          });
-
-          // Supprimer le client
-          await tx.client.delete({
-            where: { id: parseInt(clientId) }
-          });
+          await tx.compteClient.deleteMany({ where: { clientId: parsedClientId } });
+          await tx.client.delete({ where: { id: parsedClientId } });
         });
         
-        // Enqueue pour sync vers Neon
+        // Sync vers Neon — supprimer d'abord le compte (contrainte FK), puis le client
+        const syncService = getSyncService(req);
         if (syncService) {
-          await syncService.enqueue('clients', 'DELETE', { id: parseInt(clientId) });
+          if (compteClient) {
+            await syncService.enqueue('comptes_clients', 'DELETE', { id: compteClient.id });
+          } else {
+            await syncService.deleteByClientId('comptes_clients', parsedClientId);
+          }
+          await syncService.enqueue('clients', 'DELETE', { id: parsedClientId });
         }
         
         res.json(BaseResponseDTO.success(null, 'Client supprimé avec succès'));
@@ -386,7 +399,7 @@ function createCustomerRouter(models) {
             include: { produit: true }
           }
         };
-        options.orderBy = { dateVente: 'desc' };
+        options.orderBy = { id: 'desc' };
 
         const [ventes, total] = await Promise.all([
           models.vente.findMany(options),
@@ -576,6 +589,7 @@ function createCustomerRouter(models) {
           console.log(`✅ Compte créé avec succès (ID: ${compte.id})`);
 
           // Synchroniser le nouveau compte vers Neon
+          const syncService = getSyncService(req);
           if (syncService) {
             await syncService.enqueue('comptes_clients', 'INSERT', compte);
           }
@@ -757,6 +771,7 @@ function createCustomerRouter(models) {
           });
 
           // Synchroniser le nouveau compte vers Neon
+          const syncService = getSyncService(req);
           if (syncService) {
             await syncService.enqueue('comptes_clients', 'INSERT', compte);
           }
@@ -880,6 +895,7 @@ function createCustomerRouter(models) {
         });
 
         // Sync vers Neon après la transaction
+        const syncService = getSyncService(req);
         if (syncService && (txResult.mouvement || txResult.compteClient)) {
           setImmediate(async () => {
             try {

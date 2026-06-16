@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../interfaces/i_security_validator.dart';
 
@@ -30,22 +28,22 @@ class SecurityValidator implements ISecurityValidator {
       // Vérification basique de débogage
       bool inDebugMode = false;
       assert(inDebugMode = true);
-      
+
       if (inDebugMode) return true;
-      
+
       // Vérification des variables d'environnement de débogage
       final debugVars = [
         'FLUTTER_DEBUG',
         'DEBUG',
         'DART_VM_OPTIONS',
       ];
-      
+
       for (final variable in debugVars) {
         if (Platform.environment.containsKey(variable)) {
           return true;
         }
       }
-      
+
       return false;
     } catch (e) {
       return false;
@@ -56,10 +54,10 @@ class SecurityValidator implements ISecurityValidator {
   Future<bool> isEmulator() async {
     try {
       final deviceInfo = DeviceInfoPlugin();
-      
+
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
-        
+
         // Vérification des indicateurs d'émulateur Android
         final indicators = [
           androidInfo.brand.toLowerCase(),
@@ -69,7 +67,7 @@ class SecurityValidator implements ISecurityValidator {
           androidInfo.device.toLowerCase(),
           androidInfo.hardware.toLowerCase(),
         ];
-        
+
         for (final indicator in indicators) {
           for (final emulatorSign in _knownEmulatorIndicators) {
             if (indicator.contains(emulatorSign)) {
@@ -77,24 +75,24 @@ class SecurityValidator implements ISecurityValidator {
             }
           }
         }
-        
+
         // Vérification des propriétés système spécifiques
         if (androidInfo.isPhysicalDevice == false) {
           return true;
         }
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
-        
+
         // Vérification du simulateur iOS
         if (!iosInfo.isPhysicalDevice) {
           return true;
         }
-        
+
         if (iosInfo.model.toLowerCase().contains('simulator')) {
           return true;
         }
       }
-      
+
       return false;
     } catch (e) {
       // En cas d'erreur, considérer comme potentiellement suspect
@@ -110,7 +108,7 @@ class SecurityValidator implements ISecurityValidator {
       } else if (Platform.isIOS) {
         return await _checkIOSJailbreak();
       }
-      
+
       return false;
     } catch (e) {
       return false;
@@ -131,13 +129,13 @@ class SecurityValidator implements ISecurityValidator {
       '/data/local/su',
       '/su/bin/su',
     ];
-    
+
     for (final path in rootFiles) {
       if (await File(path).exists()) {
         return true;
       }
     }
-    
+
     // Vérification des applications de root
     final rootApps = [
       'com.noshufou.android.su',
@@ -147,10 +145,10 @@ class SecurityValidator implements ISecurityValidator {
       'com.thirdparty.superuser',
       'com.yellowes.su',
     ];
-    
+
     // Note: La vérification des packages installés nécessiterait
     // des permissions spéciales ou des plugins natifs
-    
+
     return false;
   }
 
@@ -164,13 +162,13 @@ class SecurityValidator implements ISecurityValidator {
       '/etc/apt',
       '/private/var/lib/apt/',
     ];
-    
+
     for (final path in jailbreakFiles) {
       if (await File(path).exists()) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -183,20 +181,20 @@ class SecurityValidator implements ISecurityValidator {
         'lib/features/subscription/services/implementations/license_service.dart',
         'lib/features/subscription/services/implementations/crypto_service.dart',
       ];
-      
+
       for (final filePath in criticalFiles) {
         final file = File(filePath);
         if (!await file.exists()) {
           return false;
         }
-        
+
         // Vérification basique de la taille du fichier
         final stat = await file.stat();
         if (stat.size == 0) {
           return false;
         }
       }
-      
+
       return true;
     } catch (e) {
       return false;
@@ -209,17 +207,17 @@ class SecurityValidator implements ISecurityValidator {
       // Vérification des modifications de fichiers
       final integrityCheck = await verifyCodeIntegrity();
       if (!integrityCheck) return true;
-      
+
       // Vérification de la signature de l'application
       final signatureCheck = await verifyAppSignature();
       if (!signatureCheck) return true;
-      
+
       // Vérification des permissions anormales
       if (Platform.isAndroid) {
         // Vérification des permissions de débogage
         // Note: Nécessiterait l'accès aux informations de l'application
       }
-      
+
       return false;
     } catch (e) {
       return true;
@@ -232,7 +230,7 @@ class SecurityValidator implements ISecurityValidator {
       // Note: La vérification de signature réelle nécessiterait
       // l'accès aux informations de signature de l'application
       // via des plugins natifs ou des APIs spécifiques à la plateforme
-      
+
       // Implémentation basique pour la démonstration
       return true;
     } catch (e) {
@@ -243,43 +241,41 @@ class SecurityValidator implements ISecurityValidator {
   @override
   Future<SecurityValidationResult> performFullSecurityCheck() async {
     final threats = <SecurityThreat>[];
-    
+
     try {
       // Vérification du débogueur
       if (await isDebuggerAttached()) {
         threats.add(SecurityThreat.debuggerAttached);
       }
-      
+
       // Vérification de l'émulateur
       if (await isEmulator()) {
         threats.add(SecurityThreat.emulatorDetected);
       }
-      
+
       // Vérification du root/jailbreak
       if (await isRooted()) {
         threats.add(SecurityThreat.rootDetected);
       }
-      
+
       // Vérification de l'intégrité du code
       if (!await verifyCodeIntegrity()) {
         threats.add(SecurityThreat.codeIntegrityFailure);
       }
-      
+
       // Vérification de la manipulation
       if (await detectTampering()) {
         threats.add(SecurityThreat.tamperingDetected);
       }
-      
+
       // Vérification de la signature
       if (!await verifyAppSignature()) {
         threats.add(SecurityThreat.invalidSignature);
       }
-      
+
       final isSecure = threats.isEmpty;
-      final details = threats.isEmpty 
-          ? 'Environnement sécurisé' 
-          : 'Menaces détectées: ';
-      
+      final details = threats.isEmpty ? 'Environnement sécurisé' : 'Menaces détectées: ';
+
       return SecurityValidationResult(
         isSecure: isSecure,
         threats: threats,

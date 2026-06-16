@@ -51,15 +51,50 @@ void main() async {
   runApp(const LogescoApp());
 }
 
-/// Arrête le backend proprement quand l'application se ferme (mode serveur uniquement)
+/// Gère le cycle de vie de l'app en mode serveur embarqué.
+/// - detached → arrêt propre du backend
+/// - resume   → vérification silencieuse + redémarrage automatique si mort
 class _AppLifecycleObserver extends WidgetsBindingObserver {
   final BackendService _backend;
+  bool _isRestarting = false;
+
   _AppLifecycleObserver(this._backend);
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
       _backend.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      _checkAndRestoreBackend();
+    }
+  }
+
+  Future<void> _checkAndRestoreBackend() async {
+    if (_isRestarting) return;
+
+    // Attendre un court instant que le réseau soit restauré après la veille
+    await Future.delayed(const Duration(seconds: 1));
+
+    final healthy = await _backend.checkHealth();
+    if (healthy) {
+      _backend.markRunning();
+      AppLogger.info('Backend OK après resume');
+      return;
+    }
+
+    // Backend mort → relance silencieuse
+    _isRestarting = true;
+    AppLogger.warning('Backend inaccessible après resume — relance automatique...');
+
+    try {
+      final ok = await _backend.restart();
+      if (ok) {
+        AppLogger.info('Backend relancé avec succès après resume');
+      } else {
+        AppLogger.error('Échec relance backend après resume');
+      }
+    } finally {
+      _isRestarting = false;
     }
   }
 }

@@ -22,11 +22,16 @@ class BackendService {
   BackendService._internal();
 
   bool _isRunning = false;
+  bool _watchdogActive = false;
+  Timer? _watchdogTimer;
   final int _port = 8080;
 
   bool get isRunning => _isRunning;
   int get port => _port;
   String get baseUrl => 'http://localhost:$_port';
+
+  /// Marque le backend comme actif (appelé depuis le lifecycle observer)
+  void markRunning() => _isRunning = true;
 
   // ═══ Chemins ═══════════════════════════════════════════════════════════════
 
@@ -62,6 +67,7 @@ class BackendService {
     if (await checkHealth()) {
       debugPrint('✅ Backend déjà en cours sur $baseUrl');
       _isRunning = true;
+      _startWatchdog();
       return true;
     }
 
@@ -75,10 +81,43 @@ class BackendService {
     return true;
   }
 
-  Future<bool> waitUntilReady({int maxSeconds = 120}) async {
+  /// Redémarre le backend (utilisé après veille/hibernate)
+  Future<bool> restart() async {
+    debugPrint('🔄 BackendService: redémarrage...');
+    _isRunning = false;
+    // Tuer l'ancien process proprement
+    try {
+      await Process.run('taskkill', ['/F', '/IM', 'node.exe'], runInShell: true);
+    } catch (_) {}
+    await Future.delayed(const Duration(milliseconds: 500));
+    _ensureEnvFile();
+    final ok = await _start();
+    if (ok) _startWatchdog();
+    return ok;
+  }
+
+  /// Watchdog de fond — vérifie le health toutes les 30s et relance si mort
+  void _startWatchdog() {
+    if (_watchdogActive) return;
+    _watchdogActive = true;
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      if (!_isRunning) return;
+      final alive = await checkHealth();
+      if (!alive) {
+        debugPrint('⚠️ Watchdog: backend mort — relance silencieuse...');
+        _isRunning = false;
+        _watchdogActive = false;
+        _watchdogTimer?.cancel();
+        await restart();
+      }
+    });
+  }
+
+  Future<bool> waitUntilReady({int maxSeconds = 60}) async {
     if (_isRunning) return true;
     for (int i = 0; i < maxSeconds; i++) {
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 500));
       if (_isRunning) return true;
       if (await checkHealth()) {
         _isRunning = true;
@@ -90,8 +129,9 @@ class BackendService {
 
   Future<void> stop() async {
     debugPrint('🛑 BackendService: arrêt via taskkill...');
+    _watchdogTimer?.cancel();
+    _watchdogActive = false;
     try {
-      // Tuer tous les node.exe qui tournent sur notre port
       await Process.run('taskkill', ['/F', '/IM', 'node.exe'], runInShell: true);
     } catch (_) {}
     _isRunning = false;
@@ -186,12 +226,13 @@ class BackendService {
       );
 
       debugPrint('   wscript lancé, attente health check...');
-      _isRunning = await _poll(maxSeconds: 90);
+      _isRunning = await _poll(maxSeconds: 60);
 
       if (_isRunning) {
         debugPrint('✅ Backend prêt sur $baseUrl');
+        _startWatchdog();
       } else {
-        debugPrint('❌ Backend non disponible après 90s');
+        debugPrint('❌ Backend non disponible après 60s');
       }
       return _isRunning;
     } catch (e) {
@@ -200,13 +241,18 @@ class BackendService {
     }
   }
 
-  Future<bool> _poll({int maxSeconds = 90}) async {
-    for (int i = 0; i < maxSeconds; i++) {
-      await Future.delayed(const Duration(seconds: 1));
+  Future<bool> _poll({int maxSeconds = 60}) async {
+    final deadline = DateTime.now().add(Duration(seconds: maxSeconds));
+    int attempt = 0;
+    while (DateTime.now().isBefore(deadline)) {
+      // Polling rapide au début (500ms), puis espacé (1s après 10 tentatives)
+      final delay = attempt < 10 ? const Duration(milliseconds: 500) : const Duration(seconds: 1);
+      await Future.delayed(delay);
       if (await checkHealth()) {
-        debugPrint('   → Health OK après ${i + 1}s');
+        debugPrint('   → Health OK après ~${attempt * 0.5 + (attempt > 10 ? (attempt - 10) * 0.5 : 0).toInt()}s');
         return true;
       }
+      attempt++;
     }
     return false;
   }

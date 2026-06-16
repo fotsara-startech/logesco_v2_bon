@@ -187,6 +187,12 @@ class SubscriptionManager implements ISubscriptionManager {
       // Stocker la nouvelle licence (remplace toute licence existante)
       await _licenseService.storeLicense(validationResult.licenseData!);
 
+      // Enregistrer la date de première activation (pour la fenêtre de grâce NTP 7 jours)
+      final existingActivation = await _secureTimeService.getFirstActivation();
+      if (existingActivation == null) {
+        await _secureTimeService.recordFirstActivation(DateTime.now());
+      }
+
       // Désactiver la période d'essai
       await _secureStorage.write(key: _trialActiveKey, value: 'false');
 
@@ -267,15 +273,15 @@ class SubscriptionManager implements ISubscriptionManager {
         secureNow = DateTime.now();
       }
 
-      // Manipulation détectée → invalider l'essai
+      // Manipulation détectée → retourner false sans invalider définitivement
+      // (peut être un faux positif dû au cache NTP mal initialisé)
       if (manipulationDetected) {
-        await _secureStorage.write(key: _trialActiveKey, value: 'false');
         return false;
       }
 
       // Retour en arrière : date actuelle avant le début de l'essai
+      // On ne désactive pas définitivement — peut être un artefact de cache NTP mal initialisé
       if (secureNow.isBefore(trialStart)) {
-        await _secureStorage.write(key: _trialActiveKey, value: 'false');
         return false;
       }
 
@@ -417,10 +423,11 @@ class SubscriptionManager implements ISubscriptionManager {
       else if (status.isInGracePeriod) {
         shouldBlock = false;
       }
-      // Vérifier si on est en mode offline avec licence valide
-      else if (await _secureTimeService.getFirstActivation() != null && _secureTimeService.isOfflineMode) {
-        // Mode offline: on laisse travailler si une licence a déjà été activée
-        shouldBlock = false;
+      // Mode offline : ne pas bloquer si une licence est stockée localement
+      // (même si le NTP était indisponible lors de la validation du statut)
+      else if (_secureTimeService.isOfflineMode) {
+        final storedLicense = await _licenseService.getStoredLicense();
+        shouldBlock = storedLicense == null;
       }
       // Bloquer si aucun abonnement actif et pas de période de grâce
       else {

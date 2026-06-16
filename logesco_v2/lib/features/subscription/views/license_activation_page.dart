@@ -78,8 +78,10 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // ferme le dialog
+              // Utiliser Get.offAllNamed pour vider la pile et aller au dashboard
+              // évite le double pop() qui échoue si activation est la route racine
+              Get.offAllNamed('/dashboard');
             },
             child: Text('subscription_continue'.tr),
           ),

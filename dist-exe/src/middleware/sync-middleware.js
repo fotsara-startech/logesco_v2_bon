@@ -108,8 +108,8 @@ const ROUTE_MODEL_MAP = {
   '/stock-inventory':     { 
     table: 'stock_inventories', model: 'stockInventory',
     allowedColumns: [
-      'id','nom','boutique_id','date_inventaire','notes',
-      'date_creation','date_modification'
+      'id','nom','description','type','status','categorie_id','utilisateur_id',
+      'boutique_id','date_creation','date_modification','date_debut','date_fin'
     ]
   },
   '/expiration-dates':    { 

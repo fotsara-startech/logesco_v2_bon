@@ -144,6 +144,7 @@ class SecureTimeService {
   /// 2. NTP check UNIQUEMENT au démarrage (initialize())
   /// 3. Pendant session: utiliser cache + temps écoulé
   /// 4. Jamais d'attente > 2 secondes
+  /// 5. NTP ignoré les 7 premiers jours après première activation
   Future<TimeValidationResult> getSecureTime({
     bool forceNtpCheck = false,
     bool throwOnManipulation = false, // IMPORTANT: Jamais vrai pendant session
@@ -156,9 +157,13 @@ class SecureTimeService {
     bool isFresh = false;
 
     try {
+      // Vérifier si on est dans la fenêtre de grâce NTP (7 premiers jours)
+      final isInNtpGracePeriod = await _isInNtpGracePeriod();
+
       // 1. Vérifier le retour en arrière de l'horloge système
       // UNIQUEMENT si manipulation check est activé (démarrage uniquement)
-      final clockRollback = _manipulationCheckEnabled ? await _detectTimeManipulation() : false;
+      // ET hors fenêtre de grâce NTP
+      final clockRollback = (_manipulationCheckEnabled && !isInNtpGracePeriod) ? await _detectTimeManipulation() : false;
       if (clockRollback) {
         isSystemTimeReliable = false;
         warnings.add('Retour en arrière de l\'horloge système détecté');
@@ -187,8 +192,8 @@ class SecureTimeService {
         systemTimeOffset = ntpTime.difference(systemTime);
 
         // Offset > 5 minutes = manipulation de date système confirmée
-        // Mais UNIQUEMENT si check activé
-        if (_manipulationCheckEnabled && systemTimeOffset.abs() > _maxAcceptableOffset) {
+        // Mais UNIQUEMENT si check activé ET hors fenêtre de grâce NTP
+        if (_manipulationCheckEnabled && !isInNtpGracePeriod && systemTimeOffset.abs() > _maxAcceptableOffset) {
           isSystemTimeReliable = false;
           warnings.add(
             'Manipulation de date détectée: décalage de ${systemTimeOffset.inMinutes} minutes',
@@ -210,8 +215,11 @@ class SecureTimeService {
           final elapsedSinceNtp = DateTime.now().difference(_cachedNtpTimestamp!);
 
           if (elapsedSinceNtp.isNegative) {
-            // Date système reculée
-            isSystemTimeReliable = false;
+            // Date système reculée par rapport au timestamp du cache NTP
+            // Uniquement suspect si le recul est hors fenêtre de grâce
+            if (!isInNtpGracePeriod) {
+              isSystemTimeReliable = false;
+            }
             trustedTime = _cachedNtpTime!;
             warnings.add('Temps restauré depuis cache NTP');
           } else {
@@ -224,10 +232,11 @@ class SecureTimeService {
           trustedTime = _lastCheckTime!.add(elapsedSinceCheck);
           warnings.add('Temps calculé depuis dernière vérification');
         } else {
-          // Aucun cache disponible → système time seulement
+          // Aucun cache disponible → utiliser l'heure système
+          // Ne PAS marquer comme non fiable : absence de NTP ≠ manipulation
+          // On ne peut simplement pas vérifier, ce qui est différent d'une preuve de fraude
           trustedTime = DateTime.now();
-          isSystemTimeReliable = false;
-          warnings.add('Attention: Utilisation de l\'horloge système (cache indisponible)');
+          warnings.add('NTP indisponible: utilisation de l\'horloge système');
         }
       }
 
@@ -379,7 +388,8 @@ class SecureTimeService {
       final lastNtpStr = await _secureStorage.read(key: _keyLastNtpTime);
       if (lastNtpStr != null) {
         _cachedNtpTime = DateTime.parse(lastNtpStr);
-        _cachedNtpTimestamp = _lastCheckTime;
+        // Utiliser lastCheckTime si disponible, sinon now() comme timestamp du cache
+        _cachedNtpTimestamp = _lastCheckTime ?? DateTime.now();
       }
 
       final sessionCounterStr = await _secureStorage.read(key: _keySessionCounter);
@@ -443,6 +453,20 @@ class SecureTimeService {
 
   /// Vérifie si l'app est en mode offline
   bool get isOfflineMode => _isOfflineMode;
+
+  /// Retourne true si on est dans les 7 premiers jours après la 1ère activation.
+  /// Pendant cette période, les vérifications NTP de manipulation sont désactivées
+  /// pour éviter de bloquer les nouveaux clients.
+  Future<bool> _isInNtpGracePeriod() async {
+    try {
+      final firstActivation = await getFirstActivation();
+      if (firstActivation == null) return true; // Pas encore activé = grâce totale
+      final daysSinceActivation = DateTime.now().difference(firstActivation).inDays;
+      return daysSinceActivation < 7;
+    } catch (_) {
+      return true; // En cas d'erreur, appliquer la grâce
+    }
+  }
 
   /// Force une vérification NTP immédiate (en arrière-plan)
   Future<DateTime?> forceNtpCheck() async {

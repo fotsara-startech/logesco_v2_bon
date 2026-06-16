@@ -501,7 +501,7 @@ model UserRole {
 
 model CashRegister {
   id               Int            @id @default(autoincrement())
-  nom              String         @unique
+  nom              String
   description      String?
   soldeInitial     Float          @default(0) @map("solde_initial")
   soldeActuel      Float          @default(0) @map("solde_actuel")

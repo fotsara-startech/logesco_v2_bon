@@ -48,9 +48,9 @@ QIDAQAB
 
   /// Checksums d'intégrité des clés publiques
   static const Map<String, String> _keyIntegrityHashes = {
-    'key_v1': 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
-    'key_v2': 'b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567a',
-    'key_v3': 'c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567ab2',
+    'key_v1': '953ade6bed2347fff8792342eb1534977c0e3a95afdfe793f4fb2fd69b30349f',
+    'key_v2': 'b4c9951302de8c191a0f55ee4384f7c6f10cc1c55919282227ae18f4da2a4268',
+    'key_v3': '5ada4547d37ac49aaf37e421b790eb2e2f1bdde223e8249321f156314e4ba114',
   };
 
   /// Initialise le gestionnaire de clés

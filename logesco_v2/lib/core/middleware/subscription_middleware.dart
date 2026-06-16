@@ -57,9 +57,14 @@ class SubscriptionMiddleware extends GetMiddleware {
   }
 
   void _scheduleDelayedCheck(SubscriptionController controller) {
-    Future.delayed(const Duration(seconds: 3), () {
+    // Attendre que l'initialisation soit terminée avant de vérifier
+    // 3s était trop court — si l'init prend plus de temps (NTP, stockage lent)
+    // le check redirige vers /activation alors que la licence est en cours de chargement
+    Future.delayed(const Duration(seconds: 8), () {
       try {
         final status = controller.currentStatus;
+        // Ne rediriger QUE si le status est définitivement inactif
+        // (pas null — null signifie encore en cours d'initialisation)
         if (status != null && !status.isActive && !status.isInGracePeriod) {
           final canContinueOffline = controller.canContinueOffline();
           if (!canContinueOffline) {

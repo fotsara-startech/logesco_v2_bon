@@ -423,7 +423,7 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
               }
             }
           },
-          orderBy: { dateVente: 'desc' }
+          orderBy: { id: 'desc' }
         });
 
         const ventesFormatted = ventesImpayees.map(v => ({
@@ -867,15 +867,29 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
             const random = Math.floor(Math.random() * 100000);
             const reference = `PAY-FOUR-${timestamp}-${random}`;
 
+            // Trouver ou créer la catégorie "Paiement Fournisseur"
+            const categoriePaiementFournisseur = await prisma.movementCategory.upsert({
+              where: { nom: 'paiement_fournisseur' },
+              create: {
+                nom: 'paiement_fournisseur',
+                displayName: 'Paiement Fournisseur',
+                color: '#EF4444',
+                icon: 'store',
+                isDefault: false,
+                isActive: true
+              },
+              update: {}
+            });
+
             mouvementFinancierRecord = await prisma.financialMovement.create({
               data: {
                 reference,
                 sessionId: sessionCaisse.id,
                 boutiqueId: sessionCaisse.boutiqueId || null,
                 montant: parseFloat(montant),
-                categorieId: 11,
+                categorieId: categoriePaiementFournisseur.id,
                 description: description || `Paiement fournisseur ${fournisseur.nom}${referenceId ? ` - Commande #${referenceId}` : ''}`,
-                date: new Date(),
+                date: new Date().toISOString(),
                 utilisateurId: req.user.id,
                 notes: `Paiement fournisseur ${fournisseur.nom} - Transaction compte ID: ${transaction.id}`
               }

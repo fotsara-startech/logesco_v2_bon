@@ -18,7 +18,7 @@ let prismaInstance = null;
 function getPrismaClient() {
   if (!prismaInstance) {
     prismaInstance = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['error'] : ['error']
+      log: [] // Désactiver tous les logs Prisma (erreurs interceptées par catch)
     });
     
     // Activer les hooks de synchronisation APRÈS la création de l'instance

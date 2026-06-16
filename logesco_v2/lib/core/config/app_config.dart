@@ -58,14 +58,15 @@ class AppConfig {
   /// Web: toujours désactivé (freemium)
   /// Desktop: activé par défaut (peut être override via --dart-define=ENABLE_LICENSE_CONTROL=false)
   /// Mobile: activé par défaut
+  ///
+  /// IMPORTANT: doit être `static const` pour que bool.fromEnvironment soit
+  /// évalué au compile-time et reflète correctement le --dart-define passé au build.
+  static const bool _licenseControlDefined = bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: true);
+
   static bool get enableLicenseControl {
     // Sur web: licence toujours désactivée
-    if (isWeb) {
-      return false;
-    }
-
-    // Sur desktop/mobile: activée par défaut (peut être override)
-    return bool.fromEnvironment('ENABLE_LICENSE_CONTROL', defaultValue: true);
+    if (isWeb) return false;
+    return _licenseControlDefined;
   }
 
   // ============================================================================
