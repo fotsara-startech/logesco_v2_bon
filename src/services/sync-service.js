@@ -42,6 +42,10 @@ class SyncServiceV2 {
       return;
     }
     console.log('🔄 SyncService V2: initialisation avec Event Sourcing...');
+    
+    // Créer la table deleted_records si elle n'existe pas
+    await this._ensureDeletedRecordsTable();
+    
     await this._checkCloudConnection();
     if (this.isCloudAvailable) {
       console.log('📋 [V2] Replay des opérations en attente...');
@@ -83,6 +87,37 @@ class SyncServiceV2 {
   }
 
   /**
+   * Crée la table deleted_records en local si elle n'existe pas
+   */
+  async _ensureDeletedRecordsTable() {
+    try {
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE TABLE IF NOT EXISTS "deleted_records" (
+          "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
+          "table_name"  TEXT NOT NULL,
+          "record_id"   INTEGER NOT NULL,
+          "deleted_at"  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "deleted_by"  INTEGER
+        )`
+      );
+      
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "idx_deleted_records_deleted_at"
+         ON "deleted_records"("deleted_at")`
+      );
+      
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "idx_deleted_records_table_deleted_at"
+         ON "deleted_records"("table_name", "deleted_at")`
+      );
+      
+      console.log('✅ Table deleted_records créée/vérifiée en local');
+    } catch (e) {
+      console.warn('⚠️  Erreur création table deleted_records:', e.message);
+    }
+  }
+
+  /**
    * NOUVEAU: Replay des opérations non-synchronisées
    * C'est le cœur du Event Sourcing
    */
@@ -98,12 +133,27 @@ class SyncServiceV2 {
       }
 
       // Trier les opérations par ordre de dépendances FK
+      // - INSERT/UPDATE : ordre normal (parents avant enfants)
+      // - DELETE : ordre inverse (enfants avant parents, pour respecter les FK)
       pending.sort((a, b) => {
         const orderA = PULL_TABLES.indexOf(a.table_name);
         const orderB = PULL_TABLES.indexOf(b.table_name);
-        // Si les tables sont différentes, trier par ordre de dépendances
+        const isDeleteA = a.operation_type === 'DELETE';
+        const isDeleteB = b.operation_type === 'DELETE';
+
+        // DELETE d'une table enfant doit passer avant DELETE d'une table parent
+        // → inverser l'ordre pour les DELETE
+        if (isDeleteA && isDeleteB) {
+          if (orderA !== orderB) return orderB - orderA; // inverse
+          return 0;
+        }
+
+        // INSERT/UPDATE avant DELETE (créer avant supprimer)
+        if (!isDeleteA && isDeleteB) return -1;
+        if (isDeleteA && !isDeleteB) return 1;
+
+        // INSERT/UPDATE : ordre normal (parent avant enfant)
         if (orderA !== orderB) return orderA - orderB;
-        // Même table : garder l'ordre chronologique
         return 0;
       });
 
@@ -112,10 +162,29 @@ class SyncServiceV2 {
 
       for (const op of pending) {
         try {
-          const data = typeof op.data === 'string' ? JSON.parse(op.data) : op.data;
+          // Sauter les INSERT/UPDATE si un DELETE synced existe pour le même enregistrement
+          if (op.operation_type !== 'DELETE' && op.record_id) {
+            const deleted = await this.localPrisma.$queryRawUnsafe(
+              `SELECT 1 FROM operation_log 
+               WHERE table_name = ? AND record_id = ? AND operation_type = 'DELETE'
+               AND status IN ('synced', 'pending')
+               LIMIT 1`,
+              op.table_name,
+              op.record_id
+            );
+            if (deleted.length > 0) {
+              await this.localPrisma.$executeRawUnsafe(
+                `UPDATE operation_log SET status = 'cancelled' WHERE operation_id = ?`,
+                op.operation_id
+              );
+              console.log(`  ⏭️  Annulé: ${op.operation_type} ${op.table_name} (id=${op.record_id}) — enregistrement supprimé`);
+              continue;
+            }
+          }
           
           console.log(`  ⏮️  Replay: ${op.operation_type} ${op.table_name} (id=${op.record_id})`);
           
+          const data = typeof op.data === 'string' ? JSON.parse(op.data) : op.data;
           // Retracer l'opération (INSERT/UPDATE/DELETE)
           await this._applyToCloud(client, op.table_name, op.operation_type, data);
 
@@ -155,6 +224,10 @@ class SyncServiceV2 {
       const client = await this.cloudPool.connect();
       let pulled = 0;
 
+      // ── Étape 1 : Propager les suppressions depuis deleted_records ────────
+      await this._applyRemoteDeletions(client);
+
+      // ── Étape 2 : Pull delta des données nouvelles/modifiées ──────────────
       for (const table of PULL_TABLES) {
         try {
           // Trouver le dernier timestamp synchronisé
@@ -206,8 +279,21 @@ class SyncServiceV2 {
 
           if (result.rows.length === 0) continue;
 
+          // Charger les IDs récemment supprimés localement pour cette table (ne pas les ré-insérer)
+          const recentDeletes = await this.localPrisma.$queryRawUnsafe(
+            `SELECT record_id FROM operation_log 
+             WHERE table_name = ? AND operation_type = 'DELETE' AND status IN ('pending', 'synced')
+             AND timestamp > datetime('now', '-1 hour')`,
+            table
+          );
+          const deletedIds = new Set(recentDeletes.map(r => Number(r.record_id)));
+
           // Insérer localement (merge, pas delete)
           for (const row of result.rows) {
+            // Ne pas ré-insérer un enregistrement qu'on vient de supprimer localement
+            if (deletedIds.has(Number(row.id))) {
+              continue;
+            }
             try {
               const keys = Object.keys(row).filter(k => row[k] !== null && row[k] !== undefined);
               const cols = keys.map(k => `"${k}"`).join(', ');
@@ -230,8 +316,38 @@ class SyncServiceV2 {
               );
               pulled++;
             } catch (insertErr) {
-              // Ignorer silencieusement les erreurs UNIQUE constraint (normal en multi-boutique)
-              if (!insertErr.message.includes('UNIQUE constraint failed')) {
+              if (insertErr.message.includes('FOREIGN KEY constraint failed') && table === 'comptes_clients') {
+                // Le client parent n'existe pas encore en local — essayer de le récupérer depuis Neon
+                try {
+                  const clientId = row.client_id;
+                  const parentResult = await client.query(`SELECT * FROM "clients" WHERE id = $1`, [clientId]);
+                  if (parentResult.rows.length > 0) {
+                    const parent = parentResult.rows[0];
+                    const pKeys = Object.keys(parent).filter(k => parent[k] !== null && parent[k] !== undefined);
+                    const pCols = pKeys.map(k => `"${k}"`).join(', ');
+                    const pPh = pKeys.map(() => '?').join(', ');
+                    const pUpd = pKeys.filter(k => k !== 'id').map(k => `"${k}" = excluded."${k}"`).join(', ');
+                    const pVals = pKeys.map(k => {
+                      const v = parent[k];
+                      if (v instanceof Date) return v.toISOString();
+                      if (typeof v === 'bigint') return Number(v);
+                      return v;
+                    });
+                    await this.localPrisma.$executeRawUnsafe(
+                      `INSERT INTO "clients" (${pCols}) VALUES (${pPh}) ON CONFLICT(id) DO UPDATE SET ${pUpd}`,
+                      ...pVals
+                    );
+                    // Réessayer le compte maintenant que le client existe
+                    await this.localPrisma.$executeRawUnsafe(
+                      `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updates}`,
+                      ...vals
+                    );
+                    pulled++;
+                  }
+                } catch (retryErr) {
+                  console.warn(`  ⚠️  ${table} retry échoué (id=${row.id}): ${retryErr.message}`);
+                }
+              } else if (!insertErr.message.includes('UNIQUE constraint failed')) {
                 console.warn(`  ⚠️  ${table} merge échoué (id=${row.id}): ${insertErr.message}`);
               }
             }
@@ -249,6 +365,78 @@ class SyncServiceV2 {
       if (pulled > 0) console.log(`📥 Pull delta: ${pulled} enregistrement(s) depuis Neon`);
     } catch (e) {
       console.error('❌ Erreur pull delta:', e.message);
+    }
+  }
+
+  /**
+   * Lit deleted_records dans Neon et supprime les enregistrements correspondants en local.
+   * Respecte l'ordre FK inverse : enfants supprimés avant parents.
+   */
+  async _applyRemoteDeletions(client) {
+    try {
+      // Timestamp de la dernière lecture des deleted_records
+      const lastCheck = await this.localPrisma.$queryRawUnsafe(
+        `SELECT MAX(deleted_at) as ts FROM deleted_records`
+      );
+      const since = (() => {
+        const ts = lastCheck[0]?.ts;
+        if (!ts) return '1970-01-01T00:00:00Z';
+        const tsNum = typeof ts === 'bigint' ? Number(ts) : ts;
+        try { return new Date(tsNum).toISOString(); } catch { return '1970-01-01T00:00:00Z'; }
+      })();
+
+      const result = await client.query(
+        `SELECT table_name, record_id, deleted_at, deleted_by
+         FROM deleted_records WHERE deleted_at > $1 ORDER BY deleted_at ASC LIMIT 1000`,
+        [since]
+      );
+
+      if (result.rows.length === 0) return;
+
+      console.log(`🗑️  Propagation de ${result.rows.length} suppression(s) depuis Neon...`);
+
+      // Trier dans l'ordre FK inverse (enfants avant parents)
+      // ex: comptes_clients avant clients, comptes_fournisseurs avant fournisseurs
+      const deletionOrder = [...PULL_TABLES].reverse();
+      result.rows.sort((a, b) => {
+        return deletionOrder.indexOf(a.table_name) - deletionOrder.indexOf(b.table_name);
+      });
+
+      for (const row of result.rows) {
+        const { table_name, record_id, deleted_at, deleted_by } = row;
+        try {
+          // Supprimer localement
+          await this.localPrisma.$executeRawUnsafe(
+            `DELETE FROM "${table_name}" WHERE id = ?`, record_id
+          );
+
+          // Mémoriser dans deleted_records local pour ne pas re-pull
+          await this.localPrisma.$executeRawUnsafe(
+            `INSERT OR IGNORE INTO deleted_records (table_name, record_id, deleted_at, deleted_by)
+             VALUES (?, ?, ?, ?)`,
+            table_name,
+            record_id,
+            deleted_at instanceof Date ? deleted_at.toISOString() : deleted_at,
+            deleted_by || null
+          );
+
+          console.log(`  🗑️  Supprimé local: ${table_name} (id=${record_id})`);
+        } catch (e) {
+          // Si l'enregistrement n'existe pas en local, pas grave
+          if (!e.message.includes('no rows') && !e.message.includes('FOREIGN KEY')) {
+            console.warn(`  ⚠️  Suppression locale ${table_name} (id=${record_id}): ${e.message}`);
+          }
+        }
+      }
+
+      console.log(`✅ ${result.rows.length} suppression(s) propagée(s)`);
+    } catch (e) {
+      // Si deleted_records n'existe pas encore (vieux poste), ignorer silencieusement
+      if (e.message.includes('deleted_records') && e.message.includes('does not exist')) {
+        console.warn('⚠️  Table deleted_records absente de Neon — suppression propagation ignorée');
+      } else {
+        console.warn('⚠️  Erreur propagation suppressions:', e.message);
+      }
     }
   }
 
@@ -322,6 +510,15 @@ class SyncServiceV2 {
 
     if (operation === 'DELETE') {
       await client.query(`DELETE FROM "${tableName}" WHERE id = $1`, [row.id]);
+      // Enregistrer la suppression dans deleted_records pour propagation aux autres postes
+      try {
+        await client.query(
+          `INSERT INTO "deleted_records" (table_name, record_id, deleted_at) VALUES ($1, $2, NOW())`,
+          [tableName, row.id]
+        );
+      } catch (e) {
+        console.warn(`⚠️  deleted_records INSERT failed (${tableName} id=${row.id}): ${e.message}`);
+      }
       return;
     }
 
@@ -499,6 +696,18 @@ class SyncServiceV2 {
         userId
       );
 
+      // Si c'est un DELETE, annuler les INSERT/UPDATE pending pour le même enregistrement
+      // (évite des erreurs FK lors du replay : INSERT d'un compte dont le client a été supprimé)
+      if (operation === 'DELETE' && data.id) {
+        await this.localPrisma.$executeRawUnsafe(
+          `UPDATE operation_log SET status = 'cancelled'
+           WHERE table_name = ? AND record_id = ? AND operation_type IN ('INSERT', 'UPDATE')
+           AND status = 'pending'`,
+          tableName,
+          data.id
+        );
+      }
+
       console.log(`📋 Logged: ${operation} ${tableName} (id=${data.id})`);
 
       // Si cloud available et pas en syncing, lancer sync immédiate
@@ -517,6 +726,34 @@ class SyncServiceV2 {
    */
   async enqueue(tableName, operation, data, userId = null) {
     return this.logOperation(tableName, operation, data, userId);
+  }
+
+  /**
+   * Supprime dans Neon par une colonne FK (ex: client_id) quand l'id local est inconnu
+   * Utilisé quand le compte est absent du local mais peut exister dans Neon
+   */
+  async deleteByClientId(tableName, clientId) {
+    if (!this.cloudUrl || !this.isCloudAvailable) return;
+    try {
+      const client = await this.cloudPool.connect();
+      await client.query(`DELETE FROM "${tableName}" WHERE client_id = $1`, [clientId]);
+      client.release();
+      console.log(`📋 Direct DELETE: ${tableName} WHERE client_id=${clientId}`);
+    } catch (e) {
+      console.warn(`⚠️  deleteByClientId ${tableName} (client_id=${clientId}): ${e.message}`);
+    }
+  }
+
+  async deleteByFournisseurId(tableName, fournisseurId) {
+    if (!this.cloudUrl || !this.isCloudAvailable) return;
+    try {
+      const client = await this.cloudPool.connect();
+      await client.query(`DELETE FROM "${tableName}" WHERE fournisseur_id = $1`, [fournisseurId]);
+      client.release();
+      console.log(`📋 Direct DELETE: ${tableName} WHERE fournisseur_id=${fournisseurId}`);
+    } catch (e) {
+      console.warn(`⚠️  deleteByFournisseurId ${tableName} (fournisseur_id=${fournisseurId}): ${e.message}`);
+    }
   }
 
   getStatus() {

@@ -80,11 +80,16 @@ class LogescoServer {
    */
   async _runAutoSeed(prisma) {
     try {
-      const userCount = await prisma.utilisateur.count();
+      // Vérifications parallèles pour éviter les allers-retours séquentiels
+      const [userCount, boutiquePrincipale] = await Promise.all([
+        prisma.utilisateur.count(),
+        prisma.boutique.findFirst({ where: { estPrincipale: true } })
+      ]);
+
       const bcrypt = require('bcryptjs');
 
       if (userCount === 0) {
-        console.log('🌱 Première installation détectée - Initialisation des données...');
+        console.log('🌱 Première installation — initialisation des données...');
 
         // Rôle admin
         const adminRole = await prisma.userRole.create({
@@ -111,40 +116,38 @@ class LogescoServer {
           }
         });
 
-        // Utilisateur admin
+        // Admin + paramètres entreprise en parallèle
         const hashedPassword = await bcrypt.hash('admin123', 10);
-        await prisma.utilisateur.create({
-          data: {
-            nomUtilisateur: 'admin',
-            motDePasseHash: hashedPassword,
-            email: 'admin@logesco.local',
-            roleId: adminRole.id,
-            isActive: true
-          }
-        });
-
-        // Paramètres entreprise
-        await prisma.parametresEntreprise.create({
-          data: {
-            nomEntreprise: 'Mon Entreprise',
-            adresse: '',
-            telephone: '',
-            email: 'contact@entreprise.com',
-            nuiRccm: '',
-            localisation: ''
-          }
-        });
+        await Promise.all([
+          prisma.utilisateur.create({
+            data: {
+              nomUtilisateur: 'admin',
+              motDePasseHash: hashedPassword,
+              email: 'admin@logesco.local',
+              roleId: adminRole.id,
+              isActive: true
+            }
+          }),
+          prisma.parametresEntreprise.create({
+            data: {
+              nomEntreprise: 'Mon Entreprise',
+              adresse: '',
+              telephone: '',
+              email: 'contact@entreprise.com',
+              nuiRccm: '',
+              localisation: ''
+            }
+          })
+        ]);
 
         console.log('✅ Données initiales créées (admin / admin123)');
-      } else {
-        console.log('✅ Base de données déjà initialisée');
       }
 
-      // ── Toujours vérifier/créer la boutique principale ──────────────────
-      let boutiquePrincipale = await prisma.boutique.findFirst({ where: { estPrincipale: true } });
-      if (!boutiquePrincipale) {
-        console.log('🏪 Création de la boutique principale manquante...');
-        boutiquePrincipale = await prisma.boutique.create({
+      // ── Boutique principale ────────────────────────────────────────────────
+      let boutique = boutiquePrincipale;
+      if (!boutique) {
+        console.log('🏪 Création de la boutique principale...');
+        boutique = await prisma.boutique.create({
           data: {
             nom: 'Boutique Principale',
             description: 'Boutique principale du système',
@@ -152,63 +155,68 @@ class LogescoServer {
             isActive: true
           }
         });
-        console.log(`✅ Boutique principale créée (ID: ${boutiquePrincipale.id})`);
-      } else {
-        console.log(`✅ Boutique principale existante (ID: ${boutiquePrincipale.id})`);
+        console.log(`✅ Boutique principale créée (ID: ${boutique.id})`);
       }
 
-      // ── Toujours vérifier/créer la caisse principale ────────────────────
-      let caissePrincipale = await prisma.cashRegister.findFirst({ where: { nom: 'Caisse Principale' } });
+      // ── Caisse principale + assignation admin en parallèle ─────────────────
+      const [caissePrincipale, adminUser] = await Promise.all([
+        prisma.cashRegister.findFirst({ where: { nom: 'Caisse Principale' } }),
+        prisma.utilisateur.findFirst({ where: { nomUtilisateur: 'admin' } })
+      ]);
+
+      const tasks = [];
+
       if (!caissePrincipale) {
-        console.log('💰 Création de la caisse principale manquante...');
-        caissePrincipale = await prisma.cashRegister.create({
-          data: {
-            nom: 'Caisse Principale',
-            description: 'Caisse principale du système',
-            isActive: true,
-            soldeActuel: 0,
-            soldeInitial: 0,
-            boutiqueId: boutiquePrincipale.id
-          }
-        });
-        console.log(`✅ Caisse principale créée (ID: ${caissePrincipale.id})`);
-      } else if (!caissePrincipale.boutiqueId) {
-        // Lier la caisse existante à la boutique principale si pas encore fait
-        await prisma.cashRegister.update({
-          where: { id: caissePrincipale.id },
-          data: { boutiqueId: boutiquePrincipale.id }
-        });
-        console.log(`✅ Caisse principale liée à la boutique principale`);
-      }
-
-      // ── Assigner l'admin à la boutique principale si pas encore fait ────
-      const adminUser = await prisma.utilisateur.findFirst({ where: { nomUtilisateur: 'admin' } });
-      if (adminUser) {
-        const existingAssignment = await prisma.userBoutiqueAssignment.findFirst({
-          where: { utilisateurId: adminUser.id, boutiqueId: boutiquePrincipale.id }
-        });
-        if (!existingAssignment) {
-          const adminRole = await prisma.userRole.findFirst({ where: { isAdmin: true } });
-          await prisma.userBoutiqueAssignment.create({
+        tasks.push(
+          prisma.cashRegister.create({
             data: {
-              utilisateurId: adminUser.id,
-              boutiqueId: boutiquePrincipale.id,
-              roleId: adminRole?.id || null,
-              isActive: true
+              nom: 'Caisse Principale',
+              description: 'Caisse principale du système',
+              isActive: true,
+              soldeActuel: 0,
+              soldeInitial: 0,
+              boutiqueId: boutique.id
             }
-          });
-          console.log('✅ Admin assigné à la boutique principale');
-        }
+          }).then(c => console.log(`✅ Caisse principale créée (ID: ${c.id})`))
+        );
+      } else if (!caissePrincipale.boutiqueId) {
+        tasks.push(
+          prisma.cashRegister.update({
+            where: { id: caissePrincipale.id },
+            data: { boutiqueId: boutique.id }
+          }).then(() => console.log('✅ Caisse principale liée à la boutique'))
+        );
       }
 
-      // ── Migration des données existantes sans boutiqueId ────────────────
-      await this._migrateExistingDataToBoutique(prisma, boutiquePrincipale.id);
+      if (adminUser) {
+        tasks.push(
+          prisma.userBoutiqueAssignment.findFirst({
+            where: { utilisateurId: adminUser.id, boutiqueId: boutique.id }
+          }).then(async existing => {
+            if (!existing) {
+              const adminRole = await prisma.userRole.findFirst({ where: { isAdmin: true } });
+              await prisma.userBoutiqueAssignment.create({
+                data: {
+                  utilisateurId: adminUser.id,
+                  boutiqueId: boutique.id,
+                  roleId: adminRole?.id || null,
+                  isActive: true
+                }
+              });
+              console.log('✅ Admin assigné à la boutique principale');
+            }
+          })
+        );
+      }
 
-      // ── Migration stock → stock_boutiques (mise à jour depuis ancienne version) ──
-      await this._migrateStockToBoutique(prisma, boutiquePrincipale.id);
+      await Promise.all(tasks);
 
-      // ── S'assurer que operation_log a bien AUTOINCREMENT sur id ─────────
-      await this._fixOperationLogSchema(prisma);
+      // ── Migrations de données (différées, non bloquantes) ─────────────────
+      setImmediate(() => {
+        this._migrateExistingDataToBoutique(prisma, boutique.id).catch(() => {});
+        this._migrateStockToBoutique(prisma, boutique.id).catch(() => {});
+        this._fixOperationLogSchema(prisma).catch(() => {});
+      });
 
     } catch (err) {
       console.warn('⚠️  Auto-seed échoué (non bloquant):', err.message);
@@ -292,8 +300,6 @@ class LogescoServer {
    */
   async _migrateExistingDataToBoutique(prisma, boutiquePrincipaleId) {
     try {
-      console.log(`🔄 Migration des données existantes vers boutique principale (ID: ${boutiquePrincipaleId})...`);
-
       const tables = [
         { name: 'vente',              model: prisma.vente },
         { name: 'cashRegister',       model: prisma.cashRegister },
@@ -308,21 +314,18 @@ class LogescoServer {
         { name: 'datePeremption',     model: prisma.datePeremption },
       ];
 
-      for (const { name, model } of tables) {
-        try {
-          const result = await model.updateMany({
-            where: { boutiqueId: null },
-            data: { boutiqueId: boutiquePrincipaleId }
-          });
-          if (result.count > 0) {
-            console.log(`  ✅ ${name}: ${result.count} ligne(s) migrée(s)`);
-          }
-        } catch (e) {
-          // Certaines tables peuvent ne pas avoir boutiqueId, on ignore
-        }
-      }
+      // Toutes les migrations en parallèle
+      const results = await Promise.allSettled(
+        tables.map(({ name, model }) =>
+          model.updateMany({ where: { boutiqueId: null }, data: { boutiqueId: boutiquePrincipaleId } })
+            .then(r => { if (r.count > 0) console.log(`  ✅ ${name}: ${r.count} ligne(s) migrée(s)`); })
+        )
+      );
 
-      console.log('✅ Migration des données existantes terminée');
+      const errors = results.filter(r => r.status === 'rejected');
+      if (errors.length === 0) {
+        console.log('✅ Migration des données existantes terminée');
+      }
     } catch (err) {
       console.warn('⚠️  Migration données existantes échouée (non bloquant):', err.message);
     }
@@ -399,34 +402,52 @@ class LogescoServer {
     const environment = require('./config/environment');
 
     try {
-      console.log('🔄 Vérification des migrations de base de données...');
-
       const backendDir = path.join(__dirname, '..');
-      
-      // Choisir le bon schema selon l'environnement
-      const schemaFile = environment.isCloud ? 'schema.postgresql.prisma' : 'schema.prisma';
-      let schemaPath = path.join(backendDir, 'prisma', schemaFile);
-      
-      if (!fs.existsSync(schemaPath)) {
-        console.log(`⚠️  ${schemaFile} introuvable, migration ignorée`);
-        return;
-      }
 
-      // En cloud, pas besoin de migration automatique (déjà fait au build)
+      // En cloud, migrations déjà appliquées au build
       if (environment.isCloud) {
-        console.log('☁️  Environnement cloud détecté, migrations déjà appliquées au build');
+        console.log('☁️  Environnement cloud — migrations ignorées');
         return;
       }
-
-      // Le reste du code pour l'environnement local uniquement
-      const prismaCmdWin  = path.join(backendDir, 'node_modules/.bin/prisma.cmd');
-      const prismaCmdUnix = path.join(backendDir, 'node_modules/.bin/prisma');
 
       const dbUrl = process.env.DATABASE_URL || (() => {
         const dataDir = process.env.LOGESCO_DATA_DIR || backendDir;
         const dbPath  = path.join(dataDir, 'database', 'logesco.db').replace(/\\/g, '/');
         return `file:${dbPath}`;
       })();
+
+      // ── FAST PATH : DB existante → skip prisma db push (économise 5-20s) ──
+      if (dbUrl.startsWith('file:')) {
+        const dbFilePath = dbUrl.replace(/^file:/, '').split('?')[0];
+        if (fs.existsSync(dbFilePath) && fs.statSync(dbFilePath).size > 0) {
+          try {
+            // Vérification rapide via sqlite3 natif (si dispo) ou lecture binaire
+            const header = Buffer.alloc(100);
+            const fd = fs.openSync(dbFilePath, 'r');
+            fs.readSync(fd, header, 0, 100, 0);
+            fs.closeSync(fd);
+            // Les 16 premiers octets d'une DB SQLite valide = "SQLite format 3\0"
+            if (header.slice(0, 15).toString('ascii') === 'SQLite format 3') {
+              console.log('✅ DB existante — migration prisma ignorée (démarrage rapide)');
+              return;
+            }
+          } catch (_) { /* continue vers slow path */ }
+        }
+      }
+
+      // ── SLOW PATH : première installation ou DB absente/corrompue ─────────
+      const schemaFile = environment.isCloud ? 'schema.postgresql.prisma' : 'schema.prisma';
+      const schemaPath = path.join(backendDir, 'prisma', schemaFile);
+
+      if (!fs.existsSync(schemaPath)) {
+        console.log(`⚠️  ${schemaFile} introuvable, migration ignorée`);
+        return;
+      }
+
+      console.log('🔄 Première installation — application des migrations...');
+
+      const prismaCmdWin  = path.join(backendDir, 'node_modules/.bin/prisma.cmd');
+      const prismaCmdUnix = path.join(backendDir, 'node_modules/.bin/prisma');
 
       const nodeExe = (() => {
         const portable = path.join(backendDir, 'node.exe');
@@ -467,7 +488,7 @@ class LogescoServer {
       // Afficher la configuration détectée
       environment.logConfiguration();
 
-      // Appliquer les migrations Prisma automatiquement (MAJ client)
+      // Appliquer les migrations Prisma (skip si DB existe déjà → démarrage rapide)
       await this._runAutoMigration();
 
       // Initialiser la base de données
@@ -476,35 +497,28 @@ class LogescoServer {
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
 
-      // Initialiser le service de synchronisation cloud (uniquement si SQLite local)
-      // En mode cloud pur (Render, etc.), DATABASE_URL pointe vers PostgreSQL et il n'y a pas de SQLite
-      const databaseUrl = process.env.DATABASE_URL || '';
-      const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
-      let syncService = null;
-      
-      if (!isCloudOnly) {
-        syncService = require('./services/sync-service');
-        await syncService.initialize(prisma);
-        const syncStatus = syncService.getStatus();
-        console.log(`🔄 Mode sync: ${syncStatus.mode}`);
-      } else {
-        console.log(`🔄 Mode sync: disabled (cloud-only PostgreSQL deployment)`);
-      }
-      
-      this.syncService = syncService;
-
-      // Exposer prisma dans app.locals pour le sync middleware
-      this.app.locals.prisma = prisma;
-
-      // Initialiser les modèles et services
+      // Initialiser les modèles et services en premier → serveur prêt le plus vite possible
       this.models = new ModelFactory(prisma);
       this.authService = new AuthService(this.models.utilisateur);
-      
-      // Services pour les mouvements financiers
-      this.financialMovementService = new FinancialMovementService(prisma, syncService);
+
+      this.financialMovementService = new FinancialMovementService(prisma, null);
       this.movementCategoryService = new MovementCategoryService(prisma);
       this.fileUploadService = new FileUploadService(prisma);
       this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
+
+      // Initialiser syncService avant les routes pour qu'il soit disponible dans app.locals
+      const databaseUrl = process.env.DATABASE_URL || '';
+      const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
+      if (!isCloudOnly) {
+        const syncService = require('./services/sync-service');
+        this.syncService = syncService;
+        this.app.locals.syncService = syncService;
+        this.financialMovementService = new FinancialMovementService(prisma, syncService);
+        this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
+      }
+
+      // Exposer prisma dans app.locals pour le sync middleware
+      this.app.locals.prisma = prisma;
 
       // Configurer les middlewares
       this.configureMiddlewares();
@@ -516,14 +530,27 @@ class LogescoServer {
       // Configurer les routes
       this.configureRoutes();
 
-      // Démarrer le serveur
+      // Démarrer le serveur HTTP → /health répond dès ici
       await this.listen();
-
       console.log('🚀 Serveur LOGESCO API démarré avec succès');
-      
-      // Afficher les statistiques de la base de données
-      const stats = await databaseManager.getStats();
-      console.log('📊 Statistiques de la base de données:', stats);
+
+      // ── Initialisation différée du sync (pull delta, replay) ─────────────
+      setImmediate(async () => {
+        try {
+          if (!isCloudOnly && this.syncService) {
+            await this.syncService.initialize(prisma);
+            console.log(`🔄 Mode sync: ${this.syncService.getStatus().mode}`);
+          } else if (isCloudOnly) {
+            console.log('🔄 Mode sync: disabled (cloud-only)');
+          }
+
+          // Stats DB (non bloquant)
+          const stats = await databaseManager.getStats();
+          console.log('📊 Stats DB:', stats);
+        } catch (e) {
+          console.warn('⚠️  Initialisation différée échouée (non bloquant):', e.message);
+        }
+      });
 
     } catch (error) {
       if (error.code === 'EADDRINUSE') {
