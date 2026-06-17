@@ -36,6 +36,10 @@ class ErrorHandler {
   /// Traite spécifiquement les erreurs d'API
   static String _handleApiException(ApiException error) {
     switch (error.code) {
+      case 'BACKEND_DOWN':
+        // Backend local en cours de redémarrage — silence total,
+        // le watchdog le relancera et affichera "Service restauré"
+        return '';
       case 'NO_INTERNET':
         return 'Vérifiez votre connexion internet';
       case 'AUTHENTICATION_REQUIRED':
@@ -78,6 +82,8 @@ class ErrorHandler {
   /// Affiche un message d'erreur à l'utilisateur
   static void showError(dynamic error, {String? context, String? title}) {
     final message = handleError(error, context: context);
+    // Message vide = erreur silencieuse (ex: BACKEND_DOWN)
+    if (message.isEmpty) return;
     SnackbarHelper.error(message, title: title, duration: const Duration(seconds: 4));
   }
 

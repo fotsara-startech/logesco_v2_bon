@@ -117,6 +117,38 @@ class DashboardStatsService extends GetxService {
     }
   }
 
+  /// Récupérer la répartition des ventes par catégories
+  Future<List<Map<String, dynamic>>> getCategorySalesData() async {
+    try {
+      print('📊 [DashboardStatsService] Récupération répartition par catégories...');
+      final response = await _apiClient.get<Map<String, dynamic>>('/dashboard/category-sales', queryParameters: _boutiqueParams());
+
+      if (response.isSuccess && response.data != null) {
+        final List<dynamic> rawList = response.data!['data'] ?? [];
+        print('📊 [DashboardStatsService] ${rawList.length} catégories reçues');
+
+        final result = rawList.map((item) {
+          final m = Map<String, dynamic>.from(item as Map);
+          return {
+            'categoryId': (m['categoryId'] as num? ?? 0).toInt(),
+            'categoryName': m['categoryName']?.toString() ?? 'Sans catégorie',
+            'revenue': (m['revenue'] as num? ?? 0.0).toDouble(),
+            'quantity': (m['quantity'] as num? ?? 0).toInt(),
+          };
+        }).toList();
+
+        print('✅ [DashboardStatsService] Répartition catégories: $result');
+        return result;
+      }
+
+      print('⚠️ [DashboardStatsService] API catégories non disponible');
+      return _getDefaultCategoryData();
+    } catch (e) {
+      print('❌ [DashboardStatsService] Erreur récupération catégories: $e');
+      return _getDefaultCategoryData();
+    }
+  }
+
   /// Données par défaut pour les statistiques générales
   Map<String, dynamic> _getDefaultStats() {
     return {
@@ -179,5 +211,29 @@ class DashboardStatsService extends GetxService {
         'revenue': 0.0,
       };
     });
+  }
+
+  /// Données par défaut pour les catégories
+  List<Map<String, dynamic>> _getDefaultCategoryData() {
+    return [
+      {
+        'categoryId': 1,
+        'categoryName': 'Électronique',
+        'revenue': 150000.0,
+        'quantity': 25,
+      },
+      {
+        'categoryId': 2,
+        'categoryName': 'Accessoires',
+        'revenue': 80000.0,
+        'quantity': 120,
+      },
+      {
+        'categoryId': 3,
+        'categoryName': 'Services',
+        'revenue': 50000.0,
+        'quantity': 10,
+      },
+    ];
   }
 }

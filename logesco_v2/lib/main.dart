@@ -23,21 +23,29 @@ void main() async {
   await GetStorage.init();
   AppLogger.info('GetStorage initialized');
 
-  // Démarre le backend embarqué uniquement en mode serveur (non disponible sur web)
+  // Démarre le backend embarqué en arrière-plan — ne bloque PAS runApp()
+  // L'UI s'affiche immédiatement ; la SplashPage attend le /health en parallèle
   if (!AppConfig.isClientMode && !kIsWeb) {
     final backendService = BackendService();
-    final backendStarted = await backendService.initialize();
-    if (backendStarted) {
-      AppLogger.info('Backend service started successfully');
-    } else {
-      AppLogger.warning('Backend service failed to start - running in offline mode');
-    }
+    // Callback déclenché quand le backend se relance après une panne silencieuse
+    backendService.onBackendRestored = () {
+      try {
+        SnackbarHelper.success(
+          'Service restauré',
+          title: 'Connexion rétablie',
+          duration: const Duration(seconds: 3),
+        );
+      } catch (_) {}
+    };
+    backendService.initialize().then((started) {
+      AppLogger.info(started ? 'Backend service started successfully' : 'Backend service failed to start - running in offline mode');
+    });
     WidgetsBinding.instance.addObserver(_AppLifecycleObserver(backendService));
   } else {
     AppLogger.info('Mode client — backend embarqué ignoré');
   }
 
-  await AppLogger.cleanupOldLogs();
+  AppLogger.cleanupOldLogs(); // non-bloquant
 
   FlutterError.onError = (FlutterErrorDetails details) {
     AppLogger.error(

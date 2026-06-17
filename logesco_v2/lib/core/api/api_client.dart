@@ -8,6 +8,7 @@ import '../constants/app_constants.dart';
 import '../models/api_response.dart';
 import '../utils/exceptions.dart';
 import '../utils/app_logger.dart';
+import '../services/backend_service.dart' if (dart.library.html) '../services/backend_service_stub.dart';
 
 /// Client API centralisé pour toutes les communications avec le backend
 class ApiClient extends GetxService {
@@ -16,6 +17,19 @@ class ApiClient extends GetxService {
   bool _isRefreshing = false;
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  /// Code spécial utilisé quand le backend local est down (circuit breaker ouvert).
+  /// Reconnu par ErrorHandler pour éviter d'afficher un toast pour chaque requête.
+  static const String backendDownCode = 'BACKEND_DOWN';
+
+  /// Retourne le code d'erreur réseau approprié selon l'état du backend local
+  String get _backendDownCode {
+    try {
+      final backend = BackendService();
+      if (backend.isBackendDown) return backendDownCode;
+    } catch (_) {}
+    return 'NO_INTERNET';
+  }
 
   @override
   void onInit() {
@@ -160,7 +174,7 @@ class ApiClient extends GetxService {
       );
     } on SocketException catch (e) {
       AppLogger.error('Network error on GET $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -188,7 +202,7 @@ class ApiClient extends GetxService {
       );
     } on SocketException catch (e) {
       AppLogger.error('Network error on POST $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -216,7 +230,7 @@ class ApiClient extends GetxService {
       );
     } on SocketException catch (e) {
       AppLogger.error('Network error on PUT $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -243,7 +257,7 @@ class ApiClient extends GetxService {
       );
     } on SocketException catch (e) {
       AppLogger.error('Network error on DELETE $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: 'NO_INTERNET', statusCode: 0);
+      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {

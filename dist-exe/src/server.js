@@ -72,6 +72,7 @@ class LogescoServer {
     this.server = null;
     this.models = null;
     this.authService = null;
+    this._seedDone = false; // flag en mémoire pour éviter un double seed dans le même process
   }
 
   /**
@@ -85,6 +86,18 @@ class LogescoServer {
         prisma.utilisateur.count(),
         prisma.boutique.findFirst({ where: { estPrincipale: true } })
       ]);
+
+      // ── Fast path : DB déjà initialisée → pas de seed ────────────────────
+      // On vérifie juste que la caisse principale existe aussi
+      if (userCount > 0 && boutiquePrincipale) {
+        const caissePrincipale = await prisma.cashRegister.findFirst({
+          where: { nom: 'Caisse Principale' }
+        });
+        if (caissePrincipale) {
+          // Tout est en place — skip complet du seed
+          return;
+        }
+      }
 
       const bcrypt = require('bcryptjs');
 
@@ -506,6 +519,17 @@ class LogescoServer {
       this.fileUploadService = new FileUploadService(prisma);
       this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
 
+      // Initialiser syncService avant les routes pour qu'il soit disponible dans app.locals
+      const databaseUrl = process.env.DATABASE_URL || '';
+      const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
+      if (!isCloudOnly) {
+        const syncService = require('./services/sync-service');
+        this.syncService = syncService;
+        this.app.locals.syncService = syncService;
+        this.financialMovementService = new FinancialMovementService(prisma, syncService);
+        this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
+      }
+
       // Exposer prisma dans app.locals pour le sync middleware
       this.app.locals.prisma = prisma;
 
@@ -523,24 +547,13 @@ class LogescoServer {
       await this.listen();
       console.log('🚀 Serveur LOGESCO API démarré avec succès');
 
-      // ── Tâches différées (non bloquantes pour le démarrage) ───────────────
+      // ── Initialisation différée du sync (pull delta, replay) ─────────────
       setImmediate(async () => {
         try {
-          // Sync service — pas nécessaire avant que le serveur soit prêt
-          const databaseUrl = process.env.DATABASE_URL || '';
-          const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
-
-          if (!isCloudOnly) {
-            const syncService = require('./services/sync-service');
-            await syncService.initialize(prisma);
-            this.syncService = syncService;
-            // Rendre syncService accessible dynamiquement aux routes via app.locals
-            this.app.locals.syncService = syncService;
-            // Mettre à jour les services qui en dépendent
-            this.financialMovementService = new FinancialMovementService(prisma, syncService);
-            this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
-            console.log(`🔄 Mode sync: ${syncService.getStatus().mode}`);
-          } else {
+          if (!isCloudOnly && this.syncService) {
+            await this.syncService.initialize(prisma);
+            console.log(`🔄 Mode sync: ${this.syncService.getStatus().mode}`);
+          } else if (isCloudOnly) {
             console.log('🔄 Mode sync: disabled (cloud-only)');
           }
 

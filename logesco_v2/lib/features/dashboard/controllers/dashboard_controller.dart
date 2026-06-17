@@ -10,12 +10,14 @@ class DashboardController extends GetxController {
   final RxMap<String, dynamic> salesStats = <String, dynamic>{}.obs;
   final RxList<Map<String, dynamic>> recentActivities = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> salesChartData = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> categorySalesData = <Map<String, dynamic>>[].obs;
 
   // États de chargement
   final RxBool isLoadingStats = false.obs;
   final RxBool isLoadingSales = false.obs;
   final RxBool isLoadingActivities = false.obs;
   final RxBool isLoadingChart = false.obs;
+  final RxBool isLoadingCategories = false.obs;
 
   @override
   void onInit() {
@@ -30,6 +32,7 @@ class DashboardController extends GetxController {
       loadSalesStats(),
       loadRecentActivities(),
       loadSalesChart(),
+      loadCategorySales(),
     ]);
   }
 
@@ -82,6 +85,19 @@ class DashboardController extends GetxController {
       print(' Erreur chargement graphique: $e');
     } finally {
       isLoadingChart.value = false;
+    }
+  }
+
+  /// Charger les données de répartition par catégories
+  Future<void> loadCategorySales() async {
+    try {
+      isLoadingCategories.value = true;
+      final categoryData = await _statsService.getCategorySalesData();
+      categorySalesData.value = categoryData;
+    } catch (e) {
+      print(' Erreur chargement catégories: $e');
+    } finally {
+      isLoadingCategories.value = false;
     }
   }
 

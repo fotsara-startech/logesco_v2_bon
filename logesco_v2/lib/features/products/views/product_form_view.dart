@@ -328,33 +328,122 @@ class ProductFormView extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownButtonFormField<String>(
-            value: currentValue,
+          // Champ de recherche
+          TextFormField(
+            controller: controller.categorieSearchController,
+            onChanged: (value) {
+              controller.updateCategorieSearch(value);
+            },
             decoration: InputDecoration(
               labelText: 'product_form_category_label'.tr,
+              hintText: 'product_form_category_search_hint'.tr,
               prefixIcon: const Icon(Icons.category),
+              suffixIcon: controller.categorieSearchText.value.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        controller.categorieSearchController.clear();
+                        controller.updateCategorieSearch('');
+                      },
+                    )
+                  : null,
               border: const OutlineInputBorder(),
-              helperText: controller.categories.isEmpty ? 'product_form_category_empty'.tr : 'product_form_category_count'.tr.replaceAll('@count', controller.categories.length.toString()),
+              helperText: controller.categories.isNotEmpty ? '${controller.categories.length} catégorie(s) disponible(s)' : null,
             ),
-            hint: Text('product_form_category_hint'.tr),
-            items: [
-              DropdownMenuItem<String>(
-                value: '',
-                child: Text('product_form_category_none'.tr),
-              ),
-              ...controller.categories.map((category) => DropdownMenuItem<String>(
-                    value: category.nom,
-                    child: Text(
-                      category.description != null && category.description!.isNotEmpty ? '${category.nom} - ${category.description}' : category.nom,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  )),
-            ],
-            onChanged: controller.updateSelectedCategory,
           ),
+          const SizedBox(height: 8),
+
+          // Liste des suggestions
+          if (controller.categorieSearchText.value.isNotEmpty && controller.filteredCategories.isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              constraints: const BoxConstraints(maxHeight: 250),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: controller.filteredCategories.length,
+                itemBuilder: (context, index) {
+                  final category = controller.filteredCategories[index];
+                  final isSelected = controller.selectedCategory.value == category.nom;
+
+                  return ListTile(
+                    title: Text(
+                      category.nom,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.blue : Colors.black87,
+                      ),
+                    ),
+                    subtitle: category.description != null && category.description!.isNotEmpty ? Text(category.description!, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+                    onTap: () {
+                      controller.updateSelectedCategory(category.nom);
+                    },
+                    dense: true,
+                  );
+                },
+              ),
+            )
+          else if (controller.categorieSearchText.value.isNotEmpty && controller.filteredCategories.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.orange.shade50,
+              ),
+              child: Text(
+                'product_form_category_not_found'.tr,
+                style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
+              ),
+            ),
+
+          // Catégorie sélectionnée
+          if (currentValue != null && currentValue.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'product_form_category_selected'.tr,
+                          style: TextStyle(fontSize: 11, color: Colors.blue.shade600),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          currentValue,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () {
+                      controller.updateSelectedCategory('');
+                      controller.categorieSearchController.clear();
+                    },
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           if (controller.categories.isEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             InkWell(
               onTap: () => Get.toNamed(AppRoutes.categories),
               child: Container(

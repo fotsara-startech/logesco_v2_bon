@@ -18,6 +18,7 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage> {
   final AuthController _authController = Get.put(AuthController());
   String _statusMessage = '';
+  double _progress = 0.0; // 0.0 → 1.0
 
   @override
   void initState() {
@@ -29,9 +30,11 @@ class _SplashPageState extends State<SplashPage> {
     // MODE CLIENT ou WEB — pas de backend local, connexion directe au serveur distant
     if (AppConfig.isClientMode || kIsWeb) {
       _setStatus('Connexion au serveur...');
+      _setProgress(0.5);
       await Future.delayed(const Duration(milliseconds: 500));
       try {
         final isAuthenticated = await _authController.checkAuthentication();
+        _setProgress(1.0);
         if (isAuthenticated) {
           _loadBoutiquesAfterAuth();
           Get.offAllNamed(AppRoutes.dashboard);
@@ -46,35 +49,24 @@ class _SplashPageState extends State<SplashPage> {
 
     // MODE SERVEUR — attendre que le backend local soit prêt
     _setStatus('Démarrage du serveur...');
+    _setProgress(0.1);
 
     final backend = BackendService();
     if (!backend.isRunning && !await backend.checkHealth()) {
-      int elapsed = 0;
-      final timer = Stream.periodic(const Duration(seconds: 5)).listen((_) {
-        elapsed += 5;
-        if (elapsed < 30) {
-          _setStatus('Démarrage du serveur...');
-        } else if (elapsed < 60) {
-          _setStatus('Initialisation de la base de données...');
-        } else {
-          _setStatus('Première installation, veuillez patienter...');
-        }
-      });
-
-      final ready = await backend.waitUntilReady(maxSeconds: 120);
-      timer.cancel();
-
+      final ready = await _waitBackendWithProgress(backend);
       if (!ready) {
         Get.offAllNamed(AppRoutes.login);
         return;
       }
     }
 
+    _setProgress(0.9);
     _setStatus('Vérification de la session...');
     await Future.delayed(const Duration(milliseconds: 300));
 
     try {
       final isAuthenticated = await _authController.checkAuthentication();
+      _setProgress(1.0);
       if (isAuthenticated) {
         _loadBoutiquesAfterAuth();
         Get.offAllNamed(AppRoutes.dashboard);
@@ -93,8 +85,48 @@ class _SplashPageState extends State<SplashPage> {
     } catch (_) {}
   }
 
+  /// Attend le backend avec messages progressifs et polling adaptatif
+  Future<bool> _waitBackendWithProgress(BackendService backend) async {
+    const maxSeconds = 120;
+    final deadline = DateTime.now().add(const Duration(seconds: maxSeconds));
+    int elapsed = 0;
+
+    while (DateTime.now().isBefore(deadline)) {
+      // Messages progressifs selon le temps écoulé
+      if (elapsed < 5) {
+        _setStatus('Démarrage du serveur...');
+      } else if (elapsed < 20) {
+        _setStatus('Chargement en cours...');
+      } else if (elapsed < 50) {
+        _setStatus('Initialisation de la base de données...');
+      } else if (elapsed < 80) {
+        _setStatus('Première installation — préparation des données...');
+      } else {
+        _setStatus('Finalisation, encore quelques instants...');
+      }
+
+      // Barre de progression simulée (0.1 → 0.85 sur 120s)
+      _setProgress(0.1 + (elapsed / maxSeconds) * 0.75);
+
+      // Polling adaptatif : rapide au début, espacé ensuite
+      final delay = elapsed < 10 ? const Duration(milliseconds: 500) : const Duration(seconds: 1);
+
+      await Future.delayed(delay);
+      elapsed += (delay.inMilliseconds / 1000).round();
+
+      if (backend.isRunning || await backend.checkHealth()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void _setStatus(String msg) {
     if (mounted) setState(() => _statusMessage = msg);
+  }
+
+  void _setProgress(double value) {
+    if (mounted) setState(() => _progress = value.clamp(0.0, 1.0));
   }
 
   @override
@@ -113,7 +145,7 @@ class _SplashPageState extends State<SplashPage> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -139,6 +171,19 @@ class _SplashPageState extends State<SplashPage> {
             Text(
               _statusMessage,
               style: const TextStyle(fontSize: 14, color: Colors.white70),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: 220,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: _progress > 0 ? _progress : null,
+                  backgroundColor: Colors.white.withValues(alpha: 0.25),
+                  color: Colors.white,
+                  minHeight: 4,
+                ),
+              ),
             ),
           ],
         ),

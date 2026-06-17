@@ -5,7 +5,7 @@ import '../../subscription/controllers/subscription_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/modern_stat_card.dart';
 import '../widgets/recent_activities_widget.dart';
-import '../widgets/sales_chart_widget.dart';
+import '../widgets/category_sales_pie_chart.dart';
 import '../widgets/accounting_summary_widget.dart';
 import '../widgets/profitability_stat_card.dart';
 import '../../../core/routes/app_routes.dart';
@@ -17,8 +17,6 @@ import '../../boutiques/widgets/boutique_selector_widget.dart';
 import '../../boutiques/widgets/boutique_context_indicator.dart';
 import '../../boutiques/views/boutiques_management_page.dart';
 import '../../sync/widgets/sync_indicator_widget.dart';
-import '../../../debug_boutique_context.dart';
-import '../../../test_boutique_injection.dart';
 
 class ModernDashboardPage extends StatefulWidget {
   const ModernDashboardPage({super.key});
@@ -58,12 +56,32 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: const [
-          BoutiqueContextIndicator(compact: true),
-          SizedBox(width: 8),
-          CashSessionIndicator(),
-          SyncIndicatorWidget(),
-          SubscriptionAppBarWidget(),
+        actions: [
+          const BoutiqueContextIndicator(compact: true),
+          const SizedBox(width: 8),
+          // Bouton de rafraîchissement du dashboard
+          Obx(() {
+            final isRefreshing =
+                dashboardController.isLoadingStats.value || dashboardController.isLoadingSales.value || dashboardController.isLoadingChart.value || dashboardController.isLoadingActivities.value;
+
+            return IconButton(
+              icon: isRefreshing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
+              onPressed: isRefreshing ? null : () => dashboardController.refresh(),
+              tooltip: 'Actualiser le dashboard',
+            );
+          }),
+          const CashSessionIndicator(),
+          const SyncIndicatorWidget(),
+          const SubscriptionAppBarWidget(),
           // IconButton(
           //   icon: const Icon(Icons.bug_report),
           //   onPressed: () => Get.to(() => const DebugBoutiqueContextPage()),
@@ -240,16 +258,16 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
 
                 const SizedBox(height: 24),
 
-                // Graphique et activités récentes
+                // Graphique camembert et activités récentes
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isMobile = constraints.maxWidth < 700;
                     if (isMobile) {
                       return Column(
                         children: [
-                          Obx(() => SalesChartWidget(
-                                chartData: dashboardController.salesChartData.toList(),
-                                isLoading: dashboardController.isLoadingChart.value,
+                          Obx(() => CategorySalesPieChart(
+                                categoryData: dashboardController.categorySalesData.toList(),
+                                isLoading: dashboardController.isLoadingCategories.value,
                               )),
                           const SizedBox(height: 20),
                           Obx(() => RecentActivitiesWidget(
@@ -264,9 +282,9 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Obx(() => SalesChartWidget(
-                                chartData: dashboardController.salesChartData.toList(),
-                                isLoading: dashboardController.isLoadingChart.value,
+                          child: Obx(() => CategorySalesPieChart(
+                                categoryData: dashboardController.categorySalesData.toList(),
+                                isLoading: dashboardController.isLoadingCategories.value,
                               )),
                         ),
                         const SizedBox(width: 20),

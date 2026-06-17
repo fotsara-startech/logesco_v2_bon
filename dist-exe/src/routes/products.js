@@ -23,6 +23,10 @@ const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-servi
 function createProductRouter(models) {
   const router = express.Router();
 
+  function getSyncService(req) {
+    return req.app.locals.syncService || models.syncService || null;
+  }
+
   /**
    * GET /products
    * Liste tous les produits avec recherche, filtrage et pagination
@@ -385,8 +389,9 @@ function createProductRouter(models) {
         );
 
         // Synchronisation cloud
-        if (models.syncService) {
-          await models.syncService.logOperation('produits', 'INSERT', produit, req.user?.id);
+        const syncService = getSyncService(req);
+        if (syncService) {
+          await syncService.logOperation('produits', 'INSERT', produit, req.user?.id);
         }
 
       } catch (error) {
@@ -517,16 +522,18 @@ function createProductRouter(models) {
           });
           const produitDTO = ProduitDTO.fromEntity(produitAvecCump);
           // Synchronisation cloud
-          if (models.syncService) {
-            await models.syncService.logOperation('produits', 'UPDATE', produitAvecCump, req.user?.id);
+          const syncService = getSyncService(req);
+          if (syncService) {
+            await syncService.logOperation('produits', 'UPDATE', produitAvecCump, req.user?.id);
           }
           return res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
         }
 
         const produitDTO = ProduitDTO.fromEntity(produitUpdated);
         // Synchronisation cloud
-        if (models.syncService) {
-          await models.syncService.logOperation('produits', 'UPDATE', produitUpdated, req.user?.id);
+        const syncServiceUpd = getSyncService(req);
+        if (syncServiceUpd) {
+          await syncServiceUpd.logOperation('produits', 'UPDATE', produitUpdated, req.user?.id);
         }
         res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
 
@@ -693,8 +700,9 @@ function createProductRouter(models) {
           const produitDTO = ProduitDTO.fromEntity(produitDeactivated);
           console.log('✅ Produit désactivé (soft delete)');
           // Synchronisation cloud
-          if (models.syncService) {
-            await models.syncService.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
+          const syncService = getSyncService(req);
+          if (syncService) {
+            await syncService.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
           }
           return res.json(
             BaseResponseDTO.success(
@@ -711,8 +719,9 @@ function createProductRouter(models) {
           });
           console.log('✅ Produit supprimé définitivement');
           // Synchronisation cloud
-          if (models.syncService) {
-            await models.syncService.logOperation('produits', 'DELETE', { id: produitId }, req.user?.id);
+          const syncServiceDel = getSyncService(req);
+          if (syncServiceDel) {
+            await syncServiceDel.logOperation('produits', 'DELETE', { id: produitId }, req.user?.id);
           }
           res.json(BaseResponseDTO.success(null, 'Produit supprimé avec succès'));
         } catch (deleteError) {
@@ -726,8 +735,9 @@ function createProductRouter(models) {
 
             const produitDTO = ProduitDTO.fromEntity(produitDeactivated);
             // Synchronisation cloud
-            if (models.syncService) {
-              await models.syncService.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
+            const syncServiceFallback = getSyncService(req);
+            if (syncServiceFallback) {
+              await syncServiceFallback.logOperation('produits', 'UPDATE', produitDeactivated, req.user?.id);
             }
             return res.json(
               BaseResponseDTO.success(

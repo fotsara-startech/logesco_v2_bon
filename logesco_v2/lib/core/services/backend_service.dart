@@ -23,15 +23,44 @@ class BackendService {
 
   bool _isRunning = false;
   bool _watchdogActive = false;
+  bool _isRestarting = false;
   Timer? _watchdogTimer;
   final int _port = 8080;
+
+  // ─── Circuit breaker ───────────────────────────────────────────────────────
+  // Quand true, ApiClient sait que le backend est down et supprime les
+  // snackbars d'erreur répétées. Remis à false dès que /health répond à nouveau.
+  bool _backendDown = false;
+  bool get isBackendDown => _backendDown;
+
+  // Callback optionnel appelé quand le backend est restauré
+  // Injecté par main.dart pour afficher un toast discret
+  void Function()? onBackendRestored;
 
   bool get isRunning => _isRunning;
   int get port => _port;
   String get baseUrl => 'http://localhost:$_port';
 
   /// Marque le backend comme actif (appelé depuis le lifecycle observer)
-  void markRunning() => _isRunning = true;
+  void markRunning() {
+    _isRunning = true;
+    _markBackendUp();
+  }
+
+  void _markBackendDown() {
+    if (_backendDown) return;
+    _backendDown = true;
+    debugPrint('🔴 BackendService: circuit breaker OUVERT (backend down)');
+  }
+
+  void _markBackendUp() {
+    if (!_backendDown) return;
+    _backendDown = false;
+    debugPrint('🟢 BackendService: circuit breaker FERMÉ (backend up)');
+    try {
+      onBackendRestored?.call();
+    } catch (_) {}
+  }
 
   // ═══ Chemins ═══════════════════════════════════════════════════════════════
 
@@ -81,35 +110,50 @@ class BackendService {
     return true;
   }
 
-  /// Redémarre le backend (utilisé après veille/hibernate)
+  /// Redémarre le backend silencieusement (watchdog ou veille)
   Future<bool> restart() async {
+    if (_isRestarting) return false;
+    _isRestarting = true;
     debugPrint('🔄 BackendService: redémarrage...');
     _isRunning = false;
-    // Tuer l'ancien process proprement
     try {
       await Process.run('taskkill', ['/F', '/IM', 'node.exe'], runInShell: true);
     } catch (_) {}
     await Future.delayed(const Duration(milliseconds: 500));
     _ensureEnvFile();
     final ok = await _start();
-    if (ok) _startWatchdog();
+    if (ok) {
+      _startWatchdog();
+      _markBackendUp();
+    }
+    _isRestarting = false;
     return ok;
   }
 
-  /// Watchdog de fond — vérifie le health toutes les 30s et relance si mort
+  /// Watchdog de fond — vérifie le health toutes les 15s et relance si mort
   void _startWatchdog() {
     if (_watchdogActive) return;
     _watchdogActive = true;
     _watchdogTimer?.cancel();
-    _watchdogTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      if (!_isRunning) return;
+    _watchdogTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+      if (_isRestarting) return;
       final alive = await checkHealth();
       if (!alive) {
-        debugPrint('⚠️ Watchdog: backend mort — relance silencieuse...');
-        _isRunning = false;
-        _watchdogActive = false;
-        _watchdogTimer?.cancel();
-        await restart();
+        if (_isRunning) {
+          // Premier échec détecté → ouvrir le circuit breaker immédiatement
+          _isRunning = false;
+          _markBackendDown();
+          debugPrint('⚠️ Watchdog: backend mort — relance silencieuse...');
+        }
+        if (!_isRestarting) {
+          _watchdogActive = false;
+          _watchdogTimer?.cancel();
+          await restart();
+        }
+      } else if (!_isRunning) {
+        // Backend répond de nouveau sans qu'on l'ait relancé (cas rare)
+        _isRunning = true;
+        _markBackendUp();
       }
     });
   }
@@ -230,6 +274,7 @@ class BackendService {
 
       if (_isRunning) {
         debugPrint('✅ Backend prêt sur $baseUrl');
+        _markBackendUp();
         _startWatchdog();
       } else {
         debugPrint('❌ Backend non disponible après 60s');
@@ -245,11 +290,19 @@ class BackendService {
     final deadline = DateTime.now().add(Duration(seconds: maxSeconds));
     int attempt = 0;
     while (DateTime.now().isBefore(deadline)) {
-      // Polling rapide au début (500ms), puis espacé (1s après 10 tentatives)
-      final delay = attempt < 10 ? const Duration(milliseconds: 500) : const Duration(seconds: 1);
+      // Polling très rapide les 5 premières secondes (200ms),
+      // puis 500ms, puis 1s après 20 tentatives
+      final Duration delay;
+      if (attempt < 25) {
+        delay = const Duration(milliseconds: 200);
+      } else if (attempt < 50) {
+        delay = const Duration(milliseconds: 500);
+      } else {
+        delay = const Duration(seconds: 1);
+      }
       await Future.delayed(delay);
       if (await checkHealth()) {
-        debugPrint('   → Health OK après ~${attempt * 0.5 + (attempt > 10 ? (attempt - 10) * 0.5 : 0).toInt()}s');
+        debugPrint('   → Backend prêt après ~${attempt ~/ 5}s');
         return true;
       }
       attempt++;

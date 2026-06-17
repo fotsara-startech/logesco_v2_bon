@@ -20,6 +20,7 @@ class ProductFormController extends GetxController {
   late final TextEditingController prixAchatController;
   late final TextEditingController codeBarreController;
   late final TextEditingController categorieController;
+  late final TextEditingController categorieSearchController;
   late final TextEditingController seuilStockController;
   late final TextEditingController remiseMaxController;
 
@@ -32,7 +33,9 @@ class ProductFormController extends GetxController {
   final RxBool estService = false.obs;
   final RxBool gestionPeremption = false.obs;
   final RxList<Category> categories = <Category>[].obs;
+  final RxList<Category> filteredCategories = <Category>[].obs;
   final RxString selectedCategory = ''.obs;
+  final RxString categorieSearchText = ''.obs;
   final RxBool isEditing = false.obs;
   final Rx<Product?> editingProduct = Rx<Product?>(null);
 
@@ -81,6 +84,7 @@ class ProductFormController extends GetxController {
     prixAchatController = TextEditingController();
     codeBarreController = TextEditingController();
     categorieController = TextEditingController();
+    categorieSearchController = TextEditingController();
     seuilStockController = TextEditingController(text: '0');
     remiseMaxController = TextEditingController(text: '0');
 
@@ -102,6 +106,7 @@ class ProductFormController extends GetxController {
     prixAchatController.dispose();
     codeBarreController.dispose();
     categorieController.dispose();
+    categorieSearchController.dispose();
     seuilStockController.dispose();
     remiseMaxController.dispose();
   }
@@ -345,6 +350,22 @@ class ProductFormController extends GetxController {
   void updateSelectedCategory(String? category) {
     selectedCategory.value = category ?? '';
     categorieController.text = category ?? '';
+    categorieSearchText.value = '';
+    categorieSearchController.clear();
+  }
+
+  /// Met à jour les catégories filtrées en fonction du texte de recherche
+  void updateCategorieSearch(String searchText) {
+    categorieSearchText.value = searchText;
+    if (searchText.isEmpty) {
+      filteredCategories.clear();
+      return;
+    }
+
+    final searchLower = searchText.toLowerCase().trim();
+    final filtered = categories.where((cat) => cat.nom.toLowerCase().contains(searchLower) || (cat.description != null && cat.description!.toLowerCase().contains(searchLower))).toList();
+
+    filteredCategories.assignAll(filtered);
   }
 
   /// Actualise la liste des catégories

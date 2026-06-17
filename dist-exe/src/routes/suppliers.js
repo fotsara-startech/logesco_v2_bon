@@ -20,7 +20,10 @@ const {
  */
 function createSupplierRouter(models) {
   const router = express.Router();
-  const syncService = models.syncService || null;
+
+  function getSyncService(req) {
+    return req.app.locals.syncService || models.syncService || null;
+  }
 
   /**
    * GET /suppliers
@@ -141,6 +144,7 @@ function createSupplierRouter(models) {
         const fournisseur = await models.fournisseur.createWithAccount(fournisseurData);
 
         // Sync vers Neon
+        const syncService = getSyncService(req);
         if (syncService) {
           await syncService.enqueue('fournisseurs', 'INSERT', fournisseur);
           const compte = fournisseur.compte || await models.prisma.compteFournisseur.findUnique({
@@ -268,19 +272,34 @@ function createSupplierRouter(models) {
           );
         }
 
+        const parsedFournisseurId = parseInt(fournisseurId);
+
+        // Récupérer le compte fournisseur avant suppression (pour sync)
+        const compteFournisseur = await models.prisma.compteFournisseur.findUnique({
+          where: { fournisseurId: parsedFournisseurId }
+        });
+
         // Supprimer le fournisseur et son compte
         await models.prisma.$transaction(async (tx) => {
-          // Supprimer le compte s'il existe
           await tx.compteFournisseur.deleteMany({
-            where: { fournisseurId: parseInt(fournisseurId) }
+            where: { fournisseurId: parsedFournisseurId }
           });
-
-          // Supprimer le fournisseur
           await tx.fournisseur.delete({
-            where: { id: parseInt(fournisseurId) }
+            where: { id: parsedFournisseurId }
           });
         });
-        
+
+        // Sync vers Neon — compte d'abord (FK), puis fournisseur
+        const syncService = getSyncService(req);
+        if (syncService) {
+          if (compteFournisseur) {
+            await syncService.enqueue('comptes_fournisseurs', 'DELETE', { id: compteFournisseur.id });
+          } else {
+            await syncService.deleteByFournisseurId('comptes_fournisseurs', parsedFournisseurId);
+          }
+          await syncService.enqueue('fournisseurs', 'DELETE', { id: parsedFournisseurId });
+        }
+
         res.json(BaseResponseDTO.success(null, 'Fournisseur supprimé avec succès'));
 
       } catch (error) {
