@@ -91,27 +91,68 @@ class SyncServiceV2 {
    */
   async _ensureDeletedRecordsTable() {
     try {
-      await this.localPrisma.$executeRawUnsafe(
-        `CREATE TABLE IF NOT EXISTS "deleted_records" (
-          "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
-          "table_name"  TEXT NOT NULL,
-          "record_id"   INTEGER NOT NULL,
-          "deleted_at"  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "deleted_by"  INTEGER
-        )`
-      );
+      // Check if table exists first
+      const existing = await this.localPrisma.$queryRaw`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='deleted_records'
+      `;
       
-      await this.localPrisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "idx_deleted_records_deleted_at"
-         ON "deleted_records"("deleted_at")`
-      );
-      
-      await this.localPrisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "idx_deleted_records_table_deleted_at"
-         ON "deleted_records"("table_name", "deleted_at")`
-      );
-      
-      console.log('✅ Table deleted_records créée/vérifiée en local');
+      if (existing.length === 0) {
+        await this.localPrisma.$executeRawUnsafe(
+          `CREATE TABLE "deleted_records" (
+            "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
+            "table_name"  TEXT NOT NULL,
+            "record_id"   INTEGER NOT NULL,
+            "deleted_at"  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "deleted_by"  INTEGER
+          )`
+        );
+        
+        await this.localPrisma.$executeRawUnsafe(
+          `CREATE INDEX "idx_deleted_records_deleted_at"
+           ON "deleted_records"("deleted_at")`
+        );
+        
+        await this.localPrisma.$executeRawUnsafe(
+          `CREATE INDEX "idx_deleted_records_table_deleted_at"
+           ON "deleted_records"("table_name", "deleted_at")`
+        );
+        
+        console.log('✅ Table deleted_records créée en local avec AUTOINCREMENT');
+      } else {
+        // Check if the existing table has AUTOINCREMENT
+        const schema = await this.localPrisma.$queryRaw`
+          SELECT sql FROM sqlite_master WHERE type='table' AND name='deleted_records'
+        `;
+        const sql = schema[0]?.sql || '';
+        if (!sql.includes('AUTOINCREMENT')) {
+          console.log('⚠️  Table deleted_records existe mais sans AUTOINCREMENT - recréation...');
+          await this.localPrisma.$executeRawUnsafe(`DROP TABLE "deleted_records"`);
+          
+          await this.localPrisma.$executeRawUnsafe(
+            `CREATE TABLE "deleted_records" (
+              "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
+              "table_name"  TEXT NOT NULL,
+              "record_id"   INTEGER NOT NULL,
+              "deleted_at"  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              "deleted_by"  INTEGER
+            )`
+          );
+          
+          await this.localPrisma.$executeRawUnsafe(
+            `CREATE INDEX "idx_deleted_records_deleted_at"
+             ON "deleted_records"("deleted_at")`
+          );
+          
+          await this.localPrisma.$executeRawUnsafe(
+            `CREATE INDEX "idx_deleted_records_table_deleted_at"
+             ON "deleted_records"("table_name", "deleted_at")`
+          );
+          
+          console.log('✅ Table deleted_records recréée avec AUTOINCREMENT');
+        } else {
+          console.log('✅ Table deleted_records existe déjà avec AUTOINCREMENT');
+        }
+      }
     } catch (e) {
       console.warn('⚠️  Erreur création table deleted_records:', e.message);
     }

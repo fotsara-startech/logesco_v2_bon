@@ -72,6 +72,7 @@ class LogescoServer {
     this.server = null;
     this.models = null;
     this.authService = null;
+    this._seedDone = false; // flag en mémoire pour éviter un double seed dans le même process
   }
 
   /**
@@ -85,6 +86,18 @@ class LogescoServer {
         prisma.utilisateur.count(),
         prisma.boutique.findFirst({ where: { estPrincipale: true } })
       ]);
+
+      // ── Fast path : DB déjà initialisée → pas de seed ────────────────────
+      // On vérifie juste que la caisse principale existe aussi
+      if (userCount > 0 && boutiquePrincipale) {
+        const caissePrincipale = await prisma.cashRegister.findFirst({
+          where: { nom: 'Caisse Principale' }
+        });
+        if (caissePrincipale) {
+          // Tout est en place — skip complet du seed
+          return;
+        }
+      }
 
       const bcrypt = require('bcryptjs');
 
