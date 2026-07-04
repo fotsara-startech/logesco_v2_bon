@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import '../controllers/inventory_getx_controller.dart';
 import '../models/stock_model.dart';
+import '../../../core/widgets/product_image_preview.dart';
 
 /// Vue de liste des stocks utilisant GetX
 class StockListGetxView extends StatefulWidget {
@@ -113,20 +114,32 @@ class _StockListViewState extends State<StockListGetxView> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isOutOfStock
-              ? Colors.red.withOpacity(0.1)
-              : isLowStock
-                  ? Colors.orange.withOpacity(0.1)
-                  : Colors.green.withOpacity(0.1),
-          child: Icon(
-            Icons.inventory_2,
-            color: isOutOfStock
-                ? Colors.red
-                : isLowStock
-                    ? Colors.orange
-                    : Colors.green,
-          ),
+        leading: Stack(
+          children: [
+            ProductImageThumbnail(
+              imageUrl: product?.imageUrl,
+              size: 48,
+              productName: product?.nom ?? '',
+            ),
+            // Indicateur de statut stock (coin bas-gauche)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: isOutOfStock
+                      ? Colors.red
+                      : isLowStock
+                          ? Colors.orange
+                          : Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+          ],
         ),
         title: Text(
           product?.nom ?? 'Produit ${stock.produitId}',

@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/services/auth_service.dart';
 import '../models/product.dart';
 import 'category_resolver_service.dart';
 
@@ -266,6 +272,48 @@ class ApiProductService extends GetxService {
     throw Exception('Erreur lors de l\'import des produits: ${response.message ?? 'Réponse invalide'}');
   }
 
+  /// Upload ou remplace l'image d'un produit
+  Future<String?> uploadProductImage(int productId, String filePath) async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) throw Exception('Token manquant');
+
+      final uri = Uri.parse('${AppConfig.currentBaseUrl}/products/$productId/image');
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+
+      final multipartFile = await http.MultipartFile.fromPath(
+        'image',
+        filePath,
+        contentType: _mimeTypeFromPath(filePath),
+      );
+      request.files.add(multipartFile);
+
+      debugPrint('📤 Upload image: uri=$uri, file=$filePath, field=${multipartFile.field}, length=${multipartFile.length}');
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      debugPrint('📥 Upload response: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = (json.decode(response.body) as Map<String, dynamic>)['data'];
+        return data?['imageUrl'] as String?;
+      }
+      throw Exception('Erreur upload image: ${response.statusCode} - ${response.body}');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Supprime l'image d'un produit
+  Future<bool> deleteProductImage(int productId) async {
+    final response = await _apiClient.delete<Map<String, dynamic>>(
+      '/products/$productId/image',
+    );
+    return response.isSuccess;
+  }
+
   /// Récupère tous les produits pour l'export
   Future<List<Product>> getAllProducts() async {
     final response = await _apiClient.get<Map<String, dynamic>>('/products/all');
@@ -276,5 +324,23 @@ class ApiProductService extends GetxService {
     }
 
     return [];
+  }
+
+  /// Détermine le MIME type à partir de l'extension du fichier
+  MediaType _mimeTypeFromPath(String filePath) {
+    final ext = filePath.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'png':
+        return MediaType('image', 'png');
+      case 'webp':
+        return MediaType('image', 'webp');
+      case 'gif':
+        return MediaType('image', 'gif');
+      default:
+        return MediaType('image', 'jpeg');
+    }
   }
 }

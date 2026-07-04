@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/product_form_controller.dart';
+import '../widgets/product_image_picker.dart';
 import '../../../shared/constants/constants.dart';
 import '../../../core/routes/app_routes.dart';
 
@@ -78,6 +79,25 @@ class ProductFormView extends StatelessWidget {
 
               _buildStatusSwitch(controller),
               const SizedBox(height: 24),
+
+              // Image du produit (mode édition uniquement)
+              Obx(() {
+                if (!controller.isEditing.value) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildSectionTitle('Image du produit'),
+                    const SizedBox(height: 16),
+                    ProductImagePicker(
+                      imageUrl: controller.currentImageUrl.value.isEmpty ? null : controller.currentImageUrl.value,
+                      isLoading: controller.isUploadingImage.value,
+                      onImagePicked: controller.uploadImage,
+                      onImageDeleted: controller.currentImageUrl.value.isNotEmpty ? controller.deleteImage : null,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              }),
 
               // Boutons d'action
               _buildActionButtons(controller),

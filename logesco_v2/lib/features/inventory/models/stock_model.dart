@@ -176,6 +176,7 @@ class Product {
   final int seuilStockMinimum;
   final bool? estActif;
   final int? stockActuel;
+  final String? imageUrl;
   final List<StockBoutique>? stocksBoutiques;
 
   Product({
@@ -185,6 +186,7 @@ class Product {
     required this.seuilStockMinimum,
     this.estActif,
     this.stockActuel,
+    this.imageUrl,
     this.stocksBoutiques,
   });
 
@@ -196,6 +198,7 @@ class Product {
       seuilStockMinimum: _safeExtractInt(json, ['seuilStockMinimum', 'seuil_stock_minimum', 'minStockLevel']),
       estActif: json['estActif'] as bool?,
       stockActuel: _safeExtractInt(json, ['stockActuel', 'stock_actuel']),
+      imageUrl: json['imageUrl'] as String?,
       stocksBoutiques: json['stocksBoutiques'] != null ? (json['stocksBoutiques'] as List).map((s) => StockBoutique.fromJson(s as Map<String, dynamic>)).toList() : null,
     );
   }

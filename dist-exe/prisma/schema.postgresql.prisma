@@ -209,6 +209,7 @@ model Produit {
   estService         Boolean                           @default(false) @map("est_service")
   remiseMaxAutorisee Float                             @default(0) @map("remise_max_autorisee")
   gestionPeremption  Boolean                           @default(false) @map("gestion_peremption")
+  imageUrl           String?                           @map("image_url")
   dateCreation       DateTime                          @default(now()) @map("date_creation")
   dateModification   DateTime                          @updatedAt @map("date_modification")
   datesPeremption    DatePeremption[]

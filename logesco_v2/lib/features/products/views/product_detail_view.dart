@@ -6,6 +6,7 @@ import '../controllers/product_detail_controller.dart';
 import '../widgets/expiration_dates_list_widget.dart';
 import '../../../shared/constants/constants.dart';
 import '../../../core/widgets/permission_widget.dart';
+import '../../../core/widgets/product_image_preview.dart';
 
 /// Vue des détails d'un produit
 class ProductDetailView extends StatelessWidget {
@@ -84,6 +85,15 @@ class ProductDetailView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Image du produit (si disponible)
+              if (product.imageUrl != null && product.imageUrl!.isNotEmpty) ...[
+                ProductDetailImage(
+                  imageUrl: product.imageUrl,
+                  productName: product.nom,
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Statut du produit
               _buildStatusBanner(product),
               const SizedBox(height: 24),

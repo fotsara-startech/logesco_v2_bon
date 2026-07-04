@@ -14,6 +14,7 @@ class Product {
   final bool estActif;
   final bool estService;
   final bool gestionPeremption;
+  final String? imageUrl;
   final DateTime dateCreation;
   final DateTime dateModification;
 
@@ -32,6 +33,7 @@ class Product {
     required this.estActif,
     this.estService = false,
     this.gestionPeremption = false,
+    this.imageUrl,
     required this.dateCreation,
     required this.dateModification,
   });
@@ -59,6 +61,7 @@ class Product {
       estActif: json['estActif'] as bool? ?? true,
       estService: json['estService'] as bool? ?? false,
       gestionPeremption: json['gestionPeremption'] as bool? ?? false,
+      imageUrl: json['imageUrl']?.toString(),
       dateCreation: _parseDateTime(json['dateCreation']),
       dateModification: _parseDateTime(json['dateModification']),
     );
@@ -81,6 +84,7 @@ class Product {
       'estActif': estActif,
       'estService': estService,
       'gestionPeremption': gestionPeremption,
+      'imageUrl': imageUrl,
       'dateCreation': dateCreation.toIso8601String(),
       'dateModification': dateModification.toIso8601String(),
     };
@@ -102,6 +106,7 @@ class Product {
     bool? estActif,
     bool? estService,
     bool? gestionPeremption,
+    String? imageUrl,
     DateTime? dateCreation,
     DateTime? dateModification,
   }) {
@@ -120,6 +125,7 @@ class Product {
       estActif: estActif ?? this.estActif,
       estService: estService ?? this.estService,
       gestionPeremption: gestionPeremption ?? this.gestionPeremption,
+      imageUrl: imageUrl ?? this.imageUrl,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

@@ -106,6 +106,7 @@ class ProduitDTO {
     this.estActif = produit.estActif;
     this.estService = produit.estService;
     this.gestionPeremption = produit.gestionPeremption || false;
+    this.imageUrl = produit.imageUrl || null;
     this.dateCreation = produit.dateCreation;
     this.dateModification = produit.dateModification;
 
@@ -148,7 +149,8 @@ class StockDTO {
         id: stock.produit.id,
         reference: stock.produit.reference,
         nom: stock.produit.nom,
-        seuilStockMinimum: stock.produit.seuilStockMinimum
+        seuilStockMinimum: stock.produit.seuilStockMinimum,
+        imageUrl: stock.produit.imageUrl || null
       };
       const seuil = stock.produit.seuilStockMinimum ?? 0;
       this.stockFaible = seuil > 0 && stock.quantiteDisponible <= seuil;

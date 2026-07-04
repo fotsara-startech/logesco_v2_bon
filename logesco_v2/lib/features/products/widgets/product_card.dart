@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/product.dart';
 import '../../../shared/constants/constants.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../core/widgets/product_image_preview.dart';
 
 /// Carte d'affichage d'un produit dans la liste
 class ProductCard extends StatelessWidget {
@@ -34,9 +35,17 @@ class ProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête avec nom et statut
+              // En-tête avec miniature image, nom et statut
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Miniature image
+                  ProductImageThumbnail(
+                    imageUrl: product.imageUrl,
+                    size: 52,
+                    productName: product.nom,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

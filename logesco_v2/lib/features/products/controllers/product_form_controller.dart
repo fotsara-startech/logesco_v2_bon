@@ -51,6 +51,10 @@ class ProductFormController extends GetxController {
   final RxBool isAutoReference = true.obs;
   final RxBool isGeneratingReference = false.obs;
 
+  // Gestion de l'image produit
+  final RxString currentImageUrl = ''.obs;
+  final RxBool isUploadingImage = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -223,6 +227,7 @@ class ProductFormController extends GetxController {
     estActif.value = product.estActif;
     estService.value = product.estService;
     gestionPeremption.value = product.gestionPeremption;
+    currentImageUrl.value = product.imageUrl ?? '';
 
     // Vérifier que la catégorie existe dans la liste avant de l'assigner
     final productCategory = product.categorie ?? '';
@@ -576,6 +581,42 @@ class ProductFormController extends GetxController {
       });
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Upload l'image du produit depuis un chemin local
+  Future<void> uploadImage(String filePath) async {
+    final productId = editingProduct.value?.id;
+    if (productId == null) return;
+    try {
+      isUploadingImage.value = true;
+      final fileName = await _productService.uploadProductImage(productId, filePath);
+      if (fileName != null) {
+        currentImageUrl.value = fileName;
+        SnackbarHelper.success('Image mise à jour');
+      }
+    } catch (e) {
+      SnackbarHelper.error('Erreur lors de l\'upload de l\'image');
+    } finally {
+      isUploadingImage.value = false;
+    }
+  }
+
+  /// Supprime l'image du produit
+  Future<void> deleteImage() async {
+    final productId = editingProduct.value?.id;
+    if (productId == null) return;
+    try {
+      isUploadingImage.value = true;
+      final ok = await _productService.deleteProductImage(productId);
+      if (ok) {
+        currentImageUrl.value = '';
+        SnackbarHelper.success('Image supprimée');
+      }
+    } catch (e) {
+      SnackbarHelper.error('Erreur lors de la suppression de l\'image');
+    } finally {
+      isUploadingImage.value = false;
     }
   }
 

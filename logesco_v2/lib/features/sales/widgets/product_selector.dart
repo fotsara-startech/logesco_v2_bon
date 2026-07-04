@@ -4,6 +4,7 @@ import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../products/controllers/product_controller.dart';
 import '../../products/models/product.dart';
 import '../controllers/sales_controller.dart';
+import '../../../core/widgets/product_image_preview.dart';
 
 class ProductSelector extends StatelessWidget {
   final Future<void> Function(Product product, int quantity) onProductSelected;
@@ -354,12 +355,10 @@ class _ProductItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: product.estActif ? (product.estService ? Colors.blue : Colors.green) : Colors.grey,
-          child: Icon(
-            product.estService ? Icons.build : Icons.inventory,
-            color: Colors.white,
-          ),
+        leading: ProductImageThumbnail(
+          imageUrl: product.imageUrl,
+          size: 48,
+          productName: product.nom,
         ),
         title: Text(
           product.nom,

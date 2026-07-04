@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/inventory_controller.dart';
 import '../models/stock_model.dart';
 import '../views/stock_detail_page.dart';
+import '../../../core/widgets/product_image_preview.dart';
 
 class StockListView extends StatefulWidget {
   const StockListView({Key? key}) : super(key: key);
@@ -142,13 +143,27 @@ class StockListItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(isOutOfStock, isLowStock),
-          child: Icon(
-            _getStatusIcon(isOutOfStock, isLowStock),
-            color: Colors.white,
-            size: 20,
-          ),
+        leading: Stack(
+          children: [
+            ProductImageThumbnail(
+              imageUrl: product?.imageUrl,
+              size: 48,
+              productName: product?.nom ?? '',
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(isOutOfStock, isLowStock),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+          ],
         ),
         title: Text(
           product?.nom ?? 'Produit inconnu',
