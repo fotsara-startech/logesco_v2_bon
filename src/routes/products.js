@@ -4,6 +4,9 @@
  */
 
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, ProduitDTO } = require('../dto');
@@ -14,6 +17,36 @@ const {
   sanitizeInput
 } = require('../utils/transformers');
 const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-service');
+
+// Configuration multer pour les images de produits
+const productImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadsDir = path.join(
+        process.env.LOGESCO_DATA_DIR || process.cwd(),
+        'uploads', 'products'
+      );
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const uniqueName = `product-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      cb(null, uniqueName);
+    }
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format non supporté. Utilisez JPEG, PNG, WebP ou GIF.'));
+    }
+  }
+});
 
 /**
  * Crée le routeur pour les produits
@@ -1001,6 +1034,113 @@ function createProductRouter(models) {
         res.status(500).json(
           BaseResponseDTO.error('Erreur lors de l\'import des produits')
         );
+      }
+    }
+  );
+
+  /**
+   * POST /products/:id/image
+   * Upload ou remplace l'image d'un produit
+   */
+  router.post('/:id/image',
+    authenticateToken(models.authService),
+    validateId,
+    (req, res, next) => {
+      productImageUpload.single('image')(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+          return res.status(400).json(BaseResponseDTO.error(`Erreur upload: ${err.message}`));
+        } else if (err) {
+          return res.status(400).json(BaseResponseDTO.error(err.message));
+        }
+        next();
+      });
+    },
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          console.log('❌ Upload image: aucun fichier reçu. req.files:', req.files, '| Content-Type:', req.headers['content-type']);
+          return res.status(400).json(BaseResponseDTO.error('Aucun fichier fourni'));
+        }
+
+        const produit = await models.prisma.produit.findUnique({
+          where: { id: parseInt(req.params.id) }
+        });
+
+        if (!produit) {
+          fs.unlinkSync(req.file.path);
+          return res.status(404).json(BaseResponseDTO.error('Produit non trouvé'));
+        }
+
+        // Supprimer l'ancienne image si elle existe
+        if (produit.imageUrl) {
+          const oldPath = path.join(
+            process.env.LOGESCO_DATA_DIR || process.cwd(),
+            'uploads', 'products', produit.imageUrl
+          );
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        const updated = await models.prisma.produit.update({
+          where: { id: parseInt(req.params.id) },
+          data: { imageUrl: req.file.filename }
+        });
+
+        // Notifier le service de sync si disponible
+        const syncService = getSyncService(req);
+        if (syncService) {
+          await syncService.logOperation('UPDATE', 'produits', updated.id, updated);
+        }
+
+        res.json(BaseResponseDTO.success(
+          { imageUrl: req.file.filename },
+          'Image produit mise à jour avec succès'
+        ));
+
+      } catch (error) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        console.error('Erreur upload image produit:', error);
+        res.status(500).json(BaseResponseDTO.error('Erreur lors de l\'upload de l\'image'));
+      }
+    }
+  );
+
+  /**
+   * DELETE /products/:id/image
+   * Supprime l'image d'un produit
+   */
+  router.delete('/:id/image',
+    authenticateToken(models.authService),
+    validateId,
+    async (req, res) => {
+      try {
+        const produit = await models.prisma.produit.findUnique({
+          where: { id: parseInt(req.params.id) }
+        });
+
+        if (!produit) {
+          return res.status(404).json(BaseResponseDTO.error('Produit non trouvé'));
+        }
+
+        if (!produit.imageUrl) {
+          return res.status(404).json(BaseResponseDTO.error('Ce produit n\'a pas d\'image'));
+        }
+
+        const imagePath = path.join(
+          process.env.LOGESCO_DATA_DIR || process.cwd(),
+          'uploads', 'products', produit.imageUrl
+        );
+        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+
+        await models.prisma.produit.update({
+          where: { id: parseInt(req.params.id) },
+          data: { imageUrl: null }
+        });
+
+        res.json(BaseResponseDTO.success(null, 'Image supprimée avec succès'));
+
+      } catch (error) {
+        console.error('Erreur suppression image produit:', error);
+        res.status(500).json(BaseResponseDTO.error('Erreur lors de la suppression de l\'image'));
       }
     }
   );
