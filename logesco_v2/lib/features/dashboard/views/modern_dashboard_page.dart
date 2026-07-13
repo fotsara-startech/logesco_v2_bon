@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../accounts/controllers/account_controller.dart';
 import '../../subscription/controllers/subscription_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/modern_stat_card.dart';
@@ -36,6 +37,13 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
     dashboardController = Get.find<DashboardController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSubscriptionNotifications();
+      // Charger les comptes clients pour le badge dettes dans le drawer
+      if (Get.isRegistered<AccountController>()) {
+        final accountCtrl = Get.find<AccountController>();
+        if (accountCtrl.comptesClients.isEmpty) {
+          accountCtrl.loadComptesClients();
+        }
+      }
     });
   }
 
@@ -174,6 +182,14 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('accounting', 'READ')) _buildMenuItem(Icons.analytics, 'menu_accounting'.tr, Colors.green, () => Get.toNamed(AppRoutes.accounting)),
                     if (_hasPermission('cash_registers', 'READ')) _buildMenuItem(Icons.account_balance, 'menu_cash_registers'.tr, Colors.amber, () => Get.toNamed(AppRoutes.cashRegisters)),
                     _buildMenuItem(Icons.history, 'menu_cash_sessions'.tr, Colors.blue, () => Get.toNamed(AppRoutes.cashSessionHistory)),
+                    if (_hasPermission('accounts', 'READ'))
+                      _buildMenuItemWithBadge(
+                        Icons.notification_important,
+                        'menu_debt_alerts'.tr,
+                        Colors.red,
+                        () => Get.toNamed(AppRoutes.debtAlerts),
+                        _buildDebtBadge(),
+                      ),
                   ]),
                   _buildMenuSection('menu_expenses'.tr, [
                     if (_hasPermission('expenses', 'READ')) _buildMenuItem(Icons.category, 'categories_title'.tr, Colors.teal, () => Get.toNamed(AppRoutes.expenseCategories)),
@@ -248,8 +264,13 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
 
                 const SizedBox(height: 24),
 
-                // Statistiques principales
+                // Vue d'ensemble (statistiques principales)
                 _buildMainStats(dashboardController),
+
+                const SizedBox(height: 24),
+
+                // Statistiques détaillées des ventes
+                _buildSalesStats(dashboardController),
 
                 const SizedBox(height: 24),
 
@@ -299,11 +320,6 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     );
                   },
                 ),
-
-                const SizedBox(height: 24),
-
-                // Statistiques détaillées des ventes
-                _buildSalesStats(dashboardController),
               ],
             ),
           ),
@@ -360,6 +376,26 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
         title,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
+      onTap: onTap,
+      dense: true,
+    );
+  }
+
+  Widget _buildMenuItemWithBadge(IconData icon, String title, Color color, VoidCallback onTap, Widget badge) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      trailing: badge,
       onTap: onTap,
       dense: true,
     );
@@ -563,6 +599,20 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                   Colors.green,
                   () => Get.toNamed(AppRoutes.createSale),
                 ),
+              if (_hasPermission('sales', 'CREATE'))
+                _buildQuickActionCard(
+                  Icons.description_outlined,
+                  'proforma_new'.tr,
+                  Colors.cyan,
+                  () => Get.toNamed(AppRoutes.proforma),
+                ),
+              if (_hasPermission('financial_movements', 'CREATE'))
+                _buildQuickActionCard(
+                  Icons.account_balance_wallet,
+                  'dashboard_financial_movement'.tr,
+                  Colors.pink,
+                  () => Get.toNamed(AppRoutes.createFinancialMovement),
+                ),
               if (_hasPermission('productS', 'CREATE'))
                 _buildQuickActionCard(
                   Icons.add_box,
@@ -583,13 +633,6 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                   'dashboard_new_order'.tr,
                   Colors.purple,
                   () => Get.toNamed(AppRoutes.createProcurement),
-                ),
-              if (_hasPermission('financial_movements', 'CREATE'))
-                _buildQuickActionCard(
-                  Icons.account_balance_wallet,
-                  'dashboard_financial_movement'.tr,
-                  Colors.pink,
-                  () => Get.toNamed(AppRoutes.createFinancialMovement),
                 ),
               if (_hasPermission('accounting', 'READ'))
                 _buildQuickActionCard(
@@ -845,9 +888,36 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
       final permissionService = Get.find<PermissionService>();
       return permissionService.hasPermission(module, privilege);
     } catch (e) {
-      // Si le service n'est pas disponible, refuser l'accès par sécurité
       print('⚠️ PermissionService non disponible pour $module.$privilege');
       return false;
+    }
+  }
+
+  /// Badge affichant le nombre de clients avec une dette non réglée
+  Widget _buildDebtBadge() {
+    try {
+      final accountCtrl = Get.find<AccountController>();
+      return Obx(() {
+        final count = accountCtrl.comptesClients.where((c) => c.soldeActuel != 0).length;
+        if (count == 0) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '$count',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      });
+    } catch (_) {
+      return const SizedBox.shrink();
     }
   }
 }

@@ -66,7 +66,7 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,25 +76,22 @@ class DashboardPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Accès rapide à l'impression
-            _buildQuickAccessSection(authController),
-
-            const SizedBox(height: 16),
-
-            // Résumé des dépenses du jour
+            // Statistiques de vente (résumé financier du jour + tendances hebdomadaires)
             _buildDailyExpensesSummary(authController),
 
             const SizedBox(height: 16),
 
-            // Résumé hebdomadaire des finances
             _buildWeeklyFinancialSummary(authController),
+
+            const SizedBox(height: 16),
+
+            // Accès rapide
+            _buildQuickAccessSection(authController),
 
             const SizedBox(height: 24),
 
             // Grille des modules principaux
-            Expanded(
-              child: _buildModulesGrid(context),
-            ),
+            _buildModulesGrid(context),
           ],
         ),
       ),
@@ -319,6 +316,24 @@ class DashboardPage extends StatelessWidget {
       const SizedBox(width: 12),
       Expanded(
         child: _buildQuickActionButton(
+          icon: Icons.description_outlined,
+          label: 'Facture proforma',
+          color: Colors.cyan,
+          onTap: () => Get.toNamed(AppRoutes.proforma),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _buildQuickActionButton(
+          icon: Icons.account_balance_wallet,
+          label: 'Nouvelle dépense',
+          color: Colors.pink,
+          onTap: () => Get.toNamed(AppRoutes.createFinancialMovement),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _buildQuickActionButton(
           icon: Icons.print,
           label: 'Réimprimer reçu',
           color: Colors.deepPurple,
@@ -334,35 +349,7 @@ class DashboardPage extends StatelessWidget {
           onTap: () => Get.toNamed(AppRoutes.inventory),
         ),
       ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _buildQuickActionButton(
-          icon: Icons.category,
-          label: 'Catégories',
-          color: Colors.purple,
-          onTap: () {
-            // print('');
-            // print('');
-            Get.toNamed(AppRoutes.categories);
-          },
-        ),
-      ),
     ];
-
-    // Ajouter l'accès rapide aux mouvements financiers si l'utilisateur a les permissions
-    if (_hasPermissionFallback(authController, 'financial.view')) {
-      actions.addAll([
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionButton(
-            icon: Icons.account_balance_wallet,
-            label: 'Nouvelle dépense',
-            color: Colors.pink,
-            onTap: () => Get.toNamed(AppRoutes.createFinancialMovement),
-          ),
-        ),
-      ]);
-    }
 
     // Ajouter l'accès rapide aux paramètres d'entreprise pour les administrateurs
     if (_canManageCompanySettings(authController)) {
@@ -380,20 +367,11 @@ class DashboardPage extends StatelessWidget {
       ]);
     }
 
-    // Ajouter le test des rôles en mode développement
-    actions.addAll([
-      const SizedBox(width: 12),
-      Expanded(
-        child: _buildQuickActionButton(
-          icon: Icons.security,
-          label: 'Test Rôles',
-          color: Colors.red,
-          onTap: () => Get.toNamed(AppRoutes.roleTest),
-        ),
-      ),
-    ]);
-
-    return Row(children: actions);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: actions.where((w) => w is! SizedBox).map((w) => SizedBox(width: 100, child: w is Expanded ? (w).child : w)).toList(),
+    );
   }
 
   Widget _buildQuickActionButton({
@@ -602,6 +580,8 @@ class DashboardPage extends StatelessWidget {
     }).toList();
 
     return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: _getCrossAxisCount(context),
         childAspectRatio: 1.2,

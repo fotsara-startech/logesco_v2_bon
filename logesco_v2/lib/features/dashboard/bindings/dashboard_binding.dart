@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import '../../financial_movements/services/movement_report_service.dart';
 import '../controllers/dashboard_stats_controller.dart';
+import '../../accounts/controllers/account_controller.dart';
+import '../../accounts/services/account_service.dart';
+import '../../accounts/services/account_api_service.dart';
 import '../../../core/services/auth_service.dart';
 
 /// Binding pour les dépendances du dashboard
@@ -19,5 +22,9 @@ class DashboardBinding extends Bindings {
       ),
       fenix: true,
     );
+
+    // Service et contrôleur des comptes — nécessaire pour le badge dettes dans le drawer
+    Get.lazyPut<AccountService>(() => AccountApiService(), fenix: true);
+    Get.lazyPut<AccountController>(() => AccountController(), fenix: true);
   }
 }

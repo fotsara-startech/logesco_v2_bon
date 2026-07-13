@@ -14,6 +14,7 @@ import '../../features/products/views/categories_page.dart';
 import '../../features/products/bindings/category_binding.dart';
 import '../../features/products/bindings/product_binding.dart';
 import '../../features/accounts/views/accounts_list_view.dart';
+import '../../features/accounts/views/debt_alerts_page.dart';
 import '../../features/accounts/views/account_detail_view.dart';
 import '../../features/accounts/bindings/account_binding.dart';
 import '../../features/dashboard/bindings/dashboard_binding.dart';
@@ -152,6 +153,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.accounts,
       page: () => const AccountsListView(),
+      binding: AccountBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.debtAlerts,
+      page: () => const DebtAlertsPage(),
       binding: AccountBinding(),
     ),
     GetPage(

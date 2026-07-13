@@ -5,6 +5,7 @@ import '../controllers/sales_controller.dart';
 import '../widgets/sales_list_item.dart';
 import '../widgets/sales_table_view.dart';
 import '../widgets/sales_details_view.dart';
+import '../widgets/sales_grid_view.dart';
 import '../widgets/sales_filters.dart';
 import '../widgets/sales_search_bar.dart';
 import 'create_sale_page.dart';
@@ -60,6 +61,9 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
             case 'details':
               viewLabel = ' - ${'sales_details_view'.tr}';
               break;
+            case 'grid':
+              viewLabel = ' - ${'sales_grid_view'.tr}';
+              break;
             default:
               viewLabel = '';
           }
@@ -88,7 +92,9 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                             ? 'table'
                             : controller.viewMode == 'table'
                                 ? 'details'
-                                : 'list';
+                                : controller.viewMode == 'details'
+                                    ? 'grid'
+                                    : 'list';
                         controller.setViewMode(next);
                       }
                       if (value == 'refresh') controller.refreshStocks();
@@ -116,12 +122,16 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                       ? 'table'
                       : controller.viewMode == 'table'
                           ? 'details'
-                          : 'list';
+                          : controller.viewMode == 'details'
+                              ? 'grid'
+                              : 'list';
                   final icon = controller.viewMode == 'list'
                       ? Icons.table_chart
                       : controller.viewMode == 'table'
                           ? Icons.list_alt
-                          : Icons.view_list;
+                          : controller.viewMode == 'details'
+                              ? Icons.grid_view
+                              : Icons.view_list;
                   return IconButton(onPressed: () => controller.setViewMode(next), icon: Icon(icon));
                 }),
                 IconButton(onPressed: () async => await controller.refreshStocks(), icon: const Icon(Icons.refresh)),
@@ -208,6 +218,15 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
 
                 if (controller.viewMode == 'details') {
                   return SalesDetailsView(
+                    sales: controller.sales,
+                    onTap: (sale) => _showSaleDetails(context, sale),
+                    hasMoreData: controller.hasMoreData,
+                    onLoadMore: () => controller.loadMoreSales(),
+                  );
+                }
+
+                if (controller.viewMode == 'grid') {
+                  return SalesGridView(
                     sales: controller.sales,
                     onTap: (sale) => _showSaleDetails(context, sale),
                     hasMoreData: controller.hasMoreData,

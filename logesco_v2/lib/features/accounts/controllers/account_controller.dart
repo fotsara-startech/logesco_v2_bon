@@ -9,6 +9,22 @@ import '../services/account_service.dart';
 class AccountController extends GetxController {
   final AccountService _accountService = Get.find<AccountService>();
 
+  // ── helper snackbar sécurisé (évite "No Overlay" pendant onInit) ──────────
+  void _safeSnackbar(String title, String message, {bool isError = true}) {
+    // Différer l'affichage après le premier frame pour s'assurer que l'Overlay est monté
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<GetMaterialController>() || Get.context != null) {
+        Get.snackbar(
+          title,
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: isError ? Colors.red.shade100 : Colors.green.shade100,
+          colorText: isError ? Colors.red.shade800 : Colors.green.shade800,
+        );
+      }
+    });
+  }
+
   // Observables pour les comptes clients
   final RxList<CompteClient> comptesClients = <CompteClient>[].obs;
   final RxBool isLoadingClients = false.obs;
@@ -109,13 +125,7 @@ class AccountController extends GetxController {
         errorMessageClients.value = 'Erreur lors du chargement des comptes clients';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessageClients.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      _safeSnackbar('Erreur', errorMessageClients.value);
     } finally {
       isLoadingClients.value = false;
       isLoadingMoreClients.value = false;
@@ -166,13 +176,7 @@ class AccountController extends GetxController {
         errorMessageFournisseurs.value = 'Erreur lors du chargement des comptes fournisseurs';
       }
 
-      Get.snackbar(
-        'Erreur',
-        errorMessageFournisseurs.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      _safeSnackbar('Erreur', errorMessageFournisseurs.value);
     } finally {
       isLoadingFournisseurs.value = false;
       isLoadingMoreFournisseurs.value = false;
@@ -270,26 +274,11 @@ class AccountController extends GetxController {
         comptesClients[index] = compteUpdated;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Transaction client créée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      _safeSnackbar('Succès', 'Transaction client créée avec succès', isError: false);
     } catch (e) {
       String message = 'Erreur lors de la création de la transaction';
-      if (e is ApiException) {
-        message = e.message;
-      }
-
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (e is ApiException) message = e.message;
+      _safeSnackbar('Erreur', message);
       rethrow;
     }
   }
@@ -311,26 +300,11 @@ class AccountController extends GetxController {
         comptesFournisseurs[index] = compteUpdated;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Transaction fournisseur créée avec succès',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      _safeSnackbar('Succès', 'Transaction fournisseur créée avec succès', isError: false);
     } catch (e) {
       String message = 'Erreur lors de la création de la transaction';
-      if (e is ApiException) {
-        message = e.message;
-      }
-
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (e is ApiException) message = e.message;
+      _safeSnackbar('Erreur', message);
       rethrow;
     }
   }
@@ -353,26 +327,11 @@ class AccountController extends GetxController {
         comptesClients[index] = compteUpdated;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Limite de crédit client mise à jour',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      _safeSnackbar('Succès', 'Limite de crédit client mise à jour', isError: false);
     } catch (e) {
       String message = 'Erreur lors de la mise à jour de la limite de crédit';
-      if (e is ApiException) {
-        message = e.message;
-      }
-
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (e is ApiException) message = e.message;
+      _safeSnackbar('Erreur', message);
       rethrow;
     }
   }
@@ -395,26 +354,11 @@ class AccountController extends GetxController {
         comptesFournisseurs[index] = compteUpdated;
       }
 
-      Get.snackbar(
-        'Succès',
-        'Limite de crédit fournisseur mise à jour',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade800,
-      );
+      _safeSnackbar('Succès', 'Limite de crédit fournisseur mise à jour', isError: false);
     } catch (e) {
       String message = 'Erreur lors de la mise à jour de la limite de crédit';
-      if (e is ApiException) {
-        message = e.message;
-      }
-
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (e is ApiException) message = e.message;
+      _safeSnackbar('Erreur', message);
       rethrow;
     }
   }
@@ -462,17 +406,8 @@ class AccountController extends GetxController {
       currentPageTransactions.value++;
     } catch (e) {
       String message = 'Erreur lors du chargement des transactions';
-      if (e is ApiException) {
-        message = e.message;
-      }
-
-      Get.snackbar(
-        'Erreur',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade800,
-      );
+      if (e is ApiException) message = e.message;
+      _safeSnackbar('Erreur', message);
     } finally {
       isLoadingTransactions.value = false;
       isLoadingMoreTransactions.value = false;

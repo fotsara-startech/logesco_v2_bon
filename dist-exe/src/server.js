@@ -88,7 +88,7 @@ class LogescoServer {
       ]);
 
       // ── Fast path : DB déjà initialisée → pas de seed ────────────────────
-      // On vérifie juste que la caisse principale existe aussi
+      // On vérifie que la boutique principale ET la caisse existent
       if (userCount > 0 && boutiquePrincipale) {
         const caissePrincipale = await prisma.cashRegister.findFirst({
           where: { nom: 'Caisse Principale' }
@@ -98,6 +98,7 @@ class LogescoServer {
           return;
         }
       }
+      // Si boutique principale manquante (mise à jour depuis ancienne version) → continuer
 
       const bcrypt = require('bcryptjs');
 

@@ -300,7 +300,7 @@ class InventoryService {
         throw Exception('Session expirée. Veuillez vous reconnecter.');
       } else {
         print('❌ ERREUR API: Status ${response.statusCode}');
-        print('   - Response: ${response.body.substring(0, 200)}');
+        print('   - Response: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Erreur lors de la récupération des stocks');
       }

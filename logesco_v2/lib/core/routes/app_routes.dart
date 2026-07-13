@@ -19,6 +19,9 @@ class AppRoutes {
   static const String inventory = '/inventory';
   static const String accounts = '/accounts';
 
+  // Alertes dettes clients
+  static const String debtAlerts = '/accounts/debt-alerts';
+
   // Routes de détail
   static const String productDetail = '/products/:id';
   static const String supplierDetail = '/suppliers/:id';
