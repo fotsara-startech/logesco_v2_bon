@@ -567,7 +567,8 @@ function createCashSessionsRouter({ prisma, authService, syncService }) {
         // Calculer les mouvements financiers (dépenses) en utilisant sessionId
         const mouvementsFinanciers = await prisma.financialMovement.aggregate({
           where: {
-            sessionId: session.id
+            sessionId: session.id,
+            statut: { not: 'annule' }
           },
           _sum: {
             montant: true

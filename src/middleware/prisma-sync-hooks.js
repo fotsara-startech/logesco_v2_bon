@@ -70,7 +70,7 @@ const SYNC_TABLES = {
     table: 'financial_movements',
     columns: [
       'id', 'reference', 'session_id', 'boutique_id', 'montant', 'categorie_id',
-      'description', 'date', 'utilisateur_id', 'notes', 'date_modification'
+      'description', 'date', 'utilisateur_id', 'notes', 'statut', 'date_modification'
     ]
   }
 };
@@ -119,17 +119,29 @@ function prepareDataForSync(modelName, data, columns) {
  * Synchronise un enregistrement vers Neon (ASYNCHRONE - ne bloque pas)
  * Utilise setImmediate pour exécuter après la transaction
  */
-function syncRecord(modelName, operation, recordId, prisma) {
+function syncRecord(modelName, operation, record, prisma) {
   const syncConfig = SYNC_TABLES[modelName];
   if (!syncConfig) return;
+
+  const recordId = (record && typeof record === 'object') ? record.id : record;
+  if (!recordId) return;
 
   setImmediate(async () => {
     try {
       if (operation !== 'DELETE') {
-        // Récupérer les données complètes depuis la BD
-        const fullData = await prisma[modelName].findUnique({
-          where: { id: recordId }
-        });
+        // NE PAS relire la ligne en base.
+        //
+        // Ce callback peut s'exécuter AVANT le commit de la transaction qui
+        // vient d'écrire : une relecture renverrait alors la valeur d'AVANT
+        // l'écriture. Cette valeur périmée était poussée vers Neon juste après
+        // la bonne, l'écrasait, et redescendait en local au pull suivant —
+        // annulant silencieusement la modification (stock restauré puis reperdu).
+        //
+        // La valeur retournée par l'écriture est déjà la valeur finale.
+        let fullData = (record && typeof record === 'object') ? record : null;
+        if (!fullData) {
+          fullData = await prisma[modelName].findUnique({ where: { id: recordId } });
+        }
 
         if (fullData) {
           const syncData = prepareDataForSync(modelName, fullData, syncConfig.columns);
@@ -187,21 +199,21 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('mouvementStock', 'INSERT', result.id, prisma);
+              syncRecord('mouvementStock', 'INSERT', result, prisma);
             }
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('mouvementStock', 'UPDATE', result.id, prisma);
+              syncRecord('mouvementStock', 'UPDATE', result, prisma);
             }
             return result;
           },
           async delete({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('mouvementStock', 'DELETE', result.id, prisma);
+              syncRecord('mouvementStock', 'DELETE', result, prisma);
             }
             return result;
           }
@@ -211,28 +223,28 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stockBoutique', 'INSERT', result.id, prisma);
+              syncRecord('stockBoutique', 'INSERT', result, prisma);
             }
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stockBoutique', 'UPDATE', result.id, prisma);
+              syncRecord('stockBoutique', 'UPDATE', result, prisma);
             }
             return result;
           },
           async upsert({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stockBoutique', 'UPDATE', result.id, prisma);
+              syncRecord('stockBoutique', 'UPDATE', result, prisma);
             }
             return result;
           },
           async delete({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stockBoutique', 'DELETE', result.id, prisma);
+              syncRecord('stockBoutique', 'DELETE', result, prisma);
             }
             return result;
           }
@@ -242,28 +254,28 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stock', 'INSERT', result.id, prisma);
+              syncRecord('stock', 'INSERT', result, prisma);
             }
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stock', 'UPDATE', result.id, prisma);
+              syncRecord('stock', 'UPDATE', result, prisma);
             }
             return result;
           },
           async upsert({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stock', 'UPDATE', result.id, prisma);
+              syncRecord('stock', 'UPDATE', result, prisma);
             }
             return result;
           },
           async delete({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('stock', 'DELETE', result.id, prisma);
+              syncRecord('stock', 'DELETE', result, prisma);
             }
             return result;
           }
@@ -273,21 +285,21 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('historiquePrixAchat', 'INSERT', result.id, prisma);
+              syncRecord('historiquePrixAchat', 'INSERT', result, prisma);
             }
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('historiquePrixAchat', 'UPDATE', result.id, prisma);
+              syncRecord('historiquePrixAchat', 'UPDATE', result, prisma);
             }
             return result;
           },
           async delete({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('historiquePrixAchat', 'DELETE', result.id, prisma);
+              syncRecord('historiquePrixAchat', 'DELETE', result, prisma);
             }
             return result;
           }
@@ -297,14 +309,14 @@ function setupPrismaSyncHooks(prisma) {
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('produit', 'UPDATE', result.id, prisma);
+              syncRecord('produit', 'UPDATE', result, prisma);
             }
             return result;
           },
           async upsert({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('produit', 'UPDATE', result.id, prisma);
+              syncRecord('produit', 'UPDATE', result, prisma);
             }
             return result;
           }
@@ -314,7 +326,7 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('commandeApprovisionnement', 'INSERT', result.id, prisma);
+              syncRecord('commandeApprovisionnement', 'INSERT', result, prisma);
               // Enqueuer aussi les détails créés dans la relation imbriquée
               setImmediate(async () => {
                 try {
@@ -336,7 +348,7 @@ function setupPrismaSyncHooks(prisma) {
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('commandeApprovisionnement', 'UPDATE', result.id, prisma);
+              syncRecord('commandeApprovisionnement', 'UPDATE', result, prisma);
             }
             return result;
           }
@@ -346,21 +358,21 @@ function setupPrismaSyncHooks(prisma) {
           async create({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('detailCommandeApprovisionnement', 'INSERT', result.id, prisma);
+              syncRecord('detailCommandeApprovisionnement', 'INSERT', result, prisma);
             }
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('detailCommandeApprovisionnement', 'UPDATE', result.id, prisma);
+              syncRecord('detailCommandeApprovisionnement', 'UPDATE', result, prisma);
             }
             return result;
           },
           async delete({ args, query }) {
             const result = await query(args);
             if (result?.id) {
-              syncRecord('detailCommandeApprovisionnement', 'DELETE', result.id, prisma);
+              syncRecord('detailCommandeApprovisionnement', 'DELETE', result, prisma);
             }
             return result;
           }
@@ -369,17 +381,17 @@ function setupPrismaSyncHooks(prisma) {
         movementCategory: {
           async create({ args, query }) {
             const result = await query(args);
-            if (result?.id) syncRecord('movementCategory', 'INSERT', result.id, prisma);
+            if (result?.id) syncRecord('movementCategory', 'INSERT', result, prisma);
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
-            if (result?.id) syncRecord('movementCategory', 'UPDATE', result.id, prisma);
+            if (result?.id) syncRecord('movementCategory', 'UPDATE', result, prisma);
             return result;
           },
           async upsert({ args, query }) {
             const result = await query(args);
-            if (result?.id) syncRecord('movementCategory', 'UPDATE', result.id, prisma);
+            if (result?.id) syncRecord('movementCategory', 'UPDATE', result, prisma);
             return result;
           }
         },
@@ -387,12 +399,12 @@ function setupPrismaSyncHooks(prisma) {
         financialMovement: {
           async create({ args, query }) {
             const result = await query(args);
-            if (result?.id) syncRecord('financialMovement', 'INSERT', result.id, prisma);
+            if (result?.id) syncRecord('financialMovement', 'INSERT', result, prisma);
             return result;
           },
           async update({ args, query }) {
             const result = await query(args);
-            if (result?.id) syncRecord('financialMovement', 'UPDATE', result.id, prisma);
+            if (result?.id) syncRecord('financialMovement', 'UPDATE', result, prisma);
             return result;
           }
         }

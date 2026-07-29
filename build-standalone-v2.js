@@ -112,6 +112,37 @@ console.log('✓ Fichier .env.example créé');
 });
 console.log('✓ Dossiers créés');
 
+// Étape 7: Créer une base de données SQLite vide avec le schéma
+console.log('\n🗄️  Création d\'une base de données template...');
+try {
+  // Générer une base de données vide avec le schéma
+  const tempDbPath = path.join(__dirname, 'database', 'logesco.db');
+  const distDbPath = path.join(distPath, 'database', 'logesco_template.db');
+  
+  if (fs.existsSync(tempDbPath)) {
+    // Copier la base actuelle comme template
+    fs.copyFileSync(tempDbPath, distDbPath);
+    console.log('✓ Base de données template créée depuis la base existante');
+  } else {
+    // Créer une nouvelle base avec le schéma
+    const { execSync } = require('child_process');
+    const tempEnv = `DATABASE_URL=file:${distDbPath.replace(/\\/g, '/')}`;
+    
+    try {
+      execSync(`npx prisma db push --skip-generate --accept-data-loss`, {
+        cwd: __dirname,
+        env: { ...process.env, DATABASE_URL: `file:${distDbPath.replace(/\\/g, '/')}` },
+        stdio: 'pipe'
+      });
+      console.log('✓ Base de données template créée avec le schéma');
+    } catch (err) {
+      console.warn('⚠️  Impossible de créer la base template, elle sera créée au premier démarrage');
+    }
+  }
+} catch (err) {
+  console.warn('⚠️  Erreur création base template:', err.message);
+}
+
 // Créer un README
 const readmeContent = `# LOGESCO Backend Standalone
 

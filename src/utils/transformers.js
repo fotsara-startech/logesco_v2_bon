@@ -3,6 +3,32 @@
  * Fonctions helper pour convertir et formater les données
  */
 
+const installation = require('./installation');
+
+/**
+ * Garantit l'unicité d'un numéro de document.
+ *
+ * Les numéros sont horodatés à la seconde : deux ventes encaissées dans la
+ * même seconde produiraient le même numéro, ce qui viole la contrainte UNIQUE
+ * et fait échouer la vente côté caisse. On suffixe donc les répétitions.
+ *
+ * Le premier usage d'un numéro le renvoie inchangé : le format habituel est
+ * conservé, seul le doublon est discriminé (…-2, …-3).
+ */
+const _numerosEmis = new Map();
+
+function ensureUniqueNumber(base) {
+  const rang = (_numerosEmis.get(base) || 0) + 1;
+  _numerosEmis.set(base, rang);
+
+  // Borne mémoire : on ne garde que les numéros récents
+  if (_numerosEmis.size > 500) {
+    _numerosEmis.delete(_numerosEmis.keys().next().value);
+  }
+
+  return rang === 1 ? base : `${base}-${rang}`;
+}
+
 /**
  * Transforme les paramètres de requête en options Prisma
  * @param {Object} query - Paramètres de requête
@@ -270,7 +296,9 @@ function generateSaleNumber() {
                String(now.getMinutes()).padStart(2, '0') + 
                String(now.getSeconds()).padStart(2, '0');
   
-  return `VTE-${year}${month}${day}-${time}`;
+  // Suffixe de poste : deux caisses qui encaissent dans la même seconde
+  // produiraient sinon le même numéro (contrainte UNIQUE en base).
+  return ensureUniqueNumber(`VTE-${year}${month}${day}-${time}${installation.documentSuffix()}`);
 }
 
 /**
@@ -286,7 +314,7 @@ function generateOrderNumber() {
                String(now.getMinutes()).padStart(2, '0') + 
                String(now.getSeconds()).padStart(2, '0');
   
-  return `CMD-${year}${month}${day}-${time}`;
+  return ensureUniqueNumber(`CMD-${year}${month}${day}-${time}${installation.documentSuffix()}`);
 }
 
 /**
@@ -313,8 +341,11 @@ async function generateReceiptNumber(prisma) {
     }
   });
   
+  // Le compteur est local au poste : le suffixe évite que deux postes
+  // émettent le même numéro de reçu le même jour. ensureUniqueNumber couvre
+  // la course entre deux impressions simultanées (même valeur de count).
   const sequence = String(count + 1).padStart(4, '0');
-  return `RCU-${year}${month}${day}-${sequence}`;
+  return ensureUniqueNumber(`RCU-${year}${month}${day}-${sequence}${installation.documentSuffix()}`);
 }
 
 /**

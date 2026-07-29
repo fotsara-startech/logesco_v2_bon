@@ -59,15 +59,21 @@ function createSyncRouter({ authService }) {
         ? Number(failed[0].count)
         : (failed[0]?.count || 0);
 
+      // Lignes reçues de Neon mais non appliquées (conflits, dépendances)
+      const pullIssues = await syncService.getPullIssues();
+
       res.json({
         success: true,
         data: {
           mode: status.mode,
           cloudEnabled: status.cloudEnabled,
           cloudAvailable: status.cloudAvailable,
+          installationId: status.installationId,
           pendingCount: totalPending,
           pendingByTable,
           failedCount,
+          pullIssues,
+          pullIssuesCount: pullIssues.reduce((n, i) => n + i.enAttente, 0),
           lastSync: new Date().toISOString(),
         }
       });

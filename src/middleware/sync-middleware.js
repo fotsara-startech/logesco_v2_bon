@@ -10,6 +10,10 @@ const syncService = require('../services/sync-service');
 const ROUTE_MODEL_MAP = {
   '/sales':               {
     table: 'ventes', model: 'vente',
+    // DELETE /sales/:id est une ANNULATION (statut='annulee'), pas une
+    // suppression de ligne. La route s'en charge elle-même : le middleware ne
+    // doit surtout pas émettre un DELETE, qui effacerait la vente de Neon.
+    softDelete: true,
     allowedColumns: [
       'id','numeroVente','clientId','vendeurId','sessionId','boutiqueId',
       'dateVente','sousTotal','montantRemise','montantTva','tauxTva',
@@ -27,7 +31,7 @@ const ROUTE_MODEL_MAP = {
   '/customers':           { 
     table: 'clients', model: 'client',
     allowedColumns: [
-      'id','nom','prenom','telephone','email','adresse',
+      'id','nom','prenom','telephone','email','adresse','nui','rccm',
       'date_creation','date_modification'
     ]
   },
@@ -66,7 +70,7 @@ const ROUTE_MODEL_MAP = {
     table: 'financial_movements', model: 'financialMovement',
     allowedColumns: [
       'id','reference','sessionId','boutiqueId','montant','categorieId',
-      'description','date','utilisateurId','notes','dateCreation','dateModification'
+      'description','date','utilisateurId','notes','statut','dateCreation','dateModification'
     ]
   },
   '/categories':          { 
@@ -174,6 +178,18 @@ function syncMiddleware(prisma) {
         const responseData = Array.isArray(body.data) ? body.data[0] : body.data;
         const recordId = responseData?.id;
         if (!recordId) return;
+
+        // Une suppression n'a plus de ligne à relire en base : seul l'id compte.
+        // Sans ce court-circuit, les tables en fetchFromDb tentaient un
+        // findUnique sur un enregistrement déjà supprimé et abandonnaient
+        // silencieusement — la suppression n'atteignait jamais Neon.
+        if (operation === 'DELETE') {
+          if (config.softDelete) return; // annulation logique : gérée par la route
+          syncService.enqueue(config.table, 'DELETE', { id: recordId }).catch(e => {
+            console.warn(`⚠️  Erreur sync DELETE ${config.table}:`, e.message);
+          });
+          return;
+        }
 
         // Si fetchFromDb est activé, récupérer les données directement depuis la BD locale
         if (config.fetchFromDb && prisma) {

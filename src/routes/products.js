@@ -11,6 +11,7 @@ const { validate, validateId, validatePagination } = require('../middleware/vali
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, ProduitDTO } = require('../dto');
 const { produitSchemas } = require('../validation/schemas');
+const logger = require('../utils/logger');
 const {
   buildProductSearchConditions,
   buildPrismaQuery,
@@ -103,7 +104,8 @@ function createProductRouter(models) {
         res.json(response);
 
       } catch (error) {
-        console.error('Erreur liste produits:', error);
+        logger.error('❌ [Products GET] Erreur liste produits', { error: error.message, stack: error.stack });
+        console.error('❌ [Products GET] Erreur liste produits:', error);
         res.status(500).json(
           BaseResponseDTO.error('Erreur lors de la récupération des produits')
         );

@@ -302,11 +302,18 @@ class FinancialMovementService {
         endDate,
         minAmount,
         maxAmount,
-        utilisateurId
+        utilisateurId,
+        includeAnnules = false
       } = options;
 
       // Construction des filtres
       const where = {};
+
+      // Un mouvement annulé est conservé pour la piste d'audit mais ne doit
+      // plus apparaître dans les listes/rapports par défaut.
+      if (!includeAnnules) {
+        where.statut = { not: 'annule' };
+      }
 
       // Filtre par boutique
       if (boutiqueId) {
@@ -519,23 +526,128 @@ class FinancialMovementService {
    * @param {number} id - ID du mouvement
    * @returns {Promise<boolean>} Succès de la suppression
    */
-  async deleteMovement(id) {
-    try {
-      // Vérifier que le mouvement existe
-      const existing = await this.getMovementById(id);
+  /**
+   * Annule un mouvement financier par contre-passation.
+   *
+   * On ne supprime jamais un mouvement qui a touché la caisse : sa disparition
+   * laisserait le solde attendu amputé sans aucune trace explicative, et
+   * l'écart constaté à la clôture deviendrait injustifiable.
+   *
+   * La correction est imputée à la session OUVERTE au moment de l'annulation,
+   * jamais à celle d'origine : une session clôturée a déjà été rapprochée et
+   * validée, la modifier après coup reviendrait à falsifier un état arrêté.
+   *
+   * @param {number} id - ID du mouvement à annuler
+   * @param {number} utilisateurId - Auteur de l'annulation
+   */
+  async cancelMovement(id, utilisateurId = null) {
+    const mouvementId = parseInt(id);
+    const existing = await this.getMovementById(mouvementId);
 
-      // Supprimer le mouvement (les attachments seront supprimés en cascade)
-      await this.prisma.financialMovement.delete({
-        where: { id: parseInt(id) }
+    if (existing.statut === 'annule') {
+      const err = new Error('Ce mouvement est déjà annulé');
+      err.code = 'DEJA_ANNULE';
+      throw err;
+    }
+
+    const montant = parseFloat(existing.montant);
+    const auteur = utilisateurId || existing.utilisateurId;
+    const impacteLaCaisse = !!existing.sessionId && montant !== 0;
+
+    // Session ouverte de la boutique concernée : c'est elle qui portera la correction
+    let sessionCorrection = null;
+    if (impacteLaCaisse) {
+      const where = { isActive: true, dateFermeture: null };
+      if (existing.boutiqueId) where.boutiqueId = existing.boutiqueId;
+      sessionCorrection = await this.prisma.cashSession.findFirst({
+        where, include: { caisse: true }, orderBy: { id: 'desc' }
       });
 
-      console.log(`✅ Mouvement financier supprimé: ${existing.reference}`);
-      return true;
-
-    } catch (error) {
-      console.error('❌ Erreur lors de la suppression du mouvement:', error.message);
-      throw error;
+      if (!sessionCorrection) {
+        const err = new Error(
+          'Aucune caisse ouverte : ouvrez une session pour enregistrer la correction de ce mouvement'
+        );
+        err.code = 'AUCUNE_SESSION_OUVERTE';
+        throw err;
+      }
     }
+
+    const resultat = await this.prisma.$transaction(async (tx) => {
+      const mouvementAnnule = await tx.financialMovement.update({
+        where: { id: mouvementId },
+        data: {
+          statut: 'annule',
+          notes: [existing.notes, `Annulé le ${new Date().toLocaleString('fr-FR')}`]
+            .filter(Boolean).join(' | '),
+        }
+      });
+
+      if (!impacteLaCaisse) return { mouvementAnnule, contrePassation: null, session: null };
+
+      // Contre-passation : montant inverse de la dépense d'origine
+      const contrePassation = await tx.cashMovement.create({
+        data: {
+          caisseId: sessionCorrection.caisseId,
+          sessionId: sessionCorrection.id,
+          boutiqueId: sessionCorrection.boutiqueId || existing.boutiqueId || null,
+          type: 'annulation_depense',
+          montant: montant, // positif : l'argent revient en caisse
+          description: `Annulation dépense ${existing.reference}`,
+          utilisateurId: auteur,
+          dateCreation: new Date(),
+        }
+      });
+
+      const soldeCourant = sessionCorrection.soldeAttendu != null
+        ? parseFloat(sessionCorrection.soldeAttendu)
+        : parseFloat(sessionCorrection.soldeOuverture);
+
+      const sessionMaj = await tx.cashSession.update({
+        where: { id: sessionCorrection.id },
+        data: { soldeAttendu: soldeCourant + montant }
+      });
+
+      const caisseMaj = await tx.cashRegister.update({
+        where: { id: sessionCorrection.caisseId },
+        data: { soldeActuel: { increment: montant } }
+      });
+
+      return { mouvementAnnule, contrePassation, session: sessionMaj, caisse: caisseMaj };
+    });
+
+    // Propagation vers le cloud (hors transaction : elle est déjà validée)
+    if (this.syncService) {
+      try {
+        await this.syncService.enqueue('financial_movements', 'UPDATE', resultat.mouvementAnnule);
+        if (resultat.contrePassation) {
+          await this.syncService.enqueue('cash_movements', 'INSERT', resultat.contrePassation);
+          await this.syncService.enqueue('cash_sessions', 'UPDATE', resultat.session);
+          await this.syncService.enqueue('cash_registers', 'UPDATE', resultat.caisse);
+        }
+      } catch (e) {
+        console.warn('⚠️  Sync annulation mouvement:', e.message);
+      }
+    }
+
+    const memeSession = sessionCorrection && sessionCorrection.id === existing.sessionId;
+    console.log(`✅ Mouvement ${existing.reference} annulé — ${montant} FCFA restitués` +
+      (impacteLaCaisse ? ` à la session ${sessionCorrection.id}${memeSession ? '' : ' (session d\'origine clôturée)'}` : ' (aucun impact caisse)'));
+
+    return {
+      mouvement: resultat.mouvementAnnule,
+      montantRestitue: impacteLaCaisse ? montant : 0,
+      sessionCorrigee: sessionCorrection ? sessionCorrection.id : null,
+      sessionOrigine: existing.sessionId || null,
+      imputeSurSessionCourante: impacteLaCaisse && !memeSession,
+    };
+  }
+
+  /**
+   * @deprecated Conservé pour compatibilité : redirige vers cancelMovement().
+   * La suppression pure laissait la caisse amputée sans trace.
+   */
+  async deleteMovement(id, utilisateurId = null) {
+    return this.cancelMovement(id, utilisateurId);
   }
 
   /**
@@ -548,7 +660,8 @@ class FinancialMovementService {
       const { startDate, endDate, categorieId } = options;
 
       // Construction des filtres
-      const where = {};
+      // Un mouvement annulé ne doit jamais gonfler ni fausser les totaux affichés
+      const where = { statut: { not: 'annule' } };
 
       if (categorieId) {
         where.categorieId = parseInt(categorieId);

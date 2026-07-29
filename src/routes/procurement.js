@@ -7,6 +7,7 @@ const express = require('express');
 const { validate } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { commandeApprovisionnementSchemas, idParamSchema } = require('../validation/schemas');
+const logger = require('../utils/logger');
 const transformers = require('../utils/transformers');
 const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-service');
 
@@ -108,6 +109,7 @@ function createProcurementRouter(services) {
         });
 
       } catch (error) {
+        logger.error('❌ [Procurement GET] Erreur liste commandes', { error: error.message, stack: error.stack });
         console.error('Erreur lors de la récupération des commandes:', error);
         res.status(500).json({
           success: false,
