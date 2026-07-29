@@ -19,6 +19,8 @@ class CustomerFormController extends GetxController {
   final TextEditingController telephoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController adresseController = TextEditingController();
+  final TextEditingController nuiController = TextEditingController();
+  final TextEditingController rccmController = TextEditingController();
 
   // État
   final RxBool isLoading = false.obs;
@@ -41,6 +43,8 @@ class CustomerFormController extends GetxController {
     telephoneController.dispose();
     emailController.dispose();
     adresseController.dispose();
+    nuiController.dispose();
+    rccmController.dispose();
     super.onClose();
   }
 
@@ -65,6 +69,8 @@ class CustomerFormController extends GetxController {
     telephoneController.text = customer.telephone ?? '';
     emailController.text = customer.email ?? '';
     adresseController.text = customer.adresse ?? '';
+    nuiController.text = customer.nui ?? '';
+    rccmController.text = customer.rccm ?? '';
   }
 
   /// Valide le nom du client
@@ -123,6 +129,8 @@ class CustomerFormController extends GetxController {
         telephone: telephoneController.text.trim().isEmpty ? null : telephoneController.text.trim(),
         email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
         adresse: adresseController.text.trim().isEmpty ? null : adresseController.text.trim(),
+        nui: nuiController.text.trim().isEmpty ? null : nuiController.text.trim(),
+        rccm: rccmController.text.trim().isEmpty ? null : rccmController.text.trim(),
       );
 
       print('📋 Données du formulaire: ${customerForm.toJson()}');
@@ -218,5 +226,7 @@ class CustomerFormController extends GetxController {
     telephoneController.clear();
     emailController.clear();
     adresseController.clear();
+    nuiController.clear();
+    rccmController.clear();
   }
 }

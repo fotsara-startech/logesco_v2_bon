@@ -8,6 +8,7 @@ const { validate, validateId, validatePagination } = require('../middleware/vali
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, ClientDTO } = require('../dto');
 const { clientSchemas } = require('../validation/schemas');
+const logger = require('../utils/logger');
 const { 
   buildPrismaQuery,
   sanitizeInput 
@@ -64,7 +65,8 @@ function createCustomerRouter(models) {
         res.json(response);
 
       } catch (error) {
-        console.error('Erreur liste clients:', error);
+        logger.error('❌ [Customers GET] Erreur liste clients', { error: error.message, stack: error.stack });
+        console.error('❌ [Customers GET] Erreur liste clients:', error);
         res.status(500).json(
           BaseResponseDTO.error('Erreur lors de la récupération des clients')
         );

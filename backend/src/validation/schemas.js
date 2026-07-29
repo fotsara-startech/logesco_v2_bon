@@ -89,7 +89,9 @@ const clientSchemas = {
     prenom: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
-    adresse: Joi.string().max(500).allow('', null)
+    adresse: Joi.string().max(500).allow('', null),
+    nui: Joi.string().max(255).allow('', null), // Numéro d'Identification Unique
+    rccm: Joi.string().max(255).allow('', null) // Registre du Commerce et du Crédit Mobilier
   }),
 
   update: Joi.object({
@@ -97,7 +99,9 @@ const clientSchemas = {
     prenom: Joi.string().max(100).allow('', null),
     telephone: baseSchemas.telephone.allow('', null),
     email: baseSchemas.email.allow('', null),
-    adresse: Joi.string().max(500).allow('', null)
+    adresse: Joi.string().max(500).allow('', null),
+    nui: Joi.string().max(255).allow('', null), // Numéro d'Identification Unique
+    rccm: Joi.string().max(255).allow('', null) // Registre du Commerce et du Crédit Mobilier
   }).min(1),
 
   search: Joi.object({

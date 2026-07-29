@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/stock_inventory_controller.dart';
 import '../models/inventory_model.dart';
 
@@ -280,12 +279,6 @@ class InventoryDetailView extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (inventory.canBeModified)
-                  OutlinedButton.icon(
-                    onPressed: () => _editInventory(inventory),
-                    icon: const Icon(Icons.edit),
-                    label: Text('inventory_detail_modify'.tr),
-                  ),
                 if (inventory.status == InventoryStatus.BROUILLON)
                   OutlinedButton.icon(
                     onPressed: () => controller.confirmDeleteInventory(inventory),
@@ -373,10 +366,5 @@ class InventoryDetailView extends StatelessWidget {
 
   void _navigateToCount(StockInventory inventory) {
     Get.toNamed('/stock-inventory/${inventory.id}/count');
-  }
-
-  void _editInventory(StockInventory inventory) {
-    // TODO: Implémenter l'édition d'inventaire
-    SnackbarHelper.info('inventory_detail_edit_dev'.tr, title: 'common_info'.tr);
   }
 }

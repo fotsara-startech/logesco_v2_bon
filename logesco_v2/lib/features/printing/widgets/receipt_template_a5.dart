@@ -20,6 +20,9 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
 
   @override
   Widget build(BuildContext context) {
+    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final logoPath = receipt.companyInfo.logo;
+
     return Container(
       width: template.format.widthPoints,
       height: showPreview ? null : template.format.heightPoints,
@@ -34,13 +37,14 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // En-tête compact
-            _buildCompactHeader(context),
+            // Bandeau en-tête coloré (logo 48x48 adapté A5)
+            buildHeader(context, logoPath: logoPath, serverUrl: serverUrl),
 
-            const SizedBox(height: 16),
+            // Titre + badge statut
+            buildTitleAndStatus(context),
 
-            // Informations de la vente
-            buildSaleInfo(context),
+            // Cartes Émetteur / Client (empilées verticalement pour A5)
+            _buildCompactClientVendorCards(context),
 
             const SizedBox(height: 12),
 
@@ -66,53 +70,52 @@ class ReceiptTemplateA5 extends ReceiptTemplateBase {
     );
   }
 
-  /// Construit un en-tête compact pour A5
-  Widget _buildCompactHeader(BuildContext context) {
-    final company = receipt.companyInfo;
+  /// Cartes Émetteur/Client empilées verticalement pour le format A5
+  Widget _buildCompactClientVendorCards(BuildContext context) {
+    // Si pas de client, ne rien afficher
+    if (receipt.customer == null) {
+      return const SizedBox.shrink();
+    }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: template.showBorder
-          ? BoxDecoration(
-              border: Border.all(color: Colors.black, width: 1),
-              borderRadius: BorderRadius.circular(6),
-            )
-          : null,
-      child: Column(
-        children: [
-          // Logo plus petit si activé et disponible
-          if (template.showLogo && company.logo != null && company.logo!.isNotEmpty) ...[
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!, width: 1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: _buildLogoWidget(company.logo!),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // Informations de l'entreprise
-          buildCompanyHeader(context),
-        ],
-      ),
+    final labelStyle = TextStyle(
+      fontSize: template.fontSize,
+      fontWeight: FontWeight.w600,
+      color: Colors.black87,
     );
-  }
+    final cardDecoration = BoxDecoration(
+      color: const Color(0xFFFAFAFA),
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(6),
+    );
 
-  /// Construit le widget logo (réseau)
-  Widget _buildLogoWidget(String logoPath) {
-    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
-    final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
-    final filename = isFullPath ? logoPath.split(RegExp(r'[/\\]')).last : logoPath;
-    return Image.network(
-      '$serverUrl/uploads/$filename',
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 40, color: Colors.grey),
+    Widget clientInfo() {
+      final c = receipt.customer!;
+      final infoStyle = TextStyle(fontSize: template.fontSize - 1, color: Colors.black87);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(c.nom, style: infoStyle.copyWith(fontWeight: FontWeight.bold)),
+          if (c.adresse?.isNotEmpty == true) ...[const SizedBox(height: 2), Text(c.adresse!, style: infoStyle)],
+          if (c.nui?.isNotEmpty == true) ...[const SizedBox(height: 2), Text('NUI: ${c.nui}', style: infoStyle)],
+          if (c.rccm?.isNotEmpty == true) ...[const SizedBox(height: 2), Text('RCCM: ${c.rccm}', style: infoStyle)],
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: cardDecoration,
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t('customer'), style: labelStyle),
+            const SizedBox(height: 4),
+            clientInfo(),
+          ],
+        ),
+      ),
     );
   }
 

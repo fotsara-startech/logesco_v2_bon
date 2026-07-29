@@ -460,7 +460,14 @@ function createUserRouter(dependencies) {
       });
 
       console.log(`✅ [UserRouter] Utilisateur supprimé: ${existingUser.nomUtilisateur}`);
-      
+
+      // La réponse ne renvoie pas de données : le middleware de sync ne peut
+      // donc rien intercepter ici. Sans cet appel, l'utilisateur resterait dans
+      // Neon et réapparaîtrait sur tous les postes au prochain pull.
+      if (syncService) {
+        await syncService.enqueue('utilisateurs', 'DELETE', { id });
+      }
+
       res.json({
         success: true,
         message: 'Utilisateur supprimé avec succès'

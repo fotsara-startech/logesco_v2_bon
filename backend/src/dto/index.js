@@ -187,6 +187,8 @@ class ClientDTO {
     this.telephone = client.telephone;
     this.email = client.email;
     this.adresse = client.adresse;
+    this.nui = client.nui; // Numéro d'Identification Unique (entreprise)
+    this.rccm = client.rccm; // Registre du Commerce et du Crédit Mobilier (entreprise)
     this.dateCreation = client.dateCreation;
     this.dateModification = client.dateModification;
 

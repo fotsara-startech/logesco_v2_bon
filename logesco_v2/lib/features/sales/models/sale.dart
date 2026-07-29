@@ -50,7 +50,7 @@ class Sale {
   @JsonKey(defaultValue: 0.0)
   final double montantRestant;
   final String statut;
-  @JsonKey(name: 'dateVente')
+  @JsonKey(name: 'dateVente', toJson: _dateToJsonLocal, fromJson: _dateFromJsonLocal)
   final DateTime dateCreation;
   final DateTime? dateModification;
   @JsonKey(defaultValue: <SaleDetail>[])
@@ -79,6 +79,17 @@ class Sale {
 
   factory Sale.fromJson(Map<String, dynamic> json) => _$SaleFromJson(json);
   Map<String, dynamic> toJson() => _$SaleToJson(this);
+
+  // Sérialisation de la date en heure locale (sans conversion UTC)
+  static String _dateToJsonLocal(DateTime date) {
+    // Format ISO sans conversion UTC: YYYY-MM-DDTHH:mm:ss.mmm
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}.${date.millisecond.toString().padLeft(3, '0')}';
+  }
+
+  static DateTime _dateFromJsonLocal(String json) {
+    // Parse sans conversion (reste en heure locale)
+    return DateTime.parse(json);
+  }
 
   double get montantFinal => montantTotal;
 
@@ -144,6 +155,7 @@ class CreateSaleRequest {
   final double montantTva;
   final double? tauxTva;
   final List<CreateSaleDetailRequest> details;
+  @JsonKey(toJson: _dateToJsonLocal, fromJson: _dateFromJsonLocal)
   final DateTime? dateVente;
 
   const CreateSaleRequest({
@@ -160,6 +172,19 @@ class CreateSaleRequest {
 
   factory CreateSaleRequest.fromJson(Map<String, dynamic> json) => _$CreateSaleRequestFromJson(json);
   Map<String, dynamic> toJson() => _$CreateSaleRequestToJson(this);
+
+  // Sérialisation de la date en heure locale (sans conversion UTC)
+  static String? _dateToJsonLocal(DateTime? date) {
+    if (date == null) return null;
+    // Format ISO sans conversion UTC: YYYY-MM-DDTHH:mm:ss.mmm
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}.${date.millisecond.toString().padLeft(3, '0')}';
+  }
+
+  static DateTime? _dateFromJsonLocal(String? json) {
+    if (json == null) return null;
+    // Parse sans conversion (reste en heure locale)
+    return DateTime.parse(json);
+  }
 }
 
 @JsonSerializable()

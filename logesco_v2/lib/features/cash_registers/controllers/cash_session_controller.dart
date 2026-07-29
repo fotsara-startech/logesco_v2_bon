@@ -384,14 +384,8 @@ class CashSessionController extends GetxController {
 
   /// Vérifier si l'utilisateur peut voir le solde
   bool get canViewBalance {
-    try {
-      final authController = Get.find<AuthController>();
-      final currentUser = authController.currentUser.value;
-      return currentUser?.role.isAdmin ?? false;
-    } catch (e) {
-      print('⚠️ Erreur lors de la vérification du rôle admin: $e');
-      return false;
-    }
+    // Tous les utilisateurs peuvent voir le solde de la caisse
+    return true;
   }
 
   /// Vérifier si l'utilisateur peut effectuer des ventes (session active requise)

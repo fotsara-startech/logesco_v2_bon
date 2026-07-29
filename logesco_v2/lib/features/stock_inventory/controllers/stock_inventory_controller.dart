@@ -6,7 +6,9 @@ import '../models/inventory_model.dart';
 import '../services/stock_inventory_service.dart';
 import '../services/mock_inventory_service.dart';
 import '../services/inventory_print_service.dart';
+import '../services/inventory_excel_service.dart';
 import '../../../core/config/app_config.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../products/services/category_service.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 import '../../sync/controllers/sync_controller.dart';
@@ -553,5 +555,138 @@ class StockInventoryController extends GetxController {
 
     inventories.assignAll(sortedInventories);
     update();
+  }
+
+  /// Exporter la fiche de comptage en Excel
+  Future<void> exportCountingSheetToExcel(int inventoryId) async {
+    try {
+      isLoading.value = true;
+
+      final inventory = inventories.firstWhereOrNull((inv) => inv.id == inventoryId);
+      if (inventory == null) {
+        throw Exception('Inventaire non trouvé');
+      }
+
+      // Charger les items si nécessaire
+      if (currentInventoryItems.isEmpty || selectedInventory.value?.id != inventoryId) {
+        await loadInventoryItems(inventoryId);
+      }
+
+      // Exporter vers Excel
+      final filePath = await InventoryExcelService.exportCountingSheet(
+        inventory,
+        currentInventoryItems,
+      );
+
+      // Partager le fichier
+      if (!kIsWeb) {
+        await Share.shareXFiles(
+          [XFile(filePath)],
+          subject: 'Fiche de comptage - ${inventory.nom}',
+          text: 'Fiche de comptage Excel à remplir et réimporter',
+        );
+      }
+
+      SnackbarHelper.success(
+        'Fiche de comptage exportée avec succès',
+        title: 'Export Excel',
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      print('❌ Erreur export Excel: $e');
+      SnackbarHelper.error('Impossible d\'exporter la fiche: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Importer la fiche de comptage depuis Excel
+  Future<void> importCountingSheetFromExcel() async {
+    try {
+      isLoading.value = true;
+
+      // Importer depuis Excel
+      final imports = await InventoryExcelService.importCountingSheet();
+
+      if (imports.isEmpty) {
+        SnackbarHelper.warning('Aucune donnée de comptage trouvée dans le fichier');
+        return;
+      }
+
+      // Correspondre les imports avec les items existants
+      int updatedCount = 0;
+      int notFoundCount = 0;
+      final errors = <String>[];
+
+      for (final import in imports) {
+        // Trouver l'item correspondant par code ou par nom
+        InventoryItem? matchingItem;
+
+        if (import.codeProduit != null && import.codeProduit!.isNotEmpty) {
+          matchingItem = currentInventoryItems.firstWhereOrNull(
+            (item) => item.codeProduit?.toLowerCase() == import.codeProduit!.toLowerCase(),
+          );
+        }
+
+        // Si pas trouvé par code, chercher par nom
+        if (matchingItem == null) {
+          matchingItem = currentInventoryItems.firstWhereOrNull(
+            (item) => item.nomProduit.toLowerCase() == import.nomProduit.toLowerCase(),
+          );
+        }
+
+        if (matchingItem != null) {
+          // Mettre à jour l'item
+          try {
+            final success = await updateInventoryItem(
+              matchingItem.id!,
+              import.quantiteComptee,
+              import.commentaire,
+            );
+            if (success) {
+              updatedCount++;
+            } else {
+              errors.add(import.nomProduit);
+            }
+          } catch (e) {
+            errors.add('${import.nomProduit}: $e');
+          }
+        } else {
+          notFoundCount++;
+          if (kDebugMode) {
+            print('⚠️ Produit non trouvé: ${import.codeProduit ?? ''} - ${import.nomProduit}');
+          }
+        }
+      }
+
+      // Afficher le résultat
+      if (updatedCount > 0) {
+        String message = '$updatedCount comptage(s) importé(s) avec succès';
+        if (notFoundCount > 0) {
+          message += '\n$notFoundCount produit(s) non trouvé(s)';
+        }
+        if (errors.isNotEmpty) {
+          message += '\n${errors.length} erreur(s)';
+        }
+
+        SnackbarHelper.success(
+          message,
+          title: 'Import Excel',
+          duration: const Duration(seconds: 5),
+        );
+
+        // Recharger les items pour avoir les données à jour
+        if (selectedInventory.value?.id != null) {
+          await loadInventoryItems(selectedInventory.value!.id!);
+        }
+      } else {
+        SnackbarHelper.warning('Aucun comptage n\'a pu être importé');
+      }
+    } catch (e) {
+      print('❌ Erreur import Excel: $e');
+      SnackbarHelper.error('Impossible d\'importer la fiche: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

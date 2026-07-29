@@ -238,6 +238,15 @@ class CategoryController {
         where: { id: parseInt(id) }
       });
 
+      // Aucun mécanisme d'interception ne couvre cette route : la réponse ne
+      // porte pas de données, et aucun hook Prisma n'écoute le modèle Category.
+      // Sans cet appel, la catégorie resterait dans Neon et réapparaîtrait sur
+      // tous les postes au prochain pull.
+      const syncService = req.app?.locals?.syncService;
+      if (syncService) {
+        await syncService.enqueue('categories', 'DELETE', { id: parseInt(id) });
+      }
+
       res.json({
         success: true,
         message: 'Catégorie supprimée avec succès'

@@ -20,6 +20,9 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
 
   @override
   Widget build(BuildContext context) {
+    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
+    final logoPath = receipt.companyInfo.logo;
+
     return Container(
       width: template.format.widthPoints,
       height: showPreview ? null : template.format.heightPoints,
@@ -34,15 +37,16 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // En-tête avec logo et informations entreprise
-            _buildHeader(context),
+            // Bandeau en-tête coloré avec logo ou initiales
+            buildHeader(context, logoPath: logoPath, serverUrl: serverUrl),
 
-            const SizedBox(height: 24),
+            // Titre + badge de statut de paiement
+            buildTitleAndStatus(context),
 
-            // Informations de la vente
-            buildSaleInfo(context),
+            // Cartes Émetteur / Client
+            buildClientVendorCards(context),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Liste des articles
             buildItemsList(context),
@@ -63,69 +67,6 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
           ],
         ),
       ),
-    );
-  }
-
-  /// Construit l'en-tête avec logo et bordure décorative
-  Widget _buildHeader(BuildContext context) {
-    final company = receipt.companyInfo;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: template.showBorder
-          ? BoxDecoration(
-              border: Border.all(color: Colors.black, width: 2),
-              borderRadius: BorderRadius.circular(8),
-            )
-          : null,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Logo à gauche (si disponible)
-          if (template.showLogo && company.logo != null && company.logo!.isNotEmpty)
-            Container(
-              width: 100,
-              height: 100,
-              margin: const EdgeInsets.only(right: 20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!, width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _buildLogoWidget(company.logo!),
-              ),
-            ),
-
-          // Informations de l'entreprise à droite
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                buildCompanyHeader(context, crossAxisAlignment: CrossAxisAlignment.end, textAlign: TextAlign.right),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Construit le widget logo (réseau ou fichier local)
-  Widget _buildLogoWidget(String logoPath) {
-    final serverUrl = AppConfig.currentBaseUrl.replaceAll('/api/v1', '');
-    final isFullPath = logoPath.contains('\\') || logoPath.contains('/') || logoPath.contains(':');
-    if (isFullPath) {
-      return Image.network(
-        '$serverUrl/uploads/${logoPath.split(RegExp(r'[/\\]')).last}',
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 50, color: Colors.grey),
-      );
-    }
-    return Image.network(
-      '$serverUrl/uploads/$logoPath',
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 50, color: Colors.grey),
     );
   }
 

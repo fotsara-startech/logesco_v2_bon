@@ -198,8 +198,27 @@ class BackendService {
 
   void _ensureEnvFile() {
     final envFile = File(p.join(_backendDir, '.env'));
+    final dbDir = Directory(p.join(_backendDir, 'database'));
     final dbPath = p.join(_backendDir, 'database', 'logesco.db').replaceAll('\\', '/');
     final dbUrl = 'file:$dbPath';
+
+    // Créer le dossier database s'il n'existe pas
+    if (!dbDir.existsSync()) {
+      dbDir.createSync(recursive: true);
+    }
+
+    // Copier la base template si la base n'existe pas
+    final dbFile = File(dbPath);
+    if (!dbFile.existsSync()) {
+      final templateDb = File(p.join(_backendDir, 'database', 'logesco_template.db'));
+      if (templateDb.existsSync()) {
+        debugPrint('📋 Copie de la base de données template...');
+        templateDb.copySync(dbPath);
+        debugPrint('✅ Base de données initialisée depuis le template');
+      } else {
+        debugPrint('⚠️  Template de base de données introuvable, sera créé au démarrage');
+      }
+    }
 
     if (envFile.existsSync()) {
       var content = envFile.readAsStringSync();

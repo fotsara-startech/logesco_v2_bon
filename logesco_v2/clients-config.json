@@ -1,0 +1,24 @@
+{
+  "clients": [
+    {
+      "name": "client-demo",
+      "displayName": "Client Démo",
+      "projectName": "logesco-demo",
+      "backendUrl": "https://api-demo.logesco.com/api/v1",
+      "customDomain": "demo.logesco.com",
+      "deployed": false,
+      "deploymentUrl": "",
+      "lastDeployment": ""
+    },
+    {
+      "name": "client-pharmacie-centrale",
+      "displayName": "Pharmacie Centrale",
+      "projectName": "logesco-pharmacie-centrale",
+      "backendUrl": "https://api-pharmacie.logesco.com/api/v1",
+      "customDomain": "pharmacie.logesco.com",
+      "deployed": false,
+      "deploymentUrl": "",
+      "lastDeployment": ""
+    }
+  ]
+}

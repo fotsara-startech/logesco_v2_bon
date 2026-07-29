@@ -22,6 +22,7 @@ class Receipt {
   final double paidAmount;
   final double remainingAmount;
   final String paymentMethod;
+  @JsonKey(toJson: _dateToJsonLocal, fromJson: _dateFromJsonLocal)
   final DateTime saleDate;
   final Customer? customer;
   final PrintFormat format;
@@ -243,6 +244,17 @@ class Receipt {
   String get reprintIndicator {
     if (!isReprint) return '';
     return 'COPIE ${reprintCount > 1 ? '($reprintCount)' : ''}';
+  }
+
+  // Sérialisation de la date en heure locale (sans conversion UTC)
+  static String _dateToJsonLocal(DateTime date) {
+    // Format ISO sans conversion UTC: YYYY-MM-DDTHH:mm:ss.mmm
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}.${date.millisecond.toString().padLeft(3, '0')}';
+  }
+
+  static DateTime _dateFromJsonLocal(String json) {
+    // Parse sans conversion (reste en heure locale)
+    return DateTime.parse(json);
   }
 
   /// Crée une copie avec des modifications

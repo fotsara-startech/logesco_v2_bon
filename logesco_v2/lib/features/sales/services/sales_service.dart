@@ -52,6 +52,10 @@ class SalesService {
 
       final uri = Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}').replace(queryParameters: queryParams);
 
+      print('📡 [DIAGNOSTIC API]');
+      print('   - URL: $uri');
+      print('   - Headers: Authorization Bearer ${token.substring(0, 20)}...');
+
       final response = await http.get(
         uri,
         headers: {
@@ -59,6 +63,9 @@ class SalesService {
           'Authorization': 'Bearer $token',
         },
       );
+
+      print('   - Status Code: ${response.statusCode}');
+      print('   - Response length: ${response.body.length} bytes');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -105,9 +112,11 @@ class SalesService {
         );
       } else {
         final errorData = json.decode(response.body);
+        print('❌ [DIAGNOSTIC API] Erreur ${response.statusCode}: ${errorData['message']}');
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération des ventes');
       }
     } catch (e) {
+      print('❌ [DIAGNOSTIC API] Exception: $e');
       return ApiResponse.error(message: 'Erreur de connexion: $e');
     }
   }

@@ -183,6 +183,8 @@ model Client {
   telephone        String?
   email            String?
   adresse          String?
+  nui              String?         @map("nui")
+  rccm             String?         @map("rccm")
   dateCreation     DateTime        @default(now()) @map("date_creation")
   dateModification DateTime        @updatedAt @map("date_modification")
   compte           CompteClient?
@@ -672,6 +674,7 @@ model FinancialMovement {
   dateCreation     DateTime             @default(now()) @map("date_creation")
   dateModification DateTime             @updatedAt @map("date_modification")
   notes            String?
+  statut           String               @default("actif")
   categorie        MovementCategory     @relation(fields: [categorieId], references: [id])
   utilisateur      Utilisateur          @relation(fields: [utilisateurId], references: [id])
   boutique         Boutique?            @relation(fields: [boutiqueId], references: [id])

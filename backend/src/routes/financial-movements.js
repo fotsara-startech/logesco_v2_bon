@@ -404,20 +404,28 @@ function createFinancialMovementRouter(services) {
     authenticateToken(services.authService),
     async (req, res) => {
       try {
-        await financialMovementService.deleteMovement(req.params.id);
-        
-        res.json(BaseResponseDTO.success(
-          null,
-          'Mouvement financier supprimé avec succès'
-        ));
+        // Annulation par contre-passation : le mouvement est conservé et la
+        // caisse recréditée dans la session ouverte (voir cancelMovement).
+        const r = await financialMovementService.cancelMovement(req.params.id, req.user?.id);
+
+        const message = r.imputeSurSessionCourante
+          ? `Mouvement annulé — ${r.montantRestitue} FCFA recrédités sur la caisse ouverte `
+            + `(la session d'origine était clôturée)`
+          : `Mouvement annulé${r.montantRestitue ? ` — ${r.montantRestitue} FCFA recrédités en caisse` : ''}`;
+
+        res.json(BaseResponseDTO.success({ id: r.mouvement.id, ...r }, message));
 
       } catch (error) {
-        console.error('Erreur suppression mouvement:', error.message);
-        
-        if (error.message.includes('non trouvé')) {
+        console.error('Erreur annulation mouvement:', error.message);
+
+        if (error.code === 'AUCUNE_SESSION_OUVERTE') {
+          res.status(409).json(BaseResponseDTO.error(error.message));
+        } else if (error.code === 'DEJA_ANNULE') {
+          res.status(400).json(BaseResponseDTO.error(error.message));
+        } else if (error.message.includes('non trouvé')) {
           res.status(404).json(BaseResponseDTO.error(error.message));
         } else {
-          res.status(500).json(BaseResponseDTO.error('Erreur lors de la suppression du mouvement'));
+          res.status(500).json(BaseResponseDTO.error('Erreur lors de l\'annulation du mouvement'));
         }
       }
     }

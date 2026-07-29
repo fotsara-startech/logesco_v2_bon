@@ -5,6 +5,7 @@
 
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
+const installation = require('../utils/installation');
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
 const PULL_TABLES = [
@@ -25,6 +26,59 @@ const TABLES_WITHOUT_DATE_MODIFICATION = [
   // Legacy list - all these tables now have date_modification column
 ];
 
+// Lignes filles à supprimer dans Neon AVANT le parent.
+//
+// SQLite local n'applique pas les mêmes contraintes que PostgreSQL : une
+// suppression qui passe en local est rejetée par Neon (violation de clé
+// étrangère) et reste bloquée en échec indéfiniment. On reproduit donc
+// explicitement la cascade côté cloud.
+//
+// Ne figurent ici que des données dérivées (stock, inventaire, comptes) : les
+// écritures à valeur comptable (ventes, commandes) ne sont jamais supprimées
+// en cascade — les routes empêchent déjà la suppression d'un élément qui en
+// possède.
+const CASCADE_ON_DELETE = {
+  produits: [
+    ['stock_boutiques',       'produit_id'],
+    ['stock',                 'produit_id'],
+    ['historique_prix_achat', 'produit_id'],
+    ['dates_peremption',      'produit_id'],
+    ['inventory_items',       'produit_id'],
+    ['mouvements_stock',      'produit_id'],
+  ],
+  clients:      [['comptes_clients',      'client_id']],
+  fournisseurs: [['comptes_fournisseurs', 'fournisseur_id']],
+  utilisateurs: [['user_boutique_assignments', 'utilisateur_id']],
+  cash_sessions: [['cash_movements', 'session_id']],
+  commandes_approvisionnement: [['details_commandes_approvisionnement', 'commande_id']],
+};
+
+// Références à neutraliser (et non supprimer) avant la suppression du parent :
+// supprimer une catégorie ne doit pas emporter les produits qui la portent.
+const NULLIFY_ON_DELETE = {
+  categories: [['produits', 'categorie_id']],
+};
+
+// Colonnes NOT NULL côté Neon que certaines routes omettent lorsqu'elles
+// construisent le payload à la main. Sans valeur de repli, la poussée est
+// rejetée ("null value in column ... violates not-null constraint") et
+// l'opération reste bloquée en échec.
+const COLONNES_OBLIGATOIRES = {
+  stock_boutiques: { derniere_maj: () => new Date().toISOString() },
+  stock:           { derniere_maj: () => new Date().toISOString() },
+};
+
+// Colonne de repli utilisée pour le delta quand date_modification est absente
+// (anciennes installations qui n'ont pas reçu les migrations)
+const ALT_MODIFICATION_COLUMNS = {
+  'mouvements_stock':   'date_mouvement',
+  'cash_movements':     'date_creation',
+  'historique_recus':   'date_generation',
+  'transactions_comptes': 'date_transaction',
+  'stock_inventories':  'date_creation',
+  'inventory_items':    'date_comptage',
+};
+
 class SyncServiceV2 {
   constructor() {
     this.localPrisma = null;
@@ -33,6 +87,7 @@ class SyncServiceV2 {
     this.syncInterval = null;
     this.isSyncing = false;
     this.cloudUrl = process.env.CLOUD_DB_URL;
+    this._modColumnCache = {};
   }
 
   async initialize(localPrisma) {
@@ -45,8 +100,19 @@ class SyncServiceV2 {
     
     // Créer la table deleted_records si elle n'existe pas
     await this._ensureDeletedRecordsTable();
-    
+
+    // Créer les tables de suivi du pull (curseur de réception + file de reprise)
+    await this._ensurePullStateTables();
+
+    // Aligner le schéma cloud sur les colonnes attendues
+    await this._ensureColonnesCloud();
+
     await this._checkCloudConnection();
+
+    // Garantir que ce poste possède sa plage d'ids (rattrapage si le premier
+    // démarrage s'est fait hors ligne)
+    await this.ensureInstallationIdentity(localPrisma);
+
     if (this.isCloudAvailable) {
       console.log('📋 [V2] Replay des opérations en attente...');
       await this._replayPendingOperations();
@@ -257,8 +323,513 @@ class SyncServiceV2 {
   }
 
   /**
-   * NOUVEAU: Pull DELTA uniquement (pas de DELETE)
-   * Récupère uniquement les nouvelles données depuis Neon
+   * Garantit que ce poste dispose d'un numéro d'installation et d'une plage
+   * d'identifiants réservée.
+   *
+   * Sans cela, deux postes génèrent les mêmes ids auto-incrémentés pour des
+   * enregistrements différents ; le second écrase alors silencieusement le
+   * premier dans Neon (perte de données définitive).
+   *
+   * Idempotent : ne fait un aller-retour réseau qu'au tout premier démarrage.
+   */
+  async ensureInstallationIdentity(localPrisma) {
+    if (localPrisma) this.localPrisma = localPrisma;
+    if (!this.localPrisma) return null;
+
+    // Déjà résolue durant ce démarrage — rien à refaire
+    if (installation.getInstallationId()) return null;
+
+    try {
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE TABLE IF NOT EXISTS "sync_identity" (
+          "id"              INTEGER PRIMARY KEY,
+          "installation_id" INTEGER NOT NULL,
+          "block_start"     INTEGER NOT NULL,
+          "machine_name"    TEXT,
+          "assigned_at"     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      );
+
+      let rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT installation_id, block_start FROM sync_identity WHERE id = 1`
+      );
+
+      // Pas encore d'identité : la réserver auprès de Neon
+      if (rows.length === 0) {
+        if (!this.cloudUrl) return null; // mode 100% local : un seul poste, rien à faire
+        const claimed = await this._claimInstallationFromCloud();
+        if (!claimed) {
+          console.warn('⚠️  Numéro de poste non réservé (Neon injoignable) — nouvelle tentative au prochain cycle');
+          return null;
+        }
+        rows = [claimed];
+      }
+
+      const identity = rows[0];
+      const installationId = Number(identity.installation_id);
+      const blockStart = Number(identity.block_start);
+
+      await this._applyIdBlock(blockStart);
+      installation.setInstallationId(installationId);
+
+      console.log(`🏷️  Poste n°${installationId} — plage d'ids réservée à partir de ${blockStart.toLocaleString('fr-FR')}`);
+      return identity;
+    } catch (e) {
+      console.warn('⚠️  Identité de poste non initialisée (non bloquant):', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Réserve un numéro de poste dans Neon, de façon atomique.
+   */
+  async _claimInstallationFromCloud() {
+    const available = await this._checkCloudConnection();
+    if (!available) return null;
+
+    const client = await this.cloudPool.connect();
+    try {
+      await client.query(
+        `CREATE TABLE IF NOT EXISTS "installations" (
+          "id"           SERIAL PRIMARY KEY,
+          "machine_name" TEXT,
+          "block_start"  BIGINT NOT NULL DEFAULT 0,
+          "created_at"   TIMESTAMP NOT NULL DEFAULT NOW(),
+          "last_seen_at" TIMESTAMP
+        )`
+      );
+
+      const machineName = require('os').hostname();
+      const res = await client.query(
+        `INSERT INTO "installations" ("machine_name", "last_seen_at") VALUES ($1, NOW()) RETURNING id`,
+        [machineName]
+      );
+
+      const installationId = Number(res.rows[0].id);
+      const blockStart = installation.blockStartFor(installationId);
+
+      await client.query(`UPDATE "installations" SET "block_start" = $1 WHERE id = $2`, [blockStart, installationId]);
+
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO sync_identity (id, installation_id, block_start, machine_name)
+         VALUES (1, ?, ?, ?)`,
+        installationId, blockStart, machineName
+      );
+
+      console.log(`✅ Poste enregistré auprès de Neon sous le n°${installationId}`);
+      return { installation_id: installationId, block_start: blockStart };
+    } catch (e) {
+      console.warn('⚠️  Réservation du numéro de poste échouée:', e.message);
+      return null;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Décale les compteurs AUTOINCREMENT de SQLite dans la plage du poste.
+   * Ne baisse jamais un compteur : les données existantes restent intactes.
+   */
+  async _applyIdBlock(blockStart) {
+    if (!blockStart || blockStart <= 0) return;
+
+    try {
+      const tables = await this.localPrisma.$queryRawUnsafe(
+        `SELECT name FROM sqlite_master
+         WHERE type='table' AND sql LIKE '%AUTOINCREMENT%' AND name NOT LIKE 'sqlite_%'`
+      );
+
+      let adjusted = 0;
+      for (const { name } of tables) {
+        await this.localPrisma.$executeRawUnsafe(
+          `INSERT INTO sqlite_sequence (name, seq)
+           SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = ?)`,
+          name, blockStart, name
+        );
+        const changed = await this.localPrisma.$executeRawUnsafe(
+          `UPDATE sqlite_sequence SET seq = ? WHERE name = ? AND seq < ?`,
+          blockStart, name, blockStart
+        );
+        if (changed > 0) adjusted++;
+      }
+
+      if (adjusted > 0) {
+        console.log(`🔢 ${adjusted} compteur(s) d'identifiants repositionné(s) dans la plage du poste`);
+      }
+    } catch (e) {
+      console.warn('⚠️  Repositionnement des compteurs échoué:', e.message);
+    }
+  }
+
+  /**
+   * Ajoute dans Neon les colonnes introduites par une mise à jour applicative.
+   * Les postes clients ne peuvent pas exécuter `prisma migrate` : la migration
+   * doit donc être portée par le démarrage, et être idempotente.
+   */
+  async _ensureColonnesCloud() {
+    const AJOUTS = [
+      [`financial_movements`, `statut`, `TEXT NOT NULL DEFAULT 'actif'`],
+    ];
+    const disponible = await this._checkCloudConnection();
+    if (!disponible) return;
+
+    const client = await this.cloudPool.connect();
+    try {
+      for (const [table, colonne, definition] of AJOUTS) {
+        try {
+          await client.query(`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${colonne}" ${definition}`);
+        } catch (e) {
+          console.warn(`⚠️  Ajout colonne ${table}.${colonne}: ${e.message}`);
+        }
+      }
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Fusionne les doublons créés par l'auto-seed.
+   *
+   * Chaque installation crée sa propre « Caisse Principale », « Boutique
+   * Principale », rôle ADMIN, etc. avant même de connaître le cloud. Quand un
+   * second poste se connecte, il télécharge les mêmes enregistrements sous
+   * d'autres identifiants et se retrouve avec des doublons. Les deux bases ne
+   * s'accordent alors plus sur l'identité de ces enregistrements : Neon impose
+   * une unicité sur le nom, la poussée est rejetée, et tout ce qui référence
+   * l'enregistrement local est bloqué en cascade.
+   *
+   * On conserve donc l'identifiant du cloud (source de vérité partagée) et on
+   * y repointe les références locales.
+   */
+  async _reconcileNaturalKeyDuplicates(client) {
+    // Tables portant une clé naturelle unique côté Neon et alimentées par l'auto-seed
+    const CLES_NATURELLES = {
+      cash_registers:     'nom',
+      user_roles:         'nom',
+      utilisateurs:       'nom_utilisateur',
+      categories:         'nom',
+      movement_categories:'nom',
+      boutiques:          'nom',
+    };
+
+    let fusions = 0;
+
+    for (const [table, colonne] of Object.entries(CLES_NATURELLES)) {
+      let doublons;
+      try {
+        doublons = await this.localPrisma.$queryRawUnsafe(
+          `SELECT "${colonne}" AS cle, COUNT(*) AS n FROM "${table}"
+           WHERE "${colonne}" IS NOT NULL GROUP BY "${colonne}" HAVING COUNT(*) > 1`
+        );
+      } catch (e) { continue; } // table absente sur d'anciennes installations
+      if (doublons.length === 0) continue;
+
+      for (const { cle } of doublons) {
+        try {
+          const locales = await this.localPrisma.$queryRawUnsafe(
+            `SELECT id FROM "${table}" WHERE "${colonne}" = ? ORDER BY id`, cle
+          );
+          const ids = locales.map(r => Number(r.id));
+
+          // L'identifiant du cloud fait foi ; à défaut on garde le plus ancien
+          let garder = ids[0];
+          try {
+            const distant = await client.query(
+              `SELECT id FROM "${table}" WHERE "${colonne}" = $1 LIMIT 1`, [cle]
+            );
+            if (distant.rows.length && ids.includes(Number(distant.rows[0].id))) {
+              garder = Number(distant.rows[0].id);
+            }
+          } catch (_) { /* on garde le repli */ }
+
+          for (const ancien of ids.filter(i => i !== garder)) {
+            await this._repointerReferences(table, ancien, garder);
+            await this.localPrisma.$executeRawUnsafe(`DELETE FROM "${table}" WHERE id = ?`, ancien);
+            await this.localPrisma.$executeRawUnsafe(
+              `UPDATE operation_log SET status = 'cancelled'
+               WHERE table_name = ? AND record_id = ? AND status IN ('pending','failed')`,
+              table, ancien
+            );
+            console.log(`🔗 ${table} « ${cle} » : id ${ancien} fusionné dans ${garder}`);
+            fusions++;
+          }
+        } catch (e) {
+          console.warn(`⚠️  Fusion ${table} « ${cle} » impossible: ${e.message}`);
+        }
+      }
+    }
+
+    if (fusions > 0) {
+      // Les opérations en attente portent un payload figé qui référence encore
+      // l'ancien identifiant : on le reconstruit depuis l'état réel de la base.
+      await this._rafraichirPayloadsEnAttente();
+      console.log(`✅ ${fusions} doublon(s) d'installation réconcilié(s)`);
+    }
+  }
+
+  /**
+   * Repointe toutes les clés étrangères visant `cible.ancienId` vers `nouveauId`.
+   * Les relations sont découvertes dynamiquement : aucune liste à maintenir.
+   */
+  async _repointerReferences(cible, ancienId, nouveauId) {
+    const tables = await this.localPrisma.$queryRawUnsafe(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`
+    );
+
+    for (const { name } of tables) {
+      let fks;
+      try {
+        fks = await this.localPrisma.$queryRawUnsafe(`PRAGMA foreign_key_list("${name}")`);
+      } catch (e) { continue; }
+
+      for (const fk of fks) {
+        if (fk.table !== cible) continue;
+        try {
+          const n = await this.localPrisma.$executeRawUnsafe(
+            `UPDATE "${name}" SET "${fk.from}" = ? WHERE "${fk.from}" = ?`, nouveauId, ancienId
+          );
+          if (n > 0) console.log(`   ↳ ${name}.${fk.from}: ${n} référence(s) repointée(s)`);
+        } catch (e) {
+          console.warn(`   ⚠️  ${name}.${fk.from}: ${e.message}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Reconstruit le payload des opérations en attente à partir des lignes
+   * réelles, afin qu'elles ne référencent plus d'identifiant fusionné.
+   */
+  async _rafraichirPayloadsEnAttente() {
+    const MODELES = {
+      cash_sessions: 'cashSession', cash_movements: 'cashMovement', cash_registers: 'cashRegister',
+      ventes: 'vente', details_ventes: 'detailVente', stock_boutiques: 'stockBoutique',
+      utilisateurs: 'utilisateur', produits: 'produit', clients: 'client',
+      fournisseurs: 'fournisseur', financial_movements: 'financialMovement',
+      user_boutique_assignments: 'userBoutiqueAssignment', boutiques: 'boutique',
+    };
+
+    const enAttente = await this.localPrisma.$queryRawUnsafe(
+      `SELECT DISTINCT table_name, record_id FROM operation_log
+       WHERE status IN ('pending','failed') AND operation_type <> 'DELETE'`
+    );
+
+    for (const op of enAttente) {
+      const modele = MODELES[op.table_name];
+      if (!modele || !this.localPrisma[modele]) continue;
+      try {
+        const ligne = await this.localPrisma[modele].findUnique({ where: { id: Number(op.record_id) } });
+        await this.localPrisma.$executeRawUnsafe(
+          `DELETE FROM operation_log WHERE table_name = ? AND record_id = ? AND status IN ('pending','failed')`,
+          op.table_name, op.record_id
+        );
+        // La ligne peut avoir disparu (fusionnée) : l'opération devient caduque
+        if (ligne) await this.logOperation(op.table_name, 'INSERT', ligne);
+      } catch (e) {
+        console.warn(`⚠️  Rafraîchissement ${op.table_name}#${op.record_id}: ${e.message}`);
+      }
+    }
+  }
+
+  /**
+   * Crée les tables de suivi du pull.
+   *
+   * IMPORTANT : le curseur de réception doit être distinct de operation_log.
+   * operation_log ne trace que les ENVOIS de ce poste ; s'en servir comme
+   * curseur de réception rend invisibles toutes les données distantes
+   * antérieures au dernier envoi local (perte de données entre postes).
+   */
+  async _ensurePullStateTables() {
+    try {
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE TABLE IF NOT EXISTS "sync_pull_state" (
+          "table_name"       TEXT PRIMARY KEY,
+          "last_modified_at" TEXT,
+          "last_pulled_at"   DATETIME
+        )`
+      );
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE TABLE IF NOT EXISTS "sync_pull_retry" (
+          "id"         INTEGER PRIMARY KEY AUTOINCREMENT,
+          "table_name" TEXT NOT NULL,
+          "record_id"  TEXT NOT NULL,
+          "payload"    TEXT NOT NULL,
+          "attempts"   INTEGER NOT NULL DEFAULT 0,
+          "last_error" TEXT,
+          "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updated_at" DATETIME
+        )`
+      );
+      await this.localPrisma.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "idx_sync_pull_retry_unique"
+         ON "sync_pull_retry"("table_name", "record_id")`
+      );
+      console.log('✅ Tables de suivi du pull prêtes (sync_pull_state, sync_pull_retry)');
+    } catch (e) {
+      console.warn('⚠️  Erreur création tables de suivi du pull:', e.message);
+    }
+  }
+
+  /**
+   * Curseur de réception : date de modification la plus récente déjà reçue
+   * pour cette table. '1970…' = jamais reçu → pull complet (réparateur).
+   */
+  async _getPullWatermark(table) {
+    try {
+      const rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT last_modified_at FROM sync_pull_state WHERE table_name = ?`, table
+      );
+      return rows[0]?.last_modified_at || '1970-01-01T00:00:00.000Z';
+    } catch (e) {
+      return '1970-01-01T00:00:00.000Z';
+    }
+  }
+
+  async _setPullWatermark(table, isoValue) {
+    try {
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO sync_pull_state (table_name, last_modified_at, last_pulled_at)
+         VALUES (?, ?, datetime('now'))
+         ON CONFLICT(table_name) DO UPDATE SET
+           last_modified_at = excluded.last_modified_at,
+           last_pulled_at   = excluded.last_pulled_at`,
+        table, isoValue
+      );
+    } catch (e) {
+      console.warn(`⚠️  Curseur ${table}: ${e.message}`);
+    }
+  }
+
+  /**
+   * Détermine la colonne de suivi de modification réellement présente côté Neon.
+   * Résultat mis en cache : le schéma ne change pas en cours d'exécution.
+   */
+  async _resolveModificationColumn(client, table) {
+    if (this._modColumnCache[table] !== undefined) return this._modColumnCache[table];
+
+    const candidates = ['date_modification', ALT_MODIFICATION_COLUMNS[table], 'date_creation'].filter(Boolean);
+    let found = null;
+    try {
+      const res = await client.query(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = $1`,
+        [table]
+      );
+      const available = new Set(res.rows.map(r => r.column_name));
+      found = candidates.find(c => available.has(c)) || null;
+      if (!found && available.size > 0) {
+        console.warn(`⚠️  ${table}: aucune colonne de suivi de modification — table non synchronisable`);
+      }
+    } catch (e) {
+      found = 'date_modification';
+    }
+
+    this._modColumnCache[table] = found;
+    return found;
+  }
+
+  /**
+   * Applique une ligne distante dans la base locale (insert ou update).
+   */
+  async _mergeRemoteRow(table, row) {
+    const keys = Object.keys(row).filter(k => row[k] !== null && row[k] !== undefined);
+    if (keys.length === 0) return;
+
+    const cols = keys.map(k => `"${k}"`).join(', ');
+    const placeholders = keys.map(() => '?').join(', ');
+    const updateKeys = keys.filter(k => k !== 'id');
+    const vals = keys.map(k => {
+      const val = row[k];
+      if (val instanceof Date) return val.toISOString();
+      if (typeof val === 'bigint') return Number(val);
+      return val;
+    });
+
+    const sql = updateKeys.length > 0
+      ? `INSERT INTO "${table}" (${cols}) VALUES (${placeholders})
+         ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(k => `"${k}" = excluded."${k}"`).join(', ')}`
+      : `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO NOTHING`;
+
+    await this.localPrisma.$executeRawUnsafe(sql, ...vals);
+  }
+
+  /**
+   * Met une ligne en échec de côté au lieu de la perdre.
+   * Le curseur peut alors avancer sans risque : la ligne sera rejouée
+   * une fois ses dépendances (parents FK) arrivées.
+   */
+  async _enqueuePullRetry(table, row, errMessage) {
+    try {
+      const payload = JSON.stringify(row, (k, v) => (typeof v === 'bigint' ? Number(v) : v));
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO sync_pull_retry (table_name, record_id, payload, attempts, last_error, updated_at)
+         VALUES (?, ?, ?, 1, ?, datetime('now'))
+         ON CONFLICT(table_name, record_id) DO UPDATE SET
+           payload    = excluded.payload,
+           attempts   = sync_pull_retry.attempts + 1,
+           last_error = excluded.last_error,
+           updated_at = excluded.updated_at`,
+        table, String(row.id), payload, String(errMessage).substring(0, 500)
+      );
+    } catch (e) {
+      console.warn(`⚠️  File de reprise ${table}: ${e.message}`);
+    }
+  }
+
+  /**
+   * Rejoue les lignes en échec, dans l'ordre des dépendances FK.
+   * Appelé après le pull de toutes les tables, quand les parents sont présents.
+   */
+  async _processPullRetryQueue() {
+    try {
+      // Au-delà de MAX_TENTATIVES l'échec est structurel (conflit de clé
+      // naturelle, parent réellement absent) : on cesse de le rejouer à chaque
+      // cycle mais on le conserve, visible via GET /sync/status.
+      const MAX_TENTATIVES = 20;
+
+      const rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT id, table_name, record_id, payload, attempts FROM sync_pull_retry
+         WHERE attempts < ? LIMIT 5000`,
+        MAX_TENTATIVES
+      );
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => PULL_TABLES.indexOf(a.table_name) - PULL_TABLES.indexOf(b.table_name));
+
+      let repaired = 0;
+      const stillFailing = {};
+
+      for (const entry of rows) {
+        try {
+          await this._mergeRemoteRow(entry.table_name, JSON.parse(entry.payload));
+          await this.localPrisma.$executeRawUnsafe(`DELETE FROM sync_pull_retry WHERE id = ?`, entry.id);
+          repaired++;
+        } catch (e) {
+          stillFailing[entry.table_name] = (stillFailing[entry.table_name] || 0) + 1;
+          await this.localPrisma.$executeRawUnsafe(
+            `UPDATE sync_pull_retry SET attempts = attempts + 1, last_error = ?, updated_at = datetime('now')
+             WHERE id = ?`,
+            String(e.message).substring(0, 500), entry.id
+          );
+        }
+      }
+
+      if (repaired > 0) console.log(`🔁 File de reprise: ${repaired} ligne(s) réparée(s)`);
+      const remaining = Object.entries(stillFailing);
+      if (remaining.length > 0) {
+        console.warn(`⚠️  File de reprise: ${remaining.map(([t, n]) => `${t}=${n}`).join(', ')} encore en échec`);
+      }
+    } catch (e) {
+      console.warn('⚠️  Erreur traitement file de reprise:', e.message);
+    }
+  }
+
+  /**
+   * Pull DELTA depuis Neon (pas de DELETE ici — voir _applyRemoteDeletions).
+   *
+   * Le curseur vient de sync_pull_state (ce qu'on a REÇU) et non d'operation_log
+   * (ce qu'on a ENVOYÉ). Les lignes en échec partent en file de reprise, ce qui
+   * permet au curseur d'avancer sans jamais perdre de donnée.
    */
   async _pullDeltaFromNeon() {
     try {
@@ -271,136 +842,98 @@ class SyncServiceV2 {
       // ── Étape 2 : Pull delta des données nouvelles/modifiées ──────────────
       for (const table of PULL_TABLES) {
         try {
-          // Trouver le dernier timestamp synchronisé
-          const lastSync = await this.localPrisma.$queryRawUnsafe(
-            `SELECT MAX(timestamp) as ts FROM operation_log 
-             WHERE table_name = ? AND status = 'synced'`,
-            table
+          const modCol = await this._resolveModificationColumn(client, table);
+          if (!modCol) continue;
+
+          const since = await this._getPullWatermark(table);
+
+          const result = await client.query(
+            `SELECT * FROM "${table}" WHERE "${modCol}" > $1 ORDER BY "${modCol}" ASC LIMIT 5000`,
+            [since]
           );
-
-          const since = (() => {
-            const ts = lastSync[0]?.ts;
-            if (!ts) return '1970-01-01T00:00:00Z';
-            // Gérer BigInt et Number
-            const tsNum = typeof ts === 'bigint' ? Number(ts) : ts;
-            try {
-              return new Date(tsNum).toISOString();
-            } catch (e) {
-              return '1970-01-01T00:00:00Z';
-            }
-          })();
-
-          // Pull UNIQUEMENT les nouveaux depuis Neon
-          let result;
-          try {
-            result = await client.query(
-              `SELECT * FROM "${table}" WHERE date_modification > $1 LIMIT 5000`,
-              [since]
-            );
-          } catch (colErr) {
-            // Fallback pour les tables sans date_modification (legacy, all tables should now have it)
-            const altCols = {
-              'mouvements_stock': 'date_mouvement',
-              'cash_movements': 'date_creation',
-              'historique_recus': 'date_generation',
-              'transactions_comptes': 'date_transaction',
-              'stock_inventories': 'date_creation',
-              'inventory_items': 'date_comptage'
-            };
-            const altCol = altCols[table];
-            if (altCol) {
-              result = await client.query(
-                `SELECT * FROM "${table}" WHERE "${altCol}" > $1 LIMIT 5000`,
-                [since]
-              );
-            } else {
-              result = { rows: [] };
-            }
-          }
-
           if (result.rows.length === 0) continue;
 
-          // Charger les IDs récemment supprimés localement pour cette table (ne pas les ré-insérer)
+          // Ne pas ré-insérer un enregistrement supprimé localement.
+          //
+          // Le statut 'failed' doit impérativement être couvert : une
+          // suppression rejetée par Neon laisse la ligne présente côté cloud,
+          // et sans ce garde-fou le pull la réinsère en local — l'élément
+          // supprimé « revient » à l'écran. Tant que la suppression n'est pas
+          // aboutie, on ignore la ligne distante, sans limite de temps.
           const recentDeletes = await this.localPrisma.$queryRawUnsafe(
-            `SELECT record_id FROM operation_log 
-             WHERE table_name = ? AND operation_type = 'DELETE' AND status IN ('pending', 'synced')
-             AND timestamp > datetime('now', '-1 hour')`,
+            `SELECT record_id FROM operation_log
+             WHERE table_name = ? AND operation_type = 'DELETE'
+             AND ( status IN ('pending', 'failed')
+                OR (status = 'synced' AND timestamp > datetime('now', '-1 hour')) )`,
             table
           );
           const deletedIds = new Set(recentDeletes.map(r => Number(r.record_id)));
 
-          // Insérer localement (merge, pas delete)
+          // Ne pas écraser une ligne dont la modification locale n'est pas
+          // encore partie vers le cloud.
+          //
+          // Sans ce garde-fou, le pull applique la valeur (périmée) de Neon
+          // par-dessus une écriture locale toute fraîche : le stock restauré
+          // après une annulation repassait à sa valeur d'avant, jusqu'à ce que
+          // la poussée finisse par le rétablir — et parfois définitivement si
+          // c'est la valeur périmée qui remportait la course.
+          const enAttenteLocale = await this.localPrisma.$queryRawUnsafe(
+            `SELECT DISTINCT record_id FROM operation_log
+             WHERE table_name = ? AND status IN ('pending', 'failed')
+             AND operation_type <> 'DELETE' AND record_id IS NOT NULL`,
+            table
+          );
+          const idsEnAttente = new Set(enAttenteLocale.map(r => Number(r.record_id)));
+
+          let maxSeen = since;
+          let applied = 0, deferred = 0, conflits = 0, protegees = 0;
+
           for (const row of result.rows) {
-            // Ne pas ré-insérer un enregistrement qu'on vient de supprimer localement
-            if (deletedIds.has(Number(row.id))) {
-              continue;
-            }
+            const ts = row[modCol];
+            const tsIso = ts instanceof Date ? ts.toISOString() : (ts ? String(ts) : null);
+            if (tsIso && tsIso > maxSeen) maxSeen = tsIso;
+
+            if (deletedIds.has(Number(row.id))) continue;
+
+            // Écriture locale pas encore poussée : elle fait foi, on ne
+            // l'écrase pas. Le curseur avance quand même (la ligne sera
+            // reprise au cycle suivant, une fois la poussée effectuée).
+            if (idsEnAttente.has(Number(row.id))) { protegees++; continue; }
+
             try {
-              const keys = Object.keys(row).filter(k => row[k] !== null && row[k] !== undefined);
-              const cols = keys.map(k => `"${k}"`).join(', ');
-              const placeholders = keys.map(() => '?').join(', ');
-              const updates = keys
-                .filter(k => k !== 'id')
-                .map(k => `"${k}" = excluded."${k}"`)
-                .join(', ');
-              const vals = keys.map(k => {
-                const val = row[k];
-                if (val instanceof Date) return val.toISOString();
-                if (typeof val === 'bigint') return Number(val);
-                return val;
-              });
-
-              await this.localPrisma.$executeRawUnsafe(
-                `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) 
-                 ON CONFLICT(id) DO UPDATE SET ${updates}`,
-                ...vals
-              );
-              pulled++;
+              await this._mergeRemoteRow(table, row);
+              applied++; pulled++;
             } catch (insertErr) {
-              if (insertErr.message.includes('FOREIGN KEY constraint failed') && table === 'comptes_clients') {
-                // Le client parent n'existe pas encore en local — essayer de le récupérer depuis Neon
-                try {
-                  const clientId = row.client_id;
-                  const parentResult = await client.query(`SELECT * FROM "clients" WHERE id = $1`, [clientId]);
-                  if (parentResult.rows.length > 0) {
-                    const parent = parentResult.rows[0];
-                    const pKeys = Object.keys(parent).filter(k => parent[k] !== null && parent[k] !== undefined);
-                    const pCols = pKeys.map(k => `"${k}"`).join(', ');
-                    const pPh = pKeys.map(() => '?').join(', ');
-                    const pUpd = pKeys.filter(k => k !== 'id').map(k => `"${k}" = excluded."${k}"`).join(', ');
-                    const pVals = pKeys.map(k => {
-                      const v = parent[k];
-                      if (v instanceof Date) return v.toISOString();
-                      if (typeof v === 'bigint') return Number(v);
-                      return v;
-                    });
-                    await this.localPrisma.$executeRawUnsafe(
-                      `INSERT INTO "clients" (${pCols}) VALUES (${pPh}) ON CONFLICT(id) DO UPDATE SET ${pUpd}`,
-                      ...pVals
-                    );
-                    // Réessayer le compte maintenant que le client existe
-                    await this.localPrisma.$executeRawUnsafe(
-                      `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updates}`,
-                      ...vals
-                    );
-                    pulled++;
-                  }
-                } catch (retryErr) {
-                  console.warn(`  ⚠️  ${table} retry échoué (id=${row.id}): ${retryErr.message}`);
-                }
-              } else if (!insertErr.message.includes('UNIQUE constraint failed')) {
-                console.warn(`  ⚠️  ${table} merge échoué (id=${row.id}): ${insertErr.message}`);
-              }
+              // Un conflit UNIQUE signale une divergence réelle : la ligne
+              // distante entre en collision avec une AUTRE ligne locale sur une
+              // clé naturelle. L'ignorer silencieusement fait disparaître la
+              // donnée sans la moindre trace — on la conserve et on la signale.
+              if (insertErr.message.includes('UNIQUE constraint failed')) conflits++;
+              deferred++;
+              await this._enqueuePullRetry(table, row, insertErr.message);
             }
           }
 
-          if (result.rows.length > 0) {
-            console.log(`  📥 ${table}: ${result.rows.length} nouveau(x), ${pulled} total`);
-          }
+          if (maxSeen !== since) await this._setPullWatermark(table, maxSeen);
+
+          const details = [
+            deferred ? `${deferred} différée(s)` : null,
+            conflits ? `dont ${conflits} conflit(s) de clé` : null,
+            protegees ? `${protegees} protégée(s) (écriture locale en attente)` : null,
+          ].filter(Boolean).join(', ');
+          console.log(`  📥 ${table}: ${applied} appliquée(s)${details ? `, ${details}` : ''}`);
         } catch (e) {
           console.warn(`  ⚠️  ${table}: erreur pull - ${e.message}`);
         }
       }
+
+      // ── Étape 3 : rejouer les lignes différées, parents désormais présents ──
+      await this._processPullRetryQueue();
+
+      // ── Étape 4 : fusionner les doublons introduits par l'auto-seed ────────
+      // (le pull vient peut-être de descendre l'équivalent cloud d'un
+      //  enregistrement que ce poste avait créé de son côté)
+      await this._reconcileNaturalKeyDuplicates(client);
 
       client.release();
       if (pulled > 0) console.log(`📥 Pull delta: ${pulled} enregistrement(s) depuis Neon`);
@@ -408,6 +941,7 @@ class SyncServiceV2 {
       console.error('❌ Erreur pull delta:', e.message);
     }
   }
+
 
   /**
    * Lit deleted_records dans Neon et supprime les enregistrements correspondants en local.
@@ -550,6 +1084,29 @@ class SyncServiceV2 {
     }
 
     if (operation === 'DELETE') {
+      // Neutraliser les références qui ne doivent pas être supprimées
+      for (const [table, colonne] of (NULLIFY_ON_DELETE[tableName] || [])) {
+        try {
+          await client.query(`UPDATE "${table}" SET "${colonne}" = NULL WHERE "${colonne}" = $1`, [row.id]);
+        } catch (e) {
+          console.warn(`⚠️  Neutralisation ${table}.${colonne}: ${e.message}`);
+        }
+      }
+
+      // Supprimer les lignes filles avant le parent (Neon applique les FK,
+      // contrairement au SQLite local)
+      for (const [table, colonne] of (CASCADE_ON_DELETE[tableName] || [])) {
+        try {
+          const r = await client.query(`DELETE FROM "${table}" WHERE "${colonne}" = $1`, [row.id]);
+          if (r.rowCount > 0) console.log(`   ↳ ${table}: ${r.rowCount} ligne(s) fille(s) supprimée(s)`);
+        } catch (e) {
+          // Table absente sur d'anciennes installations : non bloquant
+          if (!e.message.includes('does not exist')) {
+            console.warn(`⚠️  Cascade ${table}.${colonne}: ${e.message}`);
+          }
+        }
+      }
+
       await client.query(`DELETE FROM "${tableName}" WHERE id = $1`, [row.id]);
       // Enregistrer la suppression dans deleted_records pour propagation aux autres postes
       try {
@@ -605,6 +1162,13 @@ class SyncServiceV2 {
     // Remove date_modification for tables that don't have it
     if (TABLES_WITHOUT_DATE_MODIFICATION.includes(tableName)) {
       delete row.date_modification;
+    }
+
+    // Compléter les colonnes NOT NULL absentes du payload
+    for (const [colonne, valeurParDefaut] of Object.entries(COLONNES_OBLIGATOIRES[tableName] || {})) {
+      if (row[colonne] === undefined || row[colonne] === null) {
+        row[colonne] = valeurParDefaut();
+      }
     }
 
     const keys = Object.keys(row).filter(k => {
@@ -726,8 +1290,42 @@ class SyncServiceV2 {
         dataStr = JSON.stringify(safeData);
       }
 
+      // ── Déduplication ────────────────────────────────────────────────────
+      // Trois mécanismes journalisent les écritures (appels explicites dans les
+      // routes, middleware HTTP, hooks Prisma) et se recouvrent sur plusieurs
+      // tables : une même écriture peut être journalisée jusqu'à trois fois.
+      // Plutôt que de pousser trois fois vers Neon, on fusionne dans
+      // l'opération déjà en attente — chaque mécanisme apporte des colonnes
+      // que les autres n'ont pas, l'union est donc plus complète que chacun
+      // pris isolément.
+      if (data.id && operation !== 'DELETE') {
+        const enAttente = await this.localPrisma.$queryRawUnsafe(
+          `SELECT operation_id, data FROM operation_log
+           WHERE table_name = ? AND record_id = ? AND operation_type = ? AND status = 'pending'
+           ORDER BY id DESC LIMIT 1`,
+          tableName, data.id, operation
+        );
+
+        if (enAttente.length > 0) {
+          let fusion = dataStr;
+          try {
+            fusion = JSON.stringify({
+              ...JSON.parse(enAttente[0].data || '{}'),
+              ...JSON.parse(dataStr),
+            });
+          } catch (_) { /* payload illisible : on garde le plus récent */ }
+
+          // Le timestamp d'origine est conservé pour ne pas fausser l'ordre de replay
+          await this.localPrisma.$executeRawUnsafe(
+            `UPDATE operation_log SET data = ? WHERE operation_id = ?`,
+            fusion, enAttente[0].operation_id
+          );
+          return;
+        }
+      }
+
       await this.localPrisma.$executeRawUnsafe(
-        `INSERT INTO operation_log (operation_id, operation_type, table_name, record_id, data, user_id, status) 
+        `INSERT INTO operation_log (operation_id, operation_type, table_name, record_id, data, user_id, status)
          VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
         operationId,
         operation,
@@ -736,6 +1334,7 @@ class SyncServiceV2 {
         dataStr,
         userId
       );
+
 
       // Si c'est un DELETE, annuler les INSERT/UPDATE pending pour le même enregistrement
       // (évite des erreurs FK lors du replay : INSERT d'un compte dont le client a été supprimé)
@@ -801,8 +1400,32 @@ class SyncServiceV2 {
     return {
       cloudEnabled: !!this.cloudUrl,
       cloudAvailable: this.isCloudAvailable,
+      installationId: installation.getInstallationId(),
       mode: !this.cloudUrl ? 'local-only' : this.isCloudAvailable ? 'hybrid' : 'offline-fallback'
     };
+  }
+
+  /**
+   * Détail des lignes reçues de Neon qui n'ont pas pu être appliquées.
+   * Sert au diagnostic : une donnée manquante sur un poste se lit ici.
+   */
+  async getPullIssues() {
+    try {
+      const rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT table_name, COUNT(*) AS total,
+                SUM(CASE WHEN attempts >= 20 THEN 1 ELSE 0 END) AS abandonnees,
+                MAX(last_error) AS derniere_erreur
+         FROM sync_pull_retry GROUP BY table_name ORDER BY total DESC`
+      );
+      return rows.map(r => ({
+        table: r.table_name,
+        enAttente: Number(r.total),
+        abandonnees: Number(r.abandonnees || 0),
+        derniereErreur: String(r.derniere_erreur || '').replace(/\s+/g, ' ').substring(0, 200),
+      }));
+    } catch (e) {
+      return [];
+    }
   }
 
   stop() {

@@ -18,6 +18,7 @@ import '../../boutiques/widgets/boutique_selector_widget.dart';
 import '../../boutiques/widgets/boutique_context_indicator.dart';
 import '../../boutiques/views/boutiques_management_page.dart';
 import '../../sync/widgets/sync_indicator_widget.dart';
+import '../../cash_registers/widgets/cash_balance_widget.dart';
 
 class ModernDashboardPage extends StatefulWidget {
   const ModernDashboardPage({super.key});
@@ -256,6 +257,11 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
 
                 // Statut d'abonnement
                 const SubscriptionStatusWidget(showDetails: false),
+
+                const SizedBox(height: 16),
+
+                // Solde de la caisse courante
+                // const CashBalanceWidget(),
 
                 const SizedBox(height: 16),
 

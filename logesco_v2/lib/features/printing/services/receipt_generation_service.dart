@@ -177,6 +177,16 @@ class ReceiptGenerationService {
       // Tronquer le nom du client à 15 caractères comme dans l'aperçu
       final customerName = receipt.customer!.nom.length > 15 ? '${receipt.customer!.nom.substring(0, 12)}...' : receipt.customer!.nom;
       buffer.writeln('Client:$customerName');
+
+      // Afficher NUI si renseigné
+      if (receipt.customer!.nui?.isNotEmpty == true) {
+        buffer.writeln('NUI:${receipt.customer!.nui}');
+      }
+
+      // Afficher RCCM si renseigné
+      if (receipt.customer!.rccm?.isNotEmpty == true) {
+        buffer.writeln('RCCM:${receipt.customer!.rccm}');
+      }
     }
 
     buffer.writeln('Paiement:${receipt.paymentMethod}');

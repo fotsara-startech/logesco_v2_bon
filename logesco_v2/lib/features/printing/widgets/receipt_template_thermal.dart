@@ -189,7 +189,13 @@ class ReceiptTemplateThermal extends ReceiptTemplateBase {
               Text('${t('saleNumber')}: ${receipt.saleNumber}', style: textStyle),
               Text('${t('date')}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: textStyle),
               Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: textStyle),
-              if (receipt.customer != null) Text('${t('customer')}: ${_truncateText(receipt.customer!.nom, 15)}', style: textStyle),
+              if (receipt.customer != null) ...[
+                Text('${t('customer')}: ${_truncateText(receipt.customer!.nom, 15)}', style: textStyle),
+                // Afficher NUI si renseigné
+                if (receipt.customer!.nui?.isNotEmpty == true) Text('NUI: ${receipt.customer!.nui}', style: textStyle),
+                // Afficher RCCM si renseigné
+                if (receipt.customer!.rccm?.isNotEmpty == true) Text('RCCM: ${receipt.customer!.rccm}', style: textStyle),
+              ],
               Text('${t('paymentMethod')}: ${receipt.paymentMethod}', style: textStyle),
             ],
           ),

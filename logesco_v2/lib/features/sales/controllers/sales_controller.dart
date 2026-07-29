@@ -11,6 +11,7 @@ import '../../printing/models/print_format.dart';
 
 import '../../products/models/product.dart';
 import '../../customers/models/customer.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 import '../models/sale.dart';
 import '../services/sales_service.dart';
 import '../../inventory/services/inventory_service.dart';
@@ -364,7 +365,16 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
     }
 
-    print('⏳ [LOADSALES] vendeurId effectif: $effectiveVendeurId');
+    final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+
+    print('🔍 [DIAGNOSTIC VENTES]');
+    print('   - Page: ${_currentPage.value}');
+    print('   - Boutique active: $activeBoutiqueId');
+    print('   - Vendeur filter: $effectiveVendeurId');
+    print('   - Statut filter: ${_statusFilter.value.isEmpty ? "AUCUN" : _statusFilter.value}');
+    print('   - Mode paiement filter: ${_paymentModeFilter.value.isEmpty ? "AUCUN" : _paymentModeFilter.value}');
+    print('   - Date début: ${_startDateFilter.value}');
+    print('   - Date fin: ${_endDateFilter.value}');
 
     try {
       final response = await _salesService.getSales(
@@ -374,10 +384,18 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         dateDebut: _startDateFilter.value,
         dateFin: _endDateFilter.value,
         vendeurId: effectiveVendeurId,
-        boutiqueId: BoutiqueController.getActiveBoutiqueId(),
+        boutiqueId: activeBoutiqueId,
       );
 
       if (response.success && response.data != null) {
+        print('✅ [DIAGNOSTIC] Réponse API réussie');
+        print('   - Nombre de ventes reçues: ${response.data!.length}');
+        print('   - Pagination: ${response.pagination?.toString() ?? "null"}');
+
+        if (response.data!.isNotEmpty) {
+          print('   - Première vente: ${response.data!.first.numeroVente} (Boutique: ${response.data!.first.clientId})');
+        }
+
         if (refresh) {
           _sales.assignAll(response.data!);
         } else {
@@ -389,11 +407,15 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
           _totalPages.value = response.pagination!.totalPages;
           _hasMoreData.value = _currentPage.value < _totalPages.value;
         }
+
+        print('   - Total ventes en mémoire après chargement: ${_sales.length}');
       } else {
+        print('❌ [DIAGNOSTIC] Erreur API: ${response.message}');
         SnackbarUtils.showError(response.message ?? 'Erreur lors du chargement des ventes');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors du chargement des ventes');
+      print('❌ [DIAGNOSTIC] Exception lors du chargement: $e');
+      SnackbarUtils.showError('Erreur lors du chargement des ventes: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -776,7 +798,20 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   }
 
   void setCustomSaleDate(DateTime? date) {
-    _customSaleDate.value = date;
+    if (date != null) {
+      // Conserver l'heure actuelle quand on sélectionne une date
+      final now = DateTime.now();
+      _customSaleDate.value = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        now.hour,
+        now.minute,
+        now.second,
+      );
+    } else {
+      _customSaleDate.value = null;
+    }
   }
 
   // Vérifier si l'utilisateur peut antidater les ventes
@@ -1065,6 +1100,12 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       if (response.success) {
         SnackbarUtils.showSuccess(response.message ?? 'Vente annulée avec succès');
         await loadSales(refresh: true);
+
+        // L'annulation rembourse le client depuis la caisse : le solde de la
+        // session change, ainsi que le stock des produits de la vente. Sans ce
+        // rafraîchissement, l'app bar et les listes gardaient les anciennes
+        // valeurs jusqu'au prochain chargement manuel.
+        await _rafraichirApresAnnulation();
         return true;
       } else {
         SnackbarUtils.showError(response.message ?? 'Erreur lors de l\'annulation de la vente');
@@ -1076,6 +1117,28 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  /// Recharge les données impactées par une annulation de vente.
+  ///
+  /// Chaque contrôleur est optionnel : selon l'écran d'où part l'annulation,
+  /// tous ne sont pas forcément instanciés. On isole donc chaque appel pour
+  /// qu'un contrôleur absent n'empêche pas les autres de se rafraîchir.
+  Future<void> _rafraichirApresAnnulation() async {
+    // Solde de la session de caisse (affiché dans l'app bar)
+    try {
+      await Get.find<CashSessionController>().loadActiveSession();
+    } catch (_) {}
+
+    // Stock des produits restauré par l'annulation
+    try {
+      await Get.find<ProductController>().refreshProducts();
+    } catch (_) {}
+
+    // Indicateurs du tableau de bord
+    try {
+      await Get.find<DashboardController>().refresh();
+    } catch (_) {}
   }
 
   // Filtres

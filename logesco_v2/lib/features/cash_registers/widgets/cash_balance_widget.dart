@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/cash_session_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
 
-/// Widget pour afficher le solde de la caisse (Admin uniquement)
-/// Visible uniquement sur le dashboard pour l'administrateur
+/// Widget pour afficher le solde de la caisse
+/// Visible pour tous les utilisateurs avec une session active
 class CashBalanceWidget extends StatelessWidget {
   const CashBalanceWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
     final sessionController = Get.find<CashSessionController>();
-    final authController = Get.find<AuthController>();
 
     return Obx(() {
-      // Vérifier si l'utilisateur est admin et a une session active
-      final isAdmin = authController.currentUser.value?.role.isAdmin ?? false;
-      if (!isAdmin || !sessionController.hasActiveSession) {
+      // Vérifier si une session est active
+      if (!sessionController.hasActiveSession) {
         return const SizedBox.shrink();
       }
 
@@ -81,31 +78,6 @@ class CashBalanceWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.admin_panel_settings,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'users_admin_access'.tr,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
 
@@ -150,39 +122,6 @@ class CashBalanceWidget extends StatelessWidget {
                         'cash_session_duration'.tr,
                         session.formattedDuration,
                         Icons.access_time,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Avertissement
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.amber.withOpacity(0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.visibility_off,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'cash_session_admin_only_visible'.tr,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
                       ),
                     ),
                   ],

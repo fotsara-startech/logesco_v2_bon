@@ -6,6 +6,8 @@ class Customer {
   final String? telephone;
   final String? email;
   final String? adresse;
+  final String? nui; // Numéro d'Identification Unique (entreprise)
+  final String? rccm; // Registre du Commerce et du Crédit Mobilier (entreprise)
   final double solde;
   final DateTime dateCreation;
   final DateTime dateModification;
@@ -17,6 +19,8 @@ class Customer {
     this.telephone,
     this.email,
     this.adresse,
+    this.nui,
+    this.rccm,
     this.solde = 0.0,
     required this.dateCreation,
     required this.dateModification,
@@ -38,6 +42,8 @@ class Customer {
       telephone: json['telephone'] as String?,
       email: json['email'] as String?,
       adresse: json['adresse'] as String?,
+      nui: json['nui'] as String?,
+      rccm: json['rccm'] as String?,
       solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
       dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr) : DateTime.now(),
       dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr) : DateTime.now(),
@@ -53,6 +59,8 @@ class Customer {
       'telephone': telephone,
       'email': email,
       'adresse': adresse,
+      'nui': nui,
+      'rccm': rccm,
       'solde': solde,
       'date_creation': dateCreation.toIso8601String(),
       'date_modification': dateModification.toIso8601String(),
@@ -67,6 +75,8 @@ class Customer {
     String? telephone,
     String? email,
     String? adresse,
+    String? nui,
+    String? rccm,
     double? solde,
     DateTime? dateCreation,
     DateTime? dateModification,
@@ -78,6 +88,8 @@ class Customer {
       telephone: telephone ?? this.telephone,
       email: email ?? this.email,
       adresse: adresse ?? this.adresse,
+      nui: nui ?? this.nui,
+      rccm: rccm ?? this.rccm,
       solde: solde ?? this.solde,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
@@ -106,6 +118,8 @@ class CustomerForm {
   final String? telephone;
   final String? email;
   final String? adresse;
+  final String? nui; // Numéro d'Identification Unique (entreprise)
+  final String? rccm; // Registre du Commerce et du Crédit Mobilier (entreprise)
 
   CustomerForm({
     required this.nom,
@@ -113,6 +127,8 @@ class CustomerForm {
     this.telephone,
     this.email,
     this.adresse,
+    this.nui,
+    this.rccm,
   });
 
   /// Convertit le formulaire en JSON pour l'API
@@ -123,6 +139,8 @@ class CustomerForm {
       'telephone': telephone,
       'email': email,
       'adresse': adresse,
+      'nui': nui,
+      'rccm': rccm,
     };
   }
 
@@ -134,6 +152,8 @@ class CustomerForm {
       telephone: customer.telephone,
       email: customer.email,
       adresse: customer.adresse,
+      nui: customer.nui,
+      rccm: customer.rccm,
     );
   }
 
@@ -144,6 +164,8 @@ class CustomerForm {
     String? telephone,
     String? email,
     String? adresse,
+    String? nui,
+    String? rccm,
   }) {
     return CustomerForm(
       nom: nom ?? this.nom,
@@ -151,6 +173,8 @@ class CustomerForm {
       telephone: telephone ?? this.telephone,
       email: email ?? this.email,
       adresse: adresse ?? this.adresse,
+      nui: nui ?? this.nui,
+      rccm: rccm ?? this.rccm,
     );
   }
 }

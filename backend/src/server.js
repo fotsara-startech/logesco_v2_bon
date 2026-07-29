@@ -495,6 +495,226 @@ class LogescoServer {
   }
 
   /**
+   * Ajoute les colonnes introduites par une mise à jour applicative.
+   * Les postes clients n'exécutent jamais `prisma migrate` : la migration doit
+   * être portée par le démarrage. SQLite ne connaît pas ADD COLUMN IF NOT
+   * EXISTS, d'où la vérification via PRAGMA.
+   */
+  async _ensureColonnesLocales(prisma) {
+    const AJOUTS = [
+      ['financial_movements', 'statut', `TEXT NOT NULL DEFAULT 'actif'`],
+    ];
+
+    for (const [table, colonne, definition] of AJOUTS) {
+      try {
+        const colonnes = await prisma.$queryRawUnsafe(`PRAGMA table_info(${table})`);
+        if (!colonnes.length) continue;               // table absente
+        if (colonnes.some(c => c.name === colonne)) continue; // déjà présente
+
+        await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${colonne}" ${definition}`);
+        console.log(`✅ Colonne ${table}.${colonne} ajoutée`);
+      } catch (e) {
+        console.warn(`⚠️  Ajout colonne ${table}.${colonne} (non bloquant):`, e.message);
+      }
+    }
+  }
+
+  /**
+   * Applique automatiquement le script de migration de production.
+   * Garantit que toutes les colonnes et index nécessaires sont présents,
+   * même si le client a raté une mise à jour.
+   * 
+   * Ce système de garde-fou évite que les migrations ne soient manquées
+   * lors des mises à jour automatiques.
+   */
+  async _runProductionMigrations(prisma) {
+    const environment = require('./config/environment');
+    
+    // Ignorer en cloud (PostgreSQL) - seulement pour SQLite local
+    if (environment.isCloud) {
+      return;
+    }
+
+    try {
+      console.log('🔄 Vérification des migrations de production...');
+
+      // Vérifie si une colonne existe dans une table SQLite
+      const columnExists = async (table, column) => {
+        try {
+          const rows = await prisma.$queryRawUnsafe(`PRAGMA table_info(${table})`);
+          return rows.some(r => r.name === column);
+        } catch {
+          return false;
+        }
+      };
+
+      // Applique un ALTER TABLE seulement si la colonne est absente
+      const addColumnIfMissing = async (table, column, type, defaultValue = null) => {
+        const exists = await columnExists(table, column);
+        if (exists) {
+          return false;
+        }
+        const def = defaultValue !== null ? ` DEFAULT ${defaultValue}` : '';
+        await prisma.$executeRawUnsafe(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${def}`);
+        console.log(`  ➕ ${table}.${column} — ajouté`);
+        return true;
+      };
+
+      const createIndexIfMissing = async (name, table, column) => {
+        await prisma.$executeRawUnsafe(
+          `CREATE INDEX IF NOT EXISTS ${name} ON ${table}(${column})`
+        );
+      };
+
+      let migrationsApplied = 0;
+
+      // ── 1. stock_boutiques.date_modification ─────────────────────────────────
+      const sb = await addColumnIfMissing('stock_boutiques', 'date_modification', 'DATETIME');
+      if (sb) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE stock_boutiques SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_stock_boutiques_date_modification', 'stock_boutiques', 'date_modification');
+      }
+
+      // ── 2. mouvements_stock : stock_initial, stock_final, date_modification ──
+      if (await addColumnIfMissing('mouvements_stock', 'stock_initial', 'INTEGER', 0)) migrationsApplied++;
+      if (await addColumnIfMissing('mouvements_stock', 'stock_final', 'INTEGER', 0)) migrationsApplied++;
+      const ms = await addColumnIfMissing('mouvements_stock', 'date_modification', 'DATETIME');
+      if (ms) {
+        migrationsApplied++;
+        await createIndexIfMissing('idx_mouvements_stock_date_modification', 'mouvements_stock', 'date_modification');
+      }
+      await createIndexIfMissing('idx_mouvements_stock_initial', 'mouvements_stock', 'stock_initial');
+      await createIndexIfMissing('idx_mouvements_stock_final', 'mouvements_stock', 'stock_final');
+
+      // ── 3. produits.image_url ─────────────────────────────────────────────────
+      if (await addColumnIfMissing('produits', 'image_url', 'TEXT')) migrationsApplied++;
+
+      // ── 4. stock.date_modification ────────────────────────────────────────────
+      const st = await addColumnIfMissing('stock', 'date_modification', 'DATETIME');
+      if (st) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE stock SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_stock_date_modification', 'stock', 'date_modification');
+      }
+
+      // ── 5. comptes_fournisseurs.date_modification ────────────────────────────
+      const cf = await addColumnIfMissing('comptes_fournisseurs', 'date_modification', 'DATETIME');
+      if (cf) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE comptes_fournisseurs SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_comptes_fournisseurs_date_modification', 'comptes_fournisseurs', 'date_modification');
+      }
+
+      // ── 6. comptes_clients.date_modification ─────────────────────────────────
+      const cc = await addColumnIfMissing('comptes_clients', 'date_modification', 'DATETIME');
+      if (cc) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE comptes_clients SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_comptes_clients_date_modification', 'comptes_clients', 'date_modification');
+      }
+
+      // ── 7. cash_sessions.date_modification ───────────────────────────────────
+      const cs = await addColumnIfMissing('cash_sessions', 'date_modification', 'DATETIME');
+      if (cs) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE cash_sessions SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_cash_sessions_date_modification', 'cash_sessions', 'date_modification');
+      }
+
+      // ── 8. cash_movements.date_modification ──────────────────────────────────
+      const cm = await addColumnIfMissing('cash_movements', 'date_modification', 'DATETIME');
+      if (cm) {
+        migrationsApplied++;
+        await prisma.$executeRawUnsafe(`UPDATE cash_movements SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
+        await createIndexIfMissing('idx_cash_movements_date_modification', 'cash_movements', 'date_modification');
+      }
+
+      // ── 9. transferts_stock.date_modification ────────────────────────────────
+      const ts = await addColumnIfMissing('transferts_stock', 'date_modification', 'DATETIME');
+      if (ts) {
+        migrationsApplied++;
+        await createIndexIfMissing('idx_transferts_stock_date_modification', 'transferts_stock', 'date_modification');
+      }
+
+      // ── 10. transactions_comptes.date_modification ───────────────────────────
+      const tc = await addColumnIfMissing('transactions_comptes', 'date_modification', 'DATETIME');
+      if (tc) {
+        migrationsApplied++;
+        await createIndexIfMissing('idx_transactions_date_modification', 'transactions_comptes', 'date_modification');
+      }
+
+      // ── 11. stock_inventories.date_modification ──────────────────────────────
+      if (await addColumnIfMissing('stock_inventories', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 12. inventory_items.date_modification ────────────────────────────────
+      if (await addColumnIfMissing('inventory_items', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 13. historique_prix_achat.date_modification ──────────────────────────
+      if (await addColumnIfMissing('historique_prix_achat', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 14. commandes_approvisionnement.date_modification ────────────────────
+      if (await addColumnIfMissing('commandes_approvisionnement', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 15. details_commandes_approvisionnement.date_modification ────────────
+      if (await addColumnIfMissing('details_commandes_approvisionnement', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 16. ventes.date_modification ─────────────────────────────────────────
+      if (await addColumnIfMissing('ventes', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      // ── 17. details_ventes.date_modification ─────────────────────────────────
+      if (await addColumnIfMissing('details_ventes', 'date_modification', 'DATETIME')) migrationsApplied++;
+
+      if (migrationsApplied > 0) {
+        console.log(`✅ ${migrationsApplied} migration(s) de production appliquée(s)`);
+      } else {
+        console.log('✅ Toutes les migrations de production déjà appliquées');
+      }
+
+    } catch (error) {
+      console.warn('⚠️  Migrations de production échouées (non bloquant):', error.message);
+    }
+  }
+
+  /**
+   * Valide et corrige le schéma de base de données
+   * Ajoute les colonnes manquantes si nécessaire
+   */
+  async _validateSchema(prisma) {
+    try {
+      const environment = require('./config/environment');
+      
+      // Ignorer en cloud (PostgreSQL) - seulement pour SQLite local
+      if (environment.isCloud) {
+        return;
+      }
+
+      const SchemaValidator = require('./utils/schema-validator');
+      const validator = new SchemaValidator(prisma);
+      
+      // Validation rapide d'abord
+      const isValid = await validator.quickValidate();
+      
+      if (isValid) {
+        console.log('✅ Schéma de base de données valide');
+        return;
+      }
+
+      // Si la validation rapide échoue, faire une validation complète et correction
+      console.log('🔧 Correction du schéma de base de données...');
+      const result = await validator.validateAndFix();
+      
+      if (result.success) {
+        console.log('✅ Schéma corrigé avec succès');
+      } else {
+        console.warn(`⚠️  ${result.issuesFound - result.issuesFixed} problèmes non résolus`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Validation du schéma échouée (non bloquant):', error.message);
+    }
+  }
+
+  /**
    * Initialise et démarre le serveur
    */
   async start() {
@@ -507,6 +727,16 @@ class LogescoServer {
 
       // Initialiser la base de données
       const prisma = await databaseManager.initialize();
+
+      // Valider et corriger le schéma si nécessaire
+      await this._validateSchema(prisma);
+
+      // GARDE-FOU : Appliquer les migrations de production automatiquement
+      // Garantit que les mises à jour ne ratent jamais les migrations
+      await this._runProductionMigrations(prisma);
+
+      // Colonnes introduites par une mise à jour applicative (SQLite local)
+      await this._ensureColonnesLocales(prisma);
 
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
@@ -527,6 +757,12 @@ class LogescoServer {
         const syncService = require('./services/sync-service');
         this.syncService = syncService;
         this.app.locals.syncService = syncService;
+
+        // Réserver la plage d'identifiants de ce poste AVANT d'accepter la
+        // moindre écriture : sans elle, deux postes créeraient les mêmes ids
+        // et s'écraseraient mutuellement dans Neon.
+        await syncService.ensureInstallationIdentity(prisma);
+
         this.financialMovementService = new FinancialMovementService(prisma, syncService);
         this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
       }
@@ -616,13 +852,25 @@ class LogescoServer {
     });
 
     // Route health check (utilisée par BackendService Flutter pour détecter le démarrage)
-    this.app.get('/health', (req, res) => {
-      const syncService = require('./services/sync-service');
-      res.json({
-        status: 'ok',
-        uptime: process.uptime(),
-        sync: syncService.getStatus()
-      });
+    // CRITIQUE : doit vérifier que Prisma est prêt, pas seulement que le serveur écoute
+    this.app.get('/health', async (req, res) => {
+      try {
+        // Vérifier que Prisma est opérationnel
+        await this.models.prisma.$queryRaw`SELECT 1`;
+        
+        const syncService = require('./services/sync-service');
+        res.json({
+          status: 'ok',
+          uptime: process.uptime(),
+          sync: syncService.getStatus()
+        });
+      } catch (error) {
+        // Si Prisma n'est pas prêt, retourner 503 Service Unavailable
+        res.status(503).json({
+          status: 'initializing',
+          message: 'Database not ready yet'
+        });
+      }
     });
 
     // Route debug — retourne l'état de la DB et les variables d'env clés

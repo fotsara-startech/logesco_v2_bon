@@ -224,6 +224,24 @@ class PrintingService {
             if (fixedJson['isReprint'] == null) fixedJson['isReprint'] = false;
             if (fixedJson['reprintCount'] == null) fixedJson['reprintCount'] = 0;
 
+            // Mapper la langue depuis le champ 'language' renvoyé par le backend
+            if (fixedJson['language'] == null) fixedJson['language'] = 'fr';
+
+            // Mapper le client avec nui/rccm
+            if (fixedJson['customer'] == null && fixedJson['vente']?['client'] != null) {
+              final c = fixedJson['vente']['client'];
+              fixedJson['customer'] = {
+                'id': c['id'] ?? 0,
+                'nom': '${c['nom'] ?? ''}${c['prenom'] != null ? ' ${c['prenom']}' : ''}',
+                'telephone': c['telephone'],
+                'adresse': c['adresse'],
+                'nui': c['nui'],
+                'rccm': c['rccm'],
+                'dateCreation': DateTime.now().toIso8601String(),
+                'dateModification': DateTime.now().toIso8601String(),
+              };
+            }
+
             return Receipt.fromJson(fixedJson);
           }).toList();
 
@@ -322,6 +340,24 @@ class PrintingService {
             receiptJson['remainingAmount'] = 0.0;
             print('❌ [GET_RECEIPT_BY_ID] No vente data for remainingAmount');
           }
+        }
+
+        // Mapper la langue
+        if (receiptJson['language'] == null) receiptJson['language'] = 'fr';
+
+        // Mapper le client avec nui/rccm depuis vente.client
+        if (receiptJson['customer'] == null && receiptJson['vente']?['client'] != null) {
+          final c = receiptJson['vente']['client'];
+          receiptJson['customer'] = {
+            'id': c['id'] ?? 0,
+            'nom': '${c['nom'] ?? ''}${c['prenom'] != null ? ' ${c['prenom']}' : ''}',
+            'telephone': c['telephone'],
+            'adresse': c['adresse'],
+            'nui': c['nui'],
+            'rccm': c['rccm'],
+            'dateCreation': DateTime.now().toIso8601String(),
+            'dateModification': DateTime.now().toIso8601String(),
+          };
         }
 
         final receipt = Receipt.fromJson(receiptJson);
@@ -851,6 +887,8 @@ class PrintingService {
         nom: clientData['nom'] ?? 'Client',
         telephone: clientData['telephone'],
         adresse: clientData['adresse'],
+        nui: clientData['nui'],
+        rccm: clientData['rccm'],
         dateCreation: DateTime.tryParse(clientData['dateCreation'] ?? '') ?? now,
         dateModification: DateTime.tryParse(clientData['dateModification'] ?? '') ?? now,
       );

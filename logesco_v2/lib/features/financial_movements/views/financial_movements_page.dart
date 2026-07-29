@@ -516,15 +516,18 @@ class FinancialMovementsPage extends StatelessWidget {
                 ? null
                 : () async {
                     final success = await controller.deleteMovement(movement.id);
-                    Get.back();
-                    if (success) {
-                      Get.snackbar(
-                        'success'.tr,
-                        'financial_movements_deleted_success'.tr,
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.green.shade100,
-                        colorText: Colors.green.shade800,
-                      );
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('financial_movements_deleted_success'.tr),
+                            backgroundColor: Colors.green.shade700,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
                     }
                   },
             style: ElevatedButton.styleFrom(

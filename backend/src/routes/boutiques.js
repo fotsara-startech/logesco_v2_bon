@@ -551,7 +551,7 @@ function createBoutiquesRouter({ prisma, authService, syncService }) {
 
         const [mouvementsAgg, caisses] = await Promise.all([
           prisma.financialMovement.aggregate({
-            where: { boutiqueId: b.id, ...(where.dateVente ? { date: where.dateVente } : {}) },
+            where: { boutiqueId: b.id, statut: { not: 'annule' }, ...(where.dateVente ? { date: where.dateVente } : {}) },
             _sum: { montant: true }
           }),
           prisma.cashRegister.findMany({
@@ -610,7 +610,7 @@ function createBoutiquesRouter({ prisma, authService, syncService }) {
         prisma.vente.aggregate({ where: venteWhere, _sum: { montantTotal: true, montantPaye: true } }),
         prisma.vente.count({ where: venteWhere }),
         prisma.financialMovement.aggregate({
-          where: { boutiqueId, ...(venteWhere.dateVente ? { date: venteWhere.dateVente } : {}) },
+          where: { boutiqueId, statut: { not: 'annule' }, ...(venteWhere.dateVente ? { date: venteWhere.dateVente } : {}) },
           _sum: { montant: true }
         }),
         prisma.stockBoutique.count({

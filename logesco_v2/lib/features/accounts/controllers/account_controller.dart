@@ -11,9 +11,11 @@ class AccountController extends GetxController {
 
   // ── helper snackbar sécurisé (évite "No Overlay" pendant onInit) ──────────
   void _safeSnackbar(String title, String message, {bool isError = true}) {
-    // Différer l'affichage après le premier frame pour s'assurer que l'Overlay est monté
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (Get.isRegistered<GetMaterialController>() || Get.context != null) {
+    Future.delayed(const Duration(milliseconds: 600), () {
+      try {
+        final ctx = Get.context;
+        if (ctx == null) return;
+        if (Overlay.maybeOf(ctx) == null) return;
         Get.snackbar(
           title,
           message,
@@ -21,6 +23,8 @@ class AccountController extends GetxController {
           backgroundColor: isError ? Colors.red.shade100 : Colors.green.shade100,
           colorText: isError ? Colors.red.shade800 : Colors.green.shade800,
         );
+      } catch (_) {
+        // Ignorer silencieusement si l'Overlay n'est toujours pas disponible
       }
     });
   }

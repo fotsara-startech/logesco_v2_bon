@@ -112,15 +112,26 @@ class _InventoryCountViewState extends State<InventoryCountView> {
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
               PopupMenuItem(
-                value: 'export',
+                value: 'export_excel',
                 child: Row(
                   children: [
-                    const Icon(Icons.file_download),
+                    const Icon(Icons.table_chart, color: Colors.green),
                     const SizedBox(width: 8),
-                    Text('inventory_count_export'.tr),
+                    const Text('Exporter Excel'),
                   ],
                 ),
               ),
+              PopupMenuItem(
+                value: 'import_excel',
+                child: Row(
+                  children: [
+                    const Icon(Icons.upload_file, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    const Text('Importer Excel'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'close_inventory',
                 child: Row(
@@ -764,12 +775,50 @@ class _InventoryCountViewState extends State<InventoryCountView> {
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'export':
-        SnackbarHelper.info('common_in_progress'.tr, title: 'inventory_count_export'.tr);
+      case 'export_excel':
+        _exportToExcel();
+        break;
+      case 'import_excel':
+        _importFromExcel();
         break;
       case 'close_inventory':
         _finalizeInventory();
         break;
+    }
+  }
+
+  void _exportToExcel() async {
+    if (_inventoryId == null) {
+      SnackbarHelper.error('ID inventaire manquant');
+      return;
+    }
+    await _controller.exportCountingSheetToExcel(_inventoryId!);
+  }
+
+  void _importFromExcel() async {
+    // Confirmer avant import
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Importer fiche de comptage'),
+        content: const Text(
+          'Sélectionnez le fichier Excel contenant les comptages remplis.\n\n'
+          'Les quantités comptées seront importées et remplaceront les valeurs existantes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Continuer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _controller.importCountingSheetFromExcel();
     }
   }
 

@@ -407,6 +407,7 @@ class MovementReportService {
   async getDetailedMovements(startDate, endDate, categoryIds = null) {
     try {
       const where = {
+        statut: { not: 'annule' }, // exclure les mouvements annulés d'un export comptable
         date: {
           gte: new Date(startDate),
           lte: new Date(endDate)

@@ -9,6 +9,7 @@ const { validate, validateId, validatePagination } = require('../middleware/vali
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, StockDTO, MouvementStockDTO } = require('../dto');
 const { stockSchemas } = require('../validation/schemas');
+const logger = require('../utils/logger');
 const {
   buildPrismaQuery,
   sanitizeInput
@@ -449,7 +450,9 @@ function createInventoryRouter(models) {
         res.json(response);
 
       } catch (error) {
-        console.error('Erreur liste stocks:', error);
+        logger.error('❌ [Inventory GET] Erreur liste stocks', { error: error.message, stack: error.stack });
+        console.error('❌ [Inventory GET] Erreur liste stocks:', error);
+        console.error('❌ [Inventory GET] Stack trace:', error.stack);
         res.status(500).json(
           BaseResponseDTO.error('Erreur lors de la récupération des stocks')
         );

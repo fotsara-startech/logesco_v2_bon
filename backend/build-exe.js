@@ -120,6 +120,22 @@ async function main() {
     console.log('\n[4/6] Copie du backend...');
     copyDirSync(path.join(ROOT, 'src'),    path.join(DIST, 'src'));
     copyDirSync(path.join(ROOT, 'prisma'), path.join(DIST, 'prisma'));
+    // Copier le dossier scripts (contient auto-migrate.js et le .bat)
+    ensureDir(path.join(DIST, 'scripts'));
+    if (fs.existsSync(path.join(ROOT, 'scripts', 'auto-migrate.js'))) {
+      fs.copyFileSync(
+        path.join(ROOT, 'scripts', 'auto-migrate.js'),
+        path.join(DIST, 'scripts', 'auto-migrate.js')
+      );
+      console.log('  ✅ auto-migrate.js copié');
+    }
+    if (fs.existsSync(path.join(ROOT, 'scripts', 'fix-migrations-client.bat'))) {
+      fs.copyFileSync(
+        path.join(ROOT, 'scripts', 'fix-migrations-client.bat'),
+        path.join(DIST, 'scripts', 'fix-migrations-client.bat')
+      );
+      console.log('  ✅ fix-migrations-client.bat copié');
+    }
     // node_modules complet (nécessaire pour Prisma natif)
     copyDirSync(path.join(ROOT, 'node_modules'), path.join(DIST, 'node_modules'));
     fs.copyFileSync(path.join(ROOT, 'package.json'), path.join(DIST, 'package.json'));

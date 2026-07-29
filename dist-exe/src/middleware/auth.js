@@ -15,10 +15,13 @@ const { AuthenticationError, AuthorizationError } = require('../utils/business-e
 function authenticateToken(authService) {
   return (req, res, next) => {
     try {
+      console.log('🔐 [AUTH] Vérification authentification pour:', req.method, req.url);
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+      console.log('🔐 [AUTH] Token présent:', !!token, 'Header:', authHeader?.substring(0, 20) + '...');
 
       if (!token) {
+        console.log('❌ [AUTH] Token manquant');
         const error = new AuthenticationError('Token d\'accès requis');
         logger.security('Missing authentication token', {
           url: req.url,
@@ -31,6 +34,7 @@ function authenticateToken(authService) {
 
       // Mode développement : accepter le token de test
       if (token === 'test-token' && process.env.NODE_ENV !== 'production') {
+        console.log('✅ [AUTH] Token de test accepté');
         req.user = {
           id: 1,
           nomUtilisateur: 'test-user',
@@ -40,7 +44,9 @@ function authenticateToken(authService) {
       }
 
       // Vérifier le token
+      console.log('🔐 [AUTH] Vérification du token JWT...');
       const decoded = authService.verifyAccessToken(token);
+      console.log('✅ [AUTH] Token valide pour utilisateur:', decoded.nomUtilisateur);
       
       // Ajouter les informations utilisateur à la requête
       req.user = {
@@ -52,6 +58,9 @@ function authenticateToken(authService) {
       next();
 
     } catch (error) {
+      console.log('❌ [AUTH] Erreur authentification:', error.message);
+      console.log('❌ [AUTH] Stack:', error.stack?.split('\n').slice(0, 3).join('\n'));
+      
       if (error instanceof AuthenticationError) {
         return next(error);
       }

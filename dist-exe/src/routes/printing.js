@@ -88,14 +88,14 @@ function createPrintingRouter({ prisma, authService }) {
 
 
 
-        const [recus, total] = await Promise.all([
+        const [recus, total, entreprise] = await Promise.all([
           prisma.historiqueRecu.findMany({
             where: conditions,
             include: {
               vente: {
                 include: {
                   client: {
-                    select: { id: true, nom: true, prenom: true }
+                    select: { id: true, nom: true, prenom: true, nui: true, rccm: true }
                   },
                   details: {
                     include: {
@@ -115,12 +115,20 @@ function createPrintingRouter({ prisma, authService }) {
             skip,
             take: parseInt(limit)
           }),
-          prisma.historiqueRecu.count({ where: conditions })
+          prisma.historiqueRecu.count({ where: conditions }),
+          prisma.parametresEntreprise.findFirst({ orderBy: { dateCreation: 'desc' } })
         ]);
+
+        // Ajouter la langue au chaque reçu
+        const langueFacture = entreprise?.langueFacture || 'fr';
+        const recusAvecLangue = recus.map(recu => ({
+          ...recu,
+          language: langueFacture
+        }));
 
         res.json({
           success: true,
-          data: recus,
+          data: recusAvecLangue,
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
@@ -148,31 +156,34 @@ function createPrintingRouter({ prisma, authService }) {
       try {
         const { id } = req.params;
 
-        const recu = await prisma.historiqueRecu.findUnique({
-          where: { id: parseInt(id) },
-          include: {
-            vente: {
-              include: {
-                client: true,
-                details: {
-                  include: {
-                    produit: {
-                      select: {
-                        id: true,
-                        nom: true,
-                        reference: true,
-                        prixUnitaire: true
+        const [recu, entreprise] = await Promise.all([
+          prisma.historiqueRecu.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+              vente: {
+                include: {
+                  client: true,
+                  details: {
+                    include: {
+                      produit: {
+                        select: {
+                          id: true,
+                          nom: true,
+                          reference: true,
+                          prixUnitaire: true
+                        }
                       }
                     }
                   }
                 }
+              },
+              reimpressions: {
+                orderBy: { dateReimpression: 'desc' }
               }
-            },
-            reimpressions: {
-              orderBy: { dateReimpression: 'desc' }
             }
-          }
-        });
+          }),
+          prisma.parametresEntreprise.findFirst({ orderBy: { dateCreation: 'desc' } })
+        ]);
 
         if (!recu) {
           return res.status(404).json({
@@ -183,7 +194,7 @@ function createPrintingRouter({ prisma, authService }) {
 
         res.json({
           success: true,
-          data: recu
+          data: { ...recu, language: entreprise?.langueFacture || 'fr' }
         });
       } catch (error) {
         console.error('Erreur lors de la récupération du reçu:', error);

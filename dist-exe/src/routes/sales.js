@@ -90,6 +90,10 @@ function createSalesRouter({ prisma, authService, syncService }) {
     validatePagination,
     async (req, res) => {
       try {
+        console.log('🔍 [SALES API] Requête reçue');
+        console.log('   - Query params:', JSON.stringify(req.query));
+        console.log('   - User:', req.user?.nomUtilisateur || 'inconnu');
+        
         const { page = 1, limit = 20, dateDebut, dateFin, ...otherParams } = req.query;
         const skip = (page - 1) * limit;
 
@@ -210,7 +214,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 where: { id: vente.id },
                 include: {
                   client: {
-                    select: { id: true, nom: true, prenom: true }
+                    select: { id: true, nom: true, prenom: true, telephone: true, adresse: true, nui: true, rccm: true }
                   },
                   vendeur: {
                     select: { id: true, nomUtilisateur: true }
@@ -247,7 +251,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
               where: conditions,
               include: {
                 client: {
-                  select: { id: true, nom: true, prenom: true }
+                  select: { id: true, nom: true, prenom: true, telephone: true, adresse: true, nui: true, rccm: true }
                 },
                 vendeur: {
                   select: { id: true, nomUtilisateur: true }
@@ -279,10 +283,18 @@ function createSalesRouter({ prisma, authService, syncService }) {
           });
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération des ventes:', error);
+        console.error('❌ ====== ERREUR GET /SALES ======');
+        console.error('Type:', error.constructor.name);
+        console.error('Message:', error.message);
+        console.error('Code:', error.code);
+        console.error('Stack:', error.stack);
+        console.error('Query params:', req.query);
+        console.error('User:', req.user);
+        console.error('=====================================');
         res.status(500).json({
           success: false,
-          message: 'Erreur lors de la récupération des ventes'
+          message: 'Erreur lors de la récupération des ventes',
+          error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
       }
     }
@@ -1010,8 +1022,23 @@ function createSalesRouter({ prisma, authService, syncService }) {
             }
 
             // Calculer le nouveau solde du compte
-            // Solde = Paiements - Achats
-            const nouveauSolde = montantVerse - montantTotalAPayer;
+            // CORRECTION: La monnaie à rendre ne doit PAS être enregistrée comme crédit client
+            // Solde négatif = Dette client (montant dû par le client)
+            // Solde positif = Crédit client (montant dû au client - SEULEMENT si paiement volontaire en excès)
+            // Si montantVerse > montantTotalAPayer, c'est de la monnaie à rendre, PAS un crédit
+            
+            let nouveauSolde;
+            if (montantRestantADistribuer > 0) {
+              // Il reste de l'argent après paiement de toutes les dettes
+              // C'est de la MONNAIE À RENDRE, pas un crédit client
+              // Le solde reste 0 (ou le solde précédent s'il y en avait un)
+              nouveauSolde = 0;
+              console.log(`💵 Monnaie à rendre au client: ${montantRestantADistribuer} FCFA`);
+            } else {
+              // Le client a payé exactement ou moins que le total
+              // Calculer le solde réel: montantVerse - montantTotalAPayer
+              nouveauSolde = montantVerse - montantTotalAPayer;
+            }
             
             const compteClientUpdated = await tx.compteClient.upsert({
               where: { clientId },
@@ -1614,9 +1641,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
         console.log(`   - Montant payé: ${vente.montantPaye} FCFA`);
         console.log(`   - Session ID: ${vente.sessionId}`);
 
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
           // Marquer la vente comme annulée
-          await tx.vente.update({
+          const venteAnnulee = await tx.vente.update({
             where: { id: parseInt(id) },
             data: { statut: 'annulee' }
           });
@@ -1676,18 +1703,46 @@ function createSalesRouter({ prisma, authService, syncService }) {
             });
           }
 
-          // CORRECTION 1: Déduire le montant payé de la session de caisse
+          // CORRECTION 1 : restituer le montant payé au client dans la caisse.
+          //
+          // Imputé à la session OUVERTE au moment de l'annulation, jamais à
+          // vente.sessionId (la session d'origine, parfois clôturée depuis).
+          // Rouvrir une session déjà clôturée reviendrait à modifier un écart
+          // de caisse déjà validé par le caissier — un état arrêté ne se
+          // corrige pas rétroactivement, on compense dans la période courante.
           let cancelMovementCreated = null;
-          if (vente.sessionId && vente.montantPaye > 0) {
-            console.log(`💰 Déduction de ${vente.montantPaye} FCFA de la session ${vente.sessionId}`);
-            
-            // Créer un mouvement de caisse d'annulation (négatif)
+          let sessionCorrigee = null;
+          if (vente.montantPaye > 0) {
+            const sessionOuverte = await tx.cashSession.findFirst({
+              where: {
+                isActive: true,
+                dateFermeture: null,
+                ...(vente.boutiqueId ? { boutiqueId: vente.boutiqueId } : {})
+              },
+              orderBy: { id: 'desc' }
+            });
+
+            if (!sessionOuverte) {
+              throw new Error(
+                'Aucune caisse ouverte : ouvrez une session pour enregistrer le remboursement de cette annulation'
+              );
+            }
+
+            const surSessionOrigine = sessionOuverte.id === vente.sessionId;
+            console.log(`💰 Remboursement de ${vente.montantPaye} FCFA sur la session ${sessionOuverte.id}` +
+              (surSessionOrigine ? '' : ` (session d'origine ${vente.sessionId} clôturée)`));
+
+            // Montant NÉGATIF : une vente comptant avait fait ENTRER l'argent
+            // en caisse ; l'annuler consiste à rembourser le client, donc à le
+            // faire SORTIR. (Sens inverse d'une annulation de dépense, où
+            // l'argent revient en caisse.)
             cancelMovementCreated = await tx.cashMovement.create({
               data: {
-                caisseId: vente.session.caisseId,
-                sessionId: vente.sessionId,
+                caisseId: sessionOuverte.caisseId,
+                sessionId: sessionOuverte.id,
+                boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
                 type: 'annulation_vente',
-                montant: -vente.montantPaye, // Montant négatif pour déduire
+                montant: -vente.montantPaye,
                 description: `Annulation vente ${vente.numeroVente}`,
                 utilisateurId: req.user?.id || null,
                 metadata: JSON.stringify({
@@ -1695,26 +1750,29 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   referenceType: 'vente_annulee',
                   referenceId: parseInt(id),
                   venteReference: vente.numeroVente,
-                  montantOriginal: vente.montantPaye
+                  montantOriginal: vente.montantPaye,
+                  sessionOrigine: vente.sessionId,
+                  imputeSurSessionCourante: !surSessionOrigine
                 })
               }
             });
 
-            // Mettre à jour le solde attendu de la session
-            const session = await tx.cashSession.findUnique({
-              where: { id: vente.sessionId }
+            const soldeCourant = sessionOuverte.soldeAttendu != null
+              ? sessionOuverte.soldeAttendu
+              : sessionOuverte.soldeOuverture;
+            const nouveauSoldeAttendu = soldeCourant - vente.montantPaye;
+
+            sessionCorrigee = await tx.cashSession.update({
+              where: { id: sessionOuverte.id },
+              data: { soldeAttendu: nouveauSoldeAttendu }
             });
 
-            if (session) {
-              const nouveauSoldeAttendu = (session.soldeAttendu || 0) - vente.montantPaye;
-              await tx.cashSession.update({
-                where: { id: vente.sessionId },
-                data: {
-                  soldeAttendu: nouveauSoldeAttendu
-                }
-              });
-              console.log(`✅ Solde attendu mis à jour: ${nouveauSoldeAttendu} FCFA`);
-            }
+            await tx.cashRegister.update({
+              where: { id: sessionOuverte.caisseId },
+              data: { soldeActuel: { decrement: vente.montantPaye } }
+            });
+
+            console.log(`✅ Solde attendu de la session ${sessionOuverte.id}: ${nouveauSoldeAttendu} FCFA`);
           }
 
           // CORRECTION 2: Supprimer les mouvements financiers liés à cette vente
@@ -1744,39 +1802,45 @@ function createSalesRouter({ prisma, authService, syncService }) {
             }
           }
 
-          // Si vente à crédit avec client, ajuster le compte
+          // Annuler la DETTE créée par cette vente — et elle seule.
+          //
+          // Seule la part non payée (montantRestant) a été portée au débit du
+          // client à la création. Créditer le montant total, comme le faisait
+          // l'ancien code, fabriquait un avoir fictif sur les ventes réglées
+          // comptant : un client ayant tout payé se retrouvait créditeur du
+          // montant de la vente annulée.
           let compteClientAnnulation = null;
-          if (vente.clientId) {
-            console.log(`👤 Ajustement du compte client ${vente.clientId}`);
-            
-            // Récupérer le compte client
+          const detteAAnnuler = vente.montantRestant || 0;
+
+          if (vente.clientId && detteAAnnuler > 0) {
+            console.log(`👤 Annulation de la dette client ${vente.clientId} : ${detteAAnnuler} FCFA`);
+
             const compteClient = await tx.compteClient.findUnique({
               where: { clientId: vente.clientId }
             });
 
             if (compteClient) {
-              // Annuler l'achat: ajouter le montant de la vente au solde
-              // (car le solde est négatif quand il y a une dette)
-              const nouveauSolde = compteClient.soldeActuel + vente.montantTotal;
-              
+              // Le solde est négatif lorsqu'il y a dette : on la résorbe
+              const nouveauSolde = compteClient.soldeActuel + detteAAnnuler;
+
               compteClientAnnulation = await tx.compteClient.update({
                 where: { clientId: vente.clientId },
-                data: {
-                  soldeActuel: nouveauSolde
-                }
+                data: { soldeActuel: nouveauSolde }
               });
 
-              console.log(`   Ancien solde: ${compteClient.soldeActuel} FCFA`);
-              console.log(`   Nouveau solde: ${nouveauSolde} FCFA`);
+              console.log(`   Solde: ${compteClient.soldeActuel} -> ${nouveauSolde} FCFA`);
 
-              // Créer une transaction d'annulation
+              // Écriture de contre-passation. L'historique des paiements est
+              // CONSERVÉ : l'ancien code supprimait toutes les transactions
+              // portant ce referenceId — y compris celle-ci, créée juste avant,
+              // ce qui effaçait la trace de l'annulation elle-même.
               await tx.transactionCompte.create({
                 data: {
                   typeCompte: 'client',
                   compteId: compteClient.id,
                   typeTransaction: 'annulation',
                   typeTransactionDetail: 'annulation_vente',
-                  montant: vente.montantTotal,
+                  montant: detteAAnnuler,
                   description: `Annulation vente ${vente.numeroVente}`,
                   referenceType: 'vente_annulee',
                   referenceId: parseInt(id),
@@ -1785,39 +1849,35 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   soldeApres: nouveauSolde
                 }
               });
-
-              // Supprimer les transactions de paiement liées à cette vente
-              const transactionsVente = await tx.transactionCompte.findMany({
-                where: {
-                  compteId: compteClient.id,
-                  referenceId: parseInt(id)
-                }
-              });
-
-              if (transactionsVente.length > 0) {
-                console.log(`🗑️ Suppression de ${transactionsVente.length} transaction(s) de compte`);
-                await tx.transactionCompte.deleteMany({
-                  where: {
-                    compteId: compteClient.id,
-                    referenceId: parseInt(id)
-                  }
-                });
-              }
             }
+          } else if (vente.clientId) {
+            console.log(`👤 Vente réglée intégralement : aucune dette à annuler, compte client inchangé`);
           }
 
-          return { updatedVente, cancelMovement: cancelMovementCreated, compteClient: compteClientAnnulation };
+          return {
+            updatedVente: venteAnnulee,
+            cancelMovement: cancelMovementCreated,
+            sessionCorrigee,
+            compteClient: compteClientAnnulation
+          };
         });
 
         const updatedVente = result.updatedVente;
 
-        // Sync cash_movement d'annulation si créé
+        // Sync cash_movement + session corrigée si un remboursement a eu lieu
         if (result.cancelMovement && syncService) {
           setImmediate(async () => {
             try {
               const syncSvc = syncService || require('../services/sync-service');
               await syncSvc.enqueue('cash_movements', 'INSERT', result.cancelMovement);
-              console.log(`✅ [Cancel Sync] Cash movement d'annulation synchronisé: ${result.cancelMovement.id}`);
+              if (result.sessionCorrigee) {
+                await syncSvc.enqueue('cash_sessions', 'UPDATE', result.sessionCorrigee);
+                const caisseMaj = await prisma.cashRegister.findUnique({
+                  where: { id: result.cancelMovement.caisseId }
+                });
+                if (caisseMaj) await syncSvc.enqueue('cash_registers', 'UPDATE', caisseMaj);
+              }
+              console.log(`✅ [Cancel Sync] Remboursement d'annulation synchronisé: ${result.cancelMovement.id}`);
             } catch (syncError) {
               console.error('❌ Erreur sync cash_movement annulation:', syncError.message);
             }
@@ -1836,12 +1896,31 @@ function createSalesRouter({ prisma, authService, syncService }) {
           });
         }
 
-        res.json({
-          success: true,
-          message: 'Vente annulée avec succès - montant déduit de la session de caisse et exclu de la comptabilité'
-        });
+        // L'annulation est un changement de statut, pas une suppression.
+        // La réponse ne portant pas de données, le middleware de sync ne peut
+        // rien intercepter : sans cet appel, la vente resterait « terminée »
+        // dans Neon et sur tous les autres postes.
+        try {
+          const syncSvc = syncService || require('../services/sync-service');
+          if (syncSvc && updatedVente) {
+            await syncSvc.enqueue('ventes', 'UPDATE', updatedVente, req.user?.id);
+          }
+        } catch (syncErr) {
+          console.warn('⚠️  Sync annulation vente:', syncErr.message);
+        }
+
+        const message = result.sessionCorrigee && result.sessionCorrigee.id !== updatedVente.sessionId
+          ? `Vente annulée — ${vente.montantPaye} FCFA remboursés depuis la caisse ouverte (la session d'origine était clôturée)`
+          : 'Vente annulée avec succès - montant remboursé depuis la session de caisse';
+
+        res.json({ success: true, message });
       } catch (error) {
         console.error('Erreur lors de l\'annulation de la vente:', error);
+
+        if (error.message?.includes('Aucune caisse ouverte')) {
+          return res.status(409).json({ success: false, message: error.message });
+        }
+
         res.status(500).json({
           success: false,
           message: 'Erreur lors de l\'annulation de la vente'

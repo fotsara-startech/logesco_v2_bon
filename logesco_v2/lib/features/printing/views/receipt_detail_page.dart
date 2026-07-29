@@ -324,6 +324,8 @@ class ReceiptDetailPage extends StatelessWidget {
             _buildInfoRow('Nom', customer.nom),
             if (customer.telephone?.isNotEmpty == true) _buildInfoRow('Téléphone', customer.telephone!),
             if (customer.adresse?.isNotEmpty == true) _buildInfoRow('Adresse', customer.adresse!),
+            if (customer.nui?.isNotEmpty == true) _buildInfoRow('NUI', customer.nui!),
+            if (customer.rccm?.isNotEmpty == true) _buildInfoRow('RCCM', customer.rccm!),
           ],
         ),
       ),

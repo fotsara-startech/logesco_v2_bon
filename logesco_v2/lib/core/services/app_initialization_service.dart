@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'admin_service.dart';
 import 'auth_service.dart';
+import 'backend_service.dart' if (dart.library.html) 'backend_service_stub.dart';
 import '../../features/subscription/controllers/subscription_controller.dart';
 import '../../features/subscription/models/license_data.dart';
 import '../config/app_config.dart';
@@ -47,6 +49,19 @@ class AppInitializationService extends GetxService {
   Future<void> _checkApiConnection() async {
     try {
       print('🔍 [AppInit] Vérification de la connexion API...');
+
+      // Attendre que le backend embarqué soit prêt avant la première requête
+      if (!kIsWeb) {
+        final backendService = BackendService();
+        if (!backendService.isRunning) {
+          print('⏳ [AppInit] Attente backend embarqué...');
+          final ready = await backendService.waitUntilReady(maxSeconds: 60);
+          if (!ready) {
+            print('⚠️ [AppInit] Backend non disponible après 60s — tentative quand même...');
+          }
+        }
+      }
+
       final response = await _authService.testConnection();
       if (response) {
         print('✅ [AppInit] Connexion API établie');

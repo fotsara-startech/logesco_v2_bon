@@ -3,13 +3,13 @@ class CloudConfig {
   static String get apiBaseUrl {
     // In production, this should be set via environment variables
     // or build-time configuration
-    const String? apiUrl = String.fromEnvironment('API_URL');
+    const String? apiUrl = String.fromEnvironment('API_URL'); // 'https://logesco-smart-energy.onrender.com/'; //String.fromEnvironment('API_URL');
     if (apiUrl != null && apiUrl.isNotEmpty) {
       return '$apiUrl/api/v1';
     }
 
     // Default for development
-    return 'http://localhost:3000/api/v1';
+    return 'http://localhost:8080/api/v1';
   }
 
   static String get apiHealthUrl {
@@ -18,7 +18,7 @@ class CloudConfig {
       return '$apiUrl/api/health';
     }
 
-    return 'http://localhost:3000/api/health';
+    return 'http://localhost:8080/api/health';
   }
 
   static const Duration connectionTimeout = Duration(seconds: 30);
