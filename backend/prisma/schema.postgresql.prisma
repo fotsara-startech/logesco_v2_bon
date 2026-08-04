@@ -147,6 +147,8 @@ model Client {
   telephone        String?
   email            String?
   adresse          String?
+  nui              String?
+  rccm             String?
   dateCreation     DateTime        @default(now()) @map("date_creation")
   dateModification DateTime        @updatedAt @map("date_modification")
   compte           CompteClient?
