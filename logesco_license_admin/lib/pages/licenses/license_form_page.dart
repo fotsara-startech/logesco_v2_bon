@@ -11,11 +11,13 @@ import '../../core/services/license_generator_service.dart';
 class LicenseFormPage extends StatefulWidget {
   final String? clientId;
   final String? licenseId;
+  final String? prefillDeviceFingerprint;
 
   const LicenseFormPage({
     super.key,
     this.clientId,
     this.licenseId,
+    this.prefillDeviceFingerprint,
   });
 
   @override
@@ -30,14 +32,15 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
 
   bool _isLoading = false;
   bool _isEditMode = false;
-  bool _isUniversal = false;
 
   Client? _selectedClient;
   List<Client> _clients = [];
   SubscriptionType _selectedType = SubscriptionType.trial;
   DateTime _expiresAt = DateTime.now().add(const Duration(days: 30));
+  // Les fonctionnalités sont automatiquement toutes incluses selon les spécifications
   String _currency = 'XAF';
 
+  // Fonctionnalités selon les spécifications LOGESCO
   final Map<String, String> _availableFeatures = {
     'full_inventory': 'Gestion complète de l\'inventaire',
     'sales': 'Module de ventes complet',
@@ -67,18 +70,29 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
+
     try {
+      // Charger les clients
       _clients = await DatabaseService.instance.getClients(isActive: true);
+
+      // Si un clientId est fourni, le sélectionner
       if (widget.clientId != null) {
         _selectedClient = _clients.firstWhere(
           (c) => c.id == widget.clientId,
           orElse: () => _clients.first,
         );
       }
+
+      // Si c'est une édition, charger la licence
       if (widget.licenseId != null) {
         _isEditMode = true;
         final license = await DatabaseService.instance.getLicense(widget.licenseId!);
-        if (license != null) _loadLicenseData(license);
+        if (license != null) {
+          _loadLicenseData(license);
+        }
+      } else if (widget.prefillDeviceFingerprint != null) {
+        // Nouvelle licence pour un appareil déjà connu (dupliquée depuis la liste des licences)
+        _deviceFingerprintController.text = widget.prefillDeviceFingerprint!;
       }
     } catch (e) {
       if (mounted) {
@@ -96,8 +110,8 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       _selectedClient = _clients.firstWhere((c) => c.id == license.clientId);
       _selectedType = license.type;
       _expiresAt = license.expiresAt;
-      _isUniversal = license.deviceFingerprint == 'UNIVERSAL';
-      _deviceFingerprintController.text = _isUniversal ? '' : license.deviceFingerprint;
+      _deviceFingerprintController.text = license.deviceFingerprint;
+      // Les fonctionnalités sont automatiquement toutes incluses
       _priceController.text = license.price?.toString() ?? '';
       _currency = license.currency ?? 'XAF';
       _notesController.text = license.notes ?? '';
@@ -123,9 +137,16 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: Colors.grey[400],
+          ),
           const SizedBox(height: 16),
-          Text('Aucun client disponible', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Aucun client disponible',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
           Text(
             'Créez d\'abord un client avant de générer une licence',
@@ -148,46 +169,33 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // --- Client ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Informations du client', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<Client>(
-                    value: _selectedClient,
-                    decoration: const InputDecoration(
-                      labelText: 'Client',
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    items: _clients.map((client) {
-                      return DropdownMenuItem(
-                        value: client,
-                        child: Text(
-                          '${client.name} (${client.company})',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (client) => setState(() => _selectedClient = client),
-                    validator: (value) => value == null ? 'Sélectionnez un client' : null,
+                  Text(
+                    'Informations du client',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  const SizedBox(height: 16),
+                  _buildClientField(),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          // --- Type ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Type de licence', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Type de licence',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<SubscriptionType>(
                     value: _selectedType,
@@ -196,7 +204,10 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                       prefixIcon: Icon(Icons.category),
                     ),
                     items: SubscriptionType.values.map((type) {
-                      return DropdownMenuItem(value: type, child: Text(_getTypeLabel(type)));
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(_getTypeLabel(type)),
+                      );
                     }).toList(),
                     onChanged: (type) {
                       setState(() {
@@ -210,14 +221,16 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // --- Durée et appareil ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Durée et appareil', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Durée et appareil',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 16),
                   ListTile(
                     leading: const Icon(Icons.calendar_today),
@@ -225,121 +238,82 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                     subtitle: Text(DateFormat('dd/MM/yyyy').format(_expiresAt)),
                     trailing: const Icon(Icons.edit),
                     onTap: _selectExpirationDate,
-                    contentPadding: EdgeInsets.zero,
                   ),
-                  const Divider(),
-                  SwitchListTile(
-                    value: _isUniversal,
-                    onChanged: (value) {
-                      setState(() {
-                        _isUniversal = value;
-                        if (value) _deviceFingerprintController.clear();
-                      });
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _deviceFingerprintController,
+                    decoration: InputDecoration(
+                      labelText: 'Empreinte de l\'appareil',
+                      prefixIcon: const Icon(Icons.fingerprint),
+                      helperText: 'Identifiant unique de l\'appareil du client',
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.refresh, size: 20),
+                            tooltip: 'Générer une empreinte de test',
+                            onPressed: () {
+                              setState(() {
+                                _deviceFingerprintController.text = LicenseGeneratorService.generateTempDeviceFingerprint();
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 20),
+                            tooltip: 'Copier l\'empreinte',
+                            onPressed: _deviceFingerprintController.text.isEmpty
+                                ? null
+                                : () {
+                                    Clipboard.setData(
+                                      ClipboardData(text: _deviceFingerprintController.text),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Empreinte copiée'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                          ),
+                        ],
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Saisissez l\'empreinte de l\'appareil';
+                      }
+                      return null;
                     },
-                    title: const Text('Licence universelle'),
-                    subtitle: const Text('Valide sur n\'importe quel appareil'),
-                    secondary: const Icon(Icons.public),
-                    contentPadding: EdgeInsets.zero,
                   ),
-                  if (!_isUniversal) ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _deviceFingerprintController,
-                      decoration: InputDecoration(
-                        labelText: 'Empreinte de l\'appareil',
-                        prefixIcon: const Icon(Icons.fingerprint),
-                        helperText: 'Identifiant unique de l\'appareil du client',
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.refresh, size: 20),
-                              tooltip: 'Générer une empreinte de test',
-                              onPressed: () {
-                                setState(() {
-                                  _deviceFingerprintController.text = LicenseGeneratorService.generateTempDeviceFingerprint();
-                                });
-                              },
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: Colors.orange.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'IMPORTANT: L\'empreinte doit correspondre EXACTEMENT à celle de l\'appareil du client. Demandez au client de vous fournir son empreinte depuis l\'application LOGESCO.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade900,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.copy, size: 20),
-                              tooltip: 'Copier l\'empreinte',
-                              onPressed: _deviceFingerprintController.text.isEmpty
-                                  ? null
-                                  : () {
-                                      Clipboard.setData(
-                                        ClipboardData(text: _deviceFingerprintController.text),
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Empreinte copiée'),
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                    },
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      validator: (value) {
-                        if (_isUniversal) return null;
-                        if (value == null || value.isEmpty) {
-                          return 'Saisissez l\'empreinte de l\'appareil';
-                        }
-                        return null;
-                      },
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning_amber, color: Colors.orange.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'IMPORTANT: L\'empreinte doit correspondre EXACTEMENT à celle de l\'appareil du client. Demandez au client de vous fournir son empreinte depuis l\'application LOGESCO.',
-                              style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (_isUniversal) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.public, color: Colors.green.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Cette licence sera valide sur tous les appareils sans restriction.',
-                              style: TextStyle(fontSize: 12, color: Colors.green.shade900),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          // --- Fonctionnalités ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -348,7 +322,10 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                 children: [
                   Row(
                     children: [
-                      Text('Fonctionnalités', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Fonctionnalités',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(width: 8),
                       Tooltip(
                         message: 'Toutes les licences donnent accès à toutes les fonctionnalités',
@@ -402,14 +379,16 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // --- Tarification ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tarification', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Tarification',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -431,11 +410,18 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _currency,
-                          decoration: const InputDecoration(labelText: 'Devise'),
-                          items: ['XAF'].map((currency) {
-                            return DropdownMenuItem(value: currency, child: Text(currency));
+                          decoration: const InputDecoration(
+                            labelText: 'Devise',
+                          ),
+                          items: [ 'XAF'].map((currency) {
+                            return DropdownMenuItem(
+                              value: currency,
+                              child: Text(currency),
+                            );
                           }).toList(),
-                          onChanged: (value) => setState(() => _currency = value!),
+                          onChanged: (value) {
+                            setState(() => _currency = value!);
+                          },
                         ),
                       ),
                     ],
@@ -445,14 +431,16 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // --- Notes ---
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Notes', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Notes',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _notesController,
@@ -488,6 +476,61 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
     );
   }
 
+  String _clientLabel(Client client) => '${client.name} (${client.company})';
+
+  Widget _buildClientField() {
+    return Autocomplete<Client>(
+      key: ValueKey(_selectedClient?.id),
+      initialValue: TextEditingValue(text: _selectedClient != null ? _clientLabel(_selectedClient!) : ''),
+      displayStringForOption: _clientLabel,
+      optionsBuilder: (textEditingValue) {
+        if (textEditingValue.text.isEmpty) return _clients;
+        final q = textEditingValue.text.toLowerCase();
+        return _clients.where((c) => c.name.toLowerCase().contains(q) || c.company.toLowerCase().contains(q));
+      },
+      onSelected: (client) => setState(() => _selectedClient = client),
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: const InputDecoration(
+            labelText: 'Client',
+            hintText: 'Rechercher un client par nom ou entreprise...',
+            prefixIcon: Icon(Icons.person),
+            suffixIcon: Icon(Icons.search),
+          ),
+          validator: (value) => _selectedClient == null ? 'Sélectionnez un client' : null,
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240, maxWidth: 500),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final client = options.elementAt(index);
+                  return ListTile(
+                    dense: true,
+                    title: Text(client.name),
+                    subtitle: Text(client.company),
+                    onTap: () => onSelected(client),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   String _getTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
@@ -512,35 +555,40 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
-    if (picked != null) setState(() => _expiresAt = picked);
+
+    if (picked != null) {
+      setState(() => _expiresAt = picked);
+    }
   }
 
   Future<void> _saveLicense() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isLoading = true);
 
     try {
       final now = DateTime.now();
 
-      final String licenseKey;
-      final String deviceFingerprint;
+      // Générer la clé de licence selon les spécifications LOGESCO V1
+      // DEBUG: Afficher l'empreinte utilisée
+      print('🔑 Génération de clé avec:');
+      print('   Client ID: ${_selectedClient!.id}');
+      print('   Type: $_selectedType');
+      print('   Expire: $_expiresAt');
+      print('   Empreinte: "${_deviceFingerprintController.text}"');
 
-      if (_isUniversal) {
-        licenseKey = LicenseGeneratorService.generateUniversalLicenseKey(
-          clientId: _selectedClient!.id,
-          type: _selectedType,
-          expiresAt: _expiresAt,
-        );
-        deviceFingerprint = 'UNIVERSAL';
-      } else {
-        licenseKey = LicenseGeneratorService.generateLicenseKey(
-          clientId: _selectedClient!.id,
-          type: _selectedType,
-          expiresAt: _expiresAt,
-          deviceFingerprint: _deviceFingerprintController.text,
-        );
-        deviceFingerprint = _deviceFingerprintController.text;
-      }
+      final licenseKey = LicenseGeneratorService.generateLicenseKey(
+        clientId: _selectedClient!.id,
+        type: _selectedType,
+        expiresAt: _expiresAt,
+        deviceFingerprint: _deviceFingerprintController.text,
+      );
+
+      print('   Clé générée: $licenseKey');
+      print('');
+
+      // Toutes les fonctionnalités sont incluses automatiquement
+      final features = LicenseGeneratorService.allFeatures;
 
       final license = License(
         id: widget.licenseId ?? const Uuid().v4(),
@@ -550,8 +598,8 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
         status: LicenseStatus.active,
         issuedAt: now,
         expiresAt: _expiresAt,
-        deviceFingerprint: deviceFingerprint,
-        features: LicenseGeneratorService.allFeatures,
+        deviceFingerprint: _deviceFingerprintController.text,
+        features: features,
         price: _priceController.text.isNotEmpty ? double.tryParse(_priceController.text) : null,
         currency: _currency,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,

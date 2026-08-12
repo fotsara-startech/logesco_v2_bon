@@ -1,5 +1,8 @@
 import '../../models/client.dart';
 import '../../models/license.dart';
+import '../../models/payment.dart';
+import '../../models/expense.dart';
+import '../../models/financial_summary.dart';
 import 'firebase_service.dart';
 
 /// Façade conservée pour compatibilité avec les pages existantes.
@@ -58,6 +61,50 @@ class DatabaseService {
   Future<void> updateLicense(License license) => _fb.updateLicense(license);
 
   Future<void> deleteLicense(String id) => _fb.deleteLicense(id);
+
+  // ─── PAIEMENTS DE SERVICES ──────────────────────────────────────────────────
+
+  Future<String> insertPayment(Payment payment) => _fb.insertPayment(payment);
+
+  Future<List<Payment>> getPayments({
+    String? clientId,
+    DateTime? from,
+    DateTime? to,
+    int? limit,
+  }) =>
+      _fb.getPayments(clientId: clientId, from: from, to: to, limit: limit);
+
+  Future<Payment?> getPayment(String id) => _fb.getPayment(id);
+
+  Future<void> updatePayment(Payment payment) => _fb.updatePayment(payment);
+
+  Future<void> deletePayment(String id) => _fb.deletePayment(id);
+
+  // ─── DÉPENSES ────────────────────────────────────────────────────────────────
+
+  Future<String> insertExpense(Expense expense) => _fb.insertExpense(expense);
+
+  Future<List<Expense>> getExpenses({
+    ExpenseCategory? category,
+    DateTime? from,
+    DateTime? to,
+    int? limit,
+  }) =>
+      _fb.getExpenses(category: category, from: from, to: to, limit: limit);
+
+  Future<Expense?> getExpense(String id) => _fb.getExpense(id);
+
+  Future<void> updateExpense(Expense expense) => _fb.updateExpense(expense);
+
+  Future<void> deleteExpense(String id) => _fb.deleteExpense(id);
+
+  // ─── ÉTAT DE L'ACTIVITÉ ─────────────────────────────────────────────────────
+
+  Future<FinancialSummary> getFinancialSummary({
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _fb.getFinancialSummary(from: from, to: to);
 
   // ─── STATISTIQUES ───────────────────────────────────────────────────────────
 

@@ -6,8 +6,14 @@ import '../../pages/login/login_page.dart';
 import '../../pages/dashboard/dashboard_page.dart';
 import '../../pages/clients/clients_page.dart';
 import '../../pages/clients/client_form_page.dart';
+import '../../pages/clients/client_detail_page.dart';
 import '../../pages/licenses/licenses_page.dart';
 import '../../pages/licenses/license_form_page.dart';
+import '../../pages/payments/payments_page.dart';
+import '../../pages/payments/payment_form_page.dart';
+import '../../pages/expenses/expenses_page.dart';
+import '../../pages/expenses/expense_form_page.dart';
+import '../../pages/reports/activity_report_page.dart';
 import '../../pages/settings/settings_page.dart';
 import '../../widgets/main_layout.dart';
 
@@ -68,6 +74,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   return ClientFormPage(clientId: clientId);
                 },
               ),
+              GoRoute(
+                path: ':id',
+                name: 'client-detail',
+                builder: (context, state) {
+                  final clientId = state.pathParameters['id']!;
+                  return ClientDetailPage(clientId: clientId);
+                },
+              ),
             ],
           ),
 
@@ -82,7 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'license-new',
                 builder: (context, state) {
                   final clientId = state.uri.queryParameters['clientId'];
-                  return LicenseFormPage(clientId: clientId);
+                  final deviceFingerprint = state.uri.queryParameters['deviceFingerprint'];
+                  return LicenseFormPage(clientId: clientId, prefillDeviceFingerprint: deviceFingerprint);
                 },
               ),
               GoRoute(
@@ -94,6 +109,60 @@ final routerProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+
+          // Paiements de services
+          GoRoute(
+            path: '/payments',
+            name: 'payments',
+            builder: (context, state) => const PaymentsPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'payment-new',
+                builder: (context, state) {
+                  final clientId = state.uri.queryParameters['clientId'];
+                  return PaymentFormPage(clientId: clientId);
+                },
+              ),
+              GoRoute(
+                path: 'edit/:id',
+                name: 'payment-edit',
+                builder: (context, state) {
+                  final paymentId = state.pathParameters['id']!;
+                  return PaymentFormPage(paymentId: paymentId);
+                },
+              ),
+            ],
+          ),
+
+          // Dépenses
+          GoRoute(
+            path: '/expenses',
+            name: 'expenses',
+            builder: (context, state) => const ExpensesPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'expense-new',
+                builder: (context, state) => const ExpenseFormPage(),
+              ),
+              GoRoute(
+                path: 'edit/:id',
+                name: 'expense-edit',
+                builder: (context, state) {
+                  final expenseId = state.pathParameters['id']!;
+                  return ExpenseFormPage(expenseId: expenseId);
+                },
+              ),
+            ],
+          ),
+
+          // État de l'activité
+          GoRoute(
+            path: '/activity-report',
+            name: 'activity-report',
+            builder: (context, state) => const ActivityReportPage(),
           ),
 
           // Paramètres
