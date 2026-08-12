@@ -14,6 +14,8 @@ class SecureLicenseStorage {
   static const String _metadataStorageKey = 'logesco_license_metadata';
   static const String _tamperDetectionKey = 'logesco_tamper_detection';
   static const String _accessLogKey = 'logesco_access_log';
+  static const String _primaryKeyStorageKey = 'logesco_license_enc_key_primary';
+  static const String _backupKeyStorageKey = 'logesco_license_enc_key_backup';
 
   final FlutterSecureStorage _secureStorage;
   final CryptoService _cryptoService;
@@ -178,6 +180,8 @@ class SecureLicenseStorage {
       await _secureStorage.delete(key: _integrityStorageKey);
       await _secureStorage.delete(key: _metadataStorageKey);
       await _secureStorage.delete(key: _tamperDetectionKey);
+      await _secureStorage.delete(key: _primaryKeyStorageKey);
+      await _secureStorage.delete(key: _backupKeyStorageKey);
 
       // Réinitialiser les clés de chiffrement
       _primaryEncryptionKey = null;
@@ -217,23 +221,62 @@ class SecureLicenseStorage {
 
   // Méthodes privées
 
-  /// Génère les clés de chiffrement dérivées
+  /// Génère ou récupère les clés de chiffrement, persistées dans le stockage sécurisé.
+  ///
+  /// Ces clés ne sont volontairement PAS dérivées de l'empreinte d'appareil :
+  /// certains champs de cette empreinte (ex. version d'OS Windows, build ID Android)
+  /// changent lors de mises à jour système normales, ce qui rendait les données
+  /// chiffrées indéchiffrables du jour au lendemain (la licence "disparaissait" et
+  /// l'utilisateur était renvoyé vers l'écran d'activation malgré une licence valide).
+  /// flutter_secure_storage fournit déjà une protection liée à l'appareil (Keystore/
+  /// Keychain/DPAPI), donc une clé aléatoire persistée y est au moins aussi sûre.
   Future<void> _generateEncryptionKeys() async {
     try {
-      final deviceFingerprint = await _deviceService.generateDeviceFingerprint();
-
-      // Clé primaire basée sur l'empreinte + salt
-      final primarySalt = 'LOGESCO_PRIMARY_SALT_2024';
-      _primaryEncryptionKey = _cryptoService.generateHash('$deviceFingerprint$primarySalt');
-
-      // Clé de sauvegarde avec un salt différent
-      final backupSalt = 'LOGESCO_BACKUP_SALT_2024';
-      _backupEncryptionKey = _cryptoService.generateHash('$deviceFingerprint$backupSalt');
+      // IMPORTANT — compatibilité ascendante : sur un appareil qui avait déjà une
+      // licence stockée AVANT ce correctif, les données étaient chiffrées avec une
+      // clé dérivée de l'empreinte d'appareil (ancien schéma). On calcule donc cette
+      // même valeur pour amorcer la clé persistée au premier lancement après mise à
+      // jour, afin que la licence existante reste déchiffrable. Une fois persistée,
+      // elle ne sera plus jamais recalculée depuis l'empreinte : un futur changement
+      // d'empreinte (mise à jour d'OS...) n'a donc plus d'impact — c'est ce qui
+      // corrige le bug pour l'avenir tout en préservant les licences déjà activées.
+      _primaryEncryptionKey = await _getOrCreatePersistedKey(
+        _primaryKeyStorageKey,
+        legacySeed: () => _computeLegacyDerivedKey('LOGESCO_PRIMARY_SALT_2024'),
+      );
+      _backupEncryptionKey = await _getOrCreatePersistedKey(
+        _backupKeyStorageKey,
+        legacySeed: () => _computeLegacyDerivedKey('LOGESCO_BACKUP_SALT_2024'),
+      );
     } catch (e) {
       // Clés de fallback en cas d'erreur
       _primaryEncryptionKey = _cryptoService.generateHash('LOGESCO_FALLBACK_PRIMARY');
       _backupEncryptionKey = _cryptoService.generateHash('LOGESCO_FALLBACK_BACKUP');
     }
+  }
+
+  /// Reproduit l'ancien calcul de clé (dérivée de l'empreinte d'appareil + salt),
+  /// utilisé uniquement pour amorcer la clé persistée lors de la migration.
+  Future<String> _computeLegacyDerivedKey(String salt) async {
+    final deviceFingerprint = await _deviceService.generateDeviceFingerprint();
+    return _cryptoService.generateHash('$deviceFingerprint$salt');
+  }
+
+  /// Récupère une clé de chiffrement déjà persistée, ou en amorce une nouvelle.
+  /// [legacySeed] fournit la valeur à utiliser pour la toute première persistance,
+  /// afin de rester compatible avec des données déjà chiffrées sous l'ancien schéma.
+  Future<String> _getOrCreatePersistedKey(
+    String storageKey, {
+    required Future<String> Function() legacySeed,
+  }) async {
+    final existingKey = await _secureStorage.read(key: storageKey);
+    if (existingKey != null && existingKey.isNotEmpty) {
+      return existingKey;
+    }
+
+    final seedKey = await legacySeed();
+    await _secureStorage.write(key: storageKey, value: seedKey);
+    return seedKey;
   }
 
   /// Initialise le système de détection de manipulation
