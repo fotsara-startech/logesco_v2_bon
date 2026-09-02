@@ -1,0 +1,164 @@
+================================================================================
+                   RAPPORT DE TEST - CORRECTION BACKEND
+================================================================================
+
+Date du test : ____________________
+Version LOGESCO : __________________
+Systeme : Windows 10 / Windows 11 (cocher)
+Nom de l'ordinateur : __________________
+
+================================================================================
+SECTION 1 : AVANT CORRECTION
+================================================================================
+
+1. Aviez-vous le probleme suivant ?
+   [ ] Le logiciel ne demarre pas automatiquement
+   [ ] Message d'erreur : _______________________
+   [ ] Autre : __________________________________
+
+2. Le backend fonctionnait-il manuellement ?
+   [ ] Oui, en lancant depuis %LOCALAPPDATA%\LOGESCO\backend
+   [ ] Non, meme manuellement ca ne marchait pas
+
+3. Combien de temps attendiez-vous avant l'erreur ?
+   [ ] Moins de 10 secondes
+   [ ] 10-30 secondes
+   [ ] Plus de 30 secondes
+   [ ] Aucune erreur affichee, juste un ecran blanc
+
+================================================================================
+SECTION 2 : EXECUTION DU SCRIPT DE CORRECTION
+================================================================================
+
+4. Avez-vous execute fix-backend-startup.bat ?
+   [ ] Oui
+   [ ] Non (pourquoi : _________________________)
+
+5. Le script s'est-il execute jusqu'au bout ?
+   [ ] Oui, message "CORRECTION TERMINEE AVEC SUCCES"
+   [ ] Non, erreur a l'etape : __________________
+   [ ] Non, message d'erreur : __________________
+
+6. Combien de temps a pris le script ?
+   [ ] Moins de 30 secondes
+   [ ] 30 secondes - 1 minute
+   [ ] Plus d'1 minute
+
+7. Quelle etape a pose probleme (si applicable) ?
+   [ ] Verification Node.js
+   [ ] Generation Prisma
+   [ ] Creation base de donnees
+   [ ] Test de demarrage
+   [ ] Aucune, tout s'est bien passe
+
+================================================================================
+SECTION 3 : APRES CORRECTION
+================================================================================
+
+8. Le logiciel demarre-t-il maintenant automatiquement ?
+   [ ] Oui, parfaitement
+   [ ] Oui, mais c'est lent (combien de temps : ____ secondes)
+   [ ] Non, toujours le meme probleme
+   [ ] Non, nouveau probleme : ___________________
+
+9. Combien de temps prend le demarrage maintenant ?
+   [ ] Moins de 10 secondes
+   [ ] 10-20 secondes
+   [ ] 20-30 secondes
+   [ ] Plus de 30 secondes
+
+10. Pouvez-vous vous connecter et utiliser le logiciel ?
+    [ ] Oui, tout fonctionne normalement
+    [ ] Partiellement (preciser : _______________)
+    [ ] Non (probleme : _________________________)
+
+================================================================================
+SECTION 4 : SCRIPT DE DIAGNOSTIC
+================================================================================
+
+11. Avez-vous execute diagnose-backend-startup.bat ?
+    [ ] Oui
+    [ ] Non necessaire, tout fonctionne
+    [ ] Non (pourquoi : _________________________)
+
+12. Si oui, tous les tests sont-ils passes ?
+    [ ] Oui, tous [OK]
+    [ ] Non, probleme a l'etape : _______________
+
+================================================================================
+SECTION 5 : OBSERVATIONS
+================================================================================
+
+13. Avez-vous remarque des messages d'erreur ou avertissements ?
+    (Copiez-les ici ou attachez une capture d'ecran)
+
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+
+14. Votre antivirus a-t-il bloque quelque chose ?
+    [ ] Oui (quel antivirus : ___________________)
+    [ ] Non
+    [ ] Ne sais pas
+
+15. Avez-vous du executer le script plusieurs fois ?
+    [ ] Non, une seule fois a suffi
+    [ ] Oui, ____ fois
+
+================================================================================
+SECTION 6 : SATISFACTION
+================================================================================
+
+16. Etes-vous satisfait de la solution ?
+    [ ] Tres satisfait - probleme resolu rapidement
+    [ ] Satisfait - ca marche mais c'etait complique
+    [ ] Peu satisfait - j'ai du demander de l'aide
+    [ ] Pas satisfait - le probleme persiste
+
+17. La documentation etait-elle claire ?
+    [ ] Tres claire
+    [ ] Claire
+    [ ] Confuse
+    [ ] Incomprehensible
+
+18. Recommandations ou commentaires supplementaires :
+
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+
+================================================================================
+SECTION 7 : INFORMATIONS TECHNIQUES (ne pas remplir si vous n'etes pas technicien)
+================================================================================
+
+Chemin installation : _______________________________________________
+
+Taille base de donnees (database\logesco.db) : _______ Ko/Mo
+
+Version Node.js (si connue) : _______________________________________
+
+Contenu du fichier .env (NE PAS inclure JWT_SECRET) :
+
+    _________________________________________________________________
+    _________________________________________________________________
+
+Logs backend (10 dernieres lignes de backend-startup.log) :
+
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+    _________________________________________________________________
+
+================================================================================
+
+Merci d'avoir rempli ce rapport !
+
+Envoyez ce fichier complete a votre developpeur avec :
+  - Captures d'ecran des messages d'erreur (si applicable)
+  - Fichier backend\logs\backend-startup.log
+  - Sortie complete de diagnose-backend-startup.bat (si execute)
+
+================================================================================

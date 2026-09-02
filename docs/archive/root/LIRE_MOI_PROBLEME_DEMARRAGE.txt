@@ -1,0 +1,89 @@
+================================================================================
+  PROBLEME DE DEMARRAGE AUTOMATIQUE DU BACKEND - LOGESCO
+================================================================================
+
+SYMPTOME :
+----------
+Le logiciel ne démarre pas correctement. Le backend ne se lance pas 
+automatiquement, mais fonctionne bien quand on le démarre manuellement depuis 
+%LOCALAPPDATA%\LOGESCO\backend.
+
+SOLUTION RAPIDE :
+-----------------
+1. Double-cliquez sur le fichier : fix-backend-startup.bat
+2. Attendez que le script termine (environ 30 secondes)
+3. Si tout est OK, fermez et relancez LOGESCO
+
+DIAGNOSTIC APPROFONDI :
+-----------------------
+Si la solution rapide ne fonctionne pas :
+1. Double-cliquez sur : diagnose-backend-startup.bat
+2. Notez les messages d'erreur affichés
+3. Consultez le guide complet : GUIDE_FIX_DEMARRAGE_BACKEND.md
+
+CAUSES PRINCIPALES :
+--------------------
+✓ Le client Prisma (ORM base de données) n'a pas été généré
+✓ La base de données SQLite est absente ou corrompue
+✓ Le fichier .env contient des chemins incorrects
+✓ Windows bloque l'exécution des scripts VBS
+✓ Node.js n'est pas accessible ou mal configuré
+
+CE QUI A ETE CORRIGE :
+-----------------------
+✓ Ajout de logging détaillé dans le service backend
+✓ Vérification et génération automatique du client Prisma
+✓ Création automatique des dossiers database/ et logs/
+✓ Lecture des logs en cas d'échec de démarrage
+✓ Amélioration de la gestion du fichier .env
+✓ Copie automatique du template de base de données
+
+FICHIERS IMPORTANTS :
+---------------------
+fix-backend-startup.bat              → Script de correction automatique
+diagnose-backend-startup.bat         → Script de diagnostic détaillé  
+GUIDE_FIX_DEMARRAGE_BACKEND.md      → Guide complet avec toutes les solutions
+
+APRES CORRECTION :
+------------------
+1. Fermez complètement l'application LOGESCO
+2. Relancez LOGESCO
+3. Le backend devrait démarrer automatiquement (15-30 secondes)
+4. Vérifiez que l'écran de connexion s'affiche
+
+EN CAS DE PROBLEME PERSISTANT :
+-------------------------------
+1. Exécutez diagnose-backend-startup.bat
+2. Copiez TOUT le contenu affiché dans la fenêtre
+3. Envoyez-le avec les logs situés dans :
+   %LOCALAPPDATA%\LOGESCO\backend\logs\backend-startup.log
+
+VERIFICATION MANUELLE :
+-----------------------
+Vous pouvez vérifier que le backend fonctionne en ouvrant un navigateur :
+http://localhost:8080/health
+
+Vous devriez voir : {"status":"ok", ...}
+
+QUESTIONS FREQUENTES :
+----------------------
+Q: Combien de temps prend le premier démarrage ?
+R: Entre 15 et 30 secondes pour initialiser la base de données.
+
+Q: Le script fix-backend-startup.bat est-il sans danger ?
+R: Oui, il ne fait que corriger la configuration, aucune donnée n'est supprimée.
+
+Q: Dois-je exécuter le script à chaque démarrage ?
+R: Non, une seule exécution devrait suffire. Si le problème revient, 
+   il y a probablement un problème plus profond (antivirus, permissions).
+
+Q: L'application fonctionne mais est lente au démarrage ?
+R: C'est normal au premier démarrage. Les suivants seront plus rapides.
+
+Q: Comment vérifier que tout est OK ?
+R: L'écran de connexion LOGESCO doit s'afficher, et vous devez pouvoir 
+   vous connecter avec admin/admin123 (première installation).
+
+================================================================================
+Support technique : Consultez GUIDE_FIX_DEMARRAGE_BACKEND.md pour plus de détails
+================================================================================

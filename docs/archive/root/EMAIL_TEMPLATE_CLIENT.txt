@@ -1,0 +1,273 @@
+================================================================================
+                        TEMPLATES D'EMAIL POUR LE CLIENT
+================================================================================
+
+=== TEMPLATE 1 : EMAIL SIMPLE (Solution Rapide) ===
+
+Objet : Solution au problème de démarrage LOGESCO
+
+Bonjour [Nom du Client],
+
+Suite au problème de démarrage automatique que vous rencontrez avec LOGESCO, 
+nous avons identifié la cause et préparé une solution automatique.
+
+SOLUTION EN 3 ÉTAPES :
+=======================
+
+1. Téléchargez le fichier joint : LOGESCO-Fix-Backend-Support.zip
+2. Extrayez les fichiers et double-cliquez sur : fix-backend-startup.bat
+3. Attendez le message "CORRECTION TERMINEE AVEC SUCCES" puis relancez LOGESCO
+
+Le backend devrait maintenant démarrer automatiquement en 15-30 secondes.
+
+BESOIN D'AIDE ?
+===============
+
+Si le problème persiste après avoir suivi ces étapes :
+- Exécutez le script : diagnose-backend-startup.bat
+- Envoyez-nous la sortie complète
+- Consultez le guide complet inclus dans le ZIP
+
+Nous restons à votre disposition pour tout support complémentaire.
+
+Cordialement,
+L'équipe Support LOGESCO
+
+Pièce jointe : LOGESCO-Fix-Backend-Support.zip
+
+================================================================================
+
+=== TEMPLATE 2 : EMAIL DÉTAILLÉ (Explication Technique) ===
+
+Objet : Correction du démarrage automatique LOGESCO - Solution disponible
+
+Bonjour [Nom du Client],
+
+Nous avons identifié la cause du problème de démarrage automatique du backend 
+LOGESCO que vous rencontrez.
+
+LE PROBLÈME :
+=============
+
+Le "client Prisma" (composant de gestion de base de données) n'a pas été 
+correctement initialisé lors de l'installation. Sans ce composant, le backend 
+ne peut pas démarrer, ce qui explique pourquoi l'application reste bloquée 
+au lancement.
+
+LA SOLUTION :
+=============
+
+Nous avons créé un script de correction automatique qui :
+✓ Vérifie tous les composants nécessaires
+✓ Régénère le client Prisma si manquant
+✓ Corrige la configuration de la base de données
+✓ Teste le démarrage du backend
+✓ Affiche un rapport de succès
+
+PROCÉDURE DE CORRECTION :
+=========================
+
+1. Téléchargez le package de support joint (LOGESCO-Fix-Backend-Support.zip)
+
+2. Extrayez les fichiers dans un dossier temporaire
+
+3. Lisez le fichier LISEZ-MOI-EN-PREMIER.txt pour comprendre la procédure
+
+4. Exécutez le script fix-backend-startup.bat :
+   - Double-cliquez sur le fichier
+   - Attendez environ 30 secondes
+   - Le script affichera chaque étape de la correction
+   - Un message de succès apparaîtra à la fin
+
+5. Fermez complètement LOGESCO (si ouvert)
+
+6. Relancez LOGESCO normalement
+
+7. Le backend devrait maintenant démarrer automatiquement en 15-30 secondes
+
+VÉRIFICATION :
+==============
+
+Pour vérifier que tout fonctionne :
+- L'écran de connexion LOGESCO doit s'afficher
+- Vous devez pouvoir vous connecter normalement
+- Les fonctionnalités doivent être accessibles
+
+SI LE PROBLÈME PERSISTE :
+==========================
+
+1. Exécutez le script diagnose-backend-startup.bat (inclus dans le ZIP)
+2. Copiez TOUTE la sortie affichée dans la fenêtre
+3. Répondez à ce mail en joignant :
+   - La sortie du script de diagnostic
+   - Le fichier : %LOCALAPPDATA%\LOGESCO\backend\logs\backend-startup.log
+
+Nous analyserons ces informations pour identifier le problème spécifique 
+à votre environnement.
+
+QUESTIONS FRÉQUENTES :
+======================
+
+Q : Vais-je perdre mes données ?
+R : Non, le script ne modifie que la configuration, aucune donnée n'est 
+    touchée.
+
+Q : Dois-je faire cette manipulation à chaque démarrage ?
+R : Non, une seule fois suffit. Une fois corrigé, le problème ne devrait 
+    plus se reproduire.
+
+Q : Combien de temps cela prend-il ?
+R : Le script prend environ 30 secondes. Le premier démarrage après 
+    correction peut prendre 30 secondes supplémentaires.
+
+Q : Que faire si mon antivirus bloque le script ?
+R : Autorisez temporairement l'exécution du script. C'est un script de 
+    correction officiel, il ne présente aucun danger.
+
+PROCHAINE VERSION :
+===================
+
+Nous intégrons cette correction dans la prochaine version de LOGESCO pour 
+que ce problème ne se reproduise plus sur les nouvelles installations.
+
+SUPPORT :
+=========
+
+Nous restons à votre entière disposition pour vous accompagner dans cette 
+procédure ou pour toute question complémentaire.
+
+Téléphone : [Votre numéro]
+Email : support@logesco.com
+Heures de support : Lun-Ven 9h-18h
+
+Cordialement,
+L'équipe Support LOGESCO
+
+Pièce jointe : LOGESCO-Fix-Backend-Support.zip (environ XXX Ko)
+
+================================================================================
+
+=== TEMPLATE 3 : EMAIL DE SUIVI (Après Correction) ===
+
+Objet : LOGESCO - Suivi de la correction
+
+Bonjour [Nom du Client],
+
+Suite à notre dernier échange concernant le problème de démarrage de LOGESCO,
+nous souhaitons nous assurer que la solution a bien fonctionné.
+
+VÉRIFICATION :
+==============
+
+Pourriez-vous nous confirmer que :
+☐ Vous avez exécuté le script fix-backend-startup.bat
+☐ Le script s'est terminé avec le message de succès
+☐ LOGESCO démarre maintenant automatiquement
+☐ Vous pouvez vous connecter et utiliser l'application normalement
+
+RETOUR D'EXPÉRIENCE :
+=====================
+
+Nous apprécierions que vous remplissiez le bref questionnaire joint 
+(RAPPORT_TEST_CLIENT.txt) pour nous aider à améliorer notre processus 
+de support.
+
+PROBLÈME PERSISTANT ?
+=====================
+
+Si vous rencontrez toujours des difficultés :
+1. Exécutez diagnose-backend-startup.bat
+2. Envoyez-nous la sortie complète
+3. Nous vous contacterons rapidement pour une assistance personnalisée
+
+Merci pour votre collaboration et votre patience.
+
+Cordialement,
+L'équipe Support LOGESCO
+
+================================================================================
+
+=== TEMPLATE 4 : EMAIL POUR NOUVELLE VERSION ===
+
+Objet : LOGESCO v2.X disponible - Corrections importantes
+
+Bonjour,
+
+Nous avons le plaisir de vous annoncer la disponibilité de LOGESCO v2.X 
+avec des améliorations importantes.
+
+CORRECTIFS MAJEURS :
+====================
+
+✓ Démarrage automatique du backend optimisé
+✓ Temps de lancement réduit (15-30 secondes)
+✓ Diagnostic et auto-réparation automatiques
+✓ Scripts de support intégrés
+
+POUR LES UTILISATEURS ACTUELS :
+================================
+
+Si vous avez rencontré des problèmes de démarrage :
+- Cette version corrige définitivement le problème
+- L'installation détecte et corrige automatiquement les configurations
+- Vous n'aurez plus besoin d'utiliser les scripts de correction
+
+TÉLÉCHARGEMENT :
+================
+
+Version : LOGESCO v2.X
+Taille : XXX Mo
+Lien : [URL de téléchargement]
+
+INSTALLATION :
+==============
+
+1. Fermez LOGESCO si ouvert
+2. Exécutez l'installeur téléchargé
+3. Suivez les instructions à l'écran
+4. Le backend se configurera automatiquement au premier démarrage
+
+NOTES IMPORTANTES :
+===================
+
+- Vos données sont conservées lors de la mise à jour
+- Première ouverture : 30 secondes d'initialisation
+- Ouvertures suivantes : 5-10 secondes
+
+SUPPORT :
+=========
+
+En cas de question ou de problème lors de la mise à jour :
+Email : support@logesco.com
+Téléphone : [Votre numéro]
+
+Cordialement,
+L'équipe LOGESCO
+
+================================================================================
+
+NOTES POUR L'EXPÉDITEUR :
+=========================
+
+1. Choisissez le template approprié selon la situation :
+   - Template 1 : Client pressé, solution rapide
+   - Template 2 : Client qui veut comprendre le problème
+   - Template 3 : Suivi après envoi de la solution
+   - Template 4 : Annonce de nouvelle version
+
+2. Personnalisez :
+   - Remplacez [Nom du Client] par le nom réel
+   - Ajoutez vos coordonnées de support
+   - Adaptez le ton selon votre relation avec le client
+
+3. Pièces jointes :
+   - Toujours joindre LOGESCO-Fix-Backend-Support.zip
+   - Vérifier la taille du fichier avant envoi
+   - Utiliser WeTransfer si > 10 Mo
+
+4. Suivi :
+   - Planifier un suivi 24-48h après l'envoi
+   - Logger le ticket dans votre système de support
+   - Marquer comme résolu uniquement après confirmation client
+
+================================================================================

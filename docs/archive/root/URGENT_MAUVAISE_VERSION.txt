@@ -1,0 +1,193 @@
+================================================================================
+          ⚠️  URGENT - VOUS AVEZ LA MAUVAISE VERSION DE LOGESCO  ⚠️
+================================================================================
+
+PROBLEME :
+==========
+
+Votre application LOGESCO est en "MODE CLIENT" au lieu de "MODE SERVEUR".
+
+Resultat :
+  ❌ Le backend local NE DEMARRE PAS automatiquement
+  ❌ L'application essaie de se connecter a un serveur distant inexistant
+  ❌ Message : "Backend inaccessible" avec port 58636 (au lieu de 8080)
+
+CAUSE :
+=======
+
+L'application a ete compilee avec une mauvaise option.
+Ce n'est PAS une erreur de votre part, c'est une erreur de compilation.
+
+================================================================================
+
+SOLUTION TEMPORAIRE (EN ATTENDANT LA BONNE VERSION) :
+======================================================
+
+Vous pouvez utiliser LOGESCO en demarrant le backend manuellement.
+
+ETAPE 1 : Demarrez le backend manuellement
+-------------------------------------------
+
+1. Double-cliquez sur : START-BACKEND-MANUEL.bat
+
+2. Une fenetre noire s'ouvre avec des messages
+
+3. Attendez voir "Serveur en ecoute sur 0.0.0.0:8080"
+
+4. LAISSEZ CETTE FENETRE OUVERTE
+
+
+ETAPE 2 : Lancez LOGESCO
+-------------------------
+
+1. Dans une AUTRE fenetre, lancez LOGESCO normalement
+
+2. L'application devrait maintenant se connecter au backend
+
+3. Vous pourrez travailler normalement
+
+
+ETAPE 3 : A la fin de la journee
+---------------------------------
+
+1. Fermez LOGESCO normalement
+
+2. Fermez la fenetre noire du backend (celle de l'etape 1)
+
+
+IMPORTANT :
+-----------
+
+Vous devrez REFAIRE cette procedure chaque fois :
+  1. Demarrer START-BACKEND-MANUEL.bat (laisser ouvert)
+  2. Lancer LOGESCO
+  3. Travailler
+  4. Fermer LOGESCO puis fermer le backend
+
+================================================================================
+
+SOLUTION DEFINITIVE :
+=====================
+
+Le developpeur doit vous fournir la BONNE version (MODE SERVEUR).
+
+Cette version :
+  ✅ Demarrera automatiquement le backend
+  ✅ Vous n'aurez plus besoin de START-BACKEND-MANUEL.bat
+  ✅ Tout fonctionnera automatiquement
+
+Contactez immediatement le developpeur/support pour obtenir la bonne version.
+
+================================================================================
+
+FICHIERS FOURNIS :
+==================
+
+Pour utiliser LOGESCO en attendant :
+  → START-BACKEND-MANUEL.bat    (a executer avant de lancer LOGESCO)
+
+Pour information :
+  → SOLUTION_MODE_CLIENT.txt    (explication technique)
+  → DEBUG-PORT-PROBLEM.bat      (diagnostic approfondi)
+
+================================================================================
+
+PROCEDURE COMPLETE DETAILLEE :
+===============================
+
+CHAQUE JOUR, AVANT D'UTILISER LOGESCO :
+
+1. Double-clic sur : START-BACKEND-MANUEL.bat
+   
+   → Une fenetre noire s'ouvre
+   → Attendez 10-15 secondes
+   → Vous verrez des messages comme :
+     "🌐 Serveur en écoute sur 0.0.0.0:8080"
+     "🏥 Health check: http://localhost:8080/health"
+     "🚀 Serveur LOGESCO API démarré avec succès"
+   
+   → LAISSEZ CETTE FENETRE OUVERTE
+
+2. Lancez LOGESCO (icone sur le bureau ou menu demarrer)
+
+   → L'application devrait se connecter au backend
+   → L'ecran de connexion s'affiche
+   → Vous pouvez travailler normalement
+
+3. A LA FIN DE VOTRE TRAVAIL :
+
+   → Fermez LOGESCO normalement
+   → Fermez la fenetre noire du backend
+     (Cliquez sur X ou appuyez sur une touche si demande)
+
+================================================================================
+
+QUESTIONS FREQUENTES :
+======================
+
+Q: Pourquoi dois-je faire ca maintenant alors qu'avant ca marchait ?
+R: L'application a ete mise a jour avec une mauvaise configuration.
+   C'est une erreur de notre part, pas de la votre.
+
+Q: Combien de temps dois-je faire cette procedure ?
+R: Jusqu'a ce que vous receviez la bonne version de l'application.
+   Le developpeur doit vous la fournir rapidement.
+
+Q: Que se passe-t-il si je ferme la fenetre noire par erreur ?
+R: Le backend s'arrete et LOGESCO ne fonctionnera plus.
+   Solution : Relancez START-BACKEND-MANUEL.bat
+
+Q: Puis-je minimiser la fenetre noire ?
+R: Oui, vous pouvez la minimiser dans la barre des taches.
+   Mais ne la fermez pas.
+
+Q: Est-ce que mes donnees sont en securite ?
+R: Oui, absolument. Vos donnees sont dans la base de donnees locale
+   et ne sont pas affectees par ce probleme.
+
+================================================================================
+
+MESSAGE AU DEVELOPPEUR :
+========================
+
+Si vous etes le developpeur et voyez ce message :
+
+L'application a ete compilee avec --dart-define=IS_CLIENT_MODE=true
+
+Pour corriger :
+
+1. Recompilez sans cette option :
+   flutter build windows --release
+
+2. Distribuez la nouvelle version au client
+
+3. Le client n'aura plus besoin de START-BACKEND-MANUEL.bat
+
+Voir SOLUTION_MODE_CLIENT.txt pour details complets.
+
+================================================================================
+
+SUPPORT :
+=========
+
+Email : support@logesco.com
+
+Indiquez dans votre message :
+  "J'ai recu la mauvaise version (MODE CLIENT)"
+
+Demandez :
+  "Version MODE SERVEUR pour utilisation standalone"
+
+================================================================================
+
+RESUME ULTRA-SIMPLE :
+=====================
+
+1. Double-clic sur : START-BACKEND-MANUEL.bat (laisser ouvert)
+2. Lancer LOGESCO
+3. Travailler normalement
+4. Fermer LOGESCO puis fermer le backend
+
+Repetez chaque jour jusqu'a recevoir la bonne version.
+
+================================================================================

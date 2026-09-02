@@ -1,0 +1,238 @@
+================================================================================
+                    SOLUTION - MODE CLIENT ACTIF PAR ERREUR
+================================================================================
+
+PROBLEME IDENTIFIE :
+====================
+
+L'application LOGESCO a ete compilee en "MODE CLIENT" au lieu de "MODE SERVEUR".
+
+En MODE CLIENT :
+  → L'application NE DEMARRE PAS le backend local
+  → Elle essaie de se connecter a un serveur distant
+  → Resultat : "Backend inaccessible" avec un port aleatoire (58636)
+
+En MODE SERVEUR (correct) :
+  → L'application demarre automatiquement le backend local Node.js
+  → Le backend ecoute sur le port 8080
+  → Tout fonctionne
+
+VERIFICATION :
+==============
+
+L'erreur affiche :
+  "port = 58636" au lieu de "port = 8080"
+
+Cela confirme que l'application est en MODE CLIENT et n'a PAS demarre 
+le backend local.
+
+CAUSE :
+=======
+
+L'application a ete compilee avec l'option :
+  --dart-define=IS_CLIENT_MODE=true
+
+Ou bien il existe un fichier de configuration qui active ce mode.
+
+SOLUTIONS :
+===========
+
+SOLUTION 1 : Recompiler l'application en MODE SERVEUR
+------------------------------------------------------
+
+Si vous etes le developpeur :
+
+1. Ouvrez un terminal dans le projet Flutter
+
+2. Compilez en MODE SERVEUR :
+
+   flutter build windows --release
+
+   (SANS l'option --dart-define=IS_CLIENT_MODE=true)
+
+3. L'executable sera dans :
+   build\windows\runner\Release\logesco_v2.exe
+
+4. Distribuez cette version au client
+
+
+SOLUTION 2 : Verifier les fichiers de configuration
+----------------------------------------------------
+
+Cherchez dans le projet s'il existe un fichier qui definit IS_CLIENT_MODE :
+
+Fichiers a verifier :
+  - .env
+  - .env.local
+  - .env.production
+  - dart_defines.json
+  - build_config.json
+
+Si vous trouvez IS_CLIENT_MODE=true, changez-le en false.
+
+
+SOLUTION 3 : Demarrer le backend manuellement (TEMPORAIRE)
+-----------------------------------------------------------
+
+En attendant une recompilation :
+
+1. Ouvrez un terminal (cmd)
+
+2. Allez dans le backend :
+   cd %LOCALAPPDATA%\LOGESCO\backend
+
+3. Demarrez le backend manuellement :
+   node src\server.js
+
+4. Laissez cette fenetre ouverte
+
+5. Lancez LOGESCO dans une autre fenetre
+
+6. LOGESCO devrait se connecter au backend sur port 8080
+
+
+SOLUTION 4 : Utiliser une version correcte
+-------------------------------------------
+
+Demandez au developpeur une version SERVEUR de l'application.
+
+Caracteristiques de la version correcte :
+  ✓ Demarre automatiquement le backend local
+  ✓ Affiche "Demarrage du serveur..." pendant 15-30s
+  ✓ Se connecte sur http://localhost:8080
+  ✓ Fonctionne sans serveur distant
+
+================================================================================
+
+COMMENT VERIFIER LE MODE ?
+===========================
+
+Methode 1 : Au demarrage
+-------------------------
+Si vous voyez "Demarrage du serveur..." en bas de l'ecran :
+  → MODE SERVEUR (correct)
+
+Si vous voyez directement l'ecran de connexion sans message :
+  → MODE CLIENT (incorrect pour usage local)
+
+Methode 2 : Dans les logs
+--------------------------
+Cherchez dans les logs Flutter (si disponibles) :
+
+MODE SERVEUR :
+  "Backend service started successfully"
+  "Mode: SERVEUR"
+
+MODE CLIENT :
+  "Mode client — backend embarque ignore"
+  "Mode: CLIENT"
+
+================================================================================
+
+POUR LE DEVELOPPEUR :
+=====================
+
+Commandes de build :
+
+BUILD MODE SERVEUR (pour installation locale) :
+  flutter build windows --release
+
+BUILD MODE CLIENT (pour connexion a serveur distant) :
+  flutter build windows --release --dart-define=IS_CLIENT_MODE=true
+
+IMPORTANT :
+-----------
+Par defaut (sans --dart-define), l'application est en MODE SERVEUR.
+
+Le MODE CLIENT ne doit etre utilise QUE pour des postes qui se connectent
+a un serveur central distant (architecture client-serveur).
+
+Pour une utilisation standalone (1 poste), utilisez MODE SERVEUR.
+
+================================================================================
+
+ARCHITECTURE :
+==============
+
+MODE SERVEUR (standalone) :
+  ┌─────────────────────────┐
+  │   Application Flutter    │
+  │         (GUI)           │
+  └───────────┬─────────────┘
+              │
+              ▼
+  ┌─────────────────────────┐
+  │   Backend Node.js       │
+  │   (Port 8080)          │
+  └───────────┬─────────────┘
+              │
+              ▼
+  ┌─────────────────────────┐
+  │   Base SQLite Locale    │
+  └─────────────────────────┘
+
+MODE CLIENT (reseau) :
+  ┌─────────────────────────┐
+  │   Application Flutter    │
+  │   (Poste client)        │
+  └───────────┬─────────────┘
+              │
+              │ Internet/Reseau
+              ▼
+  ┌─────────────────────────┐
+  │   Backend Node.js       │
+  │   (Serveur distant)     │
+  └───────────┬─────────────┘
+              │
+              ▼
+  ┌─────────────────────────┐
+  │   Base PostgreSQL       │
+  └─────────────────────────┘
+
+================================================================================
+
+RESOLUTION IMMEDIATE :
+======================
+
+1. Verifiez avec le developpeur quelle version a ete distribuee
+
+2. Si MODE CLIENT par erreur :
+   → Demandez une recompilation en MODE SERVEUR
+   → Redistribuez la bonne version
+
+3. En attendant, le client peut utiliser :
+   → Demarrage manuel du backend (Solution 3)
+
+================================================================================
+
+QUESTIONS FREQUENTES :
+======================
+
+Q: Comment savoir quel mode j'ai ?
+R: Si l'app essaie de se connecter sur un port aleatoire (58636, etc.)
+   au lieu de 8080, c'est MODE CLIENT.
+
+Q: Puis-je changer le mode sans recompiler ?
+R: Non, le mode est defini a la compilation. Il faut recompiler.
+
+Q: Quelle est la difference entre les deux modes ?
+R: MODE SERVEUR = Backend local + Base SQLite (standalone)
+   MODE CLIENT = Backend distant + Base PostgreSQL (reseau)
+
+Q: Quel mode dois-je utiliser ?
+R: MODE SERVEUR pour une utilisation locale (1 PC)
+   MODE CLIENT pour plusieurs postes connectes a un serveur central
+
+================================================================================
+
+CONCLUSION :
+============
+
+Le client a recu une version MODE CLIENT au lieu de MODE SERVEUR.
+
+Il faut lui fournir une version MODE SERVEUR compilee sans l'option
+IS_CLIENT_MODE.
+
+En attendant, il peut demarrer le backend manuellement (Solution 3).
+
+================================================================================

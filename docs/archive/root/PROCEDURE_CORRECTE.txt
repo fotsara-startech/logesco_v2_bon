@@ -1,0 +1,181 @@
+================================================================================
+                 PROCEDURE CORRECTE - DEMARRAGE LOGESCO
+================================================================================
+
+PROBLEME IDENTIFIE :
+Des processus Node.js restent actifs en arriere-plan et bloquent le port 8080.
+Resultat : Plusieurs backends tentent de demarrer en meme temps = conflit.
+
+SOLUTION EN 3 ETAPES SIMPLES :
+===============================
+
+ETAPE 1 : Fermez LOGESCO completement
+--------------------------------------
+Si LOGESCO est ouvert, fermez-le (X en haut a droite).
+
+ETAPE 2 : Nettoyez les processus Node.js
+-----------------------------------------
+Double-cliquez sur : kill-all-node-and-restart.bat
+
+Ce script va :
+  ✓ Arreter TOUS les processus Node.js en cours
+  ✓ Liberer le port 8080
+  ✓ Verifier que tout est propre
+  ✓ Afficher "NETTOYAGE TERMINE !"
+
+Duree : 5 secondes
+
+ETAPE 3 : Relancez LOGESCO
+---------------------------
+Lancez LOGESCO normalement.
+
+RESULTAT ATTENDU :
+  ✓ Le backend demarre automatiquement en 15-30 secondes
+  ✓ L'ecran de connexion s'affiche
+  ✓ Vous pouvez vous connecter
+
+================================================================================
+
+POURQUOI CETTE PROCEDURE ?
+===========================
+
+Le probleme que vous rencontrez :
+  1. Un premier backend Node.js demarre (manuellement ou via un test)
+  2. Il occupe le port 8080
+  3. Vous relancez LOGESCO
+  4. LOGESCO essaie de demarrer un DEUXIEME backend
+  5. CONFLIT : Le port 8080 est deja pris
+  6. LOGESCO reste bloque sur "Demarrage du serveur..."
+
+La solution :
+  → TUER TOUS les backends avant de relancer
+  → Un seul backend peut tourner a la fois
+
+================================================================================
+
+SI CA NE MARCHE TOUJOURS PAS :
+===============================
+
+Cas 1 : Un autre programme utilise le port 8080
+------------------------------------------------
+Symptome : Le script dit "Port 8080 encore occupe"
+
+Solution :
+  1. Notez le PID affiche par le script
+  2. Ouvrez le Gestionnaire des taches (Ctrl+Shift+Esc)
+  3. Onglet Details, cherchez le PID
+  4. Terminez ce processus
+  5. Relancez kill-all-node-and-restart.bat
+
+Cas 2 : LOGESCO ne trouve pas le backend
+-----------------------------------------
+Symptome : L'ecran reste sur "Demarrage du serveur..." meme apres nettoyage
+
+Solution :
+  1. Executez : force-recreate-scripts.bat
+     (Recree les scripts de demarrage avec les bons guillemets)
+  2. Puis executez : kill-all-node-and-restart.bat
+  3. Puis relancez LOGESCO
+
+Cas 3 : L'antivirus bloque les scripts
+---------------------------------------
+Symptome : Le script ne s'execute pas ou Windows Defender affiche une alerte
+
+Solution :
+  1. Panneau de configuration → Securite Windows
+  2. Protection contre les virus → Gerer les parametres
+  3. Ajouter une exclusion → Dossier
+  4. Chemin : C:\Users\André Brandone F\AppData\Local\LOGESCO
+  5. Relancez les scripts
+
+================================================================================
+
+VERIFICATION RAPIDE :
+=====================
+
+Pour verifier qu'aucun backend ne tourne :
+
+  1. Ouvrez une invite de commande (cmd)
+  2. Tapez : tasklist | findstr node.exe
+  3. Si rien ne s'affiche : OK, aucun backend actif
+  4. Si des lignes s'affichent : Il y a encore des backends actifs
+
+Pour verifier que le port 8080 est libre :
+
+  1. Ouvrez une invite de commande (cmd)
+  2. Tapez : netstat -ano | findstr :8080
+  3. Si rien ne s'affiche : OK, port libre
+  4. Si des lignes s'affichent : Le port est occupe
+
+================================================================================
+
+PROCEDURE COMPLETE DETAILLEE :
+===============================
+
+1. Fermez LOGESCO (si ouvert)
+2. Double-clic sur : kill-all-node-and-restart.bat
+3. Attendez "NETTOYAGE TERMINE !"
+4. Fermez la fenetre du script
+5. Lancez LOGESCO
+6. Attendez 15-30 secondes
+7. L'ecran de connexion apparait
+8. Connectez-vous normalement
+
+IMPORTANT : Si vous faites des tests manuels du backend (node src\server.js),
+            pensez TOUJOURS a tuer le processus avant de relancer LOGESCO !
+
+================================================================================
+
+RESUME ULTRA-SIMPLE :
+=====================
+
+Probleme : Trop de backends en meme temps
+Solution : kill-all-node-and-restart.bat avant chaque lancement LOGESCO
+
+================================================================================
+
+FICHIERS UTILES :
+=================
+
+  kill-all-node-and-restart.bat       → A EXECUTER AVANT CHAQUE LANCEMENT
+  force-recreate-scripts.bat          → Si les scripts sont incorrects
+  diagnose-backend-startup.bat        → Pour diagnostic complet
+  check-vbs-scripts.bat               → Pour verifier les scripts VBS/CMD
+
+================================================================================
+
+QUESTIONS FREQUENTES :
+======================
+
+Q: Dois-je executer kill-all-node-and-restart.bat a chaque fois ?
+R: Non, seulement si :
+   - Vous avez fait des tests manuels du backend
+   - LOGESCO reste bloque sur "Demarrage du serveur..."
+   - Vous avez tue LOGESCO brutalement (fermeture forcee)
+
+Q: Pourquoi plusieurs backends demarrent ?
+R: Parce que :
+   - Le script force-recreate-scripts.bat lance un backend pour tester
+   - Vous lancez le backend manuellement pour tester
+   - LOGESCO lance automatiquement le backend
+   → Resultat : 2 ou 3 backends en meme temps = conflit
+
+Q: Comment eviter ce probleme a l'avenir ?
+R: Avant de lancer LOGESCO, verifiez toujours qu'aucun backend ne tourne :
+   tasklist | findstr node.exe
+   Si vous voyez node.exe, executez : taskkill /F /IM node.exe
+
+================================================================================
+
+SUPPORT :
+=========
+
+Email : support@logesco.com
+
+Pour accelerer le support, envoyez :
+  1. La sortie de : diagnose-backend-startup.bat
+  2. La sortie de : tasklist | findstr node.exe
+  3. La sortie de : netstat -ano | findstr :8080
+  4. Le fichier : %LOCALAPPDATA%\LOGESCO\backend\logs\backend-startup.log
+
+================================================================================

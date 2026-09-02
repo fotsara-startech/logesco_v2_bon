@@ -1,0 +1,104 @@
+================================================================================
+                    PROBLEME BACKEND - SOLUTION RAPIDE
+================================================================================
+
+VOTRE PROBLEME :
+Le logiciel ne demarre pas automatiquement, mais ca marche quand vous le 
+lancez manuellement depuis %LOCALAPPDATA%\LOGESCO\backend
+
+SOLUTION EN 3 ETAPES :
+======================
+
+ETAPE 1 : Telechargez les fichiers de correction
+-------------------------------------------------
+Recuperez ces fichiers depuis votre developpeur :
+  - fix-backend-startup.bat
+  - diagnose-backend-startup.bat
+  - GUIDE_FIX_DEMARRAGE_BACKEND.md (optionnel)
+
+ETAPE 2 : Executez le script de correction
+-------------------------------------------
+Double-cliquez sur : fix-backend-startup.bat
+
+Le script va :
+  [X] Verifier Node.js
+  [X] Generer le client Prisma (moteur base de donnees)
+  [X] Corriger le fichier de configuration .env
+  [X] Creer/copier la base de donnees
+  [X] Tester le demarrage du backend
+  [X] Afficher un message de succes
+
+Duree : environ 30 secondes
+
+ETAPE 3 : Relancez votre application
+-------------------------------------
+1. Fermez completement LOGESCO (si ouvert)
+2. Relancez LOGESCO
+3. Attendez 20-30 secondes
+4. L'ecran de connexion devrait s'afficher
+
+C'EST TOUT !
+
+================================================================================
+
+EN CAS DE PROBLEME :
+====================
+
+Si ca ne marche toujours pas :
+
+1. Executez : diagnose-backend-startup.bat
+2. Copiez TOUT le texte affiche
+3. Envoyez-le a votre developpeur avec ce fichier :
+   %LOCALAPPDATA%\LOGESCO\backend\logs\backend-startup.log
+
+Votre developpeur pourra identifier le probleme exact.
+
+================================================================================
+
+QUESTIONS FREQUENTES :
+======================
+
+Q: C'est quoi le "client Prisma" ?
+R: C'est le moteur qui permet au logiciel de parler avec la base de donnees.
+   Sans lui, le backend ne peut pas demarrer.
+
+Q: Est-ce que je vais perdre mes donnees ?
+R: Non, le script ne touche pas aux donnees, il corrige juste la configuration.
+
+Q: Combien de temps ca prend ?
+R: Le script prend 30 secondes. Le premier demarrage apres correction peut 
+   prendre 30 secondes aussi.
+
+Q: Dois-je executer le script a chaque fois ?
+R: Non, une seule fois suffit. Si le probleme revient, il y a peut-etre 
+   un autre souci (antivirus, permissions, etc.)
+
+Q: Le script dit "OK" mais ca ne marche toujours pas ?
+R: Executez diagnose-backend-startup.bat et envoyez le resultat a votre 
+   developpeur. Il y a probablement un probleme specifique a votre machine.
+
+================================================================================
+
+INFORMATIONS TECHNIQUES (pour votre informaticien) :
+====================================================
+
+Probleme : Le client Prisma ORM n'est pas genere apres l'installation, 
+           ce qui empeche le backend Node.js de demarrer.
+
+Cause : Le script d'installation n'execute pas "npx prisma generate"
+
+Solution temporaire : Executer fix-backend-startup.bat qui fait :
+  - npx prisma generate
+  - Copie du template de base de donnees
+  - Correction du fichier .env avec chemins absolus
+  - Verification complete
+
+Solution permanente : Integrer la generation Prisma dans l'installeur.
+
+Logs : %LOCALAPPDATA%\LOGESCO\backend\logs\backend-startup.log
+
+================================================================================
+
+Support : Contactez votre developpeur avec les logs si le probleme persiste.
+
+================================================================================
