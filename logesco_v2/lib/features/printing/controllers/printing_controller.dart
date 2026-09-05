@@ -430,6 +430,9 @@ class PrintingController extends GetxController {
       case PrintFormat.a4:
         pageFormat = PdfPageFormat.a4;
         break;
+      case PrintFormat.matriciel:
+        pageFormat = const PdfPageFormat(595.28, 2834.65); // Continu 210mm x 1000mm
+        break;
     }
 
     pdf.addPage(

@@ -24,6 +24,7 @@ import '../../printing/services/printing_service.dart';
 import '../../printing/models/models.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
+import '../../commercials/models/commercial.dart';
 
 class SalesController extends GetxController with SubscriptionVerificationMixin {
   final SalesService _salesService = SalesService(Get.find<AuthService>());
@@ -55,6 +56,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Panier de vente
   final RxList<CartItem> _cartItems = <CartItem>[].obs;
   final Rx<Customer?> _selectedCustomer = Rx<Customer?>(null);
+  final Rx<Commercial?> _selectedCommercial = Rx<Commercial?>(null);
   final RxString _paymentMode = 'comptant'.obs;
   final RxDouble _discount = 0.0.obs;
   final RxDouble _amountPaid = 0.0.obs;
@@ -77,10 +79,18 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final Rx<DateTime?> _startDateFilter = Rx<DateTime?>(null);
   final Rx<DateTime?> _endDateFilter = Rx<DateTime?>(null);
   final RxInt _vendeurIdFilter = 0.obs;
+  final RxInt _commercialIdFilter = 0.obs;
 
   // Liste des vendeurs pour le filtre
   final RxList<Map<String, dynamic>> _vendeurs = <Map<String, dynamic>>[].obs;
   List<Map<String, dynamic>> get vendeurs => _vendeurs;
+
+  // Liste des commerciaux actifs — n'existe que pour les clients qui
+  // utilisent cette fonctionnalité optionnelle (voir feature commercials).
+  // Un sélecteur qui en dépend doit toujours vérifier `commerciaux.isNotEmpty`
+  // avant de s'afficher, pour rester invisible chez les autres clients.
+  final RxList<Commercial> _commerciaux = <Commercial>[].obs;
+  List<Commercial> get commerciaux => _commerciaux;
 
   // Recherche
   final RxString _searchQuery = ''.obs;
@@ -106,6 +116,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   List<CartItem> get cartItems => _cartItems;
   Customer? get selectedCustomer => _selectedCustomer.value;
+  Commercial? get selectedCommercial => _selectedCommercial.value;
   String get paymentMode => _paymentMode.value;
   double get discount => _discount.value;
   double get amountPaid => _amountPaid.value;
@@ -120,6 +131,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   String get statusFilter => _statusFilter.value;
   String get paymentModeFilter => _paymentModeFilter.value;
   int get vendeurIdFilter => _vendeurIdFilter.value;
+  int get commercialIdFilter => _commercialIdFilter.value;
 
   // Getters pour les produits de vente
   List<Product> get productsForSale => _productsForSale;
@@ -146,6 +158,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _loadCompanyProfile();
     loadProductsForSale();
     _loadVendeurs();
+    _loadCommerciaux();
 
     // Vérifier l'abonnement au démarrage
     _initializeSubscriptionChecks();
@@ -181,6 +194,27 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
     } catch (e) {
       print('⚠️ Impossible de charger les vendeurs: $e');
+    }
+  }
+
+  // Chargement des commerciaux terrain actifs (fonctionnalité optionnelle —
+  // liste vide chez les clients qui ne l'utilisent pas, c'est ce qui rend
+  // le sélecteur invisible dans l'écran de vente, cf. `commerciaux.isNotEmpty`)
+  Future<void> _loadCommerciaux() async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('${Get.find<ApiService>().baseUrl}/commerciaux?isActive=true'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final data = jsonData['data'] as List<dynamic>? ?? [];
+        _commerciaux.assignAll(data.map((c) => Commercial.fromJson(c as Map<String, dynamic>)).toList());
+      }
+    } catch (e) {
+      print('⚠️ Impossible de charger les commerciaux: $e');
     }
   }
 
@@ -384,6 +418,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         dateDebut: _startDateFilter.value,
         dateFin: _endDateFilter.value,
         vendeurId: effectiveVendeurId,
+        commercialId: _commercialIdFilter.value > 0 ? _commercialIdFilter.value : null,
         boutiqueId: activeBoutiqueId,
       );
 
@@ -740,6 +775,22 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
   }
 
+  /// Ramène au minimum autorisé (prix original - remise max) tout prix
+  /// unitaire du panier qui serait en-dessous. Le champ de saisie affiche
+  /// déjà une erreur dès qu'un prix invalide est tapé (voir cart_widget.dart)
+  /// mais n'empêche pas la saisie ni la validation — cette méthode est
+  /// appelée juste avant la validation (vente ou proforma) pour garantir
+  /// qu'aucun prix invalide n'est jamais réellement enregistré.
+  void clampCartPricesToMinimum() {
+    for (int i = 0; i < _cartItems.length; i++) {
+      final item = _cartItems[i];
+      final minPrice = item.originalPrice - item.maxDiscountAllowed;
+      if (item.unitPrice < minPrice) {
+        _cartItems[i] = item.copyWith(unitPrice: minPrice);
+      }
+    }
+  }
+
   void removeFromCart(int productId) {
     _cartItems.removeWhere((item) => item.productId == productId);
   }
@@ -752,6 +803,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   void clearCart() {
     _cartItems.clear();
     _selectedCustomer.value = null;
+    _selectedCommercial.value = null;
     _paymentMode.value = 'comptant';
     _discount.value = 0.0;
     _amountPaid.value = 0.0;
@@ -771,6 +823,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Configuration de la vente
   void setSelectedCustomer(Customer? customer) {
     _selectedCustomer.value = customer;
+  }
+
+  void setSelectedCommercial(Commercial? commercial) {
+    _selectedCommercial.value = commercial;
   }
 
   void setPaymentMode(String mode) {
@@ -856,6 +912,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       return false;
     }
 
+    clampCartPricesToMinimum();
+
     _isCreating.value = true;
 
     try {
@@ -885,6 +943,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       final request = CreateSaleRequest(
         clientId: _selectedCustomer.value?.id,
         boutiqueId: _getActiveBoutiqueId(),
+        commercialId: _selectedCommercial.value?.id,
         modePaiement: _paymentMode.value,
         montantRemise: _discount.value,
         montantPaye: _amountPaid.value,
@@ -1169,12 +1228,19 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     loadSales(refresh: true);
   }
 
+  void setCommercialFilter(int commercialId) {
+    _commercialIdFilter.value = commercialId;
+    _searchQuery.value = '';
+    loadSales(refresh: true);
+  }
+
   void clearFilters() {
     _statusFilter.value = '';
     _paymentModeFilter.value = '';
     _startDateFilter.value = null;
     _endDateFilter.value = null;
     _vendeurIdFilter.value = 0;
+    _commercialIdFilter.value = 0;
     _searchQuery.value = '';
     loadSales(refresh: true);
   }

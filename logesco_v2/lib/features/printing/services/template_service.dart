@@ -117,7 +117,8 @@ class TemplateService {
       // Vérifications spécifiques au format
       switch (template.format) {
         case PrintFormat.thermal:
-          // Pour le thermique, les marges doivent être plus petites
+        case PrintFormat.matriciel:
+          // Papier continu (thermique ou matriciel) : marges plus petites
           if (template.margins.horizontal > 10) return false;
           break;
         case PrintFormat.a4:
@@ -190,6 +191,16 @@ class TemplateService {
           'titleFontSize': 11.5,
           'headerFontSize': 10.5,
           'margins': const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+          'showLogo': false,
+          'showBorder': false,
+        };
+
+      case PrintFormat.matriciel:
+        return {
+          'fontSize': 9.0,
+          'titleFontSize': 12.0,
+          'headerFontSize': 9.0,
+          'margins': const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           'showLogo': false,
           'showBorder': false,
         };

@@ -681,6 +681,8 @@ class ReceiptDetailPage extends StatelessWidget {
         return Colors.green;
       case PrintFormat.thermal:
         return Colors.orange;
+      case PrintFormat.matriciel:
+        return Colors.brown;
     }
   }
 
@@ -692,6 +694,8 @@ class ReceiptDetailPage extends StatelessWidget {
         return Icons.note;
       case PrintFormat.thermal:
         return Icons.receipt;
+      case PrintFormat.matriciel:
+        return Icons.print;
     }
   }
 

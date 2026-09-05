@@ -16,6 +16,37 @@ import 'package:path/path.dart' as p;
 ///   1. Écrire un .vbs qui lance node.exe sans fenêtre (windowStyle=0)
 ///   2. Lancer ce .vbs via wscript.exe en mode détaché
 ///   3. Attendre que /health réponde (polling toutes les secondes)
+///
+/// IMPORTANT — Gestion des noms d'utilisateur Windows avec caractères
+/// spéciaux (accents, apostrophes, espaces, ex: "André jean d'arc") :
+/// Ces chemins passent sous %LOCALAPPDATA%\...\backend. Si on les écrit
+/// tels quels (texte) dans le CONTENU des .cmd/.vbs générés, cmd.exe et
+/// wscript.exe les relisent avec la page de code OEM/ANSI du système —
+/// jamais l'UTF-8 utilisé par Dart pour écrire le fichier — et tout
+/// caractère accentué est silencieusement corrompu à la lecture : le
+/// "cd /d" échoue et node.exe ne démarre jamais (ou dans le mauvais
+/// dossier), sans erreur visible. C'est reproductible même avec la page
+/// de code active réglée sur UTF-8 (65001) : le parseur de fichiers .bat
+/// de cmd.exe ne respecte pas cette page de code pour son propre texte.
+///
+/// Une première tentative de correctif convertissait ces chemins en
+/// "chemins courts" Windows 8.3 (ex: ANDR~1), garantis ASCII pur. Elle
+/// s'est révélée insuffisante : la génération des noms courts 8.3 est
+/// désactivée par défaut sur de nombreuses machines (clé de registre
+/// NtfsDisable8dot3NameCreation=1, réglage courant sur images
+/// d'entreprise/SSD) — auquel cas aucun nom court n'existe et le bug
+/// d'origine revient tel quel.
+///
+/// La solution retenue : ne plus jamais écrire de chemin dynamique
+/// (potentiellement accentué) comme texte DANS le contenu d'un .cmd/.vbs.
+/// Les scripts _logesco_start.cmd/.vbs sont désormais 100% statiques et
+/// ASCII pur (aucune interpolation), et lisent les chemins depuis les
+/// variables d'environnement du processus enfant — transmises via
+/// Process.start(environment: {...}), donc via CreateProcessW en
+/// UTF-16 natif, sans jamais passer par un décodage texte/page de code.
+/// Ce mécanisme fonctionne quel que soit le nom Windows de l'utilisateur
+/// et indépendamment du réglage 8.3 de la machine (vérifié manuellement
+/// sur un dossier "André jean d'arc" avec noms courts désactivés).
 class BackendService {
   static final BackendService _instance = BackendService._internal();
   factory BackendService() => _instance;
@@ -83,6 +114,26 @@ class BackendService {
 
   String get _serverJs => p.join(_backendDir, 'src', 'server.js');
 
+  /// Contenu statique du lanceur .cmd — jamais d'interpolation de chemin ici.
+  /// Tous les chemins dynamiques sont lus depuis l'environnement du process,
+  /// hérité via Process.start(environment: {...}) (Unicode natif).
+  static const String _startCmdTemplate =
+      '@echo off\r\n'
+      'cd /d "%LOGESCO_BACKEND_DIR%"\r\n'
+      'set "LOGESCO_DATA_DIR=%LOGESCO_BACKEND_DIR%"\r\n'
+      'set "PORT=%LOGESCO_PORT%"\r\n'
+      'set "NODE_ENV=production"\r\n'
+      'set "DATABASE_URL=%LOGESCO_DB_URL%"\r\n'
+      '"%LOGESCO_NODE_EXE%" "%LOGESCO_SERVER_JS%"\r\n';
+
+  /// Contenu statique du lanceur .vbs — lit le chemin du .cmd depuis
+  /// l'environnement (clé LOGESCO_CMD_FILE) plutôt que de l'interpoler.
+  static const String _startVbsTemplate =
+      'Set WshShell = CreateObject("WScript.Shell")\r\n'
+      'Set WshEnv = WshShell.Environment("PROCESS")\r\n'
+      'cmdFile = WshEnv("LOGESCO_CMD_FILE")\r\n'
+      'WshShell.Run "cmd.exe /C " & Chr(34) & cmdFile & Chr(34), 0, False\r\n';
+
   // ═══ API publique ══════════════════════════════════════════════════════════
 
   Future<bool> initialize() async {
@@ -130,30 +181,47 @@ class BackendService {
     return ok;
   }
 
+  // Nombre d'échecs de /health consécutifs avant de considérer le backend
+  // vraiment mort. Une requête lourde (ex: calcul d'alertes de stock sur un
+  // gros catalogue) peut bloquer la boucle d'événements Node quelques
+  // secondes sans que le process soit mort pour autant — le tuer dans ce
+  // cas coupe la connexion de la requête en cours (voir _healthTimeout).
+  int _consecutiveHealthFailures = 0;
+  static const int _maxConsecutiveHealthFailures = 3;
+  static const Duration _healthTimeout = Duration(seconds: 5);
+
   /// Watchdog de fond — vérifie le health toutes les 15s et relance si mort
   void _startWatchdog() {
     if (_watchdogActive) return;
     _watchdogActive = true;
+    _consecutiveHealthFailures = 0;
     _watchdogTimer?.cancel();
     _watchdogTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
       if (_isRestarting) return;
       final alive = await checkHealth();
       if (!alive) {
+        _consecutiveHealthFailures++;
         if (_isRunning) {
           // Premier échec détecté → ouvrir le circuit breaker immédiatement
+          // (retire les erreurs visibles côté UI), mais on ne relance PAS
+          // encore : ça peut être une requête lente, pas un backend mort.
           _isRunning = false;
           _markBackendDown();
-          debugPrint('⚠️ Watchdog: backend mort — relance silencieuse...');
+          debugPrint('⚠️ Watchdog: /health ne répond pas ($_consecutiveHealthFailures/$_maxConsecutiveHealthFailures)...');
         }
-        if (!_isRestarting) {
+        if (_consecutiveHealthFailures >= _maxConsecutiveHealthFailures && !_isRestarting) {
           _watchdogActive = false;
           _watchdogTimer?.cancel();
+          debugPrint('🔴 Watchdog: backend considéré mort — relance...');
           await restart();
         }
-      } else if (!_isRunning) {
-        // Backend répond de nouveau sans qu'on l'ait relancé (cas rare)
-        _isRunning = true;
-        _markBackendUp();
+      } else {
+        _consecutiveHealthFailures = 0;
+        if (!_isRunning) {
+          // Backend répond de nouveau sans qu'on l'ait relancé (cas rare)
+          _isRunning = true;
+          _markBackendUp();
+        }
       }
     });
   }
@@ -184,9 +252,9 @@ class BackendService {
 
   Future<bool> checkHealth() async {
     try {
-      final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
+      final client = HttpClient()..connectionTimeout = _healthTimeout;
       final req = await client.getUrl(Uri.parse('$baseUrl/health'));
-      final res = await req.close().timeout(const Duration(seconds: 2));
+      final res = await req.close().timeout(_healthTimeout);
       client.close();
       return res.statusCode == 200;
     } catch (_) {
@@ -204,7 +272,15 @@ class BackendService {
 
     // Créer le dossier database s'il n'existe pas
     if (!dbDir.existsSync()) {
+      debugPrint('📁 Création du dossier database...');
       dbDir.createSync(recursive: true);
+    }
+
+    // Créer le dossier logs s'il n'existe pas
+    final logsDir = Directory(p.join(_backendDir, 'logs'));
+    if (!logsDir.existsSync()) {
+      debugPrint('📁 Création du dossier logs...');
+      logsDir.createSync(recursive: true);
     }
 
     // Copier la base template si la base n'existe pas
@@ -213,20 +289,22 @@ class BackendService {
       final templateDb = File(p.join(_backendDir, 'database', 'logesco_template.db'));
       if (templateDb.existsSync()) {
         debugPrint('📋 Copie de la base de données template...');
-        templateDb.copySync(dbPath);
-        debugPrint('✅ Base de données initialisée depuis le template');
+        try {
+          templateDb.copySync(dbPath);
+          debugPrint('✅ Base de données initialisée depuis le template');
+        } catch (e) {
+          debugPrint('⚠️ Échec copie template: $e');
+        }
       } else {
-        debugPrint('⚠️  Template de base de données introuvable, sera créé au démarrage');
+        debugPrint('⚠️ Template de base de données introuvable, sera créé au démarrage');
       }
     }
 
-    if (envFile.existsSync()) {
-      var content = envFile.readAsStringSync();
-      if (content.contains('DATABASE_URL=file:./') || content.contains('DATABASE_URL=file:.\\')) {
-        content = content.replaceAll(RegExp(r'DATABASE_URL=file:[^\n]+'), 'DATABASE_URL=$dbUrl');
-        envFile.writeAsStringSync(content);
-      }
-    } else {
+    // Toujours recréer le fichier .env avec le bon chemin absolu
+    // pour éviter les problèmes de chemins relatifs.
+    // NOTE: ce fichier est lu par Node.js (dotenv), qui gère nativement
+    // l'UTF-8 et les chemins Unicode sous Windows — pas de risque ici.
+    try {
       envFile.writeAsStringSync(
         'NODE_ENV=production\n'
         'PORT=8080\n'
@@ -234,8 +312,12 @@ class BackendService {
         'JWT_SECRET=logesco-secret-${DateTime.now().millisecondsSinceEpoch}\n'
         'JWT_EXPIRES_IN=365d\n'
         'CORS_ORIGIN=*\n'
-        'LOG_LEVEL=info\n',
+        'LOG_LEVEL=info\n'
+        'LOGESCO_DATA_DIR=$_backendDir\n',
       );
+      debugPrint('✅ Fichier .env créé/mis à jour');
+    } catch (e) {
+      debugPrint('⚠️ Échec création .env: $e');
     }
   }
 
@@ -249,36 +331,68 @@ class BackendService {
       final dbPath = p.join(backendDir, 'database', 'logesco.db').replaceAll('\\', '/');
 
       debugPrint('⚙️ Démarrage backend via wscript + cmd...');
+      debugPrint('   backend dir: $backendDir');
       debugPrint('   node: $nodeExe');
       debugPrint('   server: $serverJs');
+      debugPrint('   database: $dbPath');
 
-      // Étape 1 : générer un .cmd avec les variables d'env + appel node.
-      // Les SET dans un .cmd sont hérités par les processus enfants.
+      // Vérifier que node.exe existe
+      if (!File(nodeExe).existsSync() && nodeExe != 'node') {
+        debugPrint('❌ Node.exe introuvable: $nodeExe');
+        return false;
+      }
+
+      // Vérifier que le client Prisma est généré
+      final prismaClient = p.join(backendDir, 'node_modules', '.prisma', 'client', 'index.js');
+      if (!File(prismaClient).existsSync()) {
+        debugPrint('⚠️ Client Prisma non généré, génération en cours...');
+        try {
+          final result = await Process.run(
+            nodeExe,
+            [p.join(backendDir, 'node_modules', 'prisma', 'build', 'index.js'), 'generate'],
+            workingDirectory: backendDir,
+            runInShell: false,
+          );
+          if (result.exitCode == 0) {
+            debugPrint('✅ Client Prisma généré');
+          } else {
+            debugPrint('⚠️ Génération Prisma échouée: ${result.stderr}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Impossible de générer Prisma: $e');
+        }
+      }
+
+      // Créer le dossier database s'il n'existe pas
+      final dbDir = Directory(p.join(backendDir, 'database'));
+      if (!dbDir.existsSync()) {
+        debugPrint('📁 Création du dossier database...');
+        dbDir.createSync(recursive: true);
+      }
+
+      // Copier le template si la base n'existe pas
+      final dbFile = File(dbPath);
+      if (!dbFile.existsSync()) {
+        final templateDb = File(p.join(backendDir, 'database', 'logesco_template.db'));
+        if (templateDb.existsSync()) {
+          debugPrint('📋 Copie du template de base de données...');
+          templateDb.copySync(dbPath);
+        } else {
+          debugPrint('ℹ️ Template absent, la base sera créée au démarrage');
+        }
+      }
+
+      // ─── Écriture des lanceurs (contenu 100% statique, voir doc de classe) ──
+      final dbUrl = 'file:$dbPath';
       final cmdPath = p.join(backendDir, '_logesco_start.cmd');
-      final cmdContent = [
-        '@echo off',
-        'SET LOGESCO_DATA_DIR=$backendDir',
-        'SET PORT=$_port',
-        'SET NODE_ENV=production',
-        'SET DATABASE_URL=file:$dbPath',
-        '"$nodeExe" "$serverJs"',
-      ].join('\r\n');
-      File(cmdPath).writeAsStringSync(cmdContent);
-
-      // Étape 2 : générer un .vbs qui lance ce .cmd sans fenêtre console.
-      // WshShell.Run avec windowStyle=0 et bWaitOnReturn=False = invisible + non-bloquant.
-      // NOTE: WshShell.Environment("PROCESS") n'est PAS hérité par les enfants →
-      //       c'est pourquoi on passe par un .cmd intermédiaire avec SET.
       final vbsPath = p.join(backendDir, '_logesco_start.vbs');
-      final vbsContent = [
-        'Set WshShell = CreateObject("WScript.Shell")',
-        'Dim cmd',
-        'cmd = "cmd.exe /C " & Chr(34) & "$cmdPath" & Chr(34)',
-        'WshShell.Run cmd, 0, False',
-      ].join('\r\n');
-      File(vbsPath).writeAsStringSync(vbsContent);
+      File(cmdPath).writeAsStringSync(_startCmdTemplate);
+      File(vbsPath).writeAsStringSync(_startVbsTemplate);
+      debugPrint('📝 Scripts CMD/VBS (statiques) écrits dans $backendDir');
 
-      // Étape 3 : lancer le .vbs via wscript.exe en mode détaché.
+      // Lancer le .vbs via wscript.exe en mode détaché ; tous les chemins
+      // dynamiques (potentiellement accentués) passent par l'environnement
+      // du processus enfant, jamais par le contenu texte des scripts.
       // ProcessStartMode.detached = aucun handle stdin/stdout hérité de Flutter.
       await Process.start(
         'wscript.exe',
@@ -286,9 +400,17 @@ class BackendService {
         workingDirectory: backendDir,
         mode: ProcessStartMode.detached,
         runInShell: false,
+        environment: {
+          'LOGESCO_CMD_FILE': cmdPath,
+          'LOGESCO_BACKEND_DIR': backendDir,
+          'LOGESCO_NODE_EXE': nodeExe,
+          'LOGESCO_SERVER_JS': serverJs,
+          'LOGESCO_DB_URL': dbUrl,
+          'LOGESCO_PORT': '$_port',
+        },
       );
 
-      debugPrint('   wscript lancé, attente health check...');
+      debugPrint('🚀 wscript lancé, attente health check...');
       _isRunning = await _poll(maxSeconds: 60);
 
       if (_isRunning) {
@@ -297,11 +419,36 @@ class BackendService {
         _startWatchdog();
       } else {
         debugPrint('❌ Backend non disponible après 60s');
+        // Lire les logs pour diagnostiquer
+        await _readStartupLogs(backendDir);
       }
       return _isRunning;
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('❌ Erreur démarrage backend: $e');
+      debugPrint('   Stack: $stack');
       return false;
+    }
+  }
+
+  /// Lit et affiche les derniers logs de démarrage pour diagnostic
+  Future<void> _readStartupLogs(String backendDir) async {
+    try {
+      final logFile = File(p.join(backendDir, 'logs', 'backend-startup.log'));
+      if (logFile.existsSync()) {
+        final content = await logFile.readAsString();
+        final lines = content.split('\n');
+        final lastLines = lines.length > 30 ? lines.sublist(lines.length - 30) : lines;
+        debugPrint('📋 Derniers logs du backend:');
+        for (final line in lastLines) {
+          if (line.trim().isNotEmpty) {
+            debugPrint('   $line');
+          }
+        }
+      } else {
+        debugPrint('⚠️ Fichier de log introuvable');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Impossible de lire les logs: $e');
     }
   }
 

@@ -5,6 +5,7 @@ import 'receipt_template_base.dart';
 import 'receipt_template_a4.dart';
 import 'receipt_template_a5.dart';
 import 'receipt_template_thermal.dart';
+import 'receipt_template_matriciel.dart';
 
 /// Factory pour créer les templates de reçu selon le format
 class ReceiptTemplateFactory {
@@ -33,6 +34,13 @@ class ReceiptTemplateFactory {
 
       case print_models.PrintFormat.thermal:
         return ReceiptTemplateThermal(
+          receipt: receipt,
+          template: printTemplate,
+          showPreview: showPreview,
+        );
+
+      case print_models.PrintFormat.matriciel:
+        return ReceiptTemplateMatriciel(
           receipt: receipt,
           template: printTemplate,
           showPreview: showPreview,
@@ -99,6 +107,8 @@ class ReceiptTemplateFactory {
         return Size(format.widthPoints, format.heightPoints);
       case print_models.PrintFormat.thermal:
         return Size(format.widthPoints, 0); // Hauteur variable
+      case print_models.PrintFormat.matriciel:
+        return Size(format.widthPoints, 0); // Papier continu, hauteur variable
     }
   }
 
@@ -155,6 +165,16 @@ class ReceiptTemplateFactory {
         // Pour le thermique, on vérifie que les noms de produits ne sont pas trop longs
         final hasLongProductNames = receipt.items.any(
           (item) => item.productName.length > 25,
+        );
+        if (hasLongProductNames) {
+          // On peut toujours rendre, mais avec troncature
+        }
+        break;
+
+      case print_models.PrintFormat.matriciel:
+        // Colonne "Désignation" limitée à 22 caractères, voir _fit() du template
+        final hasLongProductNames = receipt.items.any(
+          (item) => item.productName.length > 22,
         );
         if (hasLongProductNames) {
           // On peut toujours rendre, mais avec troncature

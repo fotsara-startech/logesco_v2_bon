@@ -1050,6 +1050,7 @@ const Map<String, String> esTranslations = {
   'sales_cart_clear_button': 'Vaciar',
   'sales_cart_reference': 'Ref: @ref',
   'sales_cart_unit_price': 'Precio unitario',
+  'sales_cart_price_below_min': 'Precio mínimo: @min FCFA',
   'sales_cart_line_total': 'Total línea:',
 
   'sales_search_hint': 'Nombre, referencia, código de barras...',
@@ -1513,6 +1514,7 @@ const Map<String, String> esTranslations = {
   'cash_session_no_available': 'No hay cajas disponibles por el momento.',
   'cash_session_history': 'Historial de sesiones',
   'cash_session_difference': 'Diferencia: @amount',
+  'cash_session_difference_short': 'Diferencia',
 
   // ============================================================================
   // INFORMES
@@ -3196,6 +3198,7 @@ const Map<String, String> esTranslations = {
   'roles_module_categories': 'Categorías',
   'roles_module_inventory': 'Inventario',
   'roles_module_suppliers': 'Proveedores',
+  'roles_module_commercials': 'Comerciales de campo',
   'roles_module_customers': 'Clientes',
   'roles_module_sales': 'Ventas',
   'roles_module_procurement': 'Aprovisionamiento',
@@ -3242,6 +3245,7 @@ const Map<String, String> esTranslations = {
   'preview_format_thermal': 'Térmico',
   'preview_format_a5': 'A5',
   'preview_format_a4': 'A4',
+  'preview_format_matriciel': 'Matricial',
   'preview_receipt_label': 'Recibo',
   'preview_total_label': 'Total',
   'preview_close': 'Cerrar',

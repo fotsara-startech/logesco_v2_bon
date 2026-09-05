@@ -51,21 +51,19 @@ class CartWidget extends StatelessWidget {
       }
 
       return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Liste des articles
-          Expanded(
-            child: ListView.builder(
-              itemCount: controller.cartItems.length,
-              itemBuilder: (context, index) {
-                final item = controller.cartItems[index];
-                return _CartItem(
-                  key: ValueKey('${item.productId}_${item.quantity}'), // Clé unique basée sur l'ID et la quantité
-                  item: item,
-                  onQuantityChanged: onQuantityChanged,
-                  onPriceChanged: onPriceChanged,
-                  onRemove: onRemoveItem,
-                );
-              },
+          // Liste des articles — Column non scrollable qui s'ajuste à son
+          // contenu (pas de Expanded/ListView) : ce widget est destiné à
+          // être placé dans un parent déjà scrollable (SingleChildScrollView),
+          // pas dans un espace de hauteur fixe/estimée.
+          ...controller.cartItems.map(
+            (item) => _CartItem(
+              key: ValueKey('${item.productId}_${item.quantity}'), // Clé unique basée sur l'ID et la quantité
+              item: item,
+              onQuantityChanged: onQuantityChanged,
+              onPriceChanged: onPriceChanged,
+              onRemove: onRemoveItem,
             ),
           ),
 
@@ -185,17 +183,35 @@ class _CartItem extends StatefulWidget {
 
 class _CartItemState extends State<_CartItem> {
   late TextEditingController _quantityController;
+  late TextEditingController _priceController;
+  late FocusNode _priceFocusNode;
   bool _isUserTyping = false;
+  bool _isUserTypingPrice = false;
+  String? _priceError;
+
+  double get _minPrice => widget.item.originalPrice - widget.item.maxDiscountAllowed;
 
   @override
   void initState() {
     super.initState();
     _quantityController = TextEditingController(text: widget.item.quantity.toString());
+    _priceController = TextEditingController(text: widget.item.unitPrice.toStringAsFixed(2));
+    _priceFocusNode = FocusNode();
+    // Dès que le champ perd le focus (l'utilisateur clique ailleurs, ex:
+    // "Procéder au paiement"), on autorise à nouveau la resynchronisation
+    // du champ avec la valeur réelle (utile après clampCartPricesToMinimum).
+    _priceFocusNode.addListener(() {
+      if (!_priceFocusNode.hasFocus && mounted) {
+        setState(() => _isUserTypingPrice = false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _quantityController.dispose();
+    _priceController.dispose();
+    _priceFocusNode.dispose();
     super.dispose();
   }
 
@@ -204,6 +220,16 @@ class _CartItemState extends State<_CartItem> {
     // Ne synchroniser que si l'utilisateur n'est pas en train de taper
     if (!_isUserTyping && _quantityController.text != widget.item.quantity.toString()) {
       _quantityController.text = widget.item.quantity.toString();
+    }
+    if (!_isUserTypingPrice && _priceController.text != widget.item.unitPrice.toStringAsFixed(2)) {
+      _priceController.text = widget.item.unitPrice.toStringAsFixed(2);
+      // Le prix a été resynchronisé depuis l'extérieur (ex: clampCartPricesToMinimum
+      // à la validation) : l'erreur affichée n'est plus d'actualité.
+      if (_priceError != null && widget.item.unitPrice >= _minPrice) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _priceError = null);
+        });
+      }
     }
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -317,24 +343,34 @@ class _CartItemState extends State<_CartItem> {
                 // Prix unitaire
                 Expanded(
                   child: TextFormField(
-                    initialValue: widget.item.unitPrice.toStringAsFixed(2),
+                    controller: _priceController,
+                    focusNode: _priceFocusNode,
                     decoration: InputDecoration(
                       labelText: 'sales_cart_unit_price'.tr,
                       suffixText: 'FCFA',
                       isDense: true,
-                      helperText: widget.item.maxDiscountAllowed > 0 ? 'Min: ${(widget.item.originalPrice - widget.item.maxDiscountAllowed).toStringAsFixed(0)} FCFA' : null,
+                      helperText: widget.item.maxDiscountAllowed > 0 ? 'Min: ${_minPrice.toStringAsFixed(0)} FCFA' : null,
                       helperStyle: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      errorText: _priceError,
                     ),
                     keyboardType: TextInputType.number,
+                    onTap: () => _isUserTypingPrice = true,
                     onChanged: (value) {
+                      _isUserTypingPrice = true;
                       final price = double.tryParse(value);
+                      setState(() {
+                        _priceError = (price != null && price < _minPrice) ? 'sales_cart_price_below_min'.trParams({'min': _minPrice.toStringAsFixed(0)}) : null;
+                      });
+                      // Le prix saisi est pris en compte tel quel — pas de correction
+                      // automatique. L'utilisateur voit l'erreur ci-dessus et peut
+                      // corriger ; s'il valide quand même, le prix minimum est
+                      // appliqué au moment de la validation (voir SalesController).
                       if (price != null && price >= 0) {
-                        // Vérifier que le prix ne descend pas en dessous du minimum autorisé
-                        final minPrice = widget.item.originalPrice - widget.item.maxDiscountAllowed;
-                        final validatedPrice = price < minPrice ? minPrice : price;
-                        widget.onPriceChanged(widget.item.productId, validatedPrice);
+                        widget.onPriceChanged(widget.item.productId, price);
                       }
                     },
+                    onEditingComplete: () => _isUserTypingPrice = false,
+                    onFieldSubmitted: (_) => _isUserTypingPrice = false,
                   ),
                 ),
               ],

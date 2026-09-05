@@ -25,6 +25,10 @@ class StockInventoryController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
 
+  // Import Excel de la fiche de comptage
+  final RxBool isImporting = false.obs;
+  final RxString importStatus = ''.obs;
+
   // Tri des inventaires
   final RxString sortBy = 'nom'.obs; // nom, date, statut
   final RxBool sortAscending = true.obs;
@@ -251,7 +255,14 @@ class StockInventoryController extends GetxController {
   }
 
   /// Mettre à jour un article d'inventaire (comptage)
-  Future<bool> updateInventoryItem(int itemId, double quantiteComptee, String? commentaire) async {
+  /// [showSnackbar] : à false lors d'imports en masse (un seul message
+  /// global est affiché à la fin par l'appelant plutôt qu'un par article).
+  Future<bool> updateInventoryItem(
+    int itemId,
+    double quantiteComptee,
+    String? commentaire, {
+    bool showSnackbar = true,
+  }) async {
     try {
       final updatedItem = AppConfig.useTestData
           ? await MockInventoryService.updateInventoryItemSimple(itemId, quantiteComptee, commentaire)
@@ -262,10 +273,14 @@ class StockInventoryController extends GetxController {
         currentInventoryItems[index] = updatedItem;
       }
 
-      SnackbarHelper.success('Article mis à jour avec succès');
+      if (showSnackbar) {
+        SnackbarHelper.success('Article mis à jour avec succès');
+      }
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour l\'article: $e');
+      if (showSnackbar) {
+        SnackbarHelper.error('Impossible de mettre à jour l\'article: $e');
+      }
       return false;
     }
   }
@@ -604,6 +619,8 @@ class StockInventoryController extends GetxController {
   Future<void> importCountingSheetFromExcel() async {
     try {
       isLoading.value = true;
+      isImporting.value = true;
+      importStatus.value = 'Lecture du fichier Excel...';
 
       // Importer depuis Excel
       final imports = await InventoryExcelService.importCountingSheet();
@@ -618,7 +635,10 @@ class StockInventoryController extends GetxController {
       int notFoundCount = 0;
       final errors = <String>[];
 
-      for (final import in imports) {
+      for (int i = 0; i < imports.length; i++) {
+        final import = imports[i];
+        importStatus.value = 'Import ${i + 1}/${imports.length}...';
+
         // Trouver l'item correspondant par code ou par nom
         InventoryItem? matchingItem;
 
@@ -642,6 +662,7 @@ class StockInventoryController extends GetxController {
               matchingItem.id!,
               import.quantiteComptee,
               import.commentaire,
+              showSnackbar: false,
             );
             if (success) {
               updatedCount++;
@@ -687,6 +708,8 @@ class StockInventoryController extends GetxController {
       SnackbarHelper.error('Impossible d\'importer la fiche: $e');
     } finally {
       isLoading.value = false;
+      isImporting.value = false;
+      importStatus.value = '';
     }
   }
 }

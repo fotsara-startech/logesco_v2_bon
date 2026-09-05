@@ -56,6 +56,7 @@ class ReceiptGenerationService {
       switch (receipt.format) {
         case print_models.PrintFormat.a4:
         case print_models.PrintFormat.a5:
+        case print_models.PrintFormat.matriciel:
           return await _generatePdfReceipt(receipt, customTemplate);
 
         case print_models.PrintFormat.thermal:
@@ -305,6 +306,8 @@ class ReceiptGenerationService {
         return 30000; // ~30KB pour un PDF A5
       case print_models.PrintFormat.thermal:
         return 2000; // ~2KB pour les données thermiques
+      case print_models.PrintFormat.matriciel:
+        return 40000; // ~40KB pour un PDF matriciel (texte pur, sans images)
     }
   }
 

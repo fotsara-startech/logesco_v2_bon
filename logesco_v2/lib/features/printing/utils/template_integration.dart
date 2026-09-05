@@ -158,6 +158,9 @@ class TemplateIntegration {
       case print_models.PrintFormat.a4:
         formatMultiplier = 2.0;
         break;
+      case print_models.PrintFormat.matriciel:
+        formatMultiplier = 1.2; // Texte pur, pas d'images/bordures à rastériser
+        break;
     }
 
     return Duration(

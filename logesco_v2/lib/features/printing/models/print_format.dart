@@ -10,6 +10,8 @@ enum PrintFormat {
   a5,
   @JsonValue('thermal')
   thermal,
+  @JsonValue('matriciel')
+  matriciel,
 }
 
 /// Extension pour les propriétés des formats d'impression
@@ -23,6 +25,8 @@ extension PrintFormatExtension on PrintFormat {
         return 'A5 (148 x 210 mm)';
       case PrintFormat.thermal:
         return 'Thermique (80 mm)';
+      case PrintFormat.matriciel:
+        return 'Matriciel (continu 80 col.)';
     }
   }
 
@@ -35,10 +39,12 @@ extension PrintFormatExtension on PrintFormat {
         return 148.0;
       case PrintFormat.thermal:
         return 80.0;
+      case PrintFormat.matriciel:
+        return 210.0; // Papier continu largeur "A4" (~80 colonnes à 10 cpi)
     }
   }
 
-  /// Hauteur en millimètres (variable pour thermique)
+  /// Hauteur en millimètres (variable pour thermique et matriciel : papier continu)
   double get heightMm {
     switch (this) {
       case PrintFormat.a4:
@@ -47,6 +53,8 @@ extension PrintFormatExtension on PrintFormat {
         return 210.0;
       case PrintFormat.thermal:
         return 0.0; // Variable selon le contenu
+      case PrintFormat.matriciel:
+        return 0.0; // Papier continu — hauteur variable selon le contenu
     }
   }
 
@@ -69,6 +77,8 @@ extension PrintFormatExtension on PrintFormat {
         return const PrintMargins.all(15.0);
       case PrintFormat.thermal:
         return const PrintMargins.symmetric(horizontal: 8.0, vertical: 12.0);
+      case PrintFormat.matriciel:
+        return const PrintMargins.symmetric(horizontal: 8.0, vertical: 8.0);
     }
   }
 
@@ -81,6 +91,8 @@ extension PrintFormatExtension on PrintFormat {
         return 10.0;
       case PrintFormat.thermal:
         return 8.5;
+      case PrintFormat.matriciel:
+        return 9.0;
     }
   }
 
@@ -93,6 +105,8 @@ extension PrintFormatExtension on PrintFormat {
         return 16.0;
       case PrintFormat.thermal:
         return 11.5;
+      case PrintFormat.matriciel:
+        return 12.0;
     }
   }
 
@@ -105,6 +119,8 @@ extension PrintFormatExtension on PrintFormat {
         return 12.0;
       case PrintFormat.thermal:
         return 10.5;
+      case PrintFormat.matriciel:
+        return 9.0;
     }
   }
 
@@ -115,6 +131,7 @@ extension PrintFormatExtension on PrintFormat {
       case PrintFormat.a5:
         return true;
       case PrintFormat.thermal:
+      case PrintFormat.matriciel:
         return false;
     }
   }
@@ -124,9 +141,35 @@ extension PrintFormatExtension on PrintFormat {
     switch (this) {
       case PrintFormat.a4:
       case PrintFormat.a5:
+      case PrintFormat.matriciel:
         return true;
       case PrintFormat.thermal:
         return false;
+    }
+  }
+
+  /// Police monospace (imitation du rendu texte matriciel/ESC-P)
+  bool get isMonospace {
+    switch (this) {
+      case PrintFormat.matriciel:
+        return true;
+      case PrintFormat.a4:
+      case PrintFormat.a5:
+      case PrintFormat.thermal:
+        return false;
+    }
+  }
+
+  /// Nombre de colonnes de texte (pertinent pour le format matriciel,
+  /// imprimante à police fixe — 80 colonnes = standard 10 cpi sur continu A4)
+  int get columns {
+    switch (this) {
+      case PrintFormat.matriciel:
+        return 80;
+      case PrintFormat.a4:
+      case PrintFormat.a5:
+      case PrintFormat.thermal:
+        return 0; // Non applicable
     }
   }
 }
@@ -211,7 +254,7 @@ class PrintTemplate {
       fontSize: format.defaultFontSize,
       titleFontSize: format.titleFontSize,
       headerFontSize: format.headerFontSize,
-      showLogo: format != PrintFormat.thermal,
+      showLogo: format != PrintFormat.thermal && format != PrintFormat.matriciel,
       showBorder: format == PrintFormat.a4,
     );
   }

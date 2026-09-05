@@ -1111,6 +1111,7 @@ const Map<String, String> frTranslations = {
   'sales_cart_clear_button': 'Vider',
   'sales_cart_reference': 'Réf: @ref',
   'sales_cart_unit_price': 'Prix unitaire',
+  'sales_cart_price_below_min': 'Prix minimum: @min FCFA',
   'sales_cart_line_total': 'Total ligne:',
 
   // Product Selector
@@ -1624,6 +1625,7 @@ const Map<String, String> frTranslations = {
   'cash_session_no_available': 'Aucune caisse disponible pour le moment.',
   'cash_session_history': 'Historique des sessions',
   'cash_session_difference': 'Différence: @amount',
+  'cash_session_difference_short': 'Différence',
 
   // ============================================================================
   // RAPPORTS
@@ -3399,6 +3401,7 @@ const Map<String, String> frTranslations = {
   'roles_module_categories': 'Catégories',
   'roles_module_inventory': 'Inventaire',
   'roles_module_suppliers': 'Fournisseurs',
+  'roles_module_commercials': 'Commerciaux terrain',
   'roles_module_customers': 'Clients',
   'roles_module_sales': 'Ventes',
   'roles_module_procurement': 'Approvisionnement',
@@ -3445,6 +3448,7 @@ const Map<String, String> frTranslations = {
   'preview_format_thermal': 'Thermique',
   'preview_format_a5': 'A5',
   'preview_format_a4': 'A4',
+  'preview_format_matriciel': 'Matriciel',
   'preview_receipt_label': 'Reçu',
   'preview_total_label': 'Total',
   'preview_close': 'Fermer',

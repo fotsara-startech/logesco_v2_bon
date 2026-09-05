@@ -148,6 +148,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       ),
       body: Column(
         children: [
+          _buildImportProgressBanner(),
           _buildProgressHeader(),
           _buildFiltersSection(),
           Expanded(
@@ -157,6 +158,43 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       ),
       bottomNavigationBar: _buildBottomActions(),
     );
+  }
+
+  /// Bandeau de progression affiché pendant l'import Excel de la fiche de
+  /// comptage — remplace les multiples snackbars de succès (un par ligne)
+  /// par une seule barre de chargement, puis un seul message final.
+  Widget _buildImportProgressBanner() {
+    return Obx(() {
+      if (!_controller.isImporting.value) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        color: Colors.blue.shade50,
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _controller.importStatus.value,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 6),
+                  const LinearProgressIndicator(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildProgressHeader() {

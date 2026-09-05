@@ -1098,6 +1098,7 @@ const Map<String, String> enTranslations = {
   'sales_cart_clear_button': 'Clear',
   'sales_cart_reference': 'Ref: @ref',
   'sales_cart_unit_price': 'Unit price',
+  'sales_cart_price_below_min': 'Minimum price: @min FCFA',
   'sales_cart_line_total': 'Line total:',
 
   // Product Selector
@@ -1613,6 +1614,7 @@ const Map<String, String> enTranslations = {
   'cash_session_no_available': 'No cash registers available at the moment.',
   'cash_session_history': 'Session history',
   'cash_session_difference': 'Difference: @amount',
+  'cash_session_difference_short': 'Difference',
 
   // ============================================================================
   // REPORTS
@@ -3386,6 +3388,7 @@ const Map<String, String> enTranslations = {
   'roles_module_categories': 'Categories',
   'roles_module_inventory': 'Inventory',
   'roles_module_suppliers': 'Suppliers',
+  'roles_module_commercials': 'Field sales reps',
   'roles_module_customers': 'Customers',
   'roles_module_sales': 'Sales',
   'roles_module_procurement': 'Procurement',
@@ -3432,6 +3435,7 @@ const Map<String, String> enTranslations = {
   'preview_format_thermal': 'Thermal',
   'preview_format_a5': 'A5',
   'preview_format_a4': 'A4',
+  'preview_format_matriciel': 'Dot matrix',
   'preview_receipt_label': 'Receipt',
   'preview_total_label': 'Total',
   'preview_close': 'Close',

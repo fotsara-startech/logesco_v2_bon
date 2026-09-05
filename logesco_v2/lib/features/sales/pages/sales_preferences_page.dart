@@ -107,6 +107,13 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
               groupValue: _selectedFormat,
               onChanged: _updateFormat,
             ),
+            RadioListTile<PrintFormat>(
+              title: const Text('Imprimante matricielle'),
+              subtitle: const Text('Papier continu à picots, texte pur (pas de logo/couleurs)'),
+              value: PrintFormat.matriciel,
+              groupValue: _selectedFormat,
+              onChanged: _updateFormat,
+            ),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,

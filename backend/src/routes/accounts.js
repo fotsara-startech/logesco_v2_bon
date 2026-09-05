@@ -1398,14 +1398,8 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
         }
 
         // Créer ou mettre à jour le compte client
-        const compte = await prisma.compteClient.upsert({
+        let compte = await prisma.compteClient.findUnique({
           where: { clientId },
-          update: { limiteCredit: parseFloat(limiteCredit) },
-          create: {
-            clientId,
-            soldeActuel: 0,
-            limiteCredit: parseFloat(limiteCredit)
-          },
           include: {
             client: {
               select: {
@@ -1416,6 +1410,39 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
             }
           }
         });
+
+        if (compte) {
+          compte = await prisma.compteClient.update({
+            where: { clientId },
+            data: { limiteCredit: parseFloat(limiteCredit) },
+            include: {
+              client: {
+                select: {
+                  id: true,
+                  nom: true,
+                  prenom: true
+                }
+              }
+            }
+          });
+        } else {
+          compte = await prisma.compteClient.create({
+            data: {
+              clientId,
+              soldeActuel: 0,
+              limiteCredit: parseFloat(limiteCredit)
+            },
+            include: {
+              client: {
+                select: {
+                  id: true,
+                  nom: true,
+                  prenom: true
+                }
+              }
+            }
+          });
+        }
 
         const compteFormatted = {
           id: compte.id,
@@ -1469,25 +1496,38 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
           );
         }
 
-        // Créer ou mettre à jour le compte fournisseur
-        const compte = await prisma.compteFournisseur.upsert({
-          where: { fournisseurId },
-          update: { limiteCredit: parseFloat(limiteCredit) },
-          create: {
-            fournisseurId,
-            soldeActuel: 0,
-            limiteCredit: parseFloat(limiteCredit)
-          },
-          include: {
-            fournisseur: {
-              select: {
-                id: true,
-                nom: true,
-                personneContact: true
-              }
+        // Créer ou mettre à jour le compte fournisseur.
+        // NOTE: on évite upsert() ici — sur certaines bases SQLite clients
+        // dont le schéma a dérivé (contrainte UNIQUE sur fournisseur_id
+        // absente de la table réelle malgré le schéma Prisma), upsert()
+        // génère un ON CONFLICT qui échoue avec "ON CONFLICT clause does
+        // not match any PRIMARY KEY or UNIQUE constraint". find + create/
+        // update est le pattern déjà utilisé partout ailleurs dans ce
+        // fichier pour cette raison (voir compteClient.create ci-dessus).
+        const compteInclude = {
+          fournisseur: {
+            select: {
+              id: true,
+              nom: true,
+              personneContact: true
             }
           }
-        });
+        };
+        const compteExistant = await prisma.compteFournisseur.findUnique({ where: { fournisseurId } });
+        const compte = compteExistant
+          ? await prisma.compteFournisseur.update({
+              where: { fournisseurId },
+              data: { limiteCredit: parseFloat(limiteCredit) },
+              include: compteInclude
+            })
+          : await prisma.compteFournisseur.create({
+              data: {
+                fournisseurId,
+                soldeActuel: 0,
+                limiteCredit: parseFloat(limiteCredit)
+              },
+              include: compteInclude
+            });
 
         const compteFormatted = {
           id: compte.id,

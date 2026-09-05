@@ -10,6 +10,7 @@ import '../widgets/product_selector.dart';
 import '../widgets/cart_widget.dart';
 import '../widgets/finalize_sale_dialog.dart';
 import '../../customers/models/customer.dart';
+import '../../commercials/models/commercial.dart';
 
 class CreateSalePage extends StatefulWidget {
   const CreateSalePage({super.key});
@@ -23,6 +24,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
   late CustomerController _customersController;
   TextEditingController? _autocompleteController;
   int _autocompleteKey = 0; // Clé pour forcer la reconstruction de l'Autocomplete
+  final Map<int, String?> _priceErrors = {}; // Erreur de prix par productId (panier inline)
 
   @override
   void initState() {
@@ -110,6 +112,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
       child: Column(
         children: [
           _buildQuickCustomerSearch(),
+          _buildCommercialSelector(),
           const Divider(height: 1),
           Obx(() {
             final itemCount = _salesController.cartItems.length;
@@ -213,10 +216,22 @@ class _CreateSalePageState extends State<CreateSalePage> {
                               Expanded(
                                   child: TextFormField(
                                       initialValue: item.unitPrice.toStringAsFixed(2),
-                                      decoration: InputDecoration(labelText: 'sales_cart_unit_price'.tr, suffixText: 'FCFA', isDense: true),
+                                      decoration: InputDecoration(
+                                        labelText: 'sales_cart_unit_price'.tr,
+                                        suffixText: 'FCFA',
+                                        isDense: true,
+                                        errorText: _priceErrors[item.productId],
+                                      ),
                                       keyboardType: TextInputType.number,
                                       onChanged: (v) {
                                         final p = double.tryParse(v);
+                                        final minPrice = item.originalPrice - item.maxDiscountAllowed;
+                                        setState(() {
+                                          _priceErrors[item.productId] = (p != null && p < minPrice) ? 'sales_cart_price_below_min'.trParams({'min': minPrice.toStringAsFixed(0)}) : null;
+                                        });
+                                        // Prix pris en compte tel quel — le minimum n'est appliqué
+                                        // qu'à la validation si l'utilisateur ignore l'erreur (voir
+                                        // SalesController.clampCartPricesToMinimum).
                                         if (p != null && p >= 0) controller.updateCartItemPrice(item.productId, p);
                                       })),
                             ]),
@@ -285,6 +300,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
             child: Column(
               children: [
                 _buildQuickCustomerSearch(),
+                _buildCommercialSelector(),
                 const Divider(height: 1),
                 Expanded(child: ProductSelector(onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity))),
               ],
@@ -320,19 +336,13 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                 child: Text('${_salesController.cartItems.length}', style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)))),
                           ]),
                         ),
-                        Obx(() {
-                          final itemCount = _salesController.cartItems.length;
-                          final estimatedHeight = itemCount * 250.0;
-                          final mediaquery = MediaQuery.of(context).size.height * 0.5;
-                          return SizedBox(
-                            height: itemCount == 0 ? mediaquery : estimatedHeight,
-                            child: CartWidget(
-                              onQuantityChanged: (productId, quantity) => _salesController.updateCartItemQuantity(productId, quantity),
-                              onPriceChanged: (productId, price) => _salesController.updateCartItemPrice(productId, price),
-                              onRemoveItem: (productId) => _salesController.removeFromCart(productId),
-                            ),
-                          );
-                        }),
+                        // CartWidget s'ajuste à son contenu (pas de hauteur fixe/estimée
+                        // à recalculer ici) — voir cart_widget.dart.
+                        CartWidget(
+                          onQuantityChanged: (productId, quantity) => _salesController.updateCartItemQuantity(productId, quantity),
+                          onPriceChanged: (productId, price) => _salesController.updateCartItemPrice(productId, price),
+                          onRemoveItem: (productId) => _salesController.removeFromCart(productId),
+                        ),
                       ],
                     ),
                   ),
@@ -473,6 +483,49 @@ class _CreateSalePageState extends State<CreateSalePage> {
         ],
       ),
     );
+  }
+
+  // Sélecteur de commercial terrain — n'apparaît que si des commerciaux ont
+  // été créés (fonctionnalité optionnelle, invisible chez les clients qui ne
+  // l'utilisent pas). Une simple liste déroulante suffit : contrairement aux
+  // clients, un commerce n'a que quelques dizaines de commerciaux au plus.
+  Widget _buildCommercialSelector() {
+    return Obx(() {
+      final commerciaux = _salesController.commerciaux;
+      if (commerciaux.isEmpty) return const SizedBox.shrink();
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: Colors.white,
+        child: Row(
+          children: [
+            Icon(Icons.badge_outlined, color: Colors.grey[600], size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<Commercial?>(
+                value: _salesController.selectedCommercial,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  hintText: 'Commercial (optionnel)',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                items: [
+                  const DropdownMenuItem<Commercial?>(value: null, child: Text('Aucun commercial')),
+                  ...commerciaux.map(
+                    (c) => DropdownMenuItem<Commercial?>(value: c, child: Text(c.libelleAvecZone, overflow: TextOverflow.ellipsis)),
+                  ),
+                ],
+                onChanged: _salesController.setSelectedCommercial,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Future<void> _createAndSelectCustomer(String nom) async {
@@ -853,6 +906,14 @@ class _CreateSalePageState extends State<CreateSalePage> {
         SnackbarHelper.warning('sales_add_products_to_continue'.tr, duration: const Duration(seconds: 2));
         return;
       }
+
+      // Ramener tout prix sous le minimum autorisé au minimum AVANT
+      // d'afficher le montant à payer — sinon le dialog de paiement (et le
+      // montant encaissé) se basent sur un total calculé avec des prix
+      // invalides, ce qui fausse la caisse même si createSale() corrige le
+      // prix plus tard côté backend.
+      _salesController.clampCartPricesToMinimum();
+      setState(() => _priceErrors.clear());
 
       // Ouvrir le dialog de paiement simplifié
       await Get.dialog(

@@ -146,6 +146,8 @@ class ReceiptPreviewService {
         return Icons.note;
       case print_models.PrintFormat.thermal:
         return Icons.receipt;
+      case print_models.PrintFormat.matriciel:
+        return Icons.print;
     }
   }
 

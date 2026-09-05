@@ -239,21 +239,56 @@ function createInventoryRouter(models) {
             produitWhere.categorie = { is: { nom: category.trim() } };
           }
 
-          // Pour les alertes en mode boutique, charger tous les produits puis filtrer
+          // Pour les alertes en mode boutique : passe légère (colonnes
+          // minimales, sans relations) pour repérer les IDs en alerte sans
+          // charger/sérialiser tout le catalogue à chaque page, puis on
+          // n'hydrate complètement que les produits de la page demandée.
+          // (Un `findMany` avec `include` complet sur tout le catalogue à
+          // chaque requête paginée pouvait bloquer la boucle d'événements
+          // Node plusieurs secondes sur les gros catalogues, ce qui faisait
+          // échouer le health check du watchdog et coupait la connexion en
+          // cours — d'où des erreurs "Connection closed before full header
+          // was received" côté app.)
           if (alerteStock === 'true' || alerteStock === true) {
-            const allProduits = await models.prisma.produit.findMany({
+            const lightProduits = await models.prisma.produit.findMany({
               where: produitWhere,
-              include: {
-                stocksBoutiques: { 
+              select: {
+                id: true,
+                seuilStockMinimum: true,
+                stocksBoutiques: {
                   where: { boutiqueId },
-                  include: { boutique: { select: { id: true, nom: true, adresse: true } } }
-                },
-                categorie: true
+                  select: { quantiteDisponible: true }
+                }
               },
               orderBy: { nom: 'asc' }
             });
 
-            const allStocks = allProduits.map(p => {
+            const matchingIds = [];
+            for (const p of lightProduits) {
+              const qte = p.stocksBoutiques[0]?.quantiteDisponible ?? 0;
+              const seuil = p.seuilStockMinimum ?? 0;
+              const estRupture = qte === 0;
+              const estAlerte = seuil > 0 && qte <= seuil;
+              if (estRupture || estAlerte) matchingIds.push(p.id); // rupture OU alerte
+            }
+
+            const pageIds = matchingIds.slice(offset, offset + limitNum);
+            const pageProduits = pageIds.length
+              ? await models.prisma.produit.findMany({
+                  where: { id: { in: pageIds } },
+                  include: {
+                    stocksBoutiques: {
+                      where: { boutiqueId },
+                      include: { boutique: { select: { id: true, nom: true, adresse: true } } }
+                    },
+                    categorie: true
+                  }
+                })
+              : [];
+            const byId = new Map(pageProduits.map(p => [p.id, p]));
+            const orderedPage = pageIds.map(id => byId.get(id)).filter(Boolean);
+
+            const paginated = orderedPage.map(p => {
               const sb = p.stocksBoutiques[0];
               const qte = sb?.quantiteDisponible ?? 0;
               const seuil = p.seuilStockMinimum ?? 0;
@@ -270,12 +305,11 @@ function createInventoryRouter(models) {
                 produit: p,
                 boutique: sb?.boutique ?? null
               };
-            }).filter(s => s.quantiteDisponible === 0 || s.stockFaible); // rupture OU alerte
+            });
 
-            const paginated = allStocks.slice(offset, offset + limitNum);
             return res.json(new PaginatedResponseDTO(
               StockDTO.fromEntities(paginated),
-              { page: pageNum, limit: limitNum, total: allStocks.length },
+              { page: pageNum, limit: limitNum, total: matchingIds.length },
               'Alertes stock boutique récupérées avec succès'
             ));
           }
@@ -353,32 +387,45 @@ function createInventoryRouter(models) {
 
         // Filtrer par alerte de stock si demandé
         if (alerteStock === true || alerteStock === 'true') {
-          // Récupérer TOUS les produits actifs pour filtrer les alertes
-          const allProduits = await models.prisma.produit.findMany({
+          // Passe légère (colonnes minimales, sans relations) pour repérer
+          // les IDs en alerte/rupture sans charger tout le catalogue avec
+          // ses relations à chaque page — voir le mode boutique ci-dessus
+          // pour le détail du problème que ça évite.
+          const lightProduits = await models.prisma.produit.findMany({
             where: produitWhere,
-            include: {
-              stock: true,
-              categorie: true
+            select: {
+              id: true,
+              seuilStockMinimum: true,
+              stock: { select: { quantiteDisponible: true } }
             },
             orderBy: { nom: 'asc' }
           });
 
-          // Filtrer pour ne garder que les produits en alerte OU en rupture
           // Alerte : seuil > 0 ET qté <= seuil
           // Rupture : qté = 0 (peu importe le seuil)
-          const produitsEnAlerte = allProduits.filter(p => {
+          const matchingIds = [];
+          for (const p of lightProduits) {
             const qte = p.stock?.quantiteDisponible ?? 0;
             const seuil = p.seuilStockMinimum ?? 0;
             const estRupture = qte === 0;
             const estAlerte = seuil > 0 && qte <= seuil;
-            return estRupture || estAlerte;
-          });
+            if (estRupture || estAlerte) matchingIds.push(p.id);
+          }
 
-          // Appliquer la pagination APRÈS le filtrage
-          const paginatedAlerts = produitsEnAlerte.slice(offset, offset + limitNum);
+          // Appliquer la pagination APRÈS le filtrage, puis n'hydrater
+          // complètement que les produits de la page demandée.
+          const pageIds = matchingIds.slice(offset, offset + limitNum);
+          const pageProduits = pageIds.length
+            ? await models.prisma.produit.findMany({
+                where: { id: { in: pageIds } },
+                include: { stock: true, categorie: true }
+              })
+            : [];
+          const byId = new Map(pageProduits.map(p => [p.id, p]));
+          const orderedPage = pageIds.map(id => byId.get(id)).filter(Boolean);
 
           // Mapper vers le format attendu
-          const alertStocks = paginatedAlerts.map(p => {
+          const alertStocks = orderedPage.map(p => {
             const qte = p.stock?.quantiteDisponible ?? 0;
             const seuil = p.seuilStockMinimum ?? 0;
             return {
@@ -392,7 +439,7 @@ function createInventoryRouter(models) {
             };
           });
 
-          const totalAlerts = produitsEnAlerte.length;
+          const totalAlerts = matchingIds.length;
 
           const stocksDTO = StockDTO.fromEntities(alertStocks);
           const response = new PaginatedResponseDTO(

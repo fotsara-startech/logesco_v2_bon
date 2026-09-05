@@ -103,6 +103,8 @@ class ProformaController extends GetxController {
       return null;
     }
 
+    salesCtrl.clampCartPricesToMinimum();
+
     isSaving = true;
     update();
 
@@ -155,6 +157,8 @@ class ProformaController extends GetxController {
       SnackbarUtils.showError('Le panier est vide');
       return false;
     }
+
+    salesCtrl.clampCartPricesToMinimum();
 
     isSaving = true;
     update();

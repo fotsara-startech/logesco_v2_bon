@@ -395,19 +395,13 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
               ],
             ),
           ),
-          // Liste articles
-          Obx(() {
-            final count = _salesCtrl.cartItems.length;
-            final height = count == 0 ? MediaQuery.of(context).size.height * 0.35 : count * 250.0;
-            return SizedBox(
-              height: height,
-              child: CartWidget(
-                onQuantityChanged: _salesCtrl.updateCartItemQuantity,
-                onPriceChanged: _salesCtrl.updateCartItemPrice,
-                onRemoveItem: _salesCtrl.removeFromCart,
-              ),
-            );
-          }),
+          // Liste articles — CartWidget s'ajuste à son contenu (pas de
+          // hauteur fixe/estimée à recalculer ici) — voir cart_widget.dart.
+          CartWidget(
+            onQuantityChanged: _salesCtrl.updateCartItemQuantity,
+            onPriceChanged: _salesCtrl.updateCartItemPrice,
+            onRemoveItem: _salesCtrl.removeFromCart,
+          ),
         ],
       ),
     );

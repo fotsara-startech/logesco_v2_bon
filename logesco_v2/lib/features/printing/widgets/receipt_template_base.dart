@@ -21,9 +21,10 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
   String t(String key) => ReceiptTranslations.get(key, language: receipt.language);
 
   // ─── Couleurs de la charte ────────────────────────────────────────────────
-  static const Color _headerBg = Color(0xFF1565C0); // bleu principal
-  static const Color _totalBg = Color(0xFF1565C0);
-  static const Color _headerText = Colors.white;
+  // Couleur d'accent utilisée en texte/bordures fines uniquement — pas
+  // d'aplats pleins (bandeau, encart total) : trop gourmand en encre pour
+  // les clients qui impriment beaucoup de factures.
+  static const Color _accent = Color(0xFF1565C0); // bleu principal
   static const Color _rowOdd = Color(0xFFF5F7FA);
   static const Color _rowEven = Colors.white;
 
@@ -58,7 +59,9 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
     }
 
     return Container(
-      decoration: const BoxDecoration(color: _headerBg),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _accent, width: 1.5)),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         children: [
@@ -66,12 +69,12 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Encart logo/initiales (fond blanc quelle que soit l'image)
+              // Encart logo/initiales (contour fin, pas d'aplat)
               Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  border: Border.all(color: _accent, width: 0.75),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -90,7 +93,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: template.fontSize + 4,
                                 fontWeight: FontWeight.bold,
-                                color: _headerBg,
+                                color: _accent,
                               ),
                             ),
                           );
@@ -106,7 +109,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: template.fontSize + 4,
                                 fontWeight: FontWeight.bold,
-                                color: _headerBg,
+                                color: _accent,
                               ),
                             ),
                           );
@@ -118,7 +121,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                           style: TextStyle(
                             fontSize: template.fontSize + 4,
                             fontWeight: FontWeight.bold,
-                            color: _headerBg,
+                            color: _accent,
                           ),
                         ),
                       ),
@@ -131,7 +134,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                   style: TextStyle(
                     fontSize: template.fontSize + 2,
                     fontWeight: FontWeight.bold,
-                    color: _headerText,
+                    color: _accent,
                   ),
                 ),
               ),
@@ -150,7 +153,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
   Widget _buildCompanyInfoLine(CompanyProfile company) {
     final infoStyle = TextStyle(
       fontSize: template.fontSize - 1,
-      color: _headerText,
+      color: Colors.grey[800],
       fontWeight: FontWeight.w400,
     );
 
@@ -292,7 +295,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: badgeColor,
+              border: Border.all(color: badgeColor, width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -300,7 +303,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
               style: TextStyle(
                 fontSize: template.fontSize - 1,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: badgeColor,
               ),
             ),
           ),
@@ -642,10 +645,10 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
             const Divider(thickness: 1, color: Colors.black),
 
             const SizedBox(height: 8),
-            // Total — encart coloré mis en valeur
+            // Total — mis en valeur par un contour, pas un aplat plein
             Container(
               decoration: BoxDecoration(
-                color: _totalBg,
+                border: Border.all(color: _accent, width: 1.25),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(12),
@@ -657,7 +660,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                     style: TextStyle(
                       fontSize: template.fontSize + 3,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: _accent,
                     ),
                   ),
                   Text(
@@ -665,7 +668,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                     style: TextStyle(
                       fontSize: template.fontSize + 3,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: _accent,
                     ),
                   ),
                 ],

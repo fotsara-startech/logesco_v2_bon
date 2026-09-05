@@ -7,6 +7,7 @@ import '../controllers/printing_controller.dart';
 import '../models/models.dart';
 import '../widgets/receipt_template_factory.dart';
 import '../utils/receipt_translations.dart';
+import '../utils/amount_in_words.dart';
 import '../../../core/config/app_config.dart';
 
 // Imports pour l'impression réelle
@@ -92,6 +93,7 @@ class ReceiptPreviewPage extends StatelessWidget {
                   ButtonSegment(value: PrintFormat.thermal, label: Text('preview_format_thermal'.tr), icon: const Icon(Icons.receipt, size: 18)),
                   ButtonSegment(value: PrintFormat.a5, label: Text('preview_format_a5'.tr), icon: const Icon(Icons.description, size: 18)),
                   ButtonSegment(value: PrintFormat.a4, label: Text('preview_format_a4'.tr), icon: const Icon(Icons.article, size: 18)),
+                  ButtonSegment(value: PrintFormat.matriciel, label: Text('preview_format_matriciel'.tr), icon: const Icon(Icons.print, size: 18)),
                 ],
                 selected: {controller.selectedFormat},
                 onSelectionChanged: (Set<PrintFormat> selection) {
@@ -168,6 +170,8 @@ class ReceiptPreviewPage extends StatelessWidget {
         return 380;
       case PrintFormat.a4:
         return 480;
+      case PrintFormat.matriciel:
+        return 520;
     }
   }
 
@@ -258,13 +262,19 @@ class ReceiptPreviewPage extends StatelessWidget {
       case PrintFormat.thermal:
         pageFormat = const PdfPageFormat(226.77, 841.89); // 80mm x 297mm
         break;
+      case PrintFormat.matriciel:
+        // Papier continu à picots, largeur "A4" (~210mm / 80 colonnes à 10 cpi).
+        // Hauteur généreuse et fixe (comme pour le thermique ci-dessus) plutôt
+        // que multi-pages : suffisant pour une facture classique.
+        pageFormat = const PdfPageFormat(595.28, 2834.65); // 210mm x 1000mm
+        break;
     }
 
     // Ajouter une page avec le contenu
     pdfDoc.addPage(
       pw.Page(
         pageFormat: pageFormat,
-        margin: pw.EdgeInsets.all(format == PrintFormat.thermal ? 8.0 : 40.0),
+        margin: pw.EdgeInsets.all(format == PrintFormat.thermal || format == PrintFormat.matriciel ? 8.0 : 40.0),
         build: (pw.Context context) {
           return _buildPdfContent(receipt, format, logoBytes); // Passer le logo
         },
@@ -349,6 +359,10 @@ class ReceiptPreviewPage extends StatelessWidget {
     // Si c'est thermique, utiliser l'ancien format
     if (isTherm) {
       return _buildThermalContent(receipt, logoBytes);
+    }
+
+    if (selectedFormat == PrintFormat.matriciel) {
+      return _buildMatricielContent(receipt);
     }
 
     // Pour A4/A5, utiliser le nouveau format qui correspond à l'aperçu
@@ -494,8 +508,10 @@ class ReceiptPreviewPage extends StatelessWidget {
   pw.Widget _buildA4A5Content(Receipt receipt, PrintFormat format, Uint8List? logoBytes) {
     final company = receipt.companyInfo;
     final fontSize = format == PrintFormat.a5 ? 9.0 : 10.0;
-    const headerBg = PdfColor.fromInt(0xFF1565C0);
-    const totalBg = PdfColor.fromInt(0xFF1565C0);
+    // Couleur d'accent utilisée en texte/bordures fines — plus d'aplats pleins
+    // (bandeau, encart total) : certains clients impriment beaucoup de
+    // factures et les gros blocs de couleur pleine consommaient trop d'encre.
+    const accent = PdfColor.fromInt(0xFF1565C0);
     const rowOdd = PdfColor.fromInt(0xFFF5F7FA);
 
     // Initiales de l'entreprise (repli si pas de logo)
@@ -511,7 +527,9 @@ class ReceiptPreviewPage extends StatelessWidget {
     if (company.nuiRccm?.isNotEmpty == true) infoParts.add('${_t('nuiRccm', receipt)}: ${company.nuiRccm}');
 
     final header = pw.Container(
-      color: headerBg,
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: accent, width: 1.5)),
+      ),
       padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: pw.Column(
         children: [
@@ -519,20 +537,20 @@ class ReceiptPreviewPage extends StatelessWidget {
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              // Encart logo/initiales (fond blanc)
+              // Encart logo/initiales (contour fin, pas d'aplat)
               pw.Container(
                 width: 48,
                 height: 48,
-                decoration: const pw.BoxDecoration(
-                  color: PdfColors.white,
-                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(6)),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: accent, width: 0.75),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
                 ),
                 alignment: pw.Alignment.center,
                 child: logoBytes != null
                     ? pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain, width: 44, height: 44)
                     : pw.Text(
                         initials,
-                        style: pw.TextStyle(fontSize: fontSize + 4, fontWeight: pw.FontWeight.bold, color: headerBg),
+                        style: pw.TextStyle(fontSize: fontSize + 4, fontWeight: pw.FontWeight.bold, color: accent),
                       ),
               ),
               pw.SizedBox(width: 12),
@@ -540,7 +558,7 @@ class ReceiptPreviewPage extends StatelessWidget {
               pw.Expanded(
                 child: pw.Text(
                   company.name,
-                  style: pw.TextStyle(fontSize: fontSize + 2, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                  style: pw.TextStyle(fontSize: fontSize + 2, fontWeight: pw.FontWeight.bold, color: accent),
                 ),
               ),
             ],
@@ -558,14 +576,14 @@ class ReceiptPreviewPage extends StatelessWidget {
                   children: [
                     pw.Text(
                       entry.value,
-                      style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.white),
+                      style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.grey800),
                     ),
                     if (!isLast)
                       pw.Padding(
                         padding: const pw.EdgeInsets.symmetric(horizontal: 3),
                         child: pw.Text(
                           '|',
-                          style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.white),
+                          style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.grey400),
                         ),
                       ),
                   ],
@@ -613,8 +631,11 @@ class ReceiptPreviewPage extends StatelessWidget {
           ),
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: pw.BoxDecoration(color: badgeColor, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10))),
-            child: pw.Text(badgeLabel, style: pw.TextStyle(fontSize: fontSize - 1, fontWeight: pw.FontWeight.bold, color: PdfColors.white)),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: badgeColor, width: 1),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+            ),
+            child: pw.Text(badgeLabel, style: pw.TextStyle(fontSize: fontSize - 1, fontWeight: pw.FontWeight.bold, color: badgeColor)),
           ),
         ],
       ),
@@ -758,18 +779,21 @@ class ReceiptPreviewPage extends StatelessWidget {
                 // Bloc TOTAL coloré
                 pw.SizedBox(height: 4),
                 pw.Container(
-                  color: totalBg,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: accent, width: 1.25),
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                  ),
                   padding: const pw.EdgeInsets.all(8),
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
                         '${receipt.tvaAmount > 0 ? 'Total TTC' : _t('totalAmount', receipt)}:',
-                        style: pw.TextStyle(fontSize: fontSize + 3, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                        style: pw.TextStyle(fontSize: fontSize + 3, fontWeight: pw.FontWeight.bold, color: accent),
                       ),
                       pw.Text(
                         '${receipt.totalAmount.toStringAsFixed(0)} FCFA',
-                        style: pw.TextStyle(fontSize: fontSize + 3, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                        style: pw.TextStyle(fontSize: fontSize + 3, fontWeight: pw.FontWeight.bold, color: accent),
                       ),
                     ],
                   ),
@@ -857,5 +881,165 @@ class ReceiptPreviewPage extends StatelessWidget {
         footer,
       ],
     );
+  }
+
+  // ── Format Matriciel : facture en texte pur, colonnes alignées, pour
+  // imprimante à aiguilles sur papier continu (pas de couleurs, pas
+  // d'images, pas de bordures — tout est du texte monospace, comme le
+  // rendu natif ESC/P d'une imprimante matricielle). ────────────────────
+  static const int _matricielCols = 80;
+
+  pw.Font get _mono => pw.Font.courier();
+  pw.Font get _monoBold => pw.Font.courierBold();
+
+  pw.Widget _buildMatricielContent(Receipt receipt) {
+    final company = receipt.companyInfo;
+    const fs = 9.0; // taille de police, cohérente avec PrintFormat.matriciel.defaultFontSize
+
+    final normal = pw.TextStyle(font: _mono, fontSize: fs);
+    final bold = pw.TextStyle(font: _monoBold, fontSize: fs, fontWeight: pw.FontWeight.bold);
+    final title = pw.TextStyle(font: _monoBold, fontSize: fs + 3, fontWeight: pw.FontWeight.bold);
+
+    final separator = '-' * _matricielCols;
+
+    // ── En-tête entreprise ────────────────────────────────────────────
+    final headerLines = <String>[
+      company.name.toUpperCase(),
+      if (company.address.isNotEmpty) company.address,
+      if (company.location?.isNotEmpty == true) company.location!,
+      if (company.phone?.isNotEmpty == true) '${_t('phone', receipt)}: ${company.phone}',
+      if (company.email?.isNotEmpty == true) '${_t('email', receipt)}: ${company.email}',
+      if (company.nuiRccm?.isNotEmpty == true) '${_t('nuiRccm', receipt)}: ${company.nuiRccm}',
+    ];
+
+    // ── Ligne de colonnes du tableau (80 colonnes) ────────────────────
+    // Référence(9) Désignation(22) Qté(4) PU(9) Remise(7) PU Net(9) Total(11)
+    String row(String ref, String desig, String qte, String pu, String remise, String puNet, String total) {
+      return '${_fit(ref, 9)} ${_fit(desig, 22)} ${_fitRight(qte, 4)} ${_fitRight(pu, 9)} ${_fitRight(remise, 7)} ${_fitRight(puNet, 9)} ${_fitRight(total, 11)}';
+    }
+
+    final tableHeader = row(
+      _t('reference', receipt),
+      _t('designation', receipt),
+      _t('quantity', receipt),
+      _t('unitPrice', receipt),
+      _t('discount', receipt),
+      _t('netUnitPrice', receipt),
+      _t('total', receipt),
+    );
+
+    final itemRows = receipt.items.map((item) {
+      final puGross = item.hasDiscount ? item.displayPrice : item.unitPrice;
+      return row(
+        item.productReference,
+        item.productName,
+        item.quantity.toString(),
+        puGross.toStringAsFixed(0),
+        item.hasDiscount ? item.discountAmount.toStringAsFixed(0) : '',
+        item.unitPrice.toStringAsFixed(0),
+        item.totalPrice.toStringAsFixed(0),
+      );
+    }).toList();
+
+    final montantEnLettres = amountInWordsFcfa(receipt.totalAmount);
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Entête entreprise (centré)
+        ...headerLines.map((l) => pw.Center(child: pw.Text(l, style: l == headerLines.first ? bold : normal))),
+        pw.SizedBox(height: 6),
+        pw.Text(separator, style: normal),
+
+        // Titre + numéro/date sur la même bande
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(receipt.isProforma ? _t('proformaInvoice', receipt) : _t('invoice', receipt), style: title),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text('${_t('saleNumber', receipt)}: ${receipt.saleNumber}', style: normal),
+                pw.Text(
+                  '${_t('date', receipt)}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
+                  style: normal,
+                ),
+              ],
+            ),
+          ],
+        ),
+        pw.Text(separator, style: normal),
+        pw.SizedBox(height: 4),
+
+        // Client
+        if (receipt.customer != null) ...[
+          pw.Text('${_t('billedTo', receipt)}: ${receipt.customer!.nom}', style: bold),
+          if (receipt.customer!.nui?.isNotEmpty == true) pw.Text('NUI: ${receipt.customer!.nui}', style: normal),
+          if (receipt.customer!.rccm?.isNotEmpty == true) pw.Text('RCCM: ${receipt.customer!.rccm}', style: normal),
+          pw.SizedBox(height: 4),
+        ],
+
+        // Tableau des articles (texte aligné, pas de grille dessinée)
+        pw.Text(separator, style: normal),
+        pw.Text(tableHeader, style: bold),
+        pw.Text(separator, style: normal),
+        ...itemRows.map((r) => pw.Text(r, style: normal)),
+        pw.Text(separator, style: normal),
+        pw.SizedBox(height: 6),
+
+        // Totaux (alignés à droite)
+        pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              if (receipt.discountAmount > 0) pw.Text('${_t('subtotal', receipt)}: ${receipt.subtotal.toStringAsFixed(0)}', style: normal),
+              if (receipt.discountAmount > 0) pw.Text('${_t('discount', receipt)}: -${receipt.discountAmount.toStringAsFixed(0)}', style: normal),
+              if (receipt.tvaAmount > 0)
+                pw.Text(
+                  'TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%): +${receipt.tvaAmount.toStringAsFixed(0)}',
+                  style: normal,
+                ),
+              pw.Text('${_t('netToPay', receipt)}: ${receipt.totalAmount.toStringAsFixed(0)}', style: pw.TextStyle(font: _monoBold, fontSize: fs + 1, fontWeight: pw.FontWeight.bold)),
+              pw.Text('${_t('paid', receipt)}: ${receipt.paidAmount.toStringAsFixed(0)}', style: normal),
+              if (receipt.paidAmount > receipt.totalAmount)
+                pw.Text('${_t('change', receipt)}: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)}', style: bold),
+              if (receipt.remainingAmount > 0) pw.Text('${_t('remaining', receipt)}: ${receipt.remainingAmount.toStringAsFixed(0)}', style: bold),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 8),
+
+        // Montant en lettres
+        pw.Text('${_t('amountInWordsLabel', receipt)}:', style: normal),
+        pw.Text(montantEnLettres, style: bold),
+        pw.SizedBox(height: 4),
+        pw.Text(separator, style: normal),
+        pw.SizedBox(height: 20),
+
+        // Signatures
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(_t('seller', receipt), style: normal),
+            pw.Text(_t('clientSignature', receipt), style: normal),
+            pw.Text(_t('cashier', receipt), style: normal),
+          ],
+        ),
+        pw.SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// Tronque/complète une chaîne à une largeur fixe (alignement gauche)
+  String _fit(String text, int width) {
+    final t = text.length > width ? text.substring(0, width) : text;
+    return t.padRight(width);
+  }
+
+  /// Tronque/complète une chaîne à une largeur fixe (alignement droite)
+  String _fitRight(String text, int width) {
+    final t = text.length > width ? text.substring(text.length - width) : text;
+    return t.padLeft(width);
   }
 }
