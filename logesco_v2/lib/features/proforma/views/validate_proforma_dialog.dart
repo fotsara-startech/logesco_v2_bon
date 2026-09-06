@@ -65,13 +65,6 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
     super.dispose();
   }
 
-  void _updateAmount(double amount) {
-    setState(() {
-      _amountPaid = amount;
-      _amountController.text = amount.toStringAsFixed(0);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -116,8 +109,6 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
                         _buildTvaToggle(),
                         const SizedBox(height: 24),
                         _buildAmountPaidField(),
-                        const SizedBox(height: 16),
-                        _buildQuickAmountButtons(),
                         const SizedBox(height: 24),
                         _buildFinalSummary(),
                       ],
@@ -393,61 +384,6 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
     );
   }
 
-  Widget _buildQuickAmountButtons() {
-    final customer = widget.proforma.client;
-    final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
-    final totalWithDebt = _totalTTC + customerDebt;
-    final suggestions = _getAmountSuggestions(totalWithDebt);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'sales_quick_amounts'.tr,
-          style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildQuickButton(label: 'sales_exact_amount'.tr, amount: totalWithDebt, isExact: true),
-            ...suggestions.map((amount) => _buildQuickButton(
-                  label: '${(amount / 1000).toStringAsFixed(0)}k',
-                  amount: amount.toDouble(),
-                )),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickButton({required String label, required double amount, bool isExact = false}) {
-    final isSelected = _amountPaid == amount;
-    return InkWell(
-      onTap: () => _updateAmount(amount),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[600] : (isExact ? Colors.green[50] : Colors.grey[100]),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.blue[600]! : (isExact ? Colors.green[300]! : Colors.grey[300]!),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : (isExact ? Colors.green[700] : Colors.grey[700]),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFinalSummary() {
     final customer = widget.proforma.client;
     final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
@@ -490,16 +426,6 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
         ],
       ),
     );
-  }
-
-  List<int> _getAmountSuggestions(double total) {
-    final roundedTotal = (total / 1000).ceil() * 1000;
-    final suggestions = <int>[];
-    if (roundedTotal > total) suggestions.add(roundedTotal);
-    suggestions.add(roundedTotal + 1000);
-    suggestions.add(roundedTotal + 2000);
-    suggestions.add(roundedTotal + 5000);
-    return suggestions.take(4).toList();
   }
 
   Future<void> _validate() async {

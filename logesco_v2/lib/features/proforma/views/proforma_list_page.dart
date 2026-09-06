@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/proforma_controller.dart';
 import '../models/proforma_invoice.dart';
+import '../widgets/proforma_filters.dart';
 import 'proforma_detail_page.dart';
 import 'validate_proforma_dialog.dart';
 import 'create_proforma_page.dart';
@@ -54,6 +55,8 @@ class _ProformaListPageState extends State<ProformaListPage> {
         children: [
           // Filtres statut
           _buildStatusFilter(),
+          // Filtres vendeur/période — mêmes filtres que la page de vente
+          const ProformaFilters(),
           // Liste
           Expanded(
             child: GetBuilder<ProformaController>(

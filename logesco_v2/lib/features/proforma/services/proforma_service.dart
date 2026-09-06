@@ -30,6 +30,8 @@ class ProformaService {
     int? clientId,
     int? vendeurId,
     int? boutiqueId,
+    DateTime? dateDebut,
+    DateTime? dateFin,
   }) async {
     try {
       final headers = await _headers();
@@ -40,6 +42,10 @@ class ProformaService {
       if (statut != null) params['statut'] = statut;
       if (clientId != null) params['clientId'] = clientId.toString();
       if (vendeurId != null) params['vendeurId'] = vendeurId.toString();
+      // Envoyé en heure locale (sans le suffixe 'Z') — même convention que
+      // SalesService, pour que le backend compare aux dates locales stockées.
+      if (dateDebut != null) params['dateDebut'] = dateDebut.toIso8601String().replaceAll('Z', '');
+      if (dateFin != null) params['dateFin'] = dateFin.toIso8601String().replaceAll('Z', '');
 
       // Utiliser la boutique active si non spécifiée
       final activeBoutiqueId = boutiqueId ?? BoutiqueController.getActiveBoutiqueId();

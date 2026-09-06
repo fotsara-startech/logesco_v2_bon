@@ -438,7 +438,10 @@ class PrintingController extends GetxController {
     pdf.addPage(
       pw.Page(
         pageFormat: pageFormat,
-        margin: pw.EdgeInsets.all(8),
+        // Marge plus généreuse pour le matriciel : la zone non imprimable
+        // réelle d'une imprimante à aiguilles peut dépasser une marge trop
+        // fine et rogner le bord droit.
+        margin: _selectedFormat.value == PrintFormat.matriciel ? const pw.EdgeInsets.all(20) : const pw.EdgeInsets.all(8),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,

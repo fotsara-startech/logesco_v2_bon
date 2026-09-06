@@ -13,6 +13,8 @@ import '../../../core/config/app_config.dart';
 import '../models/user.dart';
 import '../../users/models/role_model.dart' as role_model;
 import '../../../core/utils/snackbar_helper.dart';
+import '../../inventory/controllers/inventory_getx_controller.dart';
+import '../../cash_registers/controllers/cash_register_controller.dart';
 
 /// Contrôleur d'authentification avec GetX
 class AuthController extends GetxController {
@@ -356,6 +358,38 @@ class AuthController extends GetxController {
     isAuthenticated.value = false; // Déclenche ever() → boutiques.clear()
     errorMessage.value = '';
     isLoading.value = false;
+
+    _stopBackgroundControllers();
+  }
+
+  /// Arrête les contrôleurs qui s'auto-rafraîchissent en tâche de fond
+  /// (timers périodiques). Ces contrôleurs sont mis en place via Get.put()
+  /// et ne sont donc jamais détruits automatiquement par la navigation —
+  /// sans cet arrêt explicite, leur timer continue à interroger l'API
+  /// après la déconnexion, avec un token effacé : d'où les erreurs
+  /// "impossible de charger..." / token qui apparaissaient après logout.
+  void _stopBackgroundControllers() {
+    // NOTE : SyncController et InventoryController (l'ancien, pas
+    // InventoryGetxController) n'en font PAS partie — les deux sont
+    // enregistrés `permanent: true` au démarrage de l'app
+    // (initial_bindings.dart) et ne sont jamais recréés après coup ; les
+    // supprimer ici les désactiverait pour le reste de la session app
+    // après une déconnexion, jusqu'au redémarrage complet de l'appli.
+    for (final stop in <void Function()>[
+      () {
+        if (Get.isRegistered<InventoryGetxController>()) Get.delete<InventoryGetxController>(force: true);
+      },
+      () {
+        if (Get.isRegistered<CashRegisterController>()) Get.delete<CashRegisterController>(force: true);
+      },
+    ]) {
+      try {
+        stop();
+      } catch (e) {
+        // Ignoré : le contrôleur peut ne pas être enregistré, ou être en
+        // cours d'utilisation par un widget qui vient d'être retiré.
+      }
+    }
   }
 
   /// Créer un utilisateur fictif pour le mode développement

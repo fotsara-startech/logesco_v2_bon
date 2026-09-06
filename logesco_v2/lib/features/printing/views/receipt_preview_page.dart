@@ -270,11 +270,26 @@ class ReceiptPreviewPage extends StatelessWidget {
         break;
     }
 
+    // Marges : les imprimantes (matricielles en particulier) ont une zone
+    // non imprimable réelle près des bords, souvent plus large que ce
+    // qu'indique la taille de page nominale — d'où un bord droit rogné si
+    // la marge logique est trop fine. On garde une marge généreuse pour
+    // le matriciel plutôt que la marge très fine du thermique (qui, lui,
+    // imprime sur un rouleau sans cette contrainte de picots/traction).
+    final pw.EdgeInsets margin;
+    if (format == PrintFormat.thermal) {
+      margin = const pw.EdgeInsets.all(8.0);
+    } else if (format == PrintFormat.matriciel) {
+      margin = const pw.EdgeInsets.all(20.0);
+    } else {
+      margin = const pw.EdgeInsets.all(40.0);
+    }
+
     // Ajouter une page avec le contenu
     pdfDoc.addPage(
       pw.Page(
         pageFormat: pageFormat,
-        margin: pw.EdgeInsets.all(format == PrintFormat.thermal || format == PrintFormat.matriciel ? 8.0 : 40.0),
+        margin: margin,
         build: (pw.Context context) {
           return _buildPdfContent(receipt, format, logoBytes); // Passer le logo
         },
@@ -889,6 +904,13 @@ class ReceiptPreviewPage extends StatelessWidget {
   // rendu natif ESC/P d'une imprimante matricielle). ────────────────────
   static const int _matricielCols = 80;
 
+  // Retrait supplémentaire (au-delà de la marge de page) pour les blocs
+  // alignés à droite qui touchent pile le bord de la zone imprimable —
+  // n° de facture/date, et le récapitulatif des totaux (Net à payer).
+  // Confirmé sur impression réelle : la marge de page seule ne suffisait
+  // pas pour ces éléments collés au bord droit.
+  static const double _rightInset = 16.0;
+
   pw.Font get _mono => pw.Font.courier();
   pw.Font get _monoBold => pw.Font.courierBold();
 
@@ -952,19 +974,25 @@ class ReceiptPreviewPage extends StatelessWidget {
         pw.Text(separator, style: normal),
 
         // Titre + numéro/date sur la même bande
+        // (padding droit supplémentaire : ce bloc collait pile au bord de
+        // la zone imprimable et était rogné à l'impression réelle malgré
+        // la marge de page — voir _rightInset)
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(receipt.isProforma ? _t('proformaInvoice', receipt) : _t('invoice', receipt), style: title),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text('${_t('saleNumber', receipt)}: ${receipt.saleNumber}', style: normal),
-                pw.Text(
-                  '${_t('date', receipt)}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
-                  style: normal,
-                ),
-              ],
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(right: _rightInset),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text('${_t('saleNumber', receipt)}: ${receipt.saleNumber}', style: normal),
+                  pw.Text(
+                    '${_t('date', receipt)}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
+                    style: normal,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -987,10 +1015,12 @@ class ReceiptPreviewPage extends StatelessWidget {
         pw.Text(separator, style: normal),
         pw.SizedBox(height: 6),
 
-        // Totaux (alignés à droite)
+        // Totaux (alignés à droite, avec le même retrait que le n° facture)
         pw.Align(
           alignment: pw.Alignment.centerRight,
-          child: pw.Column(
+          child: pw.Padding(
+            padding: const pw.EdgeInsets.only(right: _rightInset),
+            child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               if (receipt.discountAmount > 0) pw.Text('${_t('subtotal', receipt)}: ${receipt.subtotal.toStringAsFixed(0)}', style: normal),
@@ -1006,6 +1036,7 @@ class ReceiptPreviewPage extends StatelessWidget {
                 pw.Text('${_t('change', receipt)}: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)}', style: bold),
               if (receipt.remainingAmount > 0) pw.Text('${_t('remaining', receipt)}: ${receipt.remainingAmount.toStringAsFixed(0)}', style: bold),
             ],
+            ),
           ),
         ),
         pw.SizedBox(height: 8),

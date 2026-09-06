@@ -119,7 +119,10 @@ class TemplateService {
         case PrintFormat.thermal:
         case PrintFormat.matriciel:
           // Papier continu (thermique ou matriciel) : marges plus petites
-          if (template.margins.horizontal > 10) return false;
+          // (mais assez larges pour éviter que le bord droit soit rogné
+          // par la zone non imprimable réelle de l'imprimante — voir
+          // PrintFormat.matriciel.defaultMargins).
+          if (template.margins.horizontal > 24) return false;
           break;
         case PrintFormat.a4:
         case PrintFormat.a5:
@@ -200,7 +203,7 @@ class TemplateService {
           'fontSize': 9.0,
           'titleFontSize': 12.0,
           'headerFontSize': 9.0,
-          'margins': const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          'margins': const EdgeInsets.all(10.0),
           'showLogo': false,
           'showBorder': false,
         };

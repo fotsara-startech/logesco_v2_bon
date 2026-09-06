@@ -25,6 +25,10 @@ class ReceiptTemplateMatriciel extends ReceiptTemplateBase {
         );
 
   static const int _cols = 80;
+  // Retrait supplémentaire pour les blocs alignés à droite (n° facture/date,
+  // récapitulatif des totaux) — aligné sur receipt_preview_page.dart, où
+  // cette valeur a été confirmée nécessaire sur impression réelle.
+  static const double _rightInset = 16.0;
 
   @override
   Widget build(BuildContext context) {
@@ -57,15 +61,18 @@ class ReceiptTemplateMatriciel extends ReceiptTemplateBase {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(receipt.isProforma ? t('proformaInvoice') : t('invoice'), style: titleStyle),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('${t('saleNumber')}: ${receipt.saleNumber}', style: style),
-                  Text(
-                    '${t('date')}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
-                    style: style,
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.only(right: _rightInset),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${t('saleNumber')}: ${receipt.saleNumber}', style: style),
+                    Text(
+                      '${t('date')}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
+                      style: style,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -99,22 +106,25 @@ class ReceiptTemplateMatriciel extends ReceiptTemplateBase {
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (receipt.discountAmount > 0) Text('${t('subtotal')}: ${receipt.subtotal.toStringAsFixed(0)}', style: style),
-                if (receipt.discountAmount > 0) Text('${t('discount')}: -${receipt.discountAmount.toStringAsFixed(0)}', style: style),
-                if (receipt.tvaAmount > 0)
-                  Text(
-                    'TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%): +${receipt.tvaAmount.toStringAsFixed(0)}',
-                    style: style,
-                  ),
-                Text('${t('netToPay')}: ${receipt.totalAmount.toStringAsFixed(0)}', style: boldStyle.copyWith(fontSize: template.fontSize + 1)),
-                Text('${t('paid')}: ${receipt.paidAmount.toStringAsFixed(0)}', style: style),
-                if (receipt.paidAmount > receipt.totalAmount)
-                  Text('${t('change')}: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)}', style: boldStyle),
-                if (receipt.remainingAmount > 0) Text('${t('remaining')}: ${receipt.remainingAmount.toStringAsFixed(0)}', style: boldStyle),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.only(right: _rightInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (receipt.discountAmount > 0) Text('${t('subtotal')}: ${receipt.subtotal.toStringAsFixed(0)}', style: style),
+                  if (receipt.discountAmount > 0) Text('${t('discount')}: -${receipt.discountAmount.toStringAsFixed(0)}', style: style),
+                  if (receipt.tvaAmount > 0)
+                    Text(
+                      'TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%): +${receipt.tvaAmount.toStringAsFixed(0)}',
+                      style: style,
+                    ),
+                  Text('${t('netToPay')}: ${receipt.totalAmount.toStringAsFixed(0)}', style: boldStyle.copyWith(fontSize: template.fontSize + 1)),
+                  Text('${t('paid')}: ${receipt.paidAmount.toStringAsFixed(0)}', style: style),
+                  if (receipt.paidAmount > receipt.totalAmount)
+                    Text('${t('change')}: ${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)}', style: boldStyle),
+                  if (receipt.remainingAmount > 0) Text('${t('remaining')}: ${receipt.remainingAmount.toStringAsFixed(0)}', style: boldStyle),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),

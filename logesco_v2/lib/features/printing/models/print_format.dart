@@ -78,7 +78,10 @@ extension PrintFormatExtension on PrintFormat {
       case PrintFormat.thermal:
         return const PrintMargins.symmetric(horizontal: 8.0, vertical: 12.0);
       case PrintFormat.matriciel:
-        return const PrintMargins.symmetric(horizontal: 8.0, vertical: 8.0);
+        // Marge généreuse sur tous les bords : la zone non imprimable
+        // réelle d'une imprimante matricielle peut dépasser une marge
+        // trop fine et rogner le bord droit ou le haut de page.
+        return const PrintMargins.all(10.0);
     }
   }
 

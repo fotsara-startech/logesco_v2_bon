@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../sales/controllers/sales_controller.dart';
@@ -28,10 +31,22 @@ class ProformaController extends GetxController {
   int _currentPage = 1;
   bool _hasMore = true;
 
+  // Filtres — mêmes filtres que la page de vente (voir SalesFilters) :
+  // vendeur (admins) et période/plage de dates.
+  DateTime? _startDateFilter;
+  DateTime? _endDateFilter;
+  int vendeurIdFilter = 0;
+  DateTime? get startDateFilter => _startDateFilter;
+  DateTime? get endDateFilter => _endDateFilter;
+
+  // Liste des vendeurs pour le filtre (admins uniquement, comme sur la page de vente)
+  List<Map<String, dynamic>> vendeurs = [];
+
   @override
   void onInit() {
     super.onInit();
     loadProformas(refresh: true);
+    _loadVendeurs();
 
     // Écouter les changements de boutique active
     if (Get.isRegistered<BoutiqueController>()) {
@@ -40,6 +55,32 @@ class ProformaController extends GetxController {
         // Recharger les proformas quand la boutique change
         loadProformas(refresh: true);
       });
+    }
+  }
+
+  // Chargement de la liste des vendeurs pour le filtre (admins uniquement) —
+  // identique à SalesController._loadVendeurs.
+  Future<void> _loadVendeurs() async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('${Get.find<ApiService>().baseUrl}/users'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final data = jsonData['data'] as List<dynamic>? ?? [];
+        vendeurs = data
+            .map((u) => {
+                  'id': u['id'],
+                  'nomUtilisateur': u['nomUtilisateur'] ?? '',
+                })
+            .toList();
+        update();
+      }
+    } catch (e) {
+      // Ignoré : le filtre vendeur reste simplement absent de l'écran
     }
   }
 
@@ -59,13 +100,21 @@ class ProformaController extends GetxController {
       try {
         final auth = Get.find<AuthController>();
         final user = auth.currentUser.value;
-        if (user != null && !user.role.isAdmin) vendeurId = user.id;
+        if (user != null && !user.role.isAdmin) {
+          // Non-admin : toujours restreint à ses propres proformas
+          vendeurId = user.id;
+        } else if (vendeurIdFilter > 0) {
+          // Admin ayant choisi un vendeur précis dans le filtre
+          vendeurId = vendeurIdFilter;
+        }
       } catch (_) {}
 
       final response = await _service.getProformas(
         page: _currentPage,
         statut: statusFilter.isEmpty ? null : statusFilter,
         vendeurId: vendeurId,
+        dateDebut: _startDateFilter,
+        dateFin: _endDateFilter,
       );
 
       if (response.success && response.data != null) {
@@ -92,6 +141,28 @@ class ProformaController extends GetxController {
 
   void setStatusFilter(String status) {
     statusFilter = status;
+    update();
+    loadProformas(refresh: true);
+  }
+
+  void setDateFilter(DateTime? startDate, DateTime? endDate) {
+    _startDateFilter = startDate;
+    _endDateFilter = endDate;
+    update();
+    loadProformas(refresh: true);
+  }
+
+  void setVendeurFilter(int vendeurId) {
+    vendeurIdFilter = vendeurId;
+    update();
+    loadProformas(refresh: true);
+  }
+
+  void clearFilters() {
+    statusFilter = '';
+    _startDateFilter = null;
+    _endDateFilter = null;
+    vendeurIdFilter = 0;
     update();
     loadProformas(refresh: true);
   }
