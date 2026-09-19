@@ -259,10 +259,56 @@ class CompanySettingsPage extends StatelessWidget {
 
             // Logo (optionnel)
             _buildLogoSection(controller),
+            const SizedBox(height: 16),
+
+            // Organisation des ventes (séparation commande/encaissement, visibilité)
+            _buildSalesWorkflowSection(controller),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSalesWorkflowSection(CompanySettingsController controller) {
+    return Obx(() {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.point_of_sale, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'company_settings_sales_workflow'.tr,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('company_settings_separate_order_checkout'.tr),
+                subtitle: Text('company_settings_separate_order_checkout_help'.tr),
+                value: controller.separateOrderAndCheckout,
+                onChanged: controller.canEdit ? controller.setSeparateOrderAndCheckout : null,
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('company_settings_vendeurs_see_all_sales'.tr),
+                subtitle: Text('company_settings_vendeurs_see_all_sales_help'.tr),
+                value: controller.vendeursSeeAllSales,
+                onChanged: controller.canEdit ? controller.setVendeursSeeAllSales : null,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildTvaField(CompanySettingsController controller) {

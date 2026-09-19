@@ -157,6 +157,10 @@ function buildSalesSearchConditions(searchParams) {
     conditions.vendeurId = parseInt(searchParams.vendeurId);
   }
 
+  if (searchParams.commercialId) {
+    conditions.commercialId = parseInt(searchParams.commercialId);
+  }
+
   if (searchParams.statut) {
     conditions.statut = searchParams.statut;
   }

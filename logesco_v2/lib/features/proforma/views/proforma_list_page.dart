@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../controllers/proforma_controller.dart';
 import '../models/proforma_invoice.dart';
 import '../widgets/proforma_filters.dart';
+import '../widgets/proforma_search_bar.dart';
 import 'proforma_detail_page.dart';
 import 'validate_proforma_dialog.dart';
 import 'create_proforma_page.dart';
@@ -32,31 +33,97 @@ class _ProformaListPageState extends State<ProformaListPage> {
         foregroundColor: Colors.white,
         title: Text('proforma_title'.tr),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _ctrl.loadProformas(refresh: true),
-            tooltip: 'Actualiser',
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ElevatedButton.icon(
-              onPressed: () => Get.to(() => const CreateProformaPage()),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text('proforma_new'.tr),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.orange[800],
-              ),
-            ),
-          ),
+          Builder(builder: (context) {
+            final isMobile = MediaQuery.of(context).size.width < 600;
+            if (isMobile) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      await Get.to(() => const CreateProformaPage());
+                      _ctrl.loadProformas(refresh: true);
+                    },
+                    icon: const Icon(Icons.add),
+                    tooltip: 'proforma_new'.tr,
+                  ),
+                  GetBuilder<ProformaController>(
+                    builder: (ctrl) => PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'filter') ctrl.toggleFiltersVisibility();
+                        if (value == 'refresh') ctrl.loadProformas(refresh: true);
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'filter',
+                          child: ListTile(
+                            leading: Icon(ctrl.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
+                            title: Text(ctrl.filtersVisible ? 'Masquer filtres' : 'Afficher filtres'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'refresh',
+                          child: ListTile(leading: const Icon(Icons.refresh), title: Text('proforma_refresh'.tr), contentPadding: EdgeInsets.zero),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GetBuilder<ProformaController>(
+                  builder: (ctrl) => IconButton(
+                    onPressed: () => ctrl.toggleFiltersVisibility(),
+                    icon: Icon(ctrl.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _ctrl.loadProformas(refresh: true),
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'proforma_refresh'.tr,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await Get.to(() => const CreateProformaPage());
+                      _ctrl.loadProformas(refresh: true);
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text('proforma_new'.tr),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.orange[800],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          // Filtres statut
-          _buildStatusFilter(),
-          // Filtres vendeur/période — mêmes filtres que la page de vente
-          const ProformaFilters(),
+          // Barre de recherche — identique en disposition à SalesSearchBar
+          const ProformaSearchBar(),
+
+          // Filtres (conditionnels) — statut + vendeur/période
+          GetBuilder<ProformaController>(
+            builder: (ctrl) => ctrl.filtersVisible
+                ? Column(
+                    children: [
+                      _buildStatusFilter(),
+                      const ProformaFilters(),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+
           // Liste
           Expanded(
             child: GetBuilder<ProformaController>(
@@ -64,16 +131,20 @@ class _ProformaListPageState extends State<ProformaListPage> {
                 if (ctrl.isLoading && ctrl.proformas.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (ctrl.proformas.isEmpty) {
+                final displayed = ctrl.displayedProformas;
+                if (displayed.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.description_outlined, size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
-                        Text('proforma_empty'.tr, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                        Text(
+                          ctrl.proformas.isEmpty ? 'proforma_empty'.tr : 'proforma_no_results'.tr,
+                          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        ),
                         const SizedBox(height: 8),
-                        Text('proforma_empty_hint'.tr, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                        if (ctrl.proformas.isEmpty) Text('proforma_empty_hint'.tr, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                       ],
                     ),
                   );
@@ -82,9 +153,9 @@ class _ProformaListPageState extends State<ProformaListPage> {
                   onRefresh: () => ctrl.loadProformas(refresh: true),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: ctrl.proformas.length,
+                    itemCount: displayed.length,
                     itemBuilder: (context, index) {
-                      return _ProformaCard(proforma: ctrl.proformas[index]);
+                      return _ProformaCard(proforma: displayed[index]);
                     },
                   ),
                 );

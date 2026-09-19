@@ -84,6 +84,13 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                       },
                       icon: const Icon(Icons.add),
                       tooltip: 'sales_new'.tr),
+                  IconButton(
+                      onPressed: () async {
+                        await Get.to(() => const CreateSalePage(startInQuickView: true));
+                        controller.loadSales(refresh: true);
+                      },
+                      icon: const Icon(Icons.bolt),
+                      tooltip: 'quick_billing_quick_view'.tr),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'filter') controller.toggleFiltersVisibility();
@@ -135,6 +142,18 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                   return IconButton(onPressed: () => controller.setViewMode(next), icon: Icon(icon));
                 }),
                 IconButton(onPressed: () async => await controller.refreshStocks(), icon: const Icon(Icons.refresh)),
+                OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                    onPressed: () async {
+                      await Get.to(() => const CreateSalePage(startInQuickView: true));
+                      controller.loadSales(refresh: true);
+                    },
+                    icon: const Icon(Icons.bolt),
+                    label: Text('quick_billing_quick_view'.tr)),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                     onPressed: () async {
                       await Get.to(() => const CreateSalePage());

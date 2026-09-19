@@ -18,6 +18,7 @@ class SalesPreferencesPage extends StatefulWidget {
 class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
   late final SalesController _salesController;
   late PrintFormat _selectedFormat;
+  late PrintMode _selectedPrintMode;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
     _salesController = Get.find<SalesController>();
     // Récupérer le format actuellement sélectionné
     _selectedFormat = _salesController.selectedReceiptFormat;
+    _selectedPrintMode = _salesController.printMode;
   }
 
   @override
@@ -37,6 +39,12 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSection(
+            title: 'Mode d\'impression',
+            description: 'Comportement après validation d\'une facture',
+            child: _buildPrintModeSelection(),
+          ),
+          const SizedBox(height: 24),
           _buildSection(
             title: 'Format d\'impression',
             description: 'Sélectionner le format par défaut pour tous les reçus',
@@ -51,6 +59,54 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildPrintModeSelection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            RadioListTile<PrintMode>(
+              title: Text(PrintMode.direct.displayName),
+              subtitle: Text(PrintMode.direct.description),
+              value: PrintMode.direct,
+              groupValue: _selectedPrintMode,
+              onChanged: _updatePrintMode,
+            ),
+            RadioListTile<PrintMode>(
+              title: Text(PrintMode.preview.displayName),
+              subtitle: Text(PrintMode.preview.description),
+              value: PrintMode.preview,
+              groupValue: _selectedPrintMode,
+              onChanged: _updatePrintMode,
+            ),
+            RadioListTile<PrintMode>(
+              title: Text(PrintMode.none.displayName),
+              subtitle: Text(PrintMode.none.description),
+              value: PrintMode.none,
+              groupValue: _selectedPrintMode,
+              onChanged: _updatePrintMode,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updatePrintMode(PrintMode? mode) {
+    if (mode != null) {
+      setState(() {
+        _selectedPrintMode = mode;
+      });
+      _salesController.setPrintMode(mode);
+
+      SnackbarHelper.success(
+        'Mode d\'impression changé en ${mode.displayName}',
+        title: 'Paramètre sauvegardé',
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
   Widget _buildSection({

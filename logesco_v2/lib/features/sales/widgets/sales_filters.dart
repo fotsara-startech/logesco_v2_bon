@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/sales_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../commercials/models/commercial.dart';
 
 class SalesFilters extends StatefulWidget {
   const SalesFilters({super.key});
@@ -160,6 +161,103 @@ class _SalesFiltersState extends State<SalesFilters> {
                                         dense: true,
                                         title: Text(vendeur['nomUtilisateur'] as String),
                                         onTap: () => onSelected(vendeur),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }),
+
+            // Filtre par commercial terrain — visible seulement si des
+            // commerciaux existent (fonctionnalité optionnelle)
+            Obx(() {
+              final commerciaux = controller.commerciaux;
+              if (commerciaux.isEmpty) return const SizedBox.shrink();
+
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.badge_outlined, size: 18, color: Colors.blueGrey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Autocomplete<Commercial>(
+                          initialValue: controller.commercialIdFilter > 0
+                              ? TextEditingValue(
+                                  text: commerciaux
+                                      .firstWhere(
+                                        (c) => c.id == controller.commercialIdFilter,
+                                        orElse: () => Commercial(id: 0, nom: '', zoneId: 0, dateCreation: DateTime.now(), dateModification: DateTime.now()),
+                                      )
+                                      .nomComplet,
+                                )
+                              : const TextEditingValue(),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) return commerciaux;
+                            final query = textEditingValue.text.toLowerCase();
+                            return commerciaux.where((c) => c.nomComplet.toLowerCase().contains(query));
+                          },
+                          displayStringForOption: (c) => c.nomComplet,
+                          fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                            return TextFormField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                labelText: 'Filtrer par commercial',
+                                hintText: 'Tous les commerciaux',
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                                prefixIcon: const Icon(Icons.search, size: 20),
+                                suffixIcon: textEditingController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close, size: 18),
+                                        onPressed: () {
+                                          textEditingController.clear();
+                                          controller.setCommercialFilter(0);
+                                        },
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+                          onSelected: (c) => controller.setCommercialFilter(c.id),
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length + 1,
+                                    itemBuilder: (context, index) {
+                                      if (index == 0) {
+                                        return ListTile(
+                                          dense: true,
+                                          title: const Text('Tous les commerciaux', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          onTap: () {
+                                            controller.setCommercialFilter(0);
+                                            onSelected(Commercial(id: 0, nom: '', zoneId: 0, dateCreation: DateTime.now(), dateModification: DateTime.now()));
+                                          },
+                                        );
+                                      }
+                                      final c = options.elementAt(index - 1);
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(c.libelleAvecZone),
+                                        onTap: () => onSelected(c),
                                       );
                                     },
                                   ),

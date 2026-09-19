@@ -27,6 +27,10 @@ class CompanyProfile {
   final DateTime? createdAt;
   @JsonKey(name: 'dateModification')
   final DateTime? updatedAt;
+  @JsonKey(name: 'separerCommandeEncaissement', defaultValue: false)
+  final bool separateOrderAndCheckout; // Sépare saisie de commande et encaissement
+  @JsonKey(name: 'vendeursVoientToutesVentes', defaultValue: false)
+  final bool vendeursSeeAllSales; // Si false, un non-admin ne voit que ses ventes
 
   CompanyProfile({
     this.id,
@@ -42,6 +46,8 @@ class CompanyProfile {
     this.tvaRate,
     this.createdAt,
     this.updatedAt,
+    this.separateOrderAndCheckout = false,
+    this.vendeursSeeAllSales = false,
   });
 
   factory CompanyProfile.fromJson(Map<String, dynamic> json) => _$CompanyProfileFromJson(json);
@@ -63,6 +69,8 @@ class CompanyProfile {
     double? tvaRate,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? separateOrderAndCheckout,
+    bool? vendeursSeeAllSales,
   }) {
     return CompanyProfile(
       id: id ?? this.id,
@@ -78,6 +86,8 @@ class CompanyProfile {
       tvaRate: tvaRate ?? this.tvaRate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      separateOrderAndCheckout: separateOrderAndCheckout ?? this.separateOrderAndCheckout,
+      vendeursSeeAllSales: vendeursSeeAllSales ?? this.vendeursSeeAllSales,
     );
   }
 
@@ -109,9 +119,8 @@ class CompanyProfile {
       errors['email'] = 'L\'adresse email n\'est pas valide';
     }
 
-    if (nuiRccm?.trim().isEmpty ?? true) {
-      errors['nuiRccm'] = 'Le NUI RCCM est requis';
-    } else if (nuiRccm != null && nuiRccm!.trim().length < 5) {
+    // NUI RCCM est optionnel
+    if (nuiRccm != null && nuiRccm!.trim().isNotEmpty && nuiRccm!.trim().length < 5) {
       errors['nuiRccm'] = 'Le NUI RCCM doit contenir au moins 5 caractères';
     }
 
@@ -207,6 +216,10 @@ class CompanyProfileRequest {
   final String? receiptLanguage; // Langue des factures
   @JsonKey(name: 'tauxTva')
   final double? tvaRate; // Taux de TVA en pourcentage (optionnel)
+  @JsonKey(name: 'separerCommandeEncaissement')
+  final bool? separateOrderAndCheckout;
+  @JsonKey(name: 'vendeursVoientToutesVentes')
+  final bool? vendeursSeeAllSales;
 
   CompanyProfileRequest({
     required this.name,
@@ -219,6 +232,8 @@ class CompanyProfileRequest {
     this.slogan,
     this.receiptLanguage = 'fr',
     this.tvaRate,
+    this.separateOrderAndCheckout,
+    this.vendeursSeeAllSales,
   });
 
   factory CompanyProfileRequest.fromJson(Map<String, dynamic> json) => _$CompanyProfileRequestFromJson(json);
@@ -238,6 +253,8 @@ class CompanyProfileRequest {
       slogan: profile.slogan,
       receiptLanguage: profile.receiptLanguage,
       tvaRate: profile.tvaRate,
+      separateOrderAndCheckout: profile.separateOrderAndCheckout,
+      vendeursSeeAllSales: profile.vendeursSeeAllSales,
     );
   }
 }

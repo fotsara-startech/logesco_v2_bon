@@ -20,6 +20,13 @@ import 'dart:io';
 class ReceiptPreviewPage extends StatelessWidget {
   const ReceiptPreviewPage({super.key});
 
+  /// Génère les octets PDF du reçu avec le même rendu que l'aperçu (logo,
+  /// couleurs, mise en page matricielle...). Permet une impression directe
+  /// sans passer par cette page (mode d'impression "direct").
+  static Future<Uint8List> generatePdfBytes(PrintFormat format, Receipt receipt) {
+    return const ReceiptPreviewPage()._generatePdf(format, receipt);
+  }
+
   /// Helper pour obtenir les traductions selon la langue du reçu
   String _t(String key, Receipt receipt) {
     return ReceiptTranslations.get(key, language: receipt.language);
@@ -642,6 +649,13 @@ class ReceiptPreviewPage extends StatelessWidget {
                 '${_t('time', receipt)}: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}',
                 style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.black),
               ),
+              if (receipt.sellerName?.isNotEmpty == true) ...[
+                pw.SizedBox(height: 1),
+                pw.Text(
+                  '${_t('soldBy', receipt)}: ${receipt.sellerName}',
+                  style: pw.TextStyle(fontSize: fontSize - 1, color: PdfColors.black),
+                ),
+              ],
             ],
           ),
           pw.Container(
@@ -991,6 +1005,8 @@ class ReceiptPreviewPage extends StatelessWidget {
                     '${_t('date', receipt)}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
                     style: normal,
                   ),
+                  if (receipt.sellerName?.isNotEmpty == true)
+                    pw.Text('${_t('soldBy', receipt)}: ${receipt.sellerName}', style: normal),
                 ],
               ),
             ),

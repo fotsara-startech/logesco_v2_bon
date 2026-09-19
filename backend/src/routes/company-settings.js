@@ -208,7 +208,9 @@ router.post('/',
         slogan: req.body.slogan || null,
         langueFacture: req.body.langueFacture || 'fr',
         tauxTva: req.body.tauxTva != null && req.body.tauxTva !== '' ? parseFloat(String(req.body.tauxTva).replace(',', '.')) : null,
-        logo: req.file ? req.file.filename : req.body.logo || null
+        logo: req.file ? req.file.filename : req.body.logo || null,
+        separerCommandeEncaissement: req.body.separerCommandeEncaissement != null ? req.body.separerCommandeEncaissement === 'true' || req.body.separerCommandeEncaissement === true : undefined,
+        vendeursVoientToutesVentes: req.body.vendeursVoientToutesVentes != null ? req.body.vendeursVoientToutesVentes === 'true' || req.body.vendeursVoientToutesVentes === true : undefined
       };
 
       console.log('📤 Upload logo reçu:');

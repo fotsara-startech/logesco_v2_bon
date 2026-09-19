@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 
@@ -9,11 +10,20 @@ import '../../customers/controllers/customer_controller.dart';
 import '../widgets/product_selector.dart';
 import '../widgets/cart_widget.dart';
 import '../widgets/finalize_sale_dialog.dart';
+import '../widgets/quick_billing_view.dart';
+import '../utils/post_sale_printing.dart';
 import '../../customers/models/customer.dart';
 import '../../commercials/models/commercial.dart';
+import '../../../core/routes/app_routes.dart';
+import '../../proforma/models/proforma_invoice.dart';
+import '../../proforma/controllers/proforma_controller.dart';
 
 class CreateSalePage extends StatefulWidget {
-  const CreateSalePage({super.key});
+  /// true pour ouvrir directement sur la vue rapide (bouton "Vente rapide"
+  /// depuis la liste des ventes), sans passer par l'écran classique.
+  final bool startInQuickView;
+
+  const CreateSalePage({super.key, this.startInQuickView = false});
 
   @override
   State<CreateSalePage> createState() => _CreateSalePageState();
@@ -25,6 +35,10 @@ class _CreateSalePageState extends State<CreateSalePage> {
   TextEditingController? _autocompleteController;
   int _autocompleteKey = 0; // Clé pour forcer la reconstruction de l'Autocomplete
   final Map<int, String?> _priceErrors = {}; // Erreur de prix par productId (panier inline)
+  final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _primaryActionFocusNode = FocusNode();
+  static const _quickViewStorageKey = 'sales_quick_view_enabled';
+  bool _showQuickView = false;
 
   @override
   void initState() {
@@ -32,6 +46,24 @@ class _CreateSalePageState extends State<CreateSalePage> {
     // Utiliser l'instance existante, ne pas en créer une nouvelle
     _salesController = Get.isRegistered<SalesController>() ? Get.find<SalesController>() : Get.put(SalesController());
     _customersController = Get.isRegistered<CustomerController>() ? Get.find<CustomerController>() : Get.put(CustomerController());
+    try {
+      _showQuickView = GetStorage().read<bool>(_quickViewStorageKey) ?? false;
+    } catch (_) {}
+    if (widget.startInQuickView) _showQuickView = true;
+  }
+
+  void _setQuickView(bool value) {
+    setState(() => _showQuickView = value);
+    try {
+      GetStorage().write(_quickViewStorageKey, value);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _primaryActionFocusNode.dispose();
+    super.dispose();
   }
 
   // Méthode pour nettoyer la recherche client
@@ -45,6 +77,18 @@ class _CreateSalePageState extends State<CreateSalePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showQuickView) {
+      return QuickBillingView(
+        title: 'sales_billing'.tr,
+        accentColor: Colors.blue[600]!,
+        includePayment: !_isSeparateWorkflow,
+        primaryLabel: _isSeparateWorkflow ? 'sales_save_order'.tr : 'sales_proceed_payment'.tr,
+        primaryIcon: _isSeparateWorkflow ? Icons.assignment_turned_in : Icons.payment,
+        onSwitchToClassic: () => _setQuickView(false),
+        onFinalize: _handleQuickFinalize,
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -63,6 +107,11 @@ class _CreateSalePageState extends State<CreateSalePage> {
           onPressed: () => Get.back(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bolt, color: Colors.white),
+            tooltip: 'quick_billing_quick_view'.tr,
+            onPressed: () => _setQuickView(true),
+          ),
           // Affichage date/heure compact
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -88,6 +137,22 @@ class _CreateSalePageState extends State<CreateSalePage> {
               ],
             ),
           ),
+          if (_isSeparateWorkflow)
+            IconButton(
+              icon: const Icon(Icons.pending_actions, color: Colors.white),
+              tooltip: 'sales_pending_orders'.tr,
+              onPressed: () {
+                // Si le contrôleur existe déjà (page visitée plus tôt dans
+                // la session), son onInit() ne se relance pas : on force le
+                // filtre nous-même avant de naviguer, sinon `arguments` ne
+                // serait lu qu'à la toute première ouverture.
+                if (Get.isRegistered<ProformaController>()) {
+                  final proformaController = Get.find<ProformaController>();
+                  proformaController.setStatusFilter(ProformaStatut.brouillon);
+                }
+                Get.toNamed(AppRoutes.proforma, arguments: ProformaStatut.brouillon);
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white),
             tooltip: 'sales_settings'.tr,
@@ -96,12 +161,31 @@ class _CreateSalePageState extends State<CreateSalePage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 700;
-          if (isMobile) return _buildMobileLayout();
-          return _buildDesktopLayout();
-        },
+      body: Focus(
+        autofocus: true,
+        // Raccourcis clavier de la page de vente :
+        // - F2 / Ctrl+F : focus sur la recherche produit
+        // - F9 : ouvrir le paiement (miroir du bouton "Procéder au paiement")
+        // Voir aussi FinalizeSaleDialog pour F9 (confirmer) / Échap (annuler)
+        // une fois la boîte de paiement ouverte.
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.f2): () => _searchFocusNode.requestFocus(),
+            const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => _searchFocusNode.requestFocus(),
+            const SingleActivator(LogicalKeyboardKey.f9): () {
+              if (!_salesController.isCreating && _salesController.cartItems.isNotEmpty && !_salesController.hasCartValidationError) {
+                _primaryAction();
+              }
+            },
+          },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 700;
+              if (isMobile) return _buildMobileLayout();
+              return _buildDesktopLayout();
+            },
+          ),
+        ),
       ),
     );
   }
@@ -129,7 +213,11 @@ class _CreateSalePageState extends State<CreateSalePage> {
           Expanded(
             child: TabBarView(
               children: [
-                ProductSelector(onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity)),
+                ProductSelector(
+                  onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity),
+                  searchFocusNode: _searchFocusNode,
+                  primaryActionFocusNode: _primaryActionFocusNode,
+                ),
                 SingleChildScrollView(
                   child: Column(
                     children: [
@@ -229,6 +317,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                         setState(() {
                                           _priceErrors[item.productId] = (p != null && p < minPrice) ? 'sales_cart_price_below_min'.trParams({'min': minPrice.toStringAsFixed(0)}) : null;
                                         });
+                                        controller.setCartLineError(item.productId, _priceErrors[item.productId] != null);
                                         // Prix pris en compte tel quel — le minimum n'est appliqué
                                         // qu'à la validation si l'utilisateur ignore l'erreur (voir
                                         // SalesController.clampCartPricesToMinimum).
@@ -302,7 +391,13 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 _buildQuickCustomerSearch(),
                 _buildCommercialSelector(),
                 const Divider(height: 1),
-                Expanded(child: ProductSelector(onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity))),
+                Expanded(
+                  child: ProductSelector(
+                    onProductSelected: (product, quantity) async => await _salesController.addToCart(product, quantity: quantity),
+                    searchFocusNode: _searchFocusNode,
+                    primaryActionFocusNode: _primaryActionFocusNode,
+                  ),
+                ),
               ],
             ),
           ),
@@ -384,6 +479,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   if (query.isNotEmpty) _createAndSelectCustomer(query);
                 } else {
                   _salesController.setSelectedCustomer(selection);
+                  // Client choisi : passer directement au clavier à la
+                  // recherche produit, sans toucher la souris.
+                  _searchFocusNode.requestFocus();
                 }
               },
               fieldViewBuilder: (context, controller, focusNode, onSubmit) {
@@ -403,6 +501,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   ),
                   style: const TextStyle(fontSize: 14),
                   onChanged: (_) => setState(() {}),
+                  // Entrée : sélectionne le client surligné dans les
+                  // suggestions (comportement natif d'Autocomplete).
+                  onSubmitted: (_) => onSubmit(),
                 );
               },
               optionsViewBuilder: (context, onSelected, options) {
@@ -428,49 +529,61 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                 shrinkWrap: true,
                                 itemCount: realOptions.length,
                                 separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
-                                itemBuilder: (_, i) {
+                                itemBuilder: (context, i) {
                                   final option = realOptions[i];
                                   final solde = option.solde;
                                   final aDette = solde < 0;
-                                  return ListTile(
-                                    dense: true,
-                                    leading: CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Colors.blue[100],
-                                      child: Text(option.nom[0].toUpperCase(), style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)),
+                                  // Suivi natif d'Autocomplete pour la navigation
+                                  // au clavier (flèches haut/bas) dans la liste.
+                                  final isHighlighted = AutocompleteHighlightedOption.of(context) == i;
+                                  return Container(
+                                    color: isHighlighted ? Colors.blue[50] : null,
+                                    child: ListTile(
+                                      dense: true,
+                                      leading: CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: Colors.blue[100],
+                                        child: Text(option.nom[0].toUpperCase(), style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)),
+                                      ),
+                                      title: Text(option.nom, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                      subtitle: option.telephone != null ? Text(option.telephone!, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+                                      trailing: solde != 0
+                                          ? Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(color: aDette ? Colors.red[50] : Colors.green[50], borderRadius: BorderRadius.circular(4)),
+                                              child: Text(
+                                                '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${solde.abs().toStringAsFixed(0)}',
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: aDette ? Colors.red[700] : Colors.green[700]),
+                                              ),
+                                            )
+                                          : null,
+                                      onTap: () => onSelected(option),
                                     ),
-                                    title: Text(option.nom, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                    subtitle: option.telephone != null ? Text(option.telephone!, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
-                                    trailing: solde != 0
-                                        ? Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: aDette ? Colors.red[50] : Colors.green[50], borderRadius: BorderRadius.circular(4)),
-                                            child: Text(
-                                              '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${solde.abs().toStringAsFixed(0)}',
-                                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: aDette ? Colors.red[700] : Colors.green[700]),
-                                            ),
-                                          )
-                                        : null,
-                                    onTap: () => onSelected(option),
                                   );
                                 },
                               ),
                             ),
                           if (showCreate) ...[
                             if (realOptions.isNotEmpty) Divider(height: 1, color: Colors.grey[200]),
-                            InkWell(
-                              onTap: () => _createAndSelectCustomer(query),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.person_add, size: 18, color: Colors.blue[700]),
-                                    const SizedBox(width: 10),
-                                    Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.blue[700], fontWeight: FontWeight.w500))),
-                                  ],
+                            Builder(builder: (context) {
+                              final isHighlighted = AutocompleteHighlightedOption.of(context) == realOptions.length;
+                              return Container(
+                                color: isHighlighted ? Colors.blue[50] : null,
+                                child: InkWell(
+                                  onTap: () => _createAndSelectCustomer(query),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.person_add, size: 18, color: Colors.blue[700]),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.blue[700], fontWeight: FontWeight.w500))),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ],
                         ],
                       ),
@@ -539,6 +652,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
         setState(() {
           _autocompleteKey++;
         });
+        _searchFocusNode.requestFocus();
       }
     } catch (e) {
       if (mounted) {
@@ -833,7 +947,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _salesController.isCreating || _salesController.cartItems.isEmpty ? null : _finalizeSale,
+                        focusNode: _primaryActionFocusNode,
+                        onPressed:
+                            _salesController.isCreating || _salesController.cartItems.isEmpty || _salesController.hasCartValidationError ? null : _primaryAction,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[600],
                           foregroundColor: Colors.white,
@@ -855,10 +971,12 @@ class _CreateSalePageState extends State<CreateSalePage> {
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.payment, size: 22),
+                                  Icon(_isSeparateWorkflow ? Icons.assignment_turned_in : Icons.payment, size: 22),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _salesController.cartItems.isEmpty ? 'sales_cart_empty_action'.tr : 'sales_proceed_payment'.tr,
+                                    _salesController.cartItems.isEmpty
+                                        ? 'sales_cart_empty_action'.tr
+                                        : (_isSeparateWorkflow ? 'sales_save_order'.tr : 'sales_proceed_payment'.tr),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -897,6 +1015,68 @@ class _CreateSalePageState extends State<CreateSalePage> {
       if (roundedTotal + 2000 > total) roundedTotal + 2000,
       if (roundedTotal + 5000 > total) roundedTotal + 5000,
     ];
+  }
+
+  /// true si l'entreprise a activé "séparer commande et encaissement" :
+  /// le bouton principal enregistre alors une commande en attente au lieu
+  /// d'ouvrir directement le paiement.
+  bool get _isSeparateWorkflow => _salesController.companyProfile?.separateOrderAndCheckout ?? false;
+
+  /// Action du bouton principal (et du raccourci F9) : ouvre le paiement,
+  /// ou enregistre une commande en attente selon le réglage d'entreprise.
+  Future<void> _primaryAction() async {
+    if (_isSeparateWorkflow) {
+      await _saveAsPendingOrder();
+    } else {
+      await _finalizeSale();
+    }
+  }
+
+  Future<void> _saveAsPendingOrder() async {
+    if (_salesController.cartItems.isEmpty) {
+      SnackbarHelper.warning('sales_add_products_to_continue'.tr, duration: const Duration(seconds: 2));
+      return;
+    }
+    await _salesController.createPendingOrder();
+  }
+
+  /// Finalisation depuis la vue rapide : pas de dialogue intermédiaire, tout
+  /// se passe sur l'écran (montant versé déjà saisi). Reprend la même
+  /// logique que FinalizeSaleDialog._finalizeSale, sans la confirmation de
+  /// paiement partiel — la vue rapide privilégie la fluidité, l'utilisateur
+  /// ayant déjà explicitement saisi le montant avant de valider.
+  Future<bool> _handleQuickFinalize(double montantVerse) async {
+    if (_isSeparateWorkflow) {
+      return await _salesController.createPendingOrder();
+    }
+
+    final total = _salesController.cartTotalTTC;
+    final customer = _salesController.selectedCustomer;
+    final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
+    final totalWithDebt = total + customerDebt;
+    final remaining = totalWithDebt - montantVerse;
+
+    if (remaining > 0 && customer == null) {
+      SnackbarHelper.warning(
+        'sales_customer_required_partial'.tr,
+        title: 'sales_customer_required'.tr,
+        duration: const Duration(seconds: 3),
+      );
+      return false;
+    }
+
+    _salesController.setAmountPaid(montantVerse);
+    _salesController.setPaymentMode(remaining > 0 ? 'credit' : 'comptant');
+    _salesController.setDiscount(0.0);
+
+    final success = await _salesController.createSale();
+    if (success) {
+      handlePostSalePrinting(_salesController);
+      return true;
+    } else {
+      SnackbarHelper.error('sales_cannot_create_sale'.tr, title: 'error'.tr, duration: const Duration(seconds: 3));
+      return false;
+    }
   }
 
   Future<void> _finalizeSale() async {

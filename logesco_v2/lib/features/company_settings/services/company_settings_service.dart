@@ -79,6 +79,8 @@ class CompanySettingsService {
           tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
+          separateOrderAndCheckout: companyData['separerCommandeEncaissement'] ?? false,
+          vendeursSeeAllSales: companyData['vendeursVoientToutesVentes'] ?? false,
         );
 
         print(' === PROFIL D\'ENTREPRISE RCUPRÀ DEPUIS L\'API ===');
@@ -155,6 +157,8 @@ class CompanySettingsService {
           tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
+          separateOrderAndCheckout: companyData['separerCommandeEncaissement'] ?? false,
+          vendeursSeeAllSales: companyData['vendeursVoientToutesVentes'] ?? false,
         );
 
         print(' [DEBUG] CompanyProfile créé depuis endpoint public: ${profile.name}');
@@ -313,6 +317,8 @@ class CompanySettingsService {
           tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
+          separateOrderAndCheckout: companyData['separerCommandeEncaissement'] ?? false,
+          vendeursSeeAllSales: companyData['vendeursVoientToutesVentes'] ?? false,
         );
 
         // Mettre en cache le nouveau profil
@@ -408,6 +414,8 @@ class CompanySettingsService {
           tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
           createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
           updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
+          separateOrderAndCheckout: companyData['separerCommandeEncaissement'] ?? false,
+          vendeursSeeAllSales: companyData['vendeursVoientToutesVentes'] ?? false,
         );
 
         // Mettre à jour le cache
@@ -501,6 +509,8 @@ class CompanySettingsService {
             tvaRate: jsonData['tauxTva'] != null ? (jsonData['tauxTva'] as num).toDouble() : null,
             createdAt: jsonData['dateCreation'] != null ? DateTime.parse(jsonData['dateCreation']) : DateTime.now(),
             updatedAt: jsonData['dateModification'] != null ? DateTime.parse(jsonData['dateModification']) : DateTime.now(),
+            separateOrderAndCheckout: jsonData['separerCommandeEncaissement'] ?? false,
+            vendeursSeeAllSales: jsonData['vendeursVoientToutesVentes'] ?? false,
           );
         } else {
           // Cache expiré, le supprimer

@@ -237,7 +237,7 @@ class CashBalanceDisplay extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildInfoCard(
-                      'cash_session_difference'.tr,
+                      'cash_session_difference_short'.tr,
                       '${difference >= 0 ? '+' : ''}${CurrencyUtils.formatAmount(difference.abs())}',
                       difference >= 0 ? Icons.trending_up : Icons.trending_down,
                       differenceColor,

@@ -15,6 +15,7 @@ class SalesService {
     int limit = 20,
     int? clientId,
     int? vendeurId,
+    int? commercialId,
     int? boutiqueId,
     String? statut,
     String? modePaiement,
@@ -34,6 +35,7 @@ class SalesService {
 
       if (clientId != null) queryParams['clientId'] = clientId.toString();
       if (vendeurId != null) queryParams['vendeurId'] = vendeurId.toString();
+      if (commercialId != null) queryParams['commercialId'] = commercialId.toString();
       if (boutiqueId != null) queryParams['boutiqueId'] = boutiqueId.toString();
       if (statut != null) queryParams['statut'] = statut;
       if (modePaiement != null) queryParams['modePaiement'] = modePaiement;

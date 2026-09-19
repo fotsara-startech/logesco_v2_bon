@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../core/services/auth_service.dart';
@@ -11,6 +12,7 @@ import '../../printing/models/print_format.dart';
 
 import '../../products/models/product.dart';
 import '../../customers/models/customer.dart';
+import '../../customers/services/customer_service.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../models/sale.dart';
 import '../services/sales_service.dart';
@@ -25,6 +27,8 @@ import '../../printing/models/models.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 import '../../commercials/models/commercial.dart';
+import '../../proforma/models/proforma_invoice.dart';
+import '../../proforma/services/proforma_service.dart';
 
 class SalesController extends GetxController with SubscriptionVerificationMixin {
   final SalesService _salesService = SalesService(Get.find<AuthService>());
@@ -50,6 +54,9 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Gestion des produits pour la vente (copie locale avec tri)
   final RxList<Product> _productsForSale = <Product>[].obs;
   final RxString _productSearchQuery = ''.obs;
+  // Index du produit "surligné" dans la liste filtrée, pour la navigation au
+  // clavier (flèches haut/bas + Entrée) dans le champ de recherche produit.
+  final RxInt _highlightedProductIndex = 0.obs;
   final RxString _productSortBy = 'nom'.obs; // nom, prix, reference, categorie
   final RxBool _productSortAscending = true.obs;
 
@@ -61,7 +68,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final RxDouble _discount = 0.0.obs;
   final RxDouble _amountPaid = 0.0.obs;
   final Rx<PrintFormat> _selectedReceiptFormat = PrintFormat.thermal.obs;
+  final Rx<PrintMode> _printMode = PrintMode.preview.obs;
   final Rx<DateTime?> _customSaleDate = Rx<DateTime?>(null);
+  final GetStorage _printPrefsStorage = GetStorage();
+  static const String _printModeStorageKey = 'sales_print_mode';
 
   // TVA
   final RxBool _tvaEnabled = false.obs;
@@ -121,6 +131,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   double get discount => _discount.value;
   double get amountPaid => _amountPaid.value;
   PrintFormat get selectedReceiptFormat => _selectedReceiptFormat.value;
+  PrintMode get printMode => _printMode.value;
   DateTime? get customSaleDate => _customSaleDate.value;
 
   int get currentPage => _currentPage.value;
@@ -153,6 +164,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   @override
   void onInit() {
     super.onInit();
+    _loadPrintMode();
     loadSales();
     _initializeStocks();
     _loadCompanyProfile();
@@ -384,15 +396,20 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _isLoading.value = true;
 
     // Si l'utilisateur n'est pas admin, forcer le filtre sur ses propres ventes
+    // — sauf si l'admin a activé "les vendeurs voient toutes les ventes"
+    // dans les paramètres d'entreprise. Le serveur applique la même règle
+    // de son côté (sales.js), donc ce filtre client n'est qu'un confort
+    // d'affichage, pas la barrière de sécurité (voir backend).
     int? effectiveVendeurId;
     try {
       final authController = Get.find<AuthController>();
       final currentUser = authController.currentUser.value;
-      if (currentUser != null && !currentUser.role.isAdmin) {
+      final vendeursVoientTout = _companyProfile.value?.vendeursSeeAllSales ?? false;
+      if (currentUser != null && !currentUser.role.isAdmin && !vendeursVoientTout) {
         // Vendeur : ne voit que ses propres ventes
         effectiveVendeurId = currentUser.id;
       } else {
-        // Admin : filtre manuel par vendeur (ou aucun filtre)
+        // Admin, ou réglage "voir toutes les ventes" activé : filtre manuel (ou aucun filtre)
         effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
       }
     } catch (e) {
@@ -591,6 +608,23 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   void updateProductSearchQuery(String query) {
     _productSearchQuery.value = query;
     _filterAndSortProducts();
+    _highlightedProductIndex.value = 0;
+  }
+
+  // Navigation au clavier dans la liste de résultats produits
+  int get highlightedProductIndex => _highlightedProductIndex.value;
+
+  void moveProductHighlight(int delta) {
+    if (_productsForSale.isEmpty) return;
+    final next = _highlightedProductIndex.value + delta;
+    _highlightedProductIndex.value = next.clamp(0, _productsForSale.length - 1);
+  }
+
+  /// Produit actuellement surligné (ou null si la liste est vide)
+  Product? get highlightedProduct {
+    if (_productsForSale.isEmpty) return null;
+    final index = _highlightedProductIndex.value.clamp(0, _productsForSale.length - 1);
+    return _productsForSale[index];
   }
 
   /// Change l'ordre de tri des produits
@@ -793,6 +827,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   void removeFromCart(int productId) {
     _cartItems.removeWhere((item) => item.productId == productId);
+    _productsWithLineError.remove(productId);
   }
 
   /// Charge directement une liste d'items dans le panier (pour édition proforma)
@@ -809,6 +844,26 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _amountPaid.value = 0.0;
     _customSaleDate.value = null;
     _tvaEnabled.value = false;
+    _productsWithLineError.clear();
+  }
+
+  // Validation des lignes du panier (prix/quantité) — alimenté par les
+  // champs d'édition du panier (cart_widget.dart, le panier mobile de
+  // create_sale_page.dart, et quick_billing_view.dart), qui signalent ici
+  // dès qu'une ligne affiche une erreur locale (prix sous le minimum
+  // autorisé, quantité dépassant le stock disponible). Tant qu'au moins une
+  // ligne est en erreur, le bouton de validation de la facture doit rester
+  // désactivé — voir hasCartValidationError.
+  final RxSet<int> _productsWithLineError = <int>{}.obs;
+
+  bool get hasCartValidationError => _productsWithLineError.isNotEmpty;
+
+  void setCartLineError(int productId, bool hasError) {
+    if (hasError) {
+      _productsWithLineError.add(productId);
+    } else {
+      _productsWithLineError.remove(productId);
+    }
   }
 
   /// Recharge les données pour la boutique active (appelé lors du switch de boutique)
@@ -822,7 +877,27 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   // Configuration de la vente
   void setSelectedCustomer(Customer? customer) {
+    // Le client sélectionné vient souvent d'une liste en mémoire
+    // (CustomerController.customers) qui n'est ni paginée entièrement, ni
+    // rafraîchie après chaque vente : son solde peut être obsolète. On
+    // l'affiche immédiatement pour la réactivité, puis on le remplace par
+    // la version fraîche du compte dès qu'elle arrive, pour ne jamais
+    // afficher une dette périmée au moment de facturer.
     _selectedCustomer.value = customer;
+    if (customer != null) {
+      _refreshSelectedCustomerDebt(customer.id);
+    }
+  }
+
+  Future<void> _refreshSelectedCustomerDebt(int customerId) async {
+    try {
+      final fresh = await Get.find<CustomerService>().getCustomerById(customerId);
+      if (fresh != null && _selectedCustomer.value?.id == customerId) {
+        _selectedCustomer.value = fresh;
+      }
+    } catch (_) {
+      // Le solde en cache reste affiché si le rafraîchissement échoue.
+    }
   }
 
   void setSelectedCommercial(Commercial? commercial) {
@@ -851,6 +926,26 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   void setSelectedReceiptFormat(PrintFormat format) {
     _selectedReceiptFormat.value = format;
+  }
+
+  /// Charge le mode d'impression sauvegardé (persiste entre les sessions).
+  void _loadPrintMode() {
+    try {
+      final saved = _printPrefsStorage.read<String>(_printModeStorageKey);
+      if (saved != null) {
+        _printMode.value = PrintMode.values.firstWhere(
+          (m) => m.name == saved,
+          orElse: () => PrintMode.preview,
+        );
+      }
+    } catch (_) {}
+  }
+
+  void setPrintMode(PrintMode mode) {
+    _printMode.value = mode;
+    try {
+      _printPrefsStorage.write(_printModeStorageKey, mode.name);
+    } catch (_) {}
   }
 
   void setCustomSaleDate(DateTime? date) {
@@ -1020,6 +1115,82 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
     } catch (e) {
       print('Erreur création vente: $e');
+      SnackbarUtils.showError('Erreur de connexion: Vérifiez que le serveur est démarré');
+      return false;
+    } finally {
+      _isCreating.value = false;
+    }
+  }
+
+  /// Enregistre le panier comme une commande en attente (proforma), sans
+  /// encaissement immédiat — utilisé quand le réglage "séparer commande et
+  /// encaissement" est activé (voir CompanyProfile.separateOrderAndCheckout).
+  /// Un autre utilisateur encaissera plus tard depuis "Commandes en attente"
+  /// (liste des proformas en brouillon), ce qui transforme la commande en
+  /// vraie vente au moment du paiement.
+  Future<bool> createPendingOrder() async {
+    final canCreateSale = await verifySubscriptionForWrite(actionName: 'Créer une commande');
+    if (!canCreateSale) return false;
+
+    if (_cartItems.isEmpty) {
+      SnackbarUtils.showError('Le panier est vide');
+      return false;
+    }
+
+    clampCartPricesToMinimum();
+    _isCreating.value = true;
+
+    try {
+      final request = CreateProformaRequest(
+        clientId: _selectedCustomer.value?.id,
+        modePaiement: _paymentMode.value,
+        montantRemise: _discount.value,
+        montantTva: tvaAmount,
+        tauxTva: _tvaEnabled.value ? (_companyProfile.value?.tvaRate) : null,
+        dateVente: _customSaleDate.value,
+        details: _cartItems.map((item) {
+          final priceDifference = item.originalPrice - item.unitPrice;
+
+          if (priceDifference < 0) {
+            return CreateProformaDetailRequest(
+              produitId: item.productId,
+              quantite: item.quantity,
+              prixUnitaire: item.unitPrice,
+              prixAffiche: item.unitPrice,
+              remiseAppliquee: 0.0,
+              justificationRemise: item.discountJustification,
+            );
+          }
+
+          return CreateProformaDetailRequest(
+            produitId: item.productId,
+            quantite: item.quantity,
+            prixUnitaire: item.unitPrice,
+            prixAffiche: item.originalPrice,
+            remiseAppliquee: priceDifference,
+            justificationRemise: item.discountJustification,
+          );
+        }).toList(),
+      );
+
+      final proformaService = ProformaService(Get.find<AuthService>());
+      final response = await proformaService.createProforma(request);
+
+      if (response.success && response.data != null) {
+        clearCart();
+        _searchQuery.value = '';
+        SnackbarHelper.success(
+          'Commande enregistrée. Elle pourra être encaissée depuis "Commandes en attente".',
+          title: 'Commande créée',
+          duration: const Duration(seconds: 3),
+        );
+        return true;
+      } else {
+        SnackbarUtils.showError(response.message ?? 'Erreur lors de la création de la commande');
+        return false;
+      }
+    } catch (e) {
+      print('Erreur création commande en attente: $e');
       SnackbarUtils.showError('Erreur de connexion: Vérifiez que le serveur est démarré');
       return false;
     } finally {

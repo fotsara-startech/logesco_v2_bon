@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../accounting/controllers/accounting_controller.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/permission_widget.dart';
@@ -27,6 +28,7 @@ class ProfitabilityStatCard extends StatelessWidget {
             final netProfit = (summary['netProfit'] ?? 0.0) as double;
             final profitMargin = (summary['profitMargin'] ?? 0.0) as double;
             final statusColor = _parseColor(summary['statusColor'] ?? '#6B7280');
+            final formatter = NumberFormat.currency(locale: 'fr_FR', symbol: '', decimalDigits: 0);
 
             return InkWell(
               onTap: () => Get.toNamed(AppRoutes.accounting),
@@ -51,8 +53,12 @@ class ProfitabilityStatCard extends StatelessWidget {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // En-tête avec icône
+                    // En-tête avec icône et statut (le badge de statut est
+                    // logé ici plutôt qu'en pied de carte : ça libère la
+                    // hauteur qui manquait à la cellule de la grille pour
+                    // le titre + montant + marge).
                     Row(
                       children: [
                         Container(
@@ -68,36 +74,61 @@ class ProfitabilityStatCard extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        Icon(
-                          isProfitable ? Icons.trending_up : Icons.trending_down,
-                          color: statusColor,
-                          size: 16,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isProfitable ? Icons.trending_up : Icons.trending_down,
+                                color: statusColor,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                isProfitable ? 'dashboard_profitable'.tr : 'dashboard_to_monitor'.tr,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Titre
                     Text(
                       'dashboard_profitability'.tr,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
 
                     // Valeur principale
                     Text(
-                      '${netProfit.toStringAsFixed(0)} FCFA',
+                      '${formatter.format(netProfit)} FCFA',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: statusColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
 
                     // Marge
                     Text(
@@ -106,24 +137,8 @@ class ProfitabilityStatCard extends StatelessWidget {
                         fontSize: 12,
                         color: Colors.grey.shade500,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Indicateur de statut
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        isProfitable ? 'dashboard_profitable'.tr : 'dashboard_to_monitor'.tr,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: statusColor,
-                        ),
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

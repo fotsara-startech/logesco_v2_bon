@@ -172,6 +172,8 @@ class UserRole {
   bool get canManageStock => isAdmin || hasPrivilege('inventory', 'ADJUST') || hasPrivilege('stock_inventory', 'COUNT');
   bool get canManageSuppliers => isAdmin || hasPrivilege('suppliers', 'CREATE') || hasPrivilege('suppliers', 'UPDATE') || hasPrivilege('suppliers', 'DELETE');
   bool get canViewSuppliers => isAdmin || hasPrivilege('suppliers', 'READ');
+  bool get canManageCommercials => isAdmin || hasPrivilege('commercials', 'CREATE') || hasPrivilege('commercials', 'UPDATE') || hasPrivilege('commercials', 'DELETE');
+  bool get canViewCommercials => isAdmin || hasPrivilege('commercials', 'READ');
   bool get canManageProcurement => isAdmin || hasPrivilege('procurement', 'CREATE') || hasPrivilege('procurement', 'UPDATE') || hasPrivilege('procurement', 'DELETE');
   bool get canViewProcurement => isAdmin || hasPrivilege('procurement', 'READ');
   bool get canReceiveProcurement => isAdmin || hasPrivilege('procurement', 'RECEIVE');
@@ -185,6 +187,7 @@ class ModulePrivileges {
     'categories': ['READ', 'CREATE', 'UPDATE', 'DELETE'],
     'inventory': ['READ', 'CREATE', 'UPDATE', 'DELETE', 'ADJUST'],
     'suppliers': ['READ', 'CREATE', 'UPDATE', 'DELETE'],
+    'commercials': ['READ', 'CREATE', 'UPDATE', 'DELETE'],
     'customers': ['READ', 'CREATE', 'UPDATE', 'DELETE'],
     'sales': ['READ', 'CREATE', 'UPDATE', 'DELETE', 'REFUND', 'BACKDATE'],
     'procurement': ['READ', 'CREATE', 'UPDATE', 'DELETE', 'RECEIVE'],
@@ -204,6 +207,7 @@ class ModulePrivileges {
     'categories': 'roles_module_categories',
     'inventory': 'roles_module_inventory',
     'suppliers': 'roles_module_suppliers',
+    'commercials': 'roles_module_commercials',
     'customers': 'roles_module_customers',
     'sales': 'roles_module_sales',
     'procurement': 'roles_module_procurement',

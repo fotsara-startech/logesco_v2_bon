@@ -49,6 +49,17 @@ class SalesListItem extends StatelessWidget {
                   ),
                 ],
               ),
+            if (sale.commercial != null)
+              Row(
+                children: [
+                  Icon(Icons.badge_outlined, size: 13, color: Colors.orange[700]),
+                  const SizedBox(width: 3),
+                  Text(
+                    sale.commercial!.libelleAvecZone,
+                    style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                  ),
+                ],
+              ),
             Text('sales_total_label'.trParams({'amount': sale.montantFinal.toStringAsFixed(0)})),
             Text(
               'sales_paid_label'.trParams({'amount': sale.montantPaye.toStringAsFixed(0)}),

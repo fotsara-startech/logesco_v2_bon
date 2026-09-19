@@ -19,6 +19,10 @@ import '../../boutiques/widgets/boutique_context_indicator.dart';
 import '../../boutiques/views/boutiques_management_page.dart';
 import '../../sync/widgets/sync_indicator_widget.dart';
 import '../../cash_registers/widgets/cash_balance_widget.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/api_service.dart';
 
 class ModernDashboardPage extends StatefulWidget {
   const ModernDashboardPage({super.key});
@@ -30,6 +34,13 @@ class ModernDashboardPage extends StatefulWidget {
 class _ModernDashboardPageState extends State<ModernDashboardPage> {
   late final AuthController authController;
   late final DashboardController dashboardController;
+
+  // Fonctionnalité optionnelle « commerciaux terrain » : le rapport associé
+  // ne doit apparaître dans le menu que pour le client qui l'utilise
+  // réellement — sinon c'est une entrée vide et déroutante pour tous les
+  // autres. L'écran de gestion, lui, reste visible dès que le rôle a la
+  // permission (c'est par là qu'on crée le tout premier commercial).
+  bool _hasCommerciaux = false;
 
   @override
   void initState() {
@@ -45,7 +56,25 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
           accountCtrl.loadComptesClients();
         }
       }
+      _checkHasCommerciaux();
     });
+  }
+
+  Future<void> _checkHasCommerciaux() async {
+    try {
+      final token = await Get.find<AuthService>().getToken();
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('${Get.find<ApiService>().baseUrl}/commerciaux?page=1&limit=1'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200 && mounted) {
+        final data = json.decode(response.body)['data'] as List<dynamic>? ?? [];
+        setState(() => _hasCommerciaux = data.isNotEmpty);
+      }
+    } catch (_) {
+      // Non bloquant : l'entrée de menu reste simplement masquée
+    }
   }
 
   Future<void> _checkSubscriptionNotifications() async {
@@ -200,12 +229,16 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.assessment, 'menu_balance_sheet'.tr, Colors.green, () => Get.toNamed(AppRoutes.activityReport)),
                     if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.discount, 'menu_discount_reports'.tr, Colors.deepOrange, () => Get.toNamed(AppRoutes.discountReports)),
                     if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.bar_chart, 'menu_product_analytics'.tr, Colors.blue, () => Get.toNamed(AppRoutes.productAnalytics)),
+                    // Fonctionnalité optionnelle : n'apparaît que si des commerciaux existent (voir _checkHasCommerciaux)
+                    if (_hasPermission('reports', 'READ') && _hasCommerciaux)
+                      _buildMenuItem(Icons.badge_outlined, 'Ventes par commercial', Colors.brown, () => Get.toNamed(AppRoutes.commercialReport)),
                   ]),
                   _buildMenuSection('menu_administration'.tr, [
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'users_title'.tr, Colors.grey, () => Get.toNamed(AppRoutes.users)),
                     if (_hasPermission('users', 'ROLES')) _buildMenuItem(Icons.admin_panel_settings, 'roles_title'.tr, Colors.indigo, () => Get.toNamed(AppRoutes.roles)),
                     if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'menu_company'.tr, Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.store, 'Boutiques', Colors.teal, () => Get.to(() => const BoutiquesManagementPage())),
+                    if (_hasPermission('commercials', 'READ')) _buildMenuItem(Icons.badge_outlined, 'Commerciaux', Colors.brown, () => Get.toNamed(AppRoutes.commercials)),
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'Dashboard consolidé', Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
                     // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
                     _buildMenuItem(Icons.card_membership, 'menu_subscription'.tr, Colors.deepOrange, () {

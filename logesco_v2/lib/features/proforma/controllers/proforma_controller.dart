@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:printing/printing.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/api_service.dart';
@@ -9,18 +10,17 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../sales/controllers/sales_controller.dart';
 import '../../sales/models/sale.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
-import '../../printing/services/printing_service.dart';
 import '../../printing/models/models.dart';
 import '../../printing/controllers/printing_controller.dart';
 import '../../printing/views/receipt_preview_page.dart';
 import '../../company_settings/controllers/company_settings_controller.dart';
+import '../../company_settings/models/company_profile.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
 import '../models/proforma_invoice.dart';
 import '../services/proforma_service.dart';
 
 class ProformaController extends GetxController {
   final ProformaService _service = ProformaService(Get.find<AuthService>());
-  final PrintingService _printingService = PrintingService(Get.find<AuthService>());
 
   // État — variables normales + update() pour GetBuilder
   List<ProformaInvoice> proformas = [];
@@ -42,9 +42,45 @@ class ProformaController extends GetxController {
   // Liste des vendeurs pour le filtre (admins uniquement, comme sur la page de vente)
   List<Map<String, dynamic>> vendeurs = [];
 
+  // Recherche texte (numéro / client) — filtre local sur la page déjà
+  // chargée, identique à SalesController.searchSales.
+  String searchQuery = '';
+
+  List<ProformaInvoice> get displayedProformas {
+    if (searchQuery.isEmpty) return proformas;
+    final q = searchQuery.toLowerCase();
+    return proformas.where((p) {
+      if (p.numeroProforma.toLowerCase().contains(q)) return true;
+      final client = p.client;
+      if (client != null) {
+        final fullName = '${client.nom} ${client.prenom ?? ''}'.toLowerCase().trim();
+        if (fullName.contains(q)) return true;
+      }
+      return false;
+    }).toList();
+  }
+
+  void searchProformas(String query) {
+    searchQuery = query;
+    update();
+  }
+
+  // Visibilité des filtres — identique à SalesController.filtersVisible.
+  bool filtersVisible = true;
+  void toggleFiltersVisibility() {
+    filtersVisible = !filtersVisible;
+    update();
+  }
+
   @override
   void onInit() {
     super.onInit();
+    // Permet d'arriver directement filtré (ex: "Commandes en attente" sur la
+    // page de vente navigue ici avec arguments: 'brouillon').
+    final initialStatus = Get.arguments;
+    if (initialStatus is String && initialStatus.isNotEmpty) {
+      statusFilter = initialStatus;
+    }
     loadProformas(refresh: true);
     _loadVendeurs();
 
@@ -97,17 +133,26 @@ class ProformaController extends GetxController {
 
     try {
       int? vendeurId;
-      try {
-        final auth = Get.find<AuthController>();
-        final user = auth.currentUser.value;
-        if (user != null && !user.role.isAdmin) {
-          // Non-admin : toujours restreint à ses propres proformas
-          vendeurId = user.id;
-        } else if (vendeurIdFilter > 0) {
-          // Admin ayant choisi un vendeur précis dans le filtre
-          vendeurId = vendeurIdFilter;
-        }
-      } catch (_) {}
+      // Les commandes en attente (brouillon) sont une file partagée : la
+      // personne qui encaisse n'est en général pas celle qui a saisi la
+      // commande, donc pas de restriction par vendeur sur cette vue-là,
+      // quel que soit son rôle.
+      final isPendingOrdersQueue = statusFilter == ProformaStatut.brouillon;
+      if (!isPendingOrdersQueue) {
+        try {
+          final auth = Get.find<AuthController>();
+          final user = auth.currentUser.value;
+          if (user != null && !user.role.isAdmin) {
+            // Non-admin : toujours restreint à ses propres proformas
+            vendeurId = user.id;
+          } else if (vendeurIdFilter > 0) {
+            // Admin ayant choisi un vendeur précis dans le filtre
+            vendeurId = vendeurIdFilter;
+          }
+        } catch (_) {}
+      } else if (vendeurIdFilter > 0) {
+        vendeurId = vendeurIdFilter;
+      }
 
       final response = await _service.getProformas(
         page: _currentPage,
@@ -320,15 +365,7 @@ class ProformaController extends GetxController {
           if (cashCtrl.canMakeSales) cashCtrl.addToCurrentBalance(sale.montantPaye);
         } catch (_) {}
 
-        try {
-          await _printingService.generateReceipt(
-            request: GenerateReceiptRequest(
-              saleId: sale.id.toString(),
-              format: PrintFormat.thermal,
-              includeCompanyInfo: true,
-            ),
-          );
-        } catch (_) {}
+        await _handlePostValidationPrinting(sale);
 
         await loadProformas(refresh: true);
 
@@ -351,6 +388,74 @@ class ProformaController extends GetxController {
     } finally {
       isValidating = false;
       update();
+    }
+  }
+
+  /// Applique après encaissement d'une commande en attente le même
+  /// comportement d'impression qu'après une vente normale (voir
+  /// FinalizeSaleDialog._handlePostSalePrinting), selon le réglage "Mode
+  /// d'impression" des paramètres de vente. Avant ce correctif, cette étape
+  /// appelait juste la génération du reçu côté serveur sans jamais imprimer
+  /// ni ouvrir l'aperçu, et avalait silencieusement toute erreur.
+  Future<void> _handlePostValidationPrinting(Sale sale) async {
+    PrintMode printMode = PrintMode.preview;
+    PrintFormat format = PrintFormat.thermal;
+    CompanyProfile? companyProfile;
+    try {
+      final salesCtrl = Get.find<SalesController>();
+      printMode = salesCtrl.printMode;
+      format = salesCtrl.selectedReceiptFormat;
+      companyProfile = salesCtrl.companyProfile;
+    } catch (_) {}
+
+    if (printMode == PrintMode.none) return;
+
+    // Repli si le profil n'était pas déjà chargé côté SalesController.
+    if (companyProfile == null) {
+      try {
+        final companyCtrl = Get.find<CompanySettingsController>();
+        if (companyCtrl.companyProfile == null) {
+          await companyCtrl.loadCompanyProfile();
+        }
+        companyProfile = companyCtrl.companyProfile;
+      } catch (_) {}
+    }
+
+    if (companyProfile == null) {
+      SnackbarUtils.showError('Profil d\'entreprise non configuré. Allez dans Paramètres > Entreprise.');
+      return;
+    }
+
+    if (!Get.isRegistered<PrintingController>()) {
+      Get.put(PrintingController());
+    }
+    final printingController = Get.find<PrintingController>();
+    printingController.setSelectedFormat(format);
+
+    final success = await printingController.generateReceiptForSale(
+      sale.id.toString(),
+      format: format,
+      companyProfile: companyProfile,
+    );
+
+    if (!success || printingController.currentReceipt == null) {
+      SnackbarUtils.showError('Impossible de générer le reçu pour l\'impression');
+      return;
+    }
+    final receipt = printingController.currentReceipt!;
+
+    if (printMode == PrintMode.direct) {
+      try {
+        final pdfBytes = await ReceiptPreviewPage.generatePdfBytes(format, receipt);
+        await Printing.layoutPdf(
+          onLayout: (_) async => pdfBytes,
+          name: 'Reçu_${receipt.saleNumber}.pdf',
+        );
+      } catch (e) {
+        SnackbarUtils.showError('Erreur lors de l\'impression: $e');
+      }
+    } else {
+      Get.to(() => const ReceiptPreviewPage(), arguments: receipt);
     }
   }
 

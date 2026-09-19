@@ -160,7 +160,10 @@ class EnvironmentConfig {
       },
       rateLimit: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: isTestMode ? 999999 : (this.isLocal ? 1000 : 100), // Illimité en mode test
+        // Mode local = backend embarqué, requêtes en boucle sur 127.0.0.1 uniquement
+        // (aucune exposition Internet) : un seuil bas y coûte plus qu'il ne protège,
+        // le tableau de bord + les services d'init suffisent à l'atteindre en usage normal.
+        max: isTestMode ? 999999 : (this.isLocal ? 20000 : 100), // Illimité en mode test
         message: 'Trop de requêtes, veuillez réessayer plus tard.',
         skip: isTestMode ? () => true : () => false // Skip complètement en mode test
       },

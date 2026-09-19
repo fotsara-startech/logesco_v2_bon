@@ -290,6 +290,16 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
+              if (receipt.sellerName?.isNotEmpty == true) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${t('soldBy')}: ${receipt.sellerName}',
+                  style: TextStyle(
+                    fontSize: template.fontSize - 1,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ],
           ),
           Container(

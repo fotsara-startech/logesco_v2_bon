@@ -241,6 +241,81 @@ class FournisseurDTO {
 }
 
 /**
+ * DTO pour les villes (commerciaux terrain)
+ */
+class VilleDTO {
+  constructor(ville) {
+    this.id = ville.id;
+    this.nom = ville.nom;
+    this.dateCreation = ville.dateCreation;
+    this.dateModification = ville.dateModification;
+  }
+
+  static fromEntity(ville) {
+    return new VilleDTO(ville);
+  }
+
+  static fromEntities(villes) {
+    return villes.map(v => new VilleDTO(v));
+  }
+}
+
+/**
+ * DTO pour les zones (quartiers, rattachées à une ville)
+ */
+class ZoneDTO {
+  constructor(zone) {
+    this.id = zone.id;
+    this.nom = zone.nom;
+    this.villeId = zone.villeId;
+    this.dateCreation = zone.dateCreation;
+    this.dateModification = zone.dateModification;
+
+    if (zone.ville) {
+      this.ville = new VilleDTO(zone.ville);
+    }
+  }
+
+  static fromEntity(zone) {
+    return new ZoneDTO(zone);
+  }
+
+  static fromEntities(zones) {
+    return zones.map(z => new ZoneDTO(z));
+  }
+}
+
+/**
+ * DTO pour les commerciaux terrain — fiches de référence (pas des comptes
+ * utilisateur) auxquelles une caissière peut rattacher une vente encaissée
+ * en magasin après un versement.
+ */
+class CommercialDTO {
+  constructor(commercial) {
+    this.id = commercial.id;
+    this.nom = commercial.nom;
+    this.prenom = commercial.prenom;
+    this.telephone = commercial.telephone;
+    this.zoneId = commercial.zoneId;
+    this.isActive = commercial.isActive;
+    this.dateCreation = commercial.dateCreation;
+    this.dateModification = commercial.dateModification;
+
+    if (commercial.zone) {
+      this.zone = new ZoneDTO(commercial.zone);
+    }
+  }
+
+  static fromEntity(commercial) {
+    return new CommercialDTO(commercial);
+  }
+
+  static fromEntities(commerciaux) {
+    return commerciaux.map(c => new CommercialDTO(c));
+  }
+}
+
+/**
  * DTO pour les comptes clients
  */
 class CompteClientDTO {
@@ -923,6 +998,9 @@ module.exports = {
   StockDTO,
   ClientDTO,
   FournisseurDTO,
+  VilleDTO,
+  ZoneDTO,
+  CommercialDTO,
   CompteClientDTO,
   CompteFournisseurDTO,
   VenteDTO,

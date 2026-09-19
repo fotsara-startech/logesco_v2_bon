@@ -29,6 +29,10 @@ import '../../features/suppliers/views/supplier_detail_view.dart';
 import '../../features/suppliers/views/supplier_transactions_view.dart';
 import '../../features/suppliers/views/supplier_account_view.dart';
 import '../../features/suppliers/bindings/supplier_binding.dart';
+import '../../features/commercials/views/commercial_list_view.dart';
+import '../../features/commercials/views/commercial_form_view.dart';
+import '../../features/commercials/views/commercial_report_view.dart';
+import '../../features/commercials/bindings/commercial_binding.dart';
 import '../../features/inventory/views/inventory_getx_page.dart';
 import '../../features/inventory/views/stock_adjustment_page.dart';
 import '../../features/inventory/views/stock_detail_page.dart';
@@ -229,6 +233,28 @@ class AppPages {
       name: AppRoutes.supplierAccount,
       page: () => const SupplierAccountView(),
       binding: SupplierBinding(),
+    ),
+
+    // Gestion des commerciaux terrain (fonctionnalité optionnelle)
+    GetPage(
+      name: AppRoutes.commercials,
+      page: () => const CommercialListView(),
+      binding: CommercialBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.createCommercial,
+      page: () => const CommercialFormView(),
+      binding: CommercialBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.editCommercial,
+      page: () => const CommercialFormView(),
+      binding: CommercialBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.commercialReport,
+      page: () => const CommercialReportView(),
+      binding: CommercialBinding(),
     ),
 
     // Gestion de l'inventaire

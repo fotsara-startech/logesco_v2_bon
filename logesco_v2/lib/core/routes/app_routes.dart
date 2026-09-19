@@ -13,6 +13,7 @@ class AppRoutes {
   static const String categories = '/categories-management';
   static const String productsImportExport = '/products/import-export';
   static const String suppliers = '/suppliers';
+  static const String commercials = '/commercials';
   static const String customers = '/customers';
   static const String procurement = '/procurement';
   static const String sales = '/sales';
@@ -37,6 +38,8 @@ class AppRoutes {
   static const String editProduct = '/products/:id/edit';
   static const String createSupplier = '/suppliers/create';
   static const String editSupplier = '/suppliers/:id/edit';
+  static const String createCommercial = '/commercials/create';
+  static const String editCommercial = '/commercials/:id/edit';
   static const String createCustomer = '/customers/create';
   static const String editCustomer = '/customers/:id/edit';
   static const String createProcurement = '/procurement/create';
@@ -49,6 +52,7 @@ class AppRoutes {
   static const String accountsReport = '/reports/accounts';
   static const String discountReports = '/reports/discounts';
   static const String activityReport = '/reports/activity';
+  static const String commercialReport = '/reports/commercials';
 
   // Routes d'analytics
   static const String analytics = '/analytics';

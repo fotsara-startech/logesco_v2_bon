@@ -175,29 +175,6 @@ class LicenseGeneratorService {
     }
   }
 
-  /// Génère une clé de licence universelle (valide sur tout appareil)
-  /// Utilise la valeur magique 999999 dans le segment appareil
-  static String generateUniversalLicenseKey({
-    required String clientId,
-    required SubscriptionType type,
-    required DateTime expiresAt,
-  }) {
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-    final typeCode = _getTypeCode(type);
-    final clientHash = _hashString(clientId);
-    final dateCode = _encodeDateToShort(expiresAt);
-    // Valeur magique reconnue par l'app client comme licence universelle
-    const universalDeviceHash = 999999;
-
-    final segment1 = _generateSegment(typeCode, alphabet, 4);
-    final segment2 = _generateSegment(clientHash, alphabet, 4);
-    final segment3 = _generateSegment(dateCode, alphabet, 4);
-    final segment4 = _generateSegment(universalDeviceHash, alphabet, 4);
-
-    return '$segment1-$segment2-$segment3-$segment4';
-  }
-
   /// Génère une empreinte d'appareil temporaire
   static String generateTempDeviceFingerprint() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;

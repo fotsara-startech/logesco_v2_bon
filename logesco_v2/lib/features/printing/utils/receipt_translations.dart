@@ -38,6 +38,7 @@ class ReceiptTranslations {
       'seller': 'Le vendeur',
       'cashier': 'La caisse',
       'clientSignature': 'Le client',
+      'soldBy': 'Vendeur',
     },
     'en': {
       'invoice': 'INVOICE',
@@ -76,6 +77,7 @@ class ReceiptTranslations {
       'seller': 'The seller',
       'cashier': 'The cashier',
       'clientSignature': 'The customer',
+      'soldBy': 'Seller',
     },
     'es': {
       'invoice': 'FACTURA',
@@ -114,6 +116,7 @@ class ReceiptTranslations {
       'seller': 'El vendedor',
       'cashier': 'La caja',
       'clientSignature': 'El cliente',
+      'soldBy': 'Vendedor',
     },
   };
 

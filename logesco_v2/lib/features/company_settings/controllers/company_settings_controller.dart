@@ -49,6 +49,26 @@ class CompanySettingsController extends GetxController {
     }
   }
 
+  // Séparation commande/encaissement
+  final RxBool _separateOrderAndCheckout = false.obs;
+  bool get separateOrderAndCheckout => _separateOrderAndCheckout.value;
+  void setSeparateOrderAndCheckout(bool value) {
+    if (value != _separateOrderAndCheckout.value) {
+      _separateOrderAndCheckout.value = value;
+      _hasUnsavedChanges.value = true;
+    }
+  }
+
+  // Visibilité des ventes pour les non-admins (vendeurs, etc.)
+  final RxBool _vendeursSeeAllSales = false.obs;
+  bool get vendeursSeeAllSales => _vendeursSeeAllSales.value;
+  void setVendeursSeeAllSales(bool value) {
+    if (value != _vendeursSeeAllSales.value) {
+      _vendeursSeeAllSales.value = value;
+      _hasUnsavedChanges.value = true;
+    }
+  }
+
   // Clé du formulaire pour la validation
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -135,7 +155,9 @@ class CompanySettingsController extends GetxController {
         sloganController.text.trim() != (profile.slogan ?? '') ||
         tvaController.text.trim() != (profile.tvaRate != null ? (profile.tvaRate! % 1 == 0 ? profile.tvaRate!.toStringAsFixed(0) : profile.tvaRate!.toStringAsFixed(2)) : '') ||
         _logoPath.value != profile.logo ||
-        _selectedLanguage.value != (profile.receiptLanguage ?? 'fr');
+        _selectedLanguage.value != (profile.receiptLanguage ?? 'fr') ||
+        _separateOrderAndCheckout.value != profile.separateOrderAndCheckout ||
+        _vendeursSeeAllSales.value != profile.vendeursSeeAllSales;
   }
 
   /// Charge le profil d'entreprise
@@ -187,6 +209,8 @@ class CompanySettingsController extends GetxController {
     _logoPath.value = profile.logo;
     _selectedLanguage.value = profile.receiptLanguage ?? 'fr';
     tvaController.text = profile.tvaRate != null ? (profile.tvaRate! % 1 == 0 ? profile.tvaRate!.toStringAsFixed(0) : profile.tvaRate!.toStringAsFixed(2)) : '';
+    _separateOrderAndCheckout.value = profile.separateOrderAndCheckout;
+    _vendeursSeeAllSales.value = profile.vendeursSeeAllSales;
   }
 
   /// Vide le formulaire
@@ -201,6 +225,8 @@ class CompanySettingsController extends GetxController {
     _logoPath.value = null;
     _hasUnsavedChanges.value = false;
     tvaController.clear();
+    _separateOrderAndCheckout.value = false;
+    _vendeursSeeAllSales.value = false;
   }
 
   /// Sauvegarde le profil d'entreprise
@@ -286,6 +312,8 @@ class CompanySettingsController extends GetxController {
         // Normaliser la virgule en point pour le séparateur décimal
         request.fields['tauxTva'] = tvaController.text.trim().replaceAll(',', '.');
       }
+      request.fields['separerCommandeEncaissement'] = _separateOrderAndCheckout.value.toString();
+      request.fields['vendeursVoientToutesVentes'] = _vendeursSeeAllSales.value.toString();
 
       print('📤 Envoi de la requête multipart...');
       final response = await request.send().timeout(
@@ -315,6 +343,8 @@ class CompanySettingsController extends GetxController {
           slogan: companyData['slogan'],
           receiptLanguage: companyData['langueFacture'] ?? 'fr',
           tvaRate: companyData['tauxTva'] != null ? (companyData['tauxTva'] as num).toDouble() : null,
+          separateOrderAndCheckout: companyData['separerCommandeEncaissement'] ?? false,
+          vendeursSeeAllSales: companyData['vendeursVoientToutesVentes'] ?? false,
         );
 
         _companyProfile.value = profile;
@@ -367,6 +397,8 @@ class CompanySettingsController extends GetxController {
         slogan: sloganController.text.trim().isEmpty ? null : sloganController.text.trim(),
         receiptLanguage: _selectedLanguage.value,
         tvaRate: tvaController.text.trim().isEmpty ? null : double.tryParse(tvaController.text.trim().replaceAll(',', '.')),
+        separateOrderAndCheckout: _separateOrderAndCheckout.value,
+        vendeursSeeAllSales: _vendeursSeeAllSales.value,
       );
 
       final response = _companyProfile.value == null ? await _companySettingsService.createCompanyProfile(request) : await _companySettingsService.updateCompanyProfile(request);
@@ -576,6 +608,8 @@ class CompanySettingsController extends GetxController {
           slogan: sloganController.text.trim().isEmpty ? null : sloganController.text.trim(),
           receiptLanguage: _selectedLanguage.value,
           tvaRate: tvaController.text.trim().isEmpty ? null : double.tryParse(tvaController.text.trim().replaceAll(',', '.')),
+          separateOrderAndCheckout: _separateOrderAndCheckout.value,
+          vendeursSeeAllSales: _vendeursSeeAllSales.value,
         );
 
         final response = await _companySettingsService.updateCompanyProfile(request);

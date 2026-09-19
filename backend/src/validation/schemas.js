@@ -140,6 +140,60 @@ const fournisseurSchemas = {
   })
 };
 
+// Validation des villes (commerciaux terrain)
+const villeSchemas = {
+  create: Joi.object({
+    nom: Joi.string().min(1).max(100).required()
+  }),
+
+  update: Joi.object({
+    nom: Joi.string().min(1).max(100)
+  }).min(1)
+};
+
+// Validation des zones (quartiers, rattachées à une ville)
+const zoneSchemas = {
+  create: Joi.object({
+    nom: Joi.string().min(1).max(100).required(),
+    villeId: baseSchemas.id.required()
+  }),
+
+  update: Joi.object({
+    nom: Joi.string().min(1).max(100),
+    villeId: baseSchemas.id
+  }).min(1),
+
+  search: Joi.object({
+    villeId: baseSchemas.id
+  })
+};
+
+// Validation des commerciaux terrain (fiches de référence, pas des comptes)
+const commercialSchemas = {
+  create: Joi.object({
+    nom: Joi.string().min(1).max(100).required(),
+    prenom: Joi.string().max(100).allow('', null),
+    telephone: baseSchemas.telephone.allow('', null),
+    zoneId: baseSchemas.id.required(),
+    isActive: Joi.boolean().default(true)
+  }),
+
+  update: Joi.object({
+    nom: Joi.string().min(1).max(100),
+    prenom: Joi.string().max(100).allow('', null),
+    telephone: baseSchemas.telephone.allow('', null),
+    zoneId: baseSchemas.id,
+    isActive: Joi.boolean()
+  }).min(1),
+
+  search: Joi.object({
+    zoneId: baseSchemas.id,
+    villeId: baseSchemas.id,
+    isActive: Joi.boolean(),
+    q: Joi.string().max(100)
+  })
+};
+
 // Validation des comptes
 const compteSchemas = {
   updateSolde: Joi.object({
@@ -274,6 +328,7 @@ const venteSchemas = {
   create: Joi.object({
     clientId: baseSchemas.id.allow(null),
     vendeurId: baseSchemas.id.allow(null),
+    commercialId: baseSchemas.id.allow(null),
     boutiqueId: baseSchemas.id.allow(null),
     modePaiement: baseSchemas.modePaiement.default('comptant'),
     montantRemise: baseSchemas.montant.default(0),
@@ -316,6 +371,7 @@ const venteSchemas = {
   search: Joi.object({
     clientId: baseSchemas.id,
     vendeurId: baseSchemas.id,
+    commercialId: baseSchemas.id,
     boutiqueId: baseSchemas.id,
     statut: Joi.string().valid('terminee', 'annulee'),
     modePaiement: baseSchemas.modePaiement,
@@ -354,7 +410,9 @@ const parametresEntrepriseSchemas = {
     logo: Joi.string().max(500).allow('', null),
     slogan: Joi.string().max(200).allow('', null),
     langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr'),
-    tauxTva: Joi.number().min(0).max(100).allow(null) // TVA en pourcentage (optionnel)
+    tauxTva: Joi.number().min(0).max(100).allow(null), // TVA en pourcentage (optionnel)
+    separerCommandeEncaissement: Joi.boolean(),
+    vendeursVoientToutesVentes: Joi.boolean()
   }),
 
   update: Joi.object({
@@ -367,7 +425,9 @@ const parametresEntrepriseSchemas = {
     logo: Joi.string().max(500).allow('', null),
     slogan: Joi.string().max(200).allow('', null),
     langueFacture: Joi.string().valid('fr', 'en', 'es').default('fr'),
-    tauxTva: Joi.number().min(0).max(100).allow(null) // TVA en pourcentage (optionnel)
+    tauxTva: Joi.number().min(0).max(100).allow(null), // TVA en pourcentage (optionnel)
+    separerCommandeEncaissement: Joi.boolean(),
+    vendeursVoientToutesVentes: Joi.boolean()
   }).min(1)
 };
 
@@ -452,6 +512,9 @@ module.exports = {
   produitSchemas,
   clientSchemas,
   fournisseurSchemas,
+  villeSchemas,
+  zoneSchemas,
+  commercialSchemas,
   compteSchemas,
   stockSchemas,
   commandeApprovisionnementSchemas,

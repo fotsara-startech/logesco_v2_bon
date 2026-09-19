@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../controllers/sales_controller.dart';
-import '../../printing/controllers/printing_controller.dart';
-import '../../printing/views/receipt_preview_page.dart';
+import '../utils/post_sale_printing.dart';
 
 /// Dialog simplifié pour finaliser la vente
 /// Contient UNIQUEMENT les informations de paiement
@@ -39,18 +39,30 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
   Widget build(BuildContext context) {
     final salesController = Get.find<SalesController>();
 
-    return Dialog(
-      child: Container(
-        width: 500,
-        constraints: const BoxConstraints(maxHeight: 600),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return Focus(
+      autofocus: true,
+      // Raccourcis clavier : Échap annule (miroir du bouton "Annuler"),
+      // F9 confirme le paiement (miroir du bouton "Confirmer") — voir
+      // le hint "F9: Paiement | Esc: Annuler" affiché sur la page de vente.
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.of(context).pop(),
+          const SingleActivator(LogicalKeyboardKey.f9): () {
+            if (!salesController.isCreating) _finalizeSale();
+          },
+        },
+        child: Dialog(
+          child: Container(
+            width: 500,
+            constraints: const BoxConstraints(maxHeight: 600),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 // Titre
                 Row(
                   children: [
@@ -140,6 +152,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               ],
             ),
           ),
+        ),
+      ),
         ),
       ),
     );
@@ -579,87 +593,9 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
     if (success) {
       Navigator.of(context).pop(); // Fermer le dialog
-      _showPrintReceiptDialog();
+      handlePostSalePrinting(salesController);
     } else {
       SnackbarHelper.error('sales_cannot_create_sale'.tr, title: 'error'.tr, duration: const Duration(seconds: 3));
-    }
-  }
-
-  void _showPrintReceiptDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 32),
-            const SizedBox(width: 12),
-            Text('sales_sale_created'.tr),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('sales_receipt_printing'.tr),
-          ],
-        ),
-      ),
-    );
-
-    // Imprimer automatiquement
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _printReceiptDirect();
-    });
-  }
-
-  Future<void> _printReceiptDirect() async {
-    try {
-      final salesController = Get.find<SalesController>();
-
-      if (salesController.lastCreatedSale == null) {
-        Get.back();
-        SnackbarHelper.error('sales_no_sale_for_print'.tr, title: 'error'.tr);
-        return;
-      }
-
-      if (!Get.isRegistered<PrintingController>()) {
-        Get.put(PrintingController());
-      }
-
-      final printingController = Get.find<PrintingController>();
-      final format = salesController.selectedReceiptFormat;
-
-      printingController.setSelectedFormat(format);
-      final success = await printingController.generateReceiptForSale(
-        salesController.lastCreatedSale!.id.toString(),
-        format: format,
-        companyProfile: salesController.companyProfile,
-      );
-
-      if (success && printingController.currentReceipt != null) {
-        final receipt = printingController.currentReceipt!;
-
-        Get.back(); // Fermer le dialog
-
-        // Naviguer vers la prévisualisation
-        Get.to(
-          () => const ReceiptPreviewPage(),
-          arguments: receipt,
-        );
-
-        // Get.snackbar(
-        //   'success'.tr,
-        //   'sales_receipt_generated'.trParams({'number': receipt.saleNumber}),
-        //   snackPosition: SnackPosition.BOTTOM,
-        //   backgroundColor: Colors.green,
-        //   colorText: Colors.white,
-        //   duration: const Duration(seconds: 2),
-        // );
-      } else {
-        Get.back();
-        SnackbarHelper.error('sales_cannot_generate_receipt'.tr, title: 'error'.tr);
-      }
-    } catch (e) {
-      Get.back();
-      SnackbarHelper.error('${'error'.tr}: $e', title: 'error'.tr);
     }
   }
 }

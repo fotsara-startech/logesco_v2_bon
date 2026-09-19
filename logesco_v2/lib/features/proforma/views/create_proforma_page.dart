@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 
 import '../../customers/controllers/customer_controller.dart';
@@ -7,12 +9,17 @@ import '../../customers/models/customer.dart';
 import '../../sales/controllers/sales_controller.dart';
 import '../../sales/widgets/product_selector.dart';
 import '../../sales/widgets/cart_widget.dart';
+import '../../sales/widgets/quick_billing_view.dart';
 import '../bindings/proforma_binding.dart';
 import '../controllers/proforma_controller.dart';
 import '../models/proforma_invoice.dart';
 
 /// Page dédiée à la création / modification d'une facture proforma.
-/// Interface identique à la page de vente mais sans paiement ni mouvement de stock.
+/// Reprend délibérément la même structure que CreateSalePage (mise en page
+/// responsive, raccourcis clavier, disposition des sections) pour que
+/// l'expérience soit identique entre les deux écrans — seule la couleur
+/// d'accent (orange) distingue visuellement le mode "commande" du mode
+/// "vente" (bleu).
 class CreateProformaPage extends StatefulWidget {
   /// Si non null, on est en mode édition d'une proforma existante
   final ProformaInvoice? editingProforma;
@@ -28,6 +35,10 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
   late CustomerController _customersCtrl;
   TextEditingController? _autocompleteCtrl;
   int _autocompleteKey = 0; // Clé pour forcer la reconstruction de l'Autocomplete
+  final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _primaryActionFocusNode = FocusNode();
+  static const _quickViewStorageKey = 'proforma_quick_view_enabled';
+  bool _showQuickView = false;
 
   bool get _isEditing => widget.editingProforma != null;
 
@@ -44,6 +55,24 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) => _salesCtrl.clearCart());
     }
+
+    try {
+      _showQuickView = !_isEditing && (GetStorage().read<bool>(_quickViewStorageKey) ?? false);
+    } catch (_) {}
+  }
+
+  void _setQuickView(bool value) {
+    setState(() => _showQuickView = value);
+    try {
+      GetStorage().write(_quickViewStorageKey, value);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _primaryActionFocusNode.dispose();
+    super.dispose();
   }
 
   void _loadProformaData() {
@@ -56,7 +85,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
     setState(() {});
   }
 
-  void _clearCustomer() {
+  void _clearCustomerSearch() {
     _autocompleteCtrl?.clear();
     _salesCtrl.setSelectedCustomer(null);
     setState(() {});
@@ -64,54 +93,42 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showQuickView) {
+      return QuickBillingView(
+        title: 'proforma_invoice_label'.tr,
+        accentColor: Colors.orange[700]!,
+        includePayment: false,
+        primaryLabel: 'proforma_save_action'.tr,
+        primaryIcon: Icons.description_outlined,
+        onSwitchToClassic: () => _setQuickView(false),
+        onFinalize: _handleQuickFinalize,
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
-      body: Row(
-        children: [
-          // ── GAUCHE : sélection produits ──────────────────────────────────
-          Expanded(
-            flex: 5,
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  _buildCustomerSearch(),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ProductSelector(
-                      onProductSelected: (product, qty) async {
-                        await _salesCtrl.addToCart(product, quantity: qty);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      body: Focus(
+        autofocus: true,
+        // Raccourcis clavier — mêmes touches que la page de vente :
+        // F2 / Ctrl+F : focus sur la recherche produit ; F9 : enregistrer.
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.f2): () => _searchFocusNode.requestFocus(),
+            const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => _searchFocusNode.requestFocus(),
+            const SingleActivator(LogicalKeyboardKey.f9): () {
+              final proformaCtrl = Get.find<ProformaController>();
+              if (_canSave(proformaCtrl)) _saveProforma(proformaCtrl);
+            },
+          },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 700;
+              if (isMobile) return _buildMobileLayout();
+              return _buildDesktopLayout();
+            },
           ),
-
-          // ── DROITE : panier + résumé ─────────────────────────────────────
-          Expanded(
-            flex: 5,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                border: Border(left: BorderSide(color: Colors.grey[200]!)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildClientBanner(),
-                    _buildCartSection(),
-                    _buildSummarySection(),
-                    _buildActionButtons(),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -128,7 +145,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
         children: [
           Text(
             _isEditing ? 'proforma_edit_title'.tr : 'proforma_create_title'.tr,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 20),
           ),
           Text(
             'proforma_invoice_label'.tr,
@@ -141,6 +158,12 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
         onPressed: () => Get.back(),
       ),
       actions: [
+        if (!_isEditing)
+          IconButton(
+            icon: const Icon(Icons.bolt, color: Colors.white),
+            tooltip: 'quick_billing_quick_view'.tr,
+            onPressed: () => _setQuickView(true),
+          ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
@@ -156,6 +179,103 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                 style: const TextStyle(color: Colors.white, fontSize: 11),
               ),
             ],
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ── Layouts ───────────────────────────────────────────────────────────────
+
+  Widget _buildMobileLayout() {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          _buildCustomerSearch(),
+          const Divider(height: 1),
+          Obx(() {
+            final itemCount = _salesCtrl.cartItems.length;
+            return TabBar(
+              labelColor: Colors.orange[700],
+              indicatorColor: Colors.orange[700],
+              tabs: [
+                const Tab(icon: Icon(Icons.inventory_2), text: 'Produits'),
+                Tab(
+                  icon: Badge(isLabelVisible: itemCount > 0, label: Text('$itemCount'), child: const Icon(Icons.shopping_cart)),
+                  text: 'proforma_order_tab'.tr,
+                ),
+              ],
+            );
+          }),
+          Expanded(
+            child: TabBarView(
+              children: [
+                ProductSelector(
+                  searchFocusNode: _searchFocusNode,
+                  primaryActionFocusNode: _primaryActionFocusNode,
+                  onProductSelected: (product, qty) async => await _salesCtrl.addToCart(product, quantity: qty),
+                ),
+                SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildClientBanner(),
+                      _buildCartSection(),
+                      _buildBottomAction(),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      children: [
+        // ── GAUCHE : sélection produits ──────────────────────────────────
+        Expanded(
+          flex: 5,
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                _buildCustomerSearch(),
+                const Divider(height: 1),
+                Expanded(
+                  child: ProductSelector(
+                    searchFocusNode: _searchFocusNode,
+                    primaryActionFocusNode: _primaryActionFocusNode,
+                    onProductSelected: (product, qty) async => await _salesCtrl.addToCart(product, quantity: qty),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // ── DROITE : panier + validation ──────────────────────────────────
+        Expanded(
+          flex: 5,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(left: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildClientBanner(),
+                  _buildCartSection(),
+                  _buildBottomAction(),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -191,6 +311,9 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                   if (query.isNotEmpty) _createAndSelectCustomer(query);
                 } else {
                   _salesCtrl.setSelectedCustomer(c);
+                  // Client choisi : passer directement au clavier à la
+                  // recherche produit, sans toucher la souris.
+                  _searchFocusNode.requestFocus();
                 }
               },
               fieldViewBuilder: (ctx, ctrl, focus, onSubmit) {
@@ -206,10 +329,13 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.orange, width: 2)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
-                    suffixIcon: ctrl.text.isNotEmpty ? IconButton(icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]), onPressed: _clearCustomer) : null,
+                    suffixIcon: ctrl.text.isNotEmpty ? IconButton(icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]), onPressed: _clearCustomerSearch) : null,
                   ),
                   style: const TextStyle(fontSize: 14),
                   onChanged: (_) => setState(() {}),
+                  // Entrée : sélectionne le client surligné dans les
+                  // suggestions (comportement natif d'Autocomplete).
+                  onSubmitted: (_) => onSubmit(),
                 );
               },
               optionsViewBuilder: (ctx, onSelected, options) {
@@ -223,7 +349,8 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       width: 320,
-                      constraints: const BoxConstraints(maxHeight: 280),
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -234,49 +361,61 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                                 shrinkWrap: true,
                                 itemCount: realOptions.length,
                                 separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
-                                itemBuilder: (_, i) {
+                                itemBuilder: (context, i) {
                                   final c = realOptions[i];
                                   final solde = c.solde;
                                   final aDette = solde < 0;
-                                  return ListTile(
-                                    dense: true,
-                                    leading: CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Colors.orange[100],
-                                      child: Text(c.nom[0].toUpperCase(), style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.w600, fontSize: 12)),
+                                  // Suivi natif d'Autocomplete pour la navigation
+                                  // au clavier (flèches haut/bas) dans la liste.
+                                  final isHighlighted = AutocompleteHighlightedOption.of(context) == i;
+                                  return Container(
+                                    color: isHighlighted ? Colors.orange[50] : null,
+                                    child: ListTile(
+                                      dense: true,
+                                      leading: CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: Colors.orange[100],
+                                        child: Text(c.nom[0].toUpperCase(), style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.w600, fontSize: 12)),
+                                      ),
+                                      title: Text(c.nom, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                      subtitle: c.telephone != null ? Text(c.telephone!, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+                                      trailing: solde != 0
+                                          ? Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(color: aDette ? Colors.red[50] : Colors.green[50], borderRadius: BorderRadius.circular(4)),
+                                              child: Text(
+                                                '${aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr}: ${solde.abs().toStringAsFixed(0)}',
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: aDette ? Colors.red[700] : Colors.green[700]),
+                                              ),
+                                            )
+                                          : null,
+                                      onTap: () => onSelected(c),
                                     ),
-                                    title: Text(c.nom, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                    subtitle: c.telephone != null ? Text(c.telephone!, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
-                                    trailing: solde != 0
-                                        ? Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: aDette ? Colors.red[50] : Colors.green[50], borderRadius: BorderRadius.circular(4)),
-                                            child: Text(
-                                              '${aDette ? "Dette" : "Credit"}: ${solde.abs().toStringAsFixed(0)} F',
-                                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: aDette ? Colors.red[700] : Colors.green[700]),
-                                            ),
-                                          )
-                                        : null,
-                                    onTap: () => onSelected(c),
                                   );
                                 },
                               ),
                             ),
                           if (showCreate) ...[
                             if (realOptions.isNotEmpty) Divider(height: 1, color: Colors.grey[200]),
-                            InkWell(
-                              onTap: () => _createAndSelectCustomer(query),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.person_add, size: 18, color: Colors.orange[700]),
-                                    const SizedBox(width: 10),
-                                    Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500))),
-                                  ],
+                            Builder(builder: (context) {
+                              final isHighlighted = AutocompleteHighlightedOption.of(context) == realOptions.length;
+                              return Container(
+                                color: isHighlighted ? Colors.orange[50] : null,
+                                child: InkWell(
+                                  onTap: () => _createAndSelectCustomer(query),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.person_add, size: 18, color: Colors.orange[700]),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500))),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ],
                         ],
                       ),
@@ -302,6 +441,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
         setState(() {
           _autocompleteKey++;
         });
+        _searchFocusNode.requestFocus();
       }
     } catch (e) {
       if (mounted) {
@@ -318,19 +458,24 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
     return Obx(() {
       final customer = _salesCtrl.selectedCustomer;
       if (customer == null) return const SizedBox.shrink();
-      final solde = customer.solde ?? 0.0;
+      final solde = customer.solde;
       final aDette = solde < 0;
+      final labelSolde = aDette ? "sales_customer_debt".tr : "sales_customer_credit".tr;
+
       return Container(
-        margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [Colors.orange[600]!, Colors.orange[700]!]),
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 18,
+              radius: 20,
               backgroundColor: Colors.white,
               child: Text(customer.nom[0].toUpperCase(), style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.bold, fontSize: 16)),
             ),
@@ -350,15 +495,15 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
                 child: Column(
                   children: [
-                    Text(aDette ? 'Dette' : 'Crédit', style: TextStyle(fontSize: 9, color: Colors.grey[600])),
-                    Text('${(-solde).abs().toStringAsFixed(0)} F', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: aDette ? Colors.red[700] : Colors.green[700])),
+                    Text(labelSolde, style: TextStyle(fontSize: 9, color: Colors.grey[600])),
+                    Text('${solde.abs().toStringAsFixed(0)} F', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: aDette ? Colors.red[700] : Colors.green[700])),
                   ],
                 ),
               ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 18),
-              onPressed: _clearCustomer,
+              onPressed: _clearCustomerSearch,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
@@ -377,7 +522,6 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[200]!))),
@@ -395,232 +539,148 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
               ],
             ),
           ),
-          // Liste articles — CartWidget s'ajuste à son contenu (pas de
-          // hauteur fixe/estimée à recalculer ici) — voir cart_widget.dart.
+          // CartWidget s'ajuste à son contenu et affiche déjà sous-total/
+          // remise/total — inutile de les dupliquer ici (voir cart_widget.dart).
           CartWidget(
-            onQuantityChanged: _salesCtrl.updateCartItemQuantity,
-            onPriceChanged: _salesCtrl.updateCartItemPrice,
-            onRemoveItem: _salesCtrl.removeFromCart,
+            onQuantityChanged: (productId, quantity) => _salesCtrl.updateCartItemQuantity(productId, quantity),
+            onPriceChanged: (productId, price) => _salesCtrl.updateCartItemPrice(productId, price),
+            onRemoveItem: (productId) => _salesCtrl.removeFromCart(productId),
           ),
         ],
       ),
     );
   }
 
-  // ── Résumé & remise ───────────────────────────────────────────────────────
+  // ── Bas de page : total + action principale ────────────────────────────────
 
-  Widget _buildSummarySection() {
+  bool _canSave(ProformaController proformaCtrl) {
+    final hasItems = _salesCtrl.cartItems.isNotEmpty;
+    final hasCustomer = _salesCtrl.selectedCustomer != null;
+    return hasItems && hasCustomer && !proformaCtrl.isSaving && !_salesCtrl.hasCartValidationError;
+  }
+
+  Widget _buildBottomAction() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange[100]!),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Titre section
-          Row(
-            children: [
-              Icon(Icons.receipt_long, color: Colors.orange[700], size: 18),
-              const SizedBox(width: 8),
-              Text('proforma_invoice_label'.tr, style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.w600, fontSize: 13)),
-            ],
-          ),
-          const Divider(height: 20),
-
-          // Résumé des montants
+          // Résumé total — même bandeau que la page de vente
           Obx(() {
-            final subtotal = _salesCtrl.cartSubtotal;
-            final discount = _salesCtrl.discount; // Calculé automatiquement
             final total = _salesCtrl.cartTotal;
+            final itemCount = _salesCtrl.cartItems.length;
 
-            return Column(
-              children: [
-                // Sous-total (prix originaux)
-                _summaryRow('proforma_subtotal'.tr, '${subtotal.toStringAsFixed(0)} FCFA'),
-
-                // Remise totale (si applicable)
-                if (discount > 0) ...[
-                  const SizedBox(height: 8),
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('total'.tr, style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 4),
+                      Text('${total.toStringAsFixed(0)} FCFA', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    ],
+                  ),
                   Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.green[200]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.discount, size: 16, color: Colors.green[700]),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Remise appliquée sur les produits',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '-${discount.toStringAsFixed(0)} FCFA',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.green[700],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.orange[50], borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                      'sales_cart_items_count'.trParams({'count': itemCount.toString()}),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.orange[700]),
                     ),
                   ),
                 ],
-              ],
+              ),
             );
           }),
 
-          const Divider(height: 20),
-
-          // Total final
-          Obx(() => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('proforma_total'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text(
-                    '${_salesCtrl.cartTotal.toStringAsFixed(0)} FCFA',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+          // Bouton principal : Enregistrer / Mettre à jour la commande
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: GetBuilder<ProformaController>(
+              builder: (proformaCtrl) => Obx(() {
+                final canSave = _canSave(proformaCtrl);
+                return SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    focusNode: _primaryActionFocusNode,
+                    onPressed: canSave ? () => _saveProforma(proformaCtrl) : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange[700],
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      disabledBackgroundColor: Colors.grey[300],
+                    ),
+                    child: proformaCtrl.isSaving
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.description_outlined, size: 22),
+                              const SizedBox(width: 8),
+                              Text(
+                                _salesCtrl.cartItems.isEmpty
+                                    ? 'sales_cart_empty_action'.tr
+                                    : (_isEditing ? 'proforma_update'.tr : 'proforma_save_action'.tr),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
                   ),
-                ],
-              )),
-
-          const SizedBox(height: 12),
-
-          // Note informative sur les remises
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Les remises sont appliquées directement sur le prix unitaire de chaque produit dans le panier.',
-                    style: TextStyle(fontSize: 11, color: Colors.blue[800]),
-                  ),
-                ),
-              ],
+                );
+              }),
             ),
           ),
 
-          const SizedBox(height: 8),
-
-          // Note informative sur la proforma
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Row(
+          // Note + raccourcis clavier — même style que la page de vente
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
               children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'proforma_no_stock_movement'.tr,
-                    style: TextStyle(fontSize: 11, color: Colors.orange[800]),
-                  ),
+                Text(
+                  'proforma_no_stock_movement'.tr,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'proforma_keyboard_shortcuts'.tr,
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _summaryRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-      ],
-    );
-  }
-
-  // ── Boutons d'action ──────────────────────────────────────────────────────
-
-  Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: GetBuilder<ProformaController>(
-        builder: (proformaCtrl) => Obx(() {
-          // Vérifier si le bouton doit être activé
-          final hasItems = _salesCtrl.cartItems.isNotEmpty;
-          final hasCustomer = _salesCtrl.selectedCustomer != null;
-          final canSave = hasItems && hasCustomer && !proformaCtrl.isSaving;
-
-          return Column(
-            children: [
-              // Bouton principal : Enregistrer la proforma
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: canSave ? () => _saveProforma(proformaCtrl) : null,
-                  icon: proformaCtrl.isSaving
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : const Icon(Icons.description_outlined, size: 22),
-                  label: Text(
-                    proformaCtrl.isSaving
-                        ? 'proforma_saving'.tr
-                        : _isEditing
-                            ? 'proforma_update'.tr
-                            : 'proforma_save_action'.tr,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[700],
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    disabledBackgroundColor: Colors.grey[300],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Bouton secondaire : Annuler
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton(
-                  onPressed: () => Get.back(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
-                    side: BorderSide(color: Colors.grey[300]!),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text('cancel'.tr),
-                ),
-              ),
-            ],
-          );
-        }),
       ),
     );
   }
 
   // ── Logique sauvegarde ────────────────────────────────────────────────────
+
+  /// Finalisation depuis la vue rapide : contrairement à _saveProforma, ne
+  /// quitte pas la page après enregistrement — la vue rapide boucle sur
+  /// Client pour saisir la commande suivante sans repasser par la liste.
+  Future<bool> _handleQuickFinalize(double _) async {
+    if (_salesCtrl.cartItems.isEmpty) return false;
+    final proformaCtrl = Get.find<ProformaController>();
+    final proforma = await proformaCtrl.createFromCart(_salesCtrl);
+    if (proforma != null) {
+      _salesCtrl.clearCart();
+      return true;
+    }
+    return false;
+  }
 
   Future<void> _saveProforma(ProformaController proformaCtrl) async {
     if (_salesCtrl.cartItems.isEmpty) return;

@@ -177,6 +177,42 @@ extension PrintFormatExtension on PrintFormat {
   }
 }
 
+/// Comportement d'impression après validation d'une vente/facture.
+enum PrintMode {
+  /// Impression immédiate sur l'imprimante par défaut, sans aperçu.
+  direct,
+
+  /// Affiche l'aperçu et laisse l'utilisateur choisir le format avant d'imprimer.
+  preview,
+
+  /// N'imprime pas et n'affiche pas d'aperçu : retour direct après validation.
+  none,
+}
+
+extension PrintModeExtension on PrintMode {
+  String get displayName {
+    switch (this) {
+      case PrintMode.direct:
+        return 'Impression directe';
+      case PrintMode.preview:
+        return 'Aperçu avant impression';
+      case PrintMode.none:
+        return 'Sans impression';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case PrintMode.direct:
+        return 'Imprime immédiatement sur l\'imprimante par défaut, sans afficher d\'aperçu';
+      case PrintMode.preview:
+        return 'Affiche l\'aperçu et permet de choisir le format avant d\'imprimer';
+      case PrintMode.none:
+        return 'Ne rien imprimer ni afficher après la validation de la facture';
+    }
+  }
+}
+
 /// Classe pour les marges d'impression
 @JsonSerializable()
 class PrintMargins {

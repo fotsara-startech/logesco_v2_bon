@@ -355,6 +355,8 @@ class _RoleFormViewState extends State<RoleFormView> {
         return Icons.warehouse;
       case 'suppliers':
         return Icons.business;
+      case 'commercials':
+        return Icons.badge_outlined;
       case 'customers':
         return Icons.people;
       case 'sales':

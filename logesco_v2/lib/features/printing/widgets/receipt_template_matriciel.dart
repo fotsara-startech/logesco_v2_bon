@@ -71,6 +71,7 @@ class ReceiptTemplateMatriciel extends ReceiptTemplateBase {
                       '${t('date')}: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}',
                       style: style,
                     ),
+                    if (receipt.sellerName?.isNotEmpty == true) Text('${t('soldBy')}: ${receipt.sellerName}', style: style),
                   ],
                 ),
               ),

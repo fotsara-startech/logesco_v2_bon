@@ -188,8 +188,30 @@ class _CartItemState extends State<_CartItem> {
   bool _isUserTyping = false;
   bool _isUserTypingPrice = false;
   String? _priceError;
+  String? _qtyError;
 
   double get _minPrice => widget.item.originalPrice - widget.item.maxDiscountAllowed;
+
+  /// Quantité maximale pour cet article : le stock disponible ne tient déjà
+  /// plus compte de ce qui est dans le panier, donc on rajoute sa propre
+  /// quantité actuelle pour connaître la vraie marge de manœuvre.
+  int get _maxQuantity {
+    try {
+      final controller = Get.find<SalesController>();
+      return controller.getAvailableQuantity(widget.item.productId) + (widget.item.quantity as int);
+    } catch (_) {
+      return widget.item.quantity as int;
+    }
+  }
+
+  /// Fait remonter au contrôleur si cette ligne a une erreur (prix ou
+  /// quantité) — utilisé pour désactiver le bouton de validation de la
+  /// facture tant qu'une ligne du panier n'est pas valide.
+  void _reportLineError() {
+    try {
+      Get.find<SalesController>().setCartLineError(widget.item.productId, _priceError != null || _qtyError != null);
+    } catch (_) {}
+  }
 
   @override
   void initState() {
@@ -209,6 +231,9 @@ class _CartItemState extends State<_CartItem> {
 
   @override
   void dispose() {
+    try {
+      Get.find<SalesController>().setCartLineError(widget.item.productId, false);
+    } catch (_) {}
     _quantityController.dispose();
     _priceController.dispose();
     _priceFocusNode.dispose();
@@ -227,7 +252,10 @@ class _CartItemState extends State<_CartItem> {
       // à la validation) : l'erreur affichée n'est plus d'actualité.
       if (_priceError != null && widget.item.unitPrice >= _minPrice) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _priceError = null);
+          if (mounted) {
+            setState(() => _priceError = null);
+            _reportLineError();
+          }
         });
       }
     }
@@ -297,6 +325,9 @@ class _CartItemState extends State<_CartItem> {
                             borderRadius: BorderRadius.circular(4),
                             borderSide: const BorderSide(color: Colors.blue, width: 2),
                           ),
+                          errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                          errorText: _qtyError,
+                          errorStyle: const TextStyle(fontSize: 9),
                           isDense: true,
                         ),
                         textAlign: TextAlign.center,
@@ -305,6 +336,16 @@ class _CartItemState extends State<_CartItem> {
                         onChanged: (value) {
                           _isUserTyping = true;
                           final quantity = int.tryParse(value);
+                          setState(() {
+                            if (quantity == null || quantity <= 0) {
+                              _qtyError = 'sales_invalid_quantity'.tr;
+                            } else if (quantity > _maxQuantity) {
+                              _qtyError = 'sales_stock_insufficient_detail'.trParams({'requested': quantity.toString(), 'available': _maxQuantity.toString()});
+                            } else {
+                              _qtyError = null;
+                            }
+                          });
+                          _reportLineError();
                           if (quantity != null && quantity > 0) {
                             widget.onQuantityChanged(widget.item.productId, quantity);
                           }
@@ -312,12 +353,15 @@ class _CartItemState extends State<_CartItem> {
                         onFieldSubmitted: (value) {
                           _isUserTyping = false;
                           final quantity = int.tryParse(value);
-                          if (quantity != null && quantity > 0) {
+                          if (quantity != null && quantity > 0 && quantity <= _maxQuantity) {
                             widget.onQuantityChanged(widget.item.productId, quantity);
                           } else {
-                            // Si la valeur n'est pas valide, remettre la quantité actuelle
+                            // Valeur invalide ou hors stock à la validation : on
+                            // annule la saisie et on revient à la quantité actuelle.
                             _quantityController.text = widget.item.quantity.toString();
                           }
+                          setState(() => _qtyError = null);
+                          _reportLineError();
                         },
                         onTap: () {
                           _isUserTyping = true;
@@ -361,6 +405,7 @@ class _CartItemState extends State<_CartItem> {
                       setState(() {
                         _priceError = (price != null && price < _minPrice) ? 'sales_cart_price_below_min'.trParams({'min': _minPrice.toStringAsFixed(0)}) : null;
                       });
+                      _reportLineError();
                       // Le prix saisi est pris en compte tel quel — pas de correction
                       // automatique. L'utilisateur voit l'erreur ci-dessus et peut
                       // corriger ; s'il valide quand même, le prix minimum est

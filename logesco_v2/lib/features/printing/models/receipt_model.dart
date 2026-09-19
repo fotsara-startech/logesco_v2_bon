@@ -32,6 +32,7 @@ class Receipt {
   final DateTime? lastReprintDate;
   final String? reprintBy;
   final bool isProforma; // true = facture proforma (titre différent)
+  final String? sellerName; // Nom du vendeur/caissier ayant réalisé la vente
 
   const Receipt({
     required this.id,
@@ -56,6 +57,7 @@ class Receipt {
     this.lastReprintDate,
     this.reprintBy,
     this.isProforma = false,
+    this.sellerName,
   });
 
   factory Receipt.fromJson(Map<String, dynamic> json) => _$ReceiptFromJson(json);
@@ -104,6 +106,7 @@ class Receipt {
       isReprint: false,
       reprintCount: 0,
       isProforma: true,
+      sellerName: proforma.vendeurNom as String?,
     );
   }
 
@@ -194,6 +197,7 @@ class Receipt {
       reprintCount: reprintCount,
       lastReprintDate: lastReprintDate,
       reprintBy: reprintBy,
+      sellerName: sale.vendeur?.nomUtilisateur,
     );
   }
 
@@ -224,6 +228,7 @@ class Receipt {
       reprintCount: reprintCount + 1,
       lastReprintDate: DateTime.now(),
       reprintBy: reprintBy,
+      sellerName: sellerName,
     );
   }
 
@@ -281,6 +286,7 @@ class Receipt {
     DateTime? lastReprintDate,
     String? reprintBy,
     bool? isProforma,
+    String? sellerName,
   }) {
     return Receipt(
       id: id ?? this.id,
@@ -305,6 +311,7 @@ class Receipt {
       lastReprintDate: lastReprintDate ?? this.lastReprintDate,
       reprintBy: reprintBy ?? this.reprintBy,
       isProforma: isProforma ?? this.isProforma,
+      sellerName: sellerName ?? this.sellerName,
     );
   }
 }

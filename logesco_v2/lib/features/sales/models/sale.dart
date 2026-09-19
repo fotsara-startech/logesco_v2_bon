@@ -17,6 +17,56 @@ class SellerSummary {
   Map<String, dynamic> toJson() => _$SellerSummaryToJson(this);
 }
 
+/// Zone (quartier) rattachée à un [CommercialSummary] — résumé minimal,
+/// juste ce qu'il faut pour l'affichage sur une vente.
+@JsonSerializable()
+class CommercialZoneSummary {
+  final int id;
+  final String nom;
+  @JsonKey(name: 'ville')
+  final CommercialVilleSummary? ville;
+
+  const CommercialZoneSummary({required this.id, required this.nom, this.ville});
+
+  factory CommercialZoneSummary.fromJson(Map<String, dynamic> json) => _$CommercialZoneSummaryFromJson(json);
+  Map<String, dynamic> toJson() => _$CommercialZoneSummaryToJson(this);
+}
+
+@JsonSerializable()
+class CommercialVilleSummary {
+  final int id;
+  final String nom;
+
+  const CommercialVilleSummary({required this.id, required this.nom});
+
+  factory CommercialVilleSummary.fromJson(Map<String, dynamic> json) => _$CommercialVilleSummaryFromJson(json);
+  Map<String, dynamic> toJson() => _$CommercialVilleSummaryToJson(this);
+}
+
+/// Commercial terrain attribué à une vente — fiche de référence, pas un
+/// compte utilisateur (voir feature commercials). Distinct de [SellerSummary]
+/// qui désigne la caissière ayant réellement encaissé la vente.
+@JsonSerializable()
+class CommercialSummary {
+  final int id;
+  final String nom;
+  final String? prenom;
+  final CommercialZoneSummary? zone;
+
+  const CommercialSummary({required this.id, required this.nom, this.prenom, this.zone});
+
+  factory CommercialSummary.fromJson(Map<String, dynamic> json) => _$CommercialSummaryFromJson(json);
+  Map<String, dynamic> toJson() => _$CommercialSummaryToJson(this);
+
+  String get nomComplet => prenom != null && prenom!.isNotEmpty ? '$nom $prenom' : nom;
+
+  String get libelleAvecZone {
+    if (zone == null) return nomComplet;
+    final villeNom = zone!.ville?.nom;
+    return villeNom != null ? '$nomComplet — ${zone!.nom}, $villeNom' : '$nomComplet — ${zone!.nom}';
+  }
+}
+
 /// Modèle de vente - SOLUTION 2: Système de compte client centralisé
 ///
 /// IMPORTANT: Le statut de la vente est toujours "terminee" dès sa création.
@@ -35,6 +85,8 @@ class Sale {
   final Customer? client;
   final int? vendeurId;
   final SellerSummary? vendeur;
+  final int? commercialId;
+  final CommercialSummary? commercial;
   final String modePaiement;
   @JsonKey(defaultValue: 0.0)
   final double sousTotal;
@@ -63,6 +115,8 @@ class Sale {
     this.client,
     this.vendeurId,
     this.vendeur,
+    this.commercialId,
+    this.commercial,
     required this.modePaiement,
     required this.sousTotal,
     required this.montantTotal,
@@ -149,6 +203,7 @@ class SaleDetail {
 class CreateSaleRequest {
   final int? clientId;
   final int? boutiqueId;
+  final int? commercialId;
   final String modePaiement;
   final double montantRemise;
   final double montantPaye;
@@ -161,6 +216,7 @@ class CreateSaleRequest {
   const CreateSaleRequest({
     this.clientId,
     this.boutiqueId,
+    this.commercialId,
     required this.modePaiement,
     required this.montantRemise,
     required this.montantPaye,
