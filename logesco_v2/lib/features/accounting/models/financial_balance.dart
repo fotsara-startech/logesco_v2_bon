@@ -108,8 +108,8 @@ class FinancialBalance {
   /// Crée un bilan depuis JSON
   factory FinancialBalance.fromJson(Map<String, dynamic> json) {
     return FinancialBalance(
-      startDate: DateTime.parse((json['startDate'] ?? DateTime.now().toIso8601String()) as String),
-      endDate: DateTime.parse((json['endDate'] ?? DateTime.now().toIso8601String()) as String),
+      startDate: DateTime.parse((json['startDate'] ?? DateTime.now().toIso8601String()) as String).toLocal(),
+      endDate: DateTime.parse((json['endDate'] ?? DateTime.now().toIso8601String()) as String).toLocal(),
       totalRevenue: ((json['totalRevenue'] ?? 0.0) as num).toDouble(),
       totalCostOfGoods: ((json['totalCostOfGoods'] ?? 0.0) as num).toDouble(),
       grossProfit: ((json['grossProfit'] ?? 0.0) as num).toDouble(),
@@ -228,7 +228,7 @@ class DailyBalance {
 
   factory DailyBalance.fromJson(Map<String, dynamic> json) {
     return DailyBalance(
-      date: DateTime.parse((json['date'] ?? DateTime.now().toIso8601String()) as String),
+      date: DateTime.parse((json['date'] ?? DateTime.now().toIso8601String()) as String).toLocal(),
       revenue: ((json['revenue'] ?? 0.0) as num).toDouble(),
       expenses: ((json['expenses'] ?? 0.0) as num).toDouble(),
       profit: ((json['profit'] ?? 0.0) as num).toDouble(),

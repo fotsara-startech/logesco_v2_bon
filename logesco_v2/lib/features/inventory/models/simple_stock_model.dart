@@ -87,7 +87,7 @@ class SimpleStock {
     for (String key in keys) {
       if (json.containsKey(key) && json[key] != null) {
         try {
-          return DateTime.parse(json[key] as String);
+          return DateTime.parse(json[key] as String).toLocal();
         } catch (e) {
           continue;
         }

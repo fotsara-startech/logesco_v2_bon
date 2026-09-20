@@ -258,8 +258,9 @@ class Receipt {
   }
 
   static DateTime _dateFromJsonLocal(String json) {
-    // Parse sans conversion (reste en heure locale)
-    return DateTime.parse(json);
+    // Voir Sale._dateFromJsonLocal : le backend renvoie du UTC ("Z"), .toLocal()
+    // est nécessaire pour retrouver l'heure locale (no-op si déjà locale).
+    return DateTime.parse(json).toLocal();
   }
 
   /// Crée une copie avec des modifications

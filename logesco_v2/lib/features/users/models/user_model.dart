@@ -33,8 +33,8 @@ class User {
         email: json['email']?.isEmpty == true ? null : json['email'], // null si vide
         role: json['role'] != null ? role_model.UserRole.fromJson(json['role']) : _createDefaultRole(),
         isActive: json['isActive'] ?? true,
-        dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,
-        dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']) : null,
+        dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']).toLocal() : null,
+        dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']).toLocal() : null,
       );
 
       print('✅ [User.fromJson] Successfully created user: ${user.nomUtilisateur}');

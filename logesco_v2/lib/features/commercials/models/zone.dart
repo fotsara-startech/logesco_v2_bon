@@ -24,8 +24,8 @@ class Zone {
       nom: json['nom'] as String,
       villeId: json['villeId'] as int,
       ville: json['ville'] != null ? Ville.fromJson(json['ville'] as Map<String, dynamic>) : null,
-      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String) : DateTime.now(),
-      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String) : DateTime.now(),
+      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String).toLocal() : DateTime.now(),
+      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String).toLocal() : DateTime.now(),
     );
   }
 

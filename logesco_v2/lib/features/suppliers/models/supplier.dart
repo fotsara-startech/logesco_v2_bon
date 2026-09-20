@@ -36,8 +36,8 @@ class Supplier {
       email: json['email'] as String?,
       adresse: json['adresse'] as String?,
       solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
-      dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr) : DateTime.now(),
-      dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr) : DateTime.now(),
+      dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr).toLocal() : DateTime.now(),
+      dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr).toLocal() : DateTime.now(),
     );
   }
 
@@ -213,7 +213,7 @@ class SupplierTransaction {
       if (value is DateTime) return value;
       if (value is String) {
         try {
-          return DateTime.parse(value);
+          return DateTime.parse(value).toLocal();
         } catch (e) {
           return defaultValue ?? DateTime.now();
         }
@@ -311,7 +311,7 @@ class UnpaidProcurement {
     return UnpaidProcurement(
       id: parseInt(json['id']),
       reference: json['reference']?.toString() ?? '',
-      dateCommande: json['dateCommande'] != null ? DateTime.parse(json['dateCommande'] as String) : DateTime.now(),
+      dateCommande: json['dateCommande'] != null ? DateTime.parse(json['dateCommande'] as String).toLocal() : DateTime.now(),
       montantTotal: parseDouble(json['montantTotal']),
       montantPaye: parseDouble(json['montantPaye']),
       montantRestant: parseDouble(json['montantRestant']),

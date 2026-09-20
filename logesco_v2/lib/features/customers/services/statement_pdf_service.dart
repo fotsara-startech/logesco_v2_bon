@@ -417,7 +417,7 @@ class StatementPdfService {
         rows.add(
           pw.TableRow(
             children: [
-              _buildTableCell(_formatDateForPDF(DateTime.parse(t['dateTransaction'].toString()))),
+              _buildTableCell(_formatDateForPDF(DateTime.parse(t['dateTransaction'].toString()).toLocal())),
               _buildTableCell(description),
               _buildTableCell(
                 '${isCredit ? '+' : '-'}${montant.toStringAsFixed(0)} F',

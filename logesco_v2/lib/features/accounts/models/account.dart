@@ -75,7 +75,7 @@ class CompteClient extends Account {
       if (value is DateTime) return value;
       if (value is String) {
         try {
-          return DateTime.parse(value);
+          return DateTime.parse(value).toLocal();
         } catch (e) {
           return defaultValue ?? DateTime.now();
         }
@@ -173,7 +173,7 @@ class CompteFournisseur extends Account {
       if (value is DateTime) return value;
       if (value is String) {
         try {
-          return DateTime.parse(value);
+          return DateTime.parse(value).toLocal();
         } catch (e) {
           return defaultValue ?? DateTime.now();
         }
@@ -287,7 +287,7 @@ class TransactionCompte {
       if (value is DateTime) return value;
       if (value is String) {
         try {
-          return DateTime.parse(value);
+          return DateTime.parse(value).toLocal();
         } catch (e) {
           return defaultValue ?? DateTime.now();
         }
@@ -559,7 +559,7 @@ class UnpaidSale {
     return UnpaidSale(
       id: json['id'] as int,
       reference: json['reference'] as String,
-      dateVente: DateTime.parse(json['dateVente'] as String),
+      dateVente: DateTime.parse(json['dateVente'] as String).toLocal(),
       montantTotal: (json['montantTotal'] as num).toDouble(),
       montantPaye: (json['montantPaye'] as num).toDouble(),
       montantRestant: (json['montantRestant'] as num).toDouble(),

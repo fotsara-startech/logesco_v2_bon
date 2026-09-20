@@ -135,8 +135,8 @@ class ActivityReportService {
           email: companyData['email'],
           nuiRccm: companyData['nuiRccm'],
           logo: companyData['logo'],
-          createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']) : DateTime.now(),
-          updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']) : DateTime.now(),
+          createdAt: companyData['dateCreation'] != null ? DateTime.parse(companyData['dateCreation']).toLocal() : DateTime.now(),
+          updatedAt: companyData['dateModification'] != null ? DateTime.parse(companyData['dateModification']).toLocal() : DateTime.now(),
         );
         print('✅ [DEBUG] CompanyProfile créé: ${companyProfile.name}');
         print('✅ [DEBUG] Logo path: ${companyProfile.logo}');

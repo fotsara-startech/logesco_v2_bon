@@ -56,7 +56,7 @@
         if (value is DateTime) return value;
         if (value is String) {
           try {
-            return DateTime.parse(value);
+            return DateTime.parse(value).toLocal();
           } catch (e) {
             return defaultValue ?? DateTime.now();
           }

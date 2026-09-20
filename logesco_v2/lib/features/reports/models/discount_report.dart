@@ -322,7 +322,7 @@ class SaleInfo {
     return SaleInfo(
       id: json['id'] as int? ?? 0,
       numeroVente: json['numeroVente'] as String? ?? '',
-      dateVente: json['dateVente'] != null ? DateTime.tryParse(json['dateVente'] as String) ?? DateTime.now() : DateTime.now(),
+      dateVente: json['dateVente'] != null ? DateTime.tryParse(json['dateVente'] as String)?.toLocal() ?? DateTime.now() : DateTime.now(),
       vendeur: json['vendeur'] != null ? VendorInfo.fromJson(json['vendeur'] as Map<String, dynamic>) : null,
       client: json['client'] != null ? CustomerInfo.fromJson(json['client'] as Map<String, dynamic>) : null,
     );

@@ -195,7 +195,7 @@ class SalesChartWidget extends StatelessWidget {
 
   Widget _buildDayLabel(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       final dayKeys = [
         'dashboard_day_sun',
         'dashboard_day_mon',

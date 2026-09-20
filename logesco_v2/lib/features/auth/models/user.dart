@@ -53,9 +53,9 @@ class User {
 
     try {
       if (json['dateCreation'] != null) {
-        dateCreation = DateTime.parse(json['dateCreation'] as String);
+        dateCreation = DateTime.parse(json['dateCreation'] as String).toLocal();
       } else if (json['created_at'] != null) {
-        dateCreation = DateTime.parse(json['created_at'] as String);
+        dateCreation = DateTime.parse(json['created_at'] as String).toLocal();
       }
     } catch (e) {
       // Garder la date par défaut si parsing échoue
@@ -63,9 +63,9 @@ class User {
 
     try {
       if (json['dateModification'] != null) {
-        dateModification = DateTime.parse(json['dateModification'] as String);
+        dateModification = DateTime.parse(json['dateModification'] as String).toLocal();
       } else if (json['updated_at'] != null) {
-        dateModification = DateTime.parse(json['updated_at'] as String);
+        dateModification = DateTime.parse(json['updated_at'] as String).toLocal();
       }
     } catch (e) {
       // Garder la date par défaut si parsing échoue

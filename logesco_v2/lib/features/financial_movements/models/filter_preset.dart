@@ -49,13 +49,13 @@ class FilterPreset {
       id: json['id'] as String,
       name: (json['name'] ?? '') as String,
       description: json['description'] as String?,
-      startDate: json['startDate'] != null ? DateTime.parse((json['startDate'] ?? DateTime.now().toIso8601String()) as String) : null,
-      endDate: json['endDate'] != null ? DateTime.parse((json['endDate'] ?? DateTime.now().toIso8601String()) as String) : null,
+      startDate: json['startDate'] != null ? DateTime.parse((json['startDate'] ?? DateTime.now().toIso8601String()) as String).toLocal() : null,
+      endDate: json['endDate'] != null ? DateTime.parse((json['endDate'] ?? DateTime.now().toIso8601String()) as String).toLocal() : null,
       categoryId: json['categoryId'] as int?,
       searchQuery: json['searchQuery'] as String?,
       minAmount: json['minAmount'] != null ? _parseDouble(json['minAmount']) : null,
       maxAmount: json['maxAmount'] != null ? _parseDouble(json['maxAmount']) : null,
-      createdAt: DateTime.parse((json['createdAt'] ?? DateTime.now().toIso8601String()) as String),
+      createdAt: DateTime.parse((json['createdAt'] ?? DateTime.now().toIso8601String()) as String).toLocal(),
       isDefault: json['isDefault'] as bool? ?? false,
     );
   }

@@ -41,8 +41,8 @@ class ActivityReport {
 
   factory ActivityReport.fromJson(Map<String, dynamic> json) {
     return ActivityReport(
-      startDate: DateTime.parse(json['startDate']),
-      endDate: DateTime.parse(json['endDate']),
+      startDate: DateTime.parse(json['startDate']).toLocal(),
+      endDate: DateTime.parse(json['endDate']).toLocal(),
       companyName: json['companyName'] ?? '',
       reportPeriod: json['reportPeriod'] ?? '',
       companyInfo: CompanyInfo.fromJson(json['companyInfo'] ?? {}),
@@ -198,7 +198,7 @@ class DailySales {
 
   factory DailySales.fromJson(Map<String, dynamic> json) {
     return DailySales(
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       amount: (json['amount'] ?? 0.0).toDouble(),
       count: json['count'] ?? 0,
     );
@@ -311,7 +311,7 @@ class DailyMovement {
 
   factory DailyMovement.fromJson(Map<String, dynamic> json) {
     return DailyMovement(
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       income: (json['income'] ?? 0.0).toDouble(),
       expenses: (json['expenses'] ?? 0.0).toDouble(),
       netFlow: (json['netFlow'] ?? 0.0).toDouble(),

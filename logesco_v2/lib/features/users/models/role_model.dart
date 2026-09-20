@@ -54,8 +54,8 @@ class UserRole {
       displayName: json['displayName'] ?? json['display_name'] ?? '',
       isAdmin: json['isAdmin'] ?? json['is_admin'] ?? false,
       privileges: parsedPrivileges,
-      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,
-      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']) : null,
+      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']).toLocal() : null,
+      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']).toLocal() : null,
       userCount: json['userCount'] ?? 0,
     );
   }

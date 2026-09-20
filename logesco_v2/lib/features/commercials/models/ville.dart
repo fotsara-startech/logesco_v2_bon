@@ -16,8 +16,8 @@ class Ville {
     return Ville(
       id: json['id'] as int,
       nom: json['nom'] as String,
-      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String) : DateTime.now(),
-      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String) : DateTime.now(),
+      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String).toLocal() : DateTime.now(),
+      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String).toLocal() : DateTime.now(),
     );
   }
 

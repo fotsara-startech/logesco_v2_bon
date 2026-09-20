@@ -115,8 +115,11 @@ class ProformaInvoice {
   }
 
   static DateTime _parseDate(dynamic v) {
-    if (v is DateTime) return v;
-    if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+    // Le backend (Prisma) renvoie ses DateTime en UTC (suffixe "Z") : sans
+    // .toLocal(), afficher .hour/.minute montre l'heure UTC, décalée d'une
+    // heure par rapport au fuseau local (WAT = UTC+1). Voir Sale._dateFromJsonLocal.
+    if (v is DateTime) return v.toLocal();
+    if (v is String) return (DateTime.tryParse(v) ?? DateTime.now()).toLocal();
     return DateTime.now();
   }
 }

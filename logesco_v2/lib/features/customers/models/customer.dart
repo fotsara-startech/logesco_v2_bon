@@ -45,8 +45,8 @@ class Customer {
       nui: json['nui'] as String?,
       rccm: json['rccm'] as String?,
       solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
-      dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr) : DateTime.now(),
-      dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr) : DateTime.now(),
+      dateCreation: dateCreationStr != null ? DateTime.parse(dateCreationStr).toLocal() : DateTime.now(),
+      dateModification: dateModificationStr != null ? DateTime.parse(dateModificationStr).toLocal() : DateTime.now(),
     );
   }
 

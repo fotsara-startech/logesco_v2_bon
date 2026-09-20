@@ -34,8 +34,8 @@ class Boutique {
       description: json['description'] as String?,
       estPrincipale: json['estPrincipale'] as bool? ?? json['est_principale'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? true,
-      dateCreation: DateTime.tryParse(json['dateCreation'] as String? ?? '') ?? DateTime.now(),
-      dateModification: DateTime.tryParse(json['dateModification'] as String? ?? '') ?? DateTime.now(),
+      dateCreation: DateTime.tryParse(json['dateCreation'] as String? ?? '')?.toLocal() ?? DateTime.now(),
+      dateModification: DateTime.tryParse(json['dateModification'] as String? ?? '')?.toLocal() ?? DateTime.now(),
     );
   }
 

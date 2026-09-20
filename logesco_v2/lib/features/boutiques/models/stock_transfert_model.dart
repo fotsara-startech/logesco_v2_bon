@@ -40,7 +40,7 @@ class StockTransfert {
       quantite: json['quantite'] as int? ?? 0,
       notes: json['notes'] as String?,
       utilisateurId: json['utilisateurId'] as int? ?? json['utilisateur_id'] as int? ?? 0,
-      dateTransfert: DateTime.tryParse(json['dateTransfert'] as String? ?? json['date_transfert'] as String? ?? '') ?? DateTime.now(),
+      dateTransfert: DateTime.tryParse(json['dateTransfert'] as String? ?? json['date_transfert'] as String? ?? '')?.toLocal() ?? DateTime.now(),
       sourceBoutique: json['sourceBoutique'] as Map<String, dynamic>?,
       destBoutique: json['destBoutique'] as Map<String, dynamic>?,
       produit: json['produit'] as Map<String, dynamic>?,

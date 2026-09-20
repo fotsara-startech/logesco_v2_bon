@@ -607,7 +607,7 @@ class SupplierStatementPdfService {
     if (date == null) return '';
     DateTime dt;
     if (date is String) {
-      dt = DateTime.parse(date);
+      dt = DateTime.parse(date).toLocal();
     } else if (date is DateTime) {
       dt = date;
     } else {

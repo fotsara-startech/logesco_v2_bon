@@ -41,10 +41,10 @@ class CashRegister {
       utilisateurId: json['utilisateurId'],
       nomUtilisateur: json['nomUtilisateur'],
       boutiqueId: json['boutiqueId'],
-      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']) : null,
-      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']) : null,
-      dateOuverture: json['dateOuverture'] != null ? DateTime.parse(json['dateOuverture']) : null,
-      dateFermeture: json['dateFermeture'] != null ? DateTime.parse(json['dateFermeture']) : null,
+      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation']).toLocal() : null,
+      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification']).toLocal() : null,
+      dateOuverture: json['dateOuverture'] != null ? DateTime.parse(json['dateOuverture']).toLocal() : null,
+      dateFermeture: json['dateFermeture'] != null ? DateTime.parse(json['dateFermeture']).toLocal() : null,
     );
   }
 
@@ -161,7 +161,7 @@ class CashMovement {
       description: json['description'] ?? '',
       utilisateurId: json['utilisateurId'],
       nomUtilisateur: json['nomUtilisateur'],
-      dateCreation: DateTime.parse(json['dateCreation']),
+      dateCreation: DateTime.parse(json['dateCreation']).toLocal(),
       metadata: json['metadata'],
     );
   }

@@ -141,8 +141,12 @@ class Sale {
   }
 
   static DateTime _dateFromJsonLocal(String json) {
-    // Parse sans conversion (reste en heure locale)
-    return DateTime.parse(json);
+    // Le backend (Prisma) sérialise ses DateTime en UTC (suffixe "Z").
+    // DateTime.parse respecte ce suffixe et renvoie un DateTime marqué UTC ;
+    // sans .toLocal(), lire .hour/.minute dessus affiche l'heure UTC (décalée
+    // d'une heure par rapport au fuseau local, WAT = UTC+1). .toLocal() est
+    // un no-op si la chaîne ne portait pas de fuseau (déjà locale).
+    return DateTime.parse(json).toLocal();
   }
 
   double get montantFinal => montantTotal;
@@ -238,8 +242,9 @@ class CreateSaleRequest {
 
   static DateTime? _dateFromJsonLocal(String? json) {
     if (json == null) return null;
-    // Parse sans conversion (reste en heure locale)
-    return DateTime.parse(json);
+    // Voir Sale._dateFromJsonLocal : le backend renvoie du UTC ("Z"), .toLocal()
+    // est nécessaire pour retrouver l'heure locale (no-op si déjà locale).
+    return DateTime.parse(json).toLocal();
   }
 }
 

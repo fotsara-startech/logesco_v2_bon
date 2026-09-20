@@ -889,8 +889,8 @@ class PrintingService {
         adresse: clientData['adresse'],
         nui: clientData['nui'],
         rccm: clientData['rccm'],
-        dateCreation: DateTime.tryParse(clientData['dateCreation'] ?? '') ?? now,
-        dateModification: DateTime.tryParse(clientData['dateModification'] ?? '') ?? now,
+        dateCreation: DateTime.tryParse(clientData['dateCreation'] ?? '')?.toLocal() ?? now,
+        dateModification: DateTime.tryParse(clientData['dateModification'] ?? '')?.toLocal() ?? now,
       );
     }
 

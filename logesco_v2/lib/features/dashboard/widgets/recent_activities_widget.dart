@@ -151,7 +151,7 @@ class RecentActivitiesWidget extends StatelessWidget {
   }
 
   Widget _buildActivityItem(Map<String, dynamic> activity) {
-    final timestamp = DateTime.tryParse(activity['timestamp'] ?? '') ?? DateTime.now();
+    final timestamp = DateTime.tryParse(activity['timestamp'] ?? '')?.toLocal() ?? DateTime.now();
     final timeAgo = _getTimeAgo(timestamp);
     final color = _getActivityColor(activity['color'] ?? 'blue');
     final icon = _getActivityIcon(activity['icon'] ?? 'info');

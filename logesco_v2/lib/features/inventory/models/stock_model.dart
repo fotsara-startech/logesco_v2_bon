@@ -40,7 +40,7 @@ class Stock {
             json['updatedAt'] as String? ??
             json['updated_at'] as String?;
         if (dateStr != null) {
-          derniereMaj = DateTime.parse(dateStr);
+          derniereMaj = DateTime.parse(dateStr).toLocal();
         }
       } catch (e) {
         derniereMaj = DateTime.now();
@@ -270,7 +270,7 @@ class StockMovement {
       changementQuantite: _safeExtractInt(json, ['changementQuantite', 'changement_quantite', 'quantityChange']),
       stockInitial: _safeExtractInt(json, ['stockInitial', 'stock_initial']),
       stockFinal: _safeExtractInt(json, ['stockFinal', 'stock_final']),
-      dateMouvement: json['dateMouvement'] != null ? DateTime.parse(json['dateMouvement'] as String) : DateTime.now(),
+      dateMouvement: json['dateMouvement'] != null ? DateTime.parse(json['dateMouvement'] as String).toLocal() : DateTime.now(),
       notes: json['notes'] as String?,
       produit: json['produit'] != null ? Product.fromJson(json['produit'] as Map<String, dynamic>) : null,
     );

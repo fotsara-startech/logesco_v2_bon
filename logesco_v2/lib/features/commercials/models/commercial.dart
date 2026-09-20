@@ -37,8 +37,8 @@ class Commercial {
       zoneId: json['zoneId'] as int,
       zone: json['zone'] != null ? Zone.fromJson(json['zone'] as Map<String, dynamic>) : null,
       isActive: json['isActive'] as bool? ?? true,
-      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String) : DateTime.now(),
-      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String) : DateTime.now(),
+      dateCreation: json['dateCreation'] != null ? DateTime.parse(json['dateCreation'] as String).toLocal() : DateTime.now(),
+      dateModification: json['dateModification'] != null ? DateTime.parse(json['dateModification'] as String).toLocal() : DateTime.now(),
     );
   }
 
