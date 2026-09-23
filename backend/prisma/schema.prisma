@@ -8,7 +8,14 @@ datasource db {
 }
 
 model OperationLog {
-  id               BigInt      @id @default(autoincrement())
+  // Int, pas BigInt : sur SQLite, seule une colonne déclarée exactement
+  // "INTEGER PRIMARY KEY" devient l'alias du rowid et bénéficie de
+  // l'auto-incrément. "BIGINT" est une affinité de stockage différente —
+  // `prisma db push` omet alors AUTOINCREMENT et toute insertion qui laisse
+  // id à sa valeur par défaut échoue avec "NOT NULL constraint failed".
+  // Ce champ n'est qu'un compteur interne à ce poste (jamais référencé
+  // ailleurs) : Int (jusqu'à ~2 milliards de lignes) est largement suffisant.
+  id               Int         @id @default(autoincrement())
   operationId      String      @unique @map("operation_id")
   operationType    String      @map("operation_type")
   tableName        String      @map("table_name")
@@ -28,7 +35,10 @@ model OperationLog {
 }
 
 model DeletedRecord {
-  id         BigInt   @id @default(autoincrement())
+  // Int, pas BigInt : voir le commentaire sur OperationLog.id — même piège
+  // AUTOINCREMENT sur SQLite. Sans ça, _ensureDeletedRecordsTable() est
+  // obligé de reconstruire cette table à chaque démarrage.
+  id         Int      @id @default(autoincrement())
   tableName  String   @map("table_name")
   recordId   Int      @map("record_id")
   deletedAt  DateTime @default(now()) @map("deleted_at")

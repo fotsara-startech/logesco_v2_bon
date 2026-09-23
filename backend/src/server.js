@@ -232,7 +232,6 @@ class LogescoServer {
       setImmediate(() => {
         this._migrateExistingDataToBoutique(prisma, boutique.id).catch(() => {});
         this._migrateStockToBoutique(prisma, boutique.id).catch(() => {});
-        this._fixOperationLogSchema(prisma).catch(() => {});
       });
 
     } catch (err) {
@@ -527,6 +526,13 @@ class LogescoServer {
       if (!environment.isCloud) {
         const migrationRunner = require('./services/migration-runner');
         await migrationRunner.run(prisma, { freshInstall });
+
+        // Postes installés avant le passage Int (voir schema.prisma) : leur
+        // operation_log a pu être créé sans AUTOINCREMENT par `prisma db
+        // push`, ce qui bloque silencieusement toute poussée vers Neon.
+        // Doit tourner à chaque démarrage (pas seulement au premier seed),
+        // sinon un poste déjà existant ne reçoit jamais la réparation.
+        await this._fixOperationLogSchema(prisma);
       }
 
       // Seed automatique si la base est vide (première installation)
