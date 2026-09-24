@@ -77,6 +77,23 @@ if (fs.existsSync(serverPath)) {
   check('Server.js', false, '', 'Fichier server.js manquant');
 }
 
+// 5. L'installeur livre bien prisma/migrations/ chez le client
+//    (sans ça, tout ce qui précède est vérifié... mais jamais présent sur
+//    le poste client : c'est exactement le bug qui a cassé la migration
+//    commerciaux/parametres chez plusieurs clients.)
+const installerPath = path.join(__dirname, '..', 'installer-setup.iss');
+if (fs.existsSync(installerPath)) {
+  const installerContent = fs.readFileSync(installerPath, 'utf8');
+  check(
+    'Installeur ↔ prisma/migrations',
+    /prisma\\migrations\\\*/i.test(installerContent),
+    'installer-setup.iss copie bien prisma\\migrations\\* chez le client',
+    "installer-setup.iss ne copie PAS prisma\\migrations\\* — aucune migration ne pourra jamais s'appliquer sur un poste client !"
+  );
+} else {
+  check('Installeur', false, '', 'installer-setup.iss introuvable (chemin attendu : ../installer-setup.iss)');
+}
+
 // Résumé
 console.log('\n╔══════════════════════════════════════════════════════════════╗');
 console.log('║                         RÉSUMÉ                               ║');

@@ -300,24 +300,48 @@ class BackendService {
       }
     }
 
-    // Toujours recréer le fichier .env avec le bon chemin absolu
-    // pour éviter les problèmes de chemins relatifs.
+    // Met à jour les clés dérivées du chemin d'installation (chemin absolu
+    // requis, cf. commentaire de classe) SANS écraser le reste du fichier.
+    //
+    // Avant : ce fichier était réécrit en entier à CHAQUE lancement et à
+    // CHAQUE redémarrage silencieux du watchdog (voir restart() ci-dessus).
+    // Toute clé ajoutée manuellement sur un poste client — notamment
+    // CLOUD_DB_URL pour activer la synchronisation Neon — disparaissait
+    // donc au redémarrage suivant, sans erreur ni log visible côté client.
+    // JWT_SECRET était en plus régénéré à chaque fois, invalidant tous les
+    // tokens de session en cours à chaque redémarrage du watchdog.
+    //
     // NOTE: ce fichier est lu par Node.js (dotenv), qui gère nativement
     // l'UTF-8 et les chemins Unicode sous Windows — pas de risque ici.
     try {
-      envFile.writeAsStringSync(
-        'NODE_ENV=production\n'
-        'PORT=8080\n'
-        'DATABASE_URL=$dbUrl\n'
-        'JWT_SECRET=logesco-secret-${DateTime.now().millisecondsSinceEpoch}\n'
-        'JWT_EXPIRES_IN=365d\n'
-        'CORS_ORIGIN=*\n'
-        'LOG_LEVEL=info\n'
-        'LOGESCO_DATA_DIR=$_backendDir\n',
-      );
-      debugPrint('✅ Fichier .env créé/mis à jour');
+      final existing = <String, String>{};
+      if (envFile.existsSync()) {
+        for (final line in envFile.readAsLinesSync()) {
+          final trimmed = line.trim();
+          if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+          final sep = trimmed.indexOf('=');
+          if (sep <= 0) continue;
+          existing[trimmed.substring(0, sep).trim()] = trimmed.substring(sep + 1).trim();
+        }
+      }
+
+      // Clés dérivées de l'installation : toujours à jour avec le chemin réel.
+      existing['NODE_ENV'] = 'production';
+      existing['PORT'] = existing['PORT'] ?? '8080';
+      existing['DATABASE_URL'] = dbUrl;
+      existing['JWT_EXPIRES_IN'] = existing['JWT_EXPIRES_IN'] ?? '365d';
+      existing['CORS_ORIGIN'] = existing['CORS_ORIGIN'] ?? '*';
+      existing['LOG_LEVEL'] = existing['LOG_LEVEL'] ?? 'info';
+      existing['LOGESCO_DATA_DIR'] = _backendDir;
+      // Généré une seule fois : le régénérer à chaque restart déconnecterait
+      // silencieusement tous les utilisateurs en cours de session.
+      existing['JWT_SECRET'] ??= 'logesco-secret-${DateTime.now().millisecondsSinceEpoch}';
+
+      final content = existing.entries.map((e) => '${e.key}=${e.value}').join('\n');
+      envFile.writeAsStringSync('$content\n');
+      debugPrint('✅ Fichier .env mis à jour (clés existantes préservées)');
     } catch (e) {
-      debugPrint('⚠️ Échec création .env: $e');
+      debugPrint('⚠️ Échec mise à jour .env: $e');
     }
   }
 

@@ -45,7 +45,19 @@ async function main() {
 
   try {
     await migrationRunner.run(prisma, { freshInstall: false });
-    console.log('✅ Base à jour — toutes les migrations connues sont appliquées.');
+
+    const appliedRows = await prisma.$queryRawUnsafe('SELECT name FROM _app_migrations');
+    const applied = new Set(appliedRows.map((r) => r.name));
+    const stillPending = migrationRunner.MIGRATION_ORDER.filter((name) => !applied.has(name));
+
+    if (stillPending.length > 0) {
+      console.warn(`⚠️  ${stillPending.length} migration(s) toujours EN ATTENTE (voir avertissements ci-dessus) :`);
+      for (const name of stillPending) console.warn(`   - ${name}`);
+      console.warn('⚠️  Base NON à jour — corrigez la cause (dossier prisma/migrations manquant ? base verrouillée ?) puis relancez ce script.');
+      process.exitCode = 1;
+    } else {
+      console.log('✅ Base à jour — toutes les migrations connues sont appliquées.');
+    }
   } finally {
     await prisma.$disconnect();
   }

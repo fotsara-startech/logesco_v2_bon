@@ -99,6 +99,11 @@ Source: "{#BackendExeDir}\schema.prisma"; DestDir: "{localappdata}\LOGESCO\backe
 Source: "{#BackendExeDir}\schema.prisma"; DestDir: "{localappdata}\LOGESCO\backend\prisma"; Flags: ignoreversion
 Source: "{#BackendExeDir}\package.json";  DestDir: "{localappdata}\LOGESCO\backend"; Flags: ignoreversion
 
+; Migrations Prisma (source de verite lue par migration-runner.js a chaque
+; demarrage) - sans ce dossier, aucune migration ne peut jamais s'appliquer
+; sur un poste deja installe, meme avec le script de rattrapage.
+Source: "{#BackendExeDir}\prisma\migrations\*"; DestDir: "{localappdata}\LOGESCO\backend\prisma\migrations"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 ; .env copie SEULEMENT si absent (1ere installation, conserve a la MAJ)
 Source: "{#BackendExeDir}\.env.example"; DestDir: "{localappdata}\LOGESCO\backend"; DestName: ".env"; Flags: onlyifdoesntexist
 

@@ -120,15 +120,25 @@ async function run(prisma, { freshInstall = false } = {}) {
     }
 
     const statements = splitStatements(fs.readFileSync(sqlPath, 'utf8'));
+    let hasBlockingError = false;
     for (const statement of statements) {
       try {
         await prisma.$executeRawUnsafe(statement);
       } catch (err) {
         const benign = BENIGN_ERROR_PATTERNS.some((p) => p.test(err.message || ''));
         if (!benign) {
+          hasBlockingError = true;
           console.warn(`⚠️  ${name}: ${err.message}`);
         }
       }
+    }
+
+    if (hasBlockingError) {
+      // Erreur non-bénigne (ex: base verrouillée par le process principal) :
+      // ne PAS marquer comme appliquée, sinon elle est ignorée pour toujours
+      // alors qu'elle n'a jamais réellement pris effet.
+      console.warn(`⚠️  Migration ${name} non marquée comme appliquée (erreur ci-dessus) — sera retentée`);
+      continue;
     }
 
     await markApplied(prisma, name);
