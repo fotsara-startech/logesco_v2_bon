@@ -472,19 +472,28 @@ class VenteModel extends BaseModel {
    */
   async updateClientAccount(tx, clientId, montant, venteId) {
     // Créer ou mettre à jour le compte client
-    const compte = await tx.compteClient.upsert({
-      where: { clientId },
-      create: {
-        clientId,
-        soldeActuel: montant,
-        limiteCredit: 0
-      },
-      update: {
-        soldeActuel: {
-          increment: montant
-        }
-      }
+    let compte = await tx.compteClient.findUnique({
+      where: { clientId }
     });
+
+    if (compte) {
+      compte = await tx.compteClient.update({
+        where: { clientId },
+        data: {
+          soldeActuel: {
+            increment: montant
+          }
+        }
+      });
+    } else {
+      compte = await tx.compteClient.create({
+        data: {
+          clientId,
+          soldeActuel: montant,
+          limiteCredit: 0
+        }
+      });
+    }
 
     // Enregistrer la transaction
     await tx.transactionCompte.create({

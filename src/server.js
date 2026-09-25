@@ -35,10 +35,12 @@ const FinancialMovementService = require('./services/financial-movement');
 const MovementCategoryService = require('./services/movement-category');
 const FileUploadService = require('./services/file-upload');
 const MovementReportService = require('./services/movement-report');
+const CommercialReportService = require('./services/commercial-report');
 const { createAuthRouter } = require('./routes/auth');
 const { createProductRouter } = require('./routes/products');
 const categoriesRouter = require('./routes/categories');
 const { createSupplierRouter } = require('./routes/suppliers');
+const { createVilleRouter, createZoneRouter, createCommercialRouter } = require('./routes/commercials');
 const { createCustomerRouter } = require('./routes/customers');
 const { createAccountRouter } = require('./routes/accounts');
 const { createInventoryRouter } = require('./routes/inventory');
@@ -50,6 +52,7 @@ const { createExpenseCategoriesRouter } = require('./routes/expense-categories')
 const companySettingsRouter = require('./routes/company-settings');
 const createPrintingRouter = require('./routes/printing');
 const { createFinancialMovementRouter } = require('./routes/financial-movements');
+const { createCommercialReportRouter } = require('./routes/commercial-reports');
 const { createMovementCategoryRouter } = require('./routes/movement-categories');
 const { createUserRouter } = require('./routes/users');
 const { createRoleRouter } = require('./routes/roles');
@@ -229,7 +232,6 @@ class LogescoServer {
       setImmediate(() => {
         this._migrateExistingDataToBoutique(prisma, boutique.id).catch(() => {});
         this._migrateStockToBoutique(prisma, boutique.id).catch(() => {});
-        this._fixOperationLogSchema(prisma).catch(() => {});
       });
 
     } catch (err) {
@@ -406,8 +408,16 @@ class LogescoServer {
   }
 
   /**
-   * Applique les migrations Prisma automatiquement au démarrage.
+   * Crée le schéma complet sur une base neuve (première installation).
    * Utilise node.exe portable + prisma CLI avec DATABASE_URL explicite.
+   *
+   * Ne fait QUE la création initiale du schéma. Le rattrapage des mises à
+   * jour (postes déjà installés) est géré séparément par migration-runner.js,
+   * qui rejoue migration par migration sans jamais spawner le CLI Prisma —
+   * c'est ce qui garde le démarrage rapide (5-20s économisées) tout en
+   * garantissant que chaque migration finit par être appliquée.
+   *
+   * @returns {Promise<boolean>} true si une base neuve vient d'être créée
    */
   async _runAutoMigration() {
     const { execSync } = require('child_process');
@@ -418,10 +428,10 @@ class LogescoServer {
     try {
       const backendDir = path.join(__dirname, '..');
 
-      // En cloud, migrations déjà appliquées au build
+      // En cloud, migrations déjà appliquées au build (prisma migrate deploy)
       if (environment.isCloud) {
         console.log('☁️  Environnement cloud — migrations ignorées');
-        return;
+        return false;
       }
 
       const dbUrl = process.env.DATABASE_URL || (() => {
@@ -430,35 +440,35 @@ class LogescoServer {
         return `file:${dbPath}`;
       })();
 
-      // ── FAST PATH : DB existante → skip prisma db push (économise 5-20s) ──
+      // ── FAST PATH : DB existante → skip la création de schéma ─────────────
+      // Les migrations en attente seront rattrapées par migration-runner.js.
       if (dbUrl.startsWith('file:')) {
         const dbFilePath = dbUrl.replace(/^file:/, '').split('?')[0];
         if (fs.existsSync(dbFilePath) && fs.statSync(dbFilePath).size > 0) {
           try {
-            // Vérification rapide via sqlite3 natif (si dispo) ou lecture binaire
+            // Vérification rapide via lecture binaire de l'en-tête SQLite
             const header = Buffer.alloc(100);
             const fd = fs.openSync(dbFilePath, 'r');
             fs.readSync(fd, header, 0, 100, 0);
             fs.closeSync(fd);
             // Les 16 premiers octets d'une DB SQLite valide = "SQLite format 3\0"
             if (header.slice(0, 15).toString('ascii') === 'SQLite format 3') {
-              console.log('✅ DB existante — migration prisma ignorée (démarrage rapide)');
-              return;
+              return false;
             }
-          } catch (_) { /* continue vers slow path */ }
+          } catch (_) { /* continue vers la création de schéma */ }
         }
       }
 
-      // ── SLOW PATH : première installation ou DB absente/corrompue ─────────
+      // ── DB absente/corrompue : première installation ──────────────────────
       const schemaFile = environment.isCloud ? 'schema.postgresql.prisma' : 'schema.prisma';
       const schemaPath = path.join(backendDir, 'prisma', schemaFile);
 
       if (!fs.existsSync(schemaPath)) {
-        console.log(`⚠️  ${schemaFile} introuvable, migration ignorée`);
-        return;
+        console.log(`⚠️  ${schemaFile} introuvable, création de schéma ignorée`);
+        return false;
       }
 
-      console.log('🔄 Première installation — application des migrations...');
+      console.log('🔄 Première installation — création du schéma...');
 
       const prismaCmdWin  = path.join(backendDir, 'node_modules/.bin/prisma.cmd');
       const prismaCmdUnix = path.join(backendDir, 'node_modules/.bin/prisma');
@@ -488,229 +498,11 @@ class LogescoServer {
         cwd: backendDir,
         env: { ...process.env, DATABASE_URL: dbUrl },
       });
-      console.log('✅ Migrations appliquées');
+      console.log('✅ Schéma initial créé');
+      return true;
     } catch (err) {
-      console.warn('⚠️  Migration automatique échouée (non bloquant):', err.message);
-    }
-  }
-
-  /**
-   * Ajoute les colonnes introduites par une mise à jour applicative.
-   * Les postes clients n'exécutent jamais `prisma migrate` : la migration doit
-   * être portée par le démarrage. SQLite ne connaît pas ADD COLUMN IF NOT
-   * EXISTS, d'où la vérification via PRAGMA.
-   */
-  async _ensureColonnesLocales(prisma) {
-    const AJOUTS = [
-      ['financial_movements', 'statut', `TEXT NOT NULL DEFAULT 'actif'`],
-    ];
-
-    for (const [table, colonne, definition] of AJOUTS) {
-      try {
-        const colonnes = await prisma.$queryRawUnsafe(`PRAGMA table_info(${table})`);
-        if (!colonnes.length) continue;               // table absente
-        if (colonnes.some(c => c.name === colonne)) continue; // déjà présente
-
-        await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${colonne}" ${definition}`);
-        console.log(`✅ Colonne ${table}.${colonne} ajoutée`);
-      } catch (e) {
-        console.warn(`⚠️  Ajout colonne ${table}.${colonne} (non bloquant):`, e.message);
-      }
-    }
-  }
-
-  /**
-   * Applique automatiquement le script de migration de production.
-   * Garantit que toutes les colonnes et index nécessaires sont présents,
-   * même si le client a raté une mise à jour.
-   * 
-   * Ce système de garde-fou évite que les migrations ne soient manquées
-   * lors des mises à jour automatiques.
-   */
-  async _runProductionMigrations(prisma) {
-    const environment = require('./config/environment');
-    
-    // Ignorer en cloud (PostgreSQL) - seulement pour SQLite local
-    if (environment.isCloud) {
-      return;
-    }
-
-    try {
-      console.log('🔄 Vérification des migrations de production...');
-
-      // Vérifie si une colonne existe dans une table SQLite
-      const columnExists = async (table, column) => {
-        try {
-          const rows = await prisma.$queryRawUnsafe(`PRAGMA table_info(${table})`);
-          return rows.some(r => r.name === column);
-        } catch {
-          return false;
-        }
-      };
-
-      // Applique un ALTER TABLE seulement si la colonne est absente
-      const addColumnIfMissing = async (table, column, type, defaultValue = null) => {
-        const exists = await columnExists(table, column);
-        if (exists) {
-          return false;
-        }
-        const def = defaultValue !== null ? ` DEFAULT ${defaultValue}` : '';
-        await prisma.$executeRawUnsafe(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${def}`);
-        console.log(`  ➕ ${table}.${column} — ajouté`);
-        return true;
-      };
-
-      const createIndexIfMissing = async (name, table, column) => {
-        await prisma.$executeRawUnsafe(
-          `CREATE INDEX IF NOT EXISTS ${name} ON ${table}(${column})`
-        );
-      };
-
-      let migrationsApplied = 0;
-
-      // ── 1. stock_boutiques.date_modification ─────────────────────────────────
-      const sb = await addColumnIfMissing('stock_boutiques', 'date_modification', 'DATETIME');
-      if (sb) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE stock_boutiques SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_stock_boutiques_date_modification', 'stock_boutiques', 'date_modification');
-      }
-
-      // ── 2. mouvements_stock : stock_initial, stock_final, date_modification ──
-      if (await addColumnIfMissing('mouvements_stock', 'stock_initial', 'INTEGER', 0)) migrationsApplied++;
-      if (await addColumnIfMissing('mouvements_stock', 'stock_final', 'INTEGER', 0)) migrationsApplied++;
-      const ms = await addColumnIfMissing('mouvements_stock', 'date_modification', 'DATETIME');
-      if (ms) {
-        migrationsApplied++;
-        await createIndexIfMissing('idx_mouvements_stock_date_modification', 'mouvements_stock', 'date_modification');
-      }
-      await createIndexIfMissing('idx_mouvements_stock_initial', 'mouvements_stock', 'stock_initial');
-      await createIndexIfMissing('idx_mouvements_stock_final', 'mouvements_stock', 'stock_final');
-
-      // ── 3. produits.image_url ─────────────────────────────────────────────────
-      if (await addColumnIfMissing('produits', 'image_url', 'TEXT')) migrationsApplied++;
-
-      // ── 4. stock.date_modification ────────────────────────────────────────────
-      const st = await addColumnIfMissing('stock', 'date_modification', 'DATETIME');
-      if (st) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE stock SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_stock_date_modification', 'stock', 'date_modification');
-      }
-
-      // ── 5. comptes_fournisseurs.date_modification ────────────────────────────
-      const cf = await addColumnIfMissing('comptes_fournisseurs', 'date_modification', 'DATETIME');
-      if (cf) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE comptes_fournisseurs SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_comptes_fournisseurs_date_modification', 'comptes_fournisseurs', 'date_modification');
-      }
-
-      // ── 6. comptes_clients.date_modification ─────────────────────────────────
-      const cc = await addColumnIfMissing('comptes_clients', 'date_modification', 'DATETIME');
-      if (cc) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE comptes_clients SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_comptes_clients_date_modification', 'comptes_clients', 'date_modification');
-      }
-
-      // ── 7. cash_sessions.date_modification ───────────────────────────────────
-      const cs = await addColumnIfMissing('cash_sessions', 'date_modification', 'DATETIME');
-      if (cs) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE cash_sessions SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_cash_sessions_date_modification', 'cash_sessions', 'date_modification');
-      }
-
-      // ── 8. cash_movements.date_modification ──────────────────────────────────
-      const cm = await addColumnIfMissing('cash_movements', 'date_modification', 'DATETIME');
-      if (cm) {
-        migrationsApplied++;
-        await prisma.$executeRawUnsafe(`UPDATE cash_movements SET date_modification = CURRENT_TIMESTAMP WHERE date_modification IS NULL`);
-        await createIndexIfMissing('idx_cash_movements_date_modification', 'cash_movements', 'date_modification');
-      }
-
-      // ── 9. transferts_stock.date_modification ────────────────────────────────
-      const ts = await addColumnIfMissing('transferts_stock', 'date_modification', 'DATETIME');
-      if (ts) {
-        migrationsApplied++;
-        await createIndexIfMissing('idx_transferts_stock_date_modification', 'transferts_stock', 'date_modification');
-      }
-
-      // ── 10. transactions_comptes.date_modification ───────────────────────────
-      const tc = await addColumnIfMissing('transactions_comptes', 'date_modification', 'DATETIME');
-      if (tc) {
-        migrationsApplied++;
-        await createIndexIfMissing('idx_transactions_date_modification', 'transactions_comptes', 'date_modification');
-      }
-
-      // ── 11. stock_inventories.date_modification ──────────────────────────────
-      if (await addColumnIfMissing('stock_inventories', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 12. inventory_items.date_modification ────────────────────────────────
-      if (await addColumnIfMissing('inventory_items', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 13. historique_prix_achat.date_modification ──────────────────────────
-      if (await addColumnIfMissing('historique_prix_achat', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 14. commandes_approvisionnement.date_modification ────────────────────
-      if (await addColumnIfMissing('commandes_approvisionnement', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 15. details_commandes_approvisionnement.date_modification ────────────
-      if (await addColumnIfMissing('details_commandes_approvisionnement', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 16. ventes.date_modification ─────────────────────────────────────────
-      if (await addColumnIfMissing('ventes', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      // ── 17. details_ventes.date_modification ─────────────────────────────────
-      if (await addColumnIfMissing('details_ventes', 'date_modification', 'DATETIME')) migrationsApplied++;
-
-      if (migrationsApplied > 0) {
-        console.log(`✅ ${migrationsApplied} migration(s) de production appliquée(s)`);
-      } else {
-        console.log('✅ Toutes les migrations de production déjà appliquées');
-      }
-
-    } catch (error) {
-      console.warn('⚠️  Migrations de production échouées (non bloquant):', error.message);
-    }
-  }
-
-  /**
-   * Valide et corrige le schéma de base de données
-   * Ajoute les colonnes manquantes si nécessaire
-   */
-  async _validateSchema(prisma) {
-    try {
-      const environment = require('./config/environment');
-      
-      // Ignorer en cloud (PostgreSQL) - seulement pour SQLite local
-      if (environment.isCloud) {
-        return;
-      }
-
-      const SchemaValidator = require('./utils/schema-validator');
-      const validator = new SchemaValidator(prisma);
-      
-      // Validation rapide d'abord
-      const isValid = await validator.quickValidate();
-      
-      if (isValid) {
-        console.log('✅ Schéma de base de données valide');
-        return;
-      }
-
-      // Si la validation rapide échoue, faire une validation complète et correction
-      console.log('🔧 Correction du schéma de base de données...');
-      const result = await validator.validateAndFix();
-      
-      if (result.success) {
-        console.log('✅ Schéma corrigé avec succès');
-      } else {
-        console.warn(`⚠️  ${result.issuesFound - result.issuesFixed} problèmes non résolus`);
-      }
-    } catch (error) {
-      console.warn('⚠️  Validation du schéma échouée (non bloquant):', error.message);
+      console.warn('⚠️  Création automatique du schéma échouée (non bloquant):', err.message);
+      return false;
     }
   }
 
@@ -722,21 +514,26 @@ class LogescoServer {
       // Afficher la configuration détectée
       environment.logConfiguration();
 
-      // Appliquer les migrations Prisma (skip si DB existe déjà → démarrage rapide)
-      await this._runAutoMigration();
+      // Créer le schéma si c'est une installation neuve (DB absente/corrompue)
+      const freshInstall = await this._runAutoMigration();
 
       // Initialiser la base de données
       const prisma = await databaseManager.initialize();
 
-      // Valider et corriger le schéma si nécessaire
-      await this._validateSchema(prisma);
+      // Rattraper les migrations en attente (mise à jour d'un poste existant)
+      // ou marquer tout l'historique comme appliqué (installation neuve).
+      // Source unique de vérité : prisma/migrations/. Voir migration-runner.js.
+      if (!environment.isCloud) {
+        const migrationRunner = require('./services/migration-runner');
+        await migrationRunner.run(prisma, { freshInstall });
 
-      // GARDE-FOU : Appliquer les migrations de production automatiquement
-      // Garantit que les mises à jour ne ratent jamais les migrations
-      await this._runProductionMigrations(prisma);
-
-      // Colonnes introduites par une mise à jour applicative (SQLite local)
-      await this._ensureColonnesLocales(prisma);
+        // Postes installés avant le passage Int (voir schema.prisma) : leur
+        // operation_log a pu être créé sans AUTOINCREMENT par `prisma db
+        // push`, ce qui bloque silencieusement toute poussée vers Neon.
+        // Doit tourner à chaque démarrage (pas seulement au premier seed),
+        // sinon un poste déjà existant ne reçoit jamais la réparation.
+        await this._fixOperationLogSchema(prisma);
+      }
 
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
@@ -749,6 +546,7 @@ class LogescoServer {
       this.movementCategoryService = new MovementCategoryService(prisma);
       this.fileUploadService = new FileUploadService(prisma);
       this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
+      this.commercialReportService = new CommercialReportService(prisma);
 
       // Initialiser syncService avant les routes pour qu'il soit disponible dans app.locals
       const databaseUrl = process.env.DATABASE_URL || '';
@@ -923,8 +721,23 @@ class LogescoServer {
       prisma: this.models.prisma,
       syncService: this.syncService
     }));
-    this.app.use(`/api/${apiVersion}/customers`, createCustomerRouter({ 
-      ...this.models, 
+    this.app.use(`/api/${apiVersion}/customers`, createCustomerRouter({
+      ...this.models,
+      authService: this.authService,
+      prisma: this.models.prisma,
+      syncService: this.syncService
+    }));
+    this.app.use(`/api/${apiVersion}/villes`, createVilleRouter({
+      authService: this.authService,
+      prisma: this.models.prisma,
+      syncService: this.syncService
+    }));
+    this.app.use(`/api/${apiVersion}/zones`, createZoneRouter({
+      authService: this.authService,
+      prisma: this.models.prisma,
+      syncService: this.syncService
+    }));
+    this.app.use(`/api/${apiVersion}/commerciaux`, createCommercialRouter({
       authService: this.authService,
       prisma: this.models.prisma,
       syncService: this.syncService
@@ -987,7 +800,12 @@ class LogescoServer {
       fileUploadService: this.fileUploadService,
       movementReportService: this.movementReportService
     }));
-    
+
+    this.app.use(`/api/${apiVersion}/commercial-reports`, createCommercialReportRouter({
+      authService: this.authService,
+      commercialReportService: this.commercialReportService
+    }));
+
     this.app.use(`/api/${apiVersion}/movement-categories`, createMovementCategoryRouter({
       authService: this.authService,
       movementCategoryService: this.movementCategoryService

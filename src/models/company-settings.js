@@ -64,7 +64,9 @@ class CompanySettingsModel {
             logo: logoPath,
             slogan: data.slogan || null,
             langueFacture: data.langueFacture || 'fr',
-            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null
+            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null,
+            ...(data.separerCommandeEncaissement != null ? { separerCommandeEncaissement: !!data.separerCommandeEncaissement } : {}),
+            ...(data.vendeursVoientToutesVentes != null ? { vendeursVoientToutesVentes: !!data.vendeursVoientToutesVentes } : {})
           }
         });
       } else {
@@ -80,7 +82,9 @@ class CompanySettingsModel {
             logo: logoPath,
             slogan: data.slogan || null,
             langueFacture: data.langueFacture || 'fr',
-            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null
+            tauxTva: data.tauxTva != null ? parseFloat(String(data.tauxTva).replace(',', '.')) : null,
+            separerCommandeEncaissement: !!data.separerCommandeEncaissement,
+            vendeursVoientToutesVentes: !!data.vendeursVoientToutesVentes
           }
         });
       }

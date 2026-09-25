@@ -15,12 +15,15 @@ class MovementReportService {
   }
 
   /**
-   * Converts any date value to a comparable string for SQLite
-   * SQLite stores dates inconsistently — this normalizes for raw SQL comparison
+   * Converts any date value to the epoch-millisecond integer Prisma uses to
+   * store DateTime columns in SQLite. Comparing against that integer directly
+   * is required: SQLite's datetime() function expects text or a Julian day
+   * number, and silently returns NULL (never matches) when handed the raw
+   * epoch-ms integer instead — that's what wrapping the column in datetime()
+   * did before this fix.
    */
   _toSqliteDate(dateInput) {
-    const d = new Date(dateInput);
-    return d.toISOString();
+    return new Date(dateInput).getTime();
   }
 
   /**
@@ -31,11 +34,10 @@ class MovementReportService {
       const start = this._toSqliteDate(startDate);
       const end = this._toSqliteDate(endDate);
 
-      // Use raw SQL to handle both ISO and non-ISO date formats in SQLite
       const boutiqueFilter = boutiqueId ? `AND boutique_id = ${parseInt(boutiqueId)}` : '';
       const rows = await this.prisma.$queryRawUnsafe(
-        `SELECT montant, date FROM financial_movements 
-         WHERE datetime(date) >= datetime(?) AND datetime(date) <= datetime(?) ${boutiqueFilter}`,
+        `SELECT montant, date FROM financial_movements
+         WHERE date >= ? AND date <= ? ${boutiqueFilter}`,
         start, end
       );
 
@@ -77,7 +79,7 @@ class MovementReportService {
         `SELECT fm.categorie_id, fm.montant, mc.nom, mc.display_name, mc.color, mc.icon
          FROM financial_movements fm
          LEFT JOIN movement_categories mc ON fm.categorie_id = mc.id
-         WHERE datetime(fm.date) >= datetime(?) AND datetime(fm.date) <= datetime(?) ${boutiqueFilter}`,
+         WHERE fm.date >= ? AND fm.date <= ? ${boutiqueFilter}`,
         start, end
       );
 
@@ -129,8 +131,8 @@ class MovementReportService {
 
       const rows = await this.prisma.$queryRawUnsafe(
         `SELECT date, montant FROM financial_movements
-         WHERE datetime(date) >= datetime(?) AND datetime(date) <= datetime(?) ${boutiqueFilter}
-         ORDER BY datetime(date) ASC`,
+         WHERE date >= ? AND date <= ? ${boutiqueFilter}
+         ORDER BY date ASC`,
         start, end
       );
 

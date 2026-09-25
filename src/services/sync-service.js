@@ -14,6 +14,7 @@ const PULL_TABLES = [
   'fournisseurs', 'comptes_fournisseurs', 'clients', 'comptes_clients',
   'cash_registers', 'cash_sessions', 'cash_movements', 'movement_categories',
   'financial_movements', 'commandes_approvisionnement', 'details_commandes_approvisionnement',
+  'villes', 'zones', 'commerciaux',
   'ventes', 'details_ventes', 'ventes_proforma', 'details_ventes_proforma',
   'mouvements_stock', 'transferts_stock', 'transactions_comptes', 'dates_peremption',
   'stock_inventories', 'inventory_items', 'historique_recus', 'parametres_entreprise',
@@ -103,6 +104,10 @@ class SyncServiceV2 {
 
     // Créer les tables de suivi du pull (curseur de réception + file de reprise)
     await this._ensurePullStateTables();
+
+    // Créer les tables métier ajoutées après la mise en place initiale de Neon
+    // (les anciennes bases clients n'ont reçu que la migration initiale)
+    await this._ensureTablesCloud();
 
     // Aligner le schéma cloud sur les colonnes attendues
     await this._ensureColonnesCloud();
@@ -466,9 +471,138 @@ class SyncServiceV2 {
    * Les postes clients ne peuvent pas exécuter `prisma migrate` : la migration
    * doit donc être portée par le démarrage, et être idempotente.
    */
+  /**
+   * Crée les tables « commerciaux terrain » (villes / zones / commerciaux)
+   * côté Neon si elles sont absentes.
+   *
+   * Ajoutées à schema.postgresql.prisma après la mise en place initiale de
+   * nombreuses bases clients : sans ce rattrapage, toute écriture locale sur
+   * ces tables (ou sur ventes.commercial_id/zone_id/ville_id) échoue
+   * indéfiniment côté sync ("relation does not exist").
+   */
+  async _ensureTablesCloud() {
+    const disponible = await this._checkCloudConnection();
+    if (!disponible) return;
+
+    const client = await this.cloudPool.connect();
+    try {
+      await client.query(`
+        CREATE OR REPLACE FUNCTION update_date_modification()
+        RETURNS TRIGGER AS $f$
+        BEGIN
+            NEW.date_modification = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $f$ LANGUAGE plpgsql;
+
+        CREATE TABLE IF NOT EXISTS "villes" (
+            "id" SERIAL NOT NULL,
+            "nom" TEXT NOT NULL,
+            "date_creation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "date_modification" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "villes_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "zones" (
+            "id" SERIAL NOT NULL,
+            "nom" TEXT NOT NULL,
+            "ville_id" INTEGER NOT NULL,
+            "date_creation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "date_modification" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "zones_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "commerciaux" (
+            "id" SERIAL NOT NULL,
+            "nom" TEXT NOT NULL,
+            "prenom" TEXT,
+            "telephone" TEXT,
+            "zone_id" INTEGER NOT NULL,
+            "is_active" BOOLEAN NOT NULL DEFAULT true,
+            "date_creation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "date_modification" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "commerciaux_pkey" PRIMARY KEY ("id")
+        );
+
+        ALTER TABLE "ventes" ADD COLUMN IF NOT EXISTS "commercial_id" INTEGER;
+        ALTER TABLE "ventes" ADD COLUMN IF NOT EXISTS "zone_id" INTEGER;
+        ALTER TABLE "ventes" ADD COLUMN IF NOT EXISTS "ville_id" INTEGER;
+
+        DO $d$ BEGIN
+            ALTER TABLE "villes" ADD CONSTRAINT "villes_nom_key" UNIQUE ("nom");
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "zones" ADD CONSTRAINT "zones_ville_id_fkey" FOREIGN KEY ("ville_id") REFERENCES "villes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "zones" ADD CONSTRAINT "zones_ville_id_nom_key" UNIQUE ("ville_id", "nom");
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "commerciaux" ADD CONSTRAINT "commerciaux_zone_id_fkey" FOREIGN KEY ("zone_id") REFERENCES "zones"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "ventes" ADD CONSTRAINT "ventes_commercial_id_fkey" FOREIGN KEY ("commercial_id") REFERENCES "commerciaux"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "ventes" ADD CONSTRAINT "ventes_zone_id_fkey" FOREIGN KEY ("zone_id") REFERENCES "zones"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        DO $d$ BEGIN
+            ALTER TABLE "ventes" ADD CONSTRAINT "ventes_ville_id_fkey" FOREIGN KEY ("ville_id") REFERENCES "villes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $d$;
+
+        CREATE TABLE IF NOT EXISTS "deleted_records" (
+            "id" SERIAL NOT NULL,
+            "table_name" TEXT NOT NULL,
+            "record_id" INTEGER NOT NULL,
+            "deleted_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "deleted_by" INTEGER,
+            CONSTRAINT "deleted_records_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "idx_deleted_records_deleted_at" ON "deleted_records"("deleted_at");
+        CREATE INDEX IF NOT EXISTS "idx_deleted_records_table_deleted_at" ON "deleted_records"("table_name", "deleted_at");
+
+        CREATE INDEX IF NOT EXISTS "idx_villes_nom" ON "villes"("nom");
+        CREATE INDEX IF NOT EXISTS "idx_zones_ville" ON "zones"("ville_id");
+        CREATE INDEX IF NOT EXISTS "idx_commerciaux_zone" ON "commerciaux"("zone_id");
+        CREATE INDEX IF NOT EXISTS "idx_commerciaux_actif" ON "commerciaux"("is_active");
+        CREATE INDEX IF NOT EXISTS "idx_ventes_commercial" ON "ventes"("commercial_id");
+        CREATE INDEX IF NOT EXISTS "idx_ventes_zone" ON "ventes"("zone_id");
+        CREATE INDEX IF NOT EXISTS "idx_ventes_ville" ON "ventes"("ville_id");
+
+        DROP TRIGGER IF EXISTS update_villes_date_modification ON villes;
+        CREATE TRIGGER update_villes_date_modification
+            BEFORE UPDATE ON villes
+            FOR EACH ROW
+            EXECUTE FUNCTION update_date_modification();
+
+        DROP TRIGGER IF EXISTS update_zones_date_modification ON zones;
+        CREATE TRIGGER update_zones_date_modification
+            BEFORE UPDATE ON zones
+            FOR EACH ROW
+            EXECUTE FUNCTION update_date_modification();
+
+        DROP TRIGGER IF EXISTS update_commerciaux_date_modification ON commerciaux;
+        CREATE TRIGGER update_commerciaux_date_modification
+            BEFORE UPDATE ON commerciaux
+            FOR EACH ROW
+            EXECUTE FUNCTION update_date_modification();
+      `).catch(e => console.warn(`⚠️  _ensureTablesCloud: ${e.message}`));
+    } finally {
+      client.release();
+    }
+  }
+
   async _ensureColonnesCloud() {
     const AJOUTS = [
       [`financial_movements`, `statut`, `TEXT NOT NULL DEFAULT 'actif'`],
+      [`parametres_entreprise`, `separer_commande_encaissement`, `BOOLEAN NOT NULL DEFAULT false`],
+      [`parametres_entreprise`, `vendeurs_voient_toutes_ventes`, `BOOLEAN NOT NULL DEFAULT false`],
     ];
     const disponible = await this._checkCloudConnection();
     if (!disponible) return;
@@ -671,6 +805,31 @@ class SyncServiceV2 {
   }
 
   /**
+   * Convertit le cast ::text d'un timestamp Postgres SANS fuseau
+   * ("2026-09-07 16:27:46.306") en ISO 8601 UTC comparable lexicalement au
+   * curseur stocké ("2026-09-07T16:27:46.306Z").
+   *
+   * Ne JAMAIS repasser par Date#toISOString() sur la valeur du driver pg
+   * pour ces colonnes : node-postgres réinterprète un timestamp sans fuseau
+   * selon le fuseau local du process, alors que Postgres le traite comme une
+   * valeur UTC littérale. Sur un poste en UTC+1, ça décale le curseur d'1h
+   * en retard en permanence — la même ligne "récente" ne sort jamais de la
+   * fenêtre du delta pull et revient à chaque cycle.
+   */
+  _rawTimestampToIso(raw) {
+    if (!raw) return null;
+    const [datePart, timePart = '00:00:00'] = String(raw).split(' ');
+    const [hms, frac = '0'] = timePart.split('.');
+    // Postgres stocke jusqu'à la microseconde (6 chiffres) ; tronquer à 3
+    // (millisecondes) faisait perdre les derniers chiffres et laissait la
+    // ligne "légèrement" plus récente que le curseur enregistré à chaque
+    // cycle — même bug de re-pull perpétuel que le décalage horaire, pour
+    // les timestamps dont les microsecondes ne sont pas nulles.
+    const micros = frac.padEnd(6, '0').slice(0, 6);
+    return `${datePart}T${hms}.${micros}Z`;
+  }
+
+  /**
    * Curseur de réception : date de modification la plus récente déjà reçue
    * pour cette table. '1970…' = jamais reçu → pull complet (réparateur).
    */
@@ -847,8 +1006,18 @@ class SyncServiceV2 {
 
           const since = await this._getPullWatermark(table);
 
+          // "${modCol}"::text : le pilote pg réinterprète un timestamp SANS
+          // fuseau (colonne "date_modification") selon le fuseau LOCAL du
+          // process Node, alors que Postgres le traite comme une valeur UTC
+          // littérale. Sur une machine en UTC+1 (ex. Afrique de l'Ouest),
+          // Date#toISOString() renvoie une heure -1h par rapport à la valeur
+          // réellement stockée. Le curseur enregistré est alors perpétuellement
+          // "en retard" d'1h sur la ligne qu'il est censé exclure : la même
+          // ligne redevient "nouvelle" à chaque cycle, indéfiniment. Le cast
+          // ::text contourne la conversion du driver et lit la valeur telle
+          // qu'écrite (voir _rawTimestampToIso ci-dessous).
           const result = await client.query(
-            `SELECT * FROM "${table}" WHERE "${modCol}" > $1 ORDER BY "${modCol}" ASC LIMIT 5000`,
+            `SELECT *, "${modCol}"::text AS __mod_col_raw FROM "${table}" WHERE "${modCol}" > $1 ORDER BY "${modCol}" ASC LIMIT 5000`,
             [since]
           );
           if (result.rows.length === 0) continue;
@@ -889,8 +1058,8 @@ class SyncServiceV2 {
           let applied = 0, deferred = 0, conflits = 0, protegees = 0;
 
           for (const row of result.rows) {
-            const ts = row[modCol];
-            const tsIso = ts instanceof Date ? ts.toISOString() : (ts ? String(ts) : null);
+            const tsIso = this._rawTimestampToIso(row.__mod_col_raw);
+            delete row.__mod_col_raw;
             if (tsIso && tsIso > maxSeen) maxSeen = tsIso;
 
             if (deletedIds.has(Number(row.id))) continue;
@@ -960,8 +1129,10 @@ class SyncServiceV2 {
         try { return new Date(tsNum).toISOString(); } catch { return '1970-01-01T00:00:00Z'; }
       })();
 
+      // deleted_at::text : voir _rawTimestampToIso — évite le décalage d'1h
+      // que Date#toISOString() introduit sur un timestamp sans fuseau.
       const result = await client.query(
-        `SELECT table_name, record_id, deleted_at, deleted_by
+        `SELECT table_name, record_id, deleted_at::text AS deleted_at, deleted_by
          FROM deleted_records WHERE deleted_at > $1 ORDER BY deleted_at ASC LIMIT 1000`,
         [since]
       );
@@ -991,7 +1162,7 @@ class SyncServiceV2 {
              VALUES (?, ?, ?, ?)`,
             table_name,
             record_id,
-            deleted_at instanceof Date ? deleted_at.toISOString() : deleted_at,
+            this._rawTimestampToIso(deleted_at) || deleted_at,
             deleted_by || null
           );
 

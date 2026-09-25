@@ -14,6 +14,18 @@ const {
 } = require('../middleware/auth');
 const { BaseResponseDTO } = require('../dto');
 const { utilisateurSchemas } = require('../validation/schemas');
+const environment = require('../config/environment');
+
+// Le rate limiting par IP sur /auth/login n'a de sens que pour un backend
+// exposé sur Internet (cloud) : un vrai attaquant distant peut sinon
+// bombarder l'endpoint. En mode local (backend embarqué), TOUTES les
+// requêtes viennent de 127.0.0.1 quel que soit l'utilisateur — le seuil
+// de 5 tentatives/15 min est alors partagé par tout le monde sur le même
+// poste et se vide en quelques essais/oublis de mot de passe cumulés,
+// sans qu'aucun attaquant externe ne puisse même atteindre ce serveur.
+const LOGIN_RATE_LIMIT = environment.isLocal ? 200 : 5;
+const REGISTER_RATE_LIMIT = environment.isLocal ? 50 : 3;
+const REFRESH_RATE_LIMIT = environment.isLocal ? 1000 : 10;
 
 /**
  * Crée le routeur d'authentification
@@ -31,7 +43,7 @@ function createAuthRouter(authService) {
    * Authentifie un utilisateur
    */
   router.post('/login', 
-    userRateLimit(5, 15 * 60 * 1000), // 5 tentatives par 15 minutes
+    userRateLimit(LOGIN_RATE_LIMIT, 15 * 60 * 1000),
     validate(utilisateurSchemas.login),
     async (req, res) => {
       try {
@@ -59,7 +71,7 @@ function createAuthRouter(authService) {
    * Inscrit un nouvel utilisateur
    */
   router.post('/register',
-    userRateLimit(3, 60 * 60 * 1000), // 3 inscriptions par heure
+    userRateLimit(REGISTER_RATE_LIMIT, 60 * 60 * 1000),
     validate(utilisateurSchemas.create),
     async (req, res) => {
       try {
@@ -84,7 +96,7 @@ function createAuthRouter(authService) {
    * Rafraîchit un access token
    */
   router.post('/refresh',
-    userRateLimit(10, 15 * 60 * 1000), // 10 refresh par 15 minutes
+    userRateLimit(REFRESH_RATE_LIMIT, 15 * 60 * 1000),
     validateRefreshToken,
     async (req, res) => {
       try {

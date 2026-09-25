@@ -99,8 +99,16 @@ async function main() {
   console.log('============================================================\n');
 
   try {
+    // 0. Vérifier que le système de migration est cohérent AVANT de construire
+    //    le paquet — sinon le bug (migration écrite mais jamais livrée/jamais
+    //    appliquée chez le client) ne serait détecté qu'une fois le paquet
+    //    déjà distribué.
+    console.log('[0/6] Vérification du système de migration...');
+    run(`node "${path.join(ROOT, 'verify-migration-system.js')}"`);
+    console.log('✅ Système de migration cohérent');
+
     // 1. Nettoyer dist-exe (sauf node.exe si déjà là)
-    console.log('[1/6] Préparation dist-exe...');
+    console.log('\n[1/6] Préparation dist-exe...');
     const nodeExeBackup = fs.existsSync(NODE_EXE) ? fs.readFileSync(NODE_EXE) : null;
     if (fs.existsSync(DIST)) fs.rmSync(DIST, { recursive: true, force: true });
     ensureDir(DIST);
@@ -135,6 +143,13 @@ async function main() {
         path.join(DIST, 'scripts', 'fix-migrations-client.bat')
       );
       console.log('  ✅ fix-migrations-client.bat copié');
+    }
+    if (fs.existsSync(path.join(ROOT, 'scripts', 'replay-migrations.js'))) {
+      fs.copyFileSync(
+        path.join(ROOT, 'scripts', 'replay-migrations.js'),
+        path.join(DIST, 'scripts', 'replay-migrations.js')
+      );
+      console.log('  ✅ replay-migrations.js copié');
     }
     // node_modules complet (nécessaire pour Prisma natif)
     copyDirSync(path.join(ROOT, 'node_modules'), path.join(DIST, 'node_modules'));

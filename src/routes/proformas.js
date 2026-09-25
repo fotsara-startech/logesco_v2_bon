@@ -44,13 +44,21 @@ function createProformaRouter({ prisma, authService, syncService }) {
   // ── GET /proformas ────────────────────────────────────────────────────────
   router.get('/', async (req, res) => {
     try {
-      const { page = 1, limit = 20, statut, clientId, vendeurId, boutiqueId } = req.query;
+      const { page = 1, limit = 20, statut, clientId, vendeurId, boutiqueId, dateDebut, dateFin } = req.query;
       const skip = (parseInt(page) - 1) * parseInt(limit);
       const where = {};
       if (statut) where.statut = statut;
       if (clientId) where.clientId = parseInt(clientId);
       if (vendeurId) where.vendeurId = parseInt(vendeurId);
       if (boutiqueId) where.boutiqueId = parseInt(boutiqueId);
+      // Filtre par période — même convention que /sales (dateDebut/dateFin en
+      // heure locale, sans suffixe 'Z') ; filtré sur dateCreation, la date
+      // affichée/triée dans le listing des proformas.
+      if (dateDebut || dateFin) {
+        where.dateCreation = {};
+        if (dateDebut) where.dateCreation.gte = new Date(dateDebut);
+        if (dateFin) where.dateCreation.lte = new Date(dateFin);
+      }
 
       const [total, proformas] = await Promise.all([
         prisma.venteProforma.count({ where }),
@@ -441,11 +449,24 @@ function createProformaRouter({ prisma, authService, syncService }) {
 
         // 3. Mettre à jour le compte client si crédit
         if (proforma.clientId && restant > 0) {
-          await tx.compteClient.upsert({
-            where: { clientId: proforma.clientId },
-            update: { soldeActuel: { decrement: restant } },
-            create: { clientId: proforma.clientId, soldeActuel: -restant },
+          const compteExistant = await tx.compteClient.findUnique({
+            where: { clientId: proforma.clientId }
           });
+
+          if (compteExistant) {
+            await tx.compteClient.update({
+              where: { clientId: proforma.clientId },
+              data: { soldeActuel: { decrement: restant } }
+            });
+          } else {
+            await tx.compteClient.create({
+              data: {
+                clientId: proforma.clientId,
+                soldeActuel: -restant,
+                limiteCredit: 0
+              }
+            });
+          }
         }
 
         // 4. Marquer la proforma comme validée

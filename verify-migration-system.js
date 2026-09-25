@@ -1,5 +1,8 @@
 /**
- * Script de vérification du système de migration automatique
+ * Script de vérification du système de migration automatique.
+ * Contrôle que MIGRATION_ORDER (migration-runner.js) correspond exactement
+ * aux dossiers présents dans prisma/migrations — la source unique de vérité
+ * appliquée aux postes clients.
  */
 
 const fs = require('fs');
@@ -9,133 +12,86 @@ console.log('╔═════════════════════�
 console.log('║  Vérification du Système de Migration Automatique LOGESCO   ║');
 console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
-const checks = {
-  total: 0,
-  passed: 0,
-  failed: 0
-};
+const checks = { total: 0, passed: 0, failed: 0 };
 
 function check(name, condition, successMsg, failMsg) {
   checks.total++;
   if (condition) {
     checks.passed++;
     console.log(`✅ ${name}: ${successMsg}`);
-    return true;
   } else {
     checks.failed++;
     console.error(`❌ ${name}: ${failMsg}`);
-    return false;
   }
+  return condition;
 }
 
-// 1. Vérifier que schema-validator.js existe
-const validatorPath = path.join(__dirname, 'src', 'utils', 'schema-validator.js');
+// 1. Le runner existe et se charge
+let migrationRunner;
+try {
+  migrationRunner = require('./src/services/migration-runner');
+  check('Chargement du module', true, 'src/services/migration-runner.js chargé sans erreur');
+} catch (error) {
+  check('Chargement du module', false, '', `Erreur: ${error.message}`);
+  process.exit(1);
+}
+
+// 2. Chaque entrée de MIGRATION_ORDER a bien un dossier + migration.sql
+const migrationsDir = path.join(__dirname, 'prisma', 'migrations');
+const missing = migrationRunner.MIGRATION_ORDER.filter(
+  (name) => !fs.existsSync(path.join(migrationsDir, name, 'migration.sql'))
+);
 check(
-  'Schema Validator',
-  fs.existsSync(validatorPath),
-  'Fichier trouvé',
-  'Fichier manquant : src/utils/schema-validator.js'
+  'MIGRATION_ORDER ↔ fichiers',
+  missing.length === 0,
+  `${migrationRunner.MIGRATION_ORDER.length} migration(s) toutes présentes sur disque`,
+  `migration.sql manquant pour: ${missing.join(', ')}`
 );
 
-// 2. Vérifier que server.js contient _validateSchema
+// 3. Aucun dossier de migration sur disque n'est absent du manifest
+//    (sinon il ne sera jamais appliqué aux postes clients)
+const onDisk = fs.readdirSync(migrationsDir).filter((entry) => {
+  const full = path.join(migrationsDir, entry);
+  return fs.statSync(full).isDirectory() && fs.existsSync(path.join(full, 'migration.sql'));
+});
+const notInManifest = onDisk.filter((name) => !migrationRunner.MIGRATION_ORDER.includes(name));
+check(
+  'Fichiers ↔ MIGRATION_ORDER',
+  notInManifest.length === 0,
+  'Tous les dossiers migration.sql sont référencés dans MIGRATION_ORDER',
+  `Dossier(s) présents sur disque mais absents de MIGRATION_ORDER (jamais appliqués aux clients !): ${notInManifest.join(', ')}`
+);
+
+// 4. server.js appelle bien le runner
 const serverPath = path.join(__dirname, 'src', 'server.js');
 if (fs.existsSync(serverPath)) {
   const serverContent = fs.readFileSync(serverPath, 'utf8');
   check(
-    'Méthode _validateSchema',
-    serverContent.includes('_validateSchema'),
-    'Méthode présente dans server.js',
-    'Méthode manquante dans server.js'
-  );
-  
-  check(
-    'Appel _validateSchema',
-    serverContent.includes('await this._validateSchema(prisma)'),
-    'Appelée dans start()',
-    'Non appelée dans start()'
+    "Appel migrationRunner.run()",
+    serverContent.includes("require('./services/migration-runner')") &&
+      serverContent.includes('migrationRunner.run('),
+    'Appelé dans start()',
+    'Non appelé dans start() — les migrations ne seront jamais rattrapées'
   );
 } else {
   check('Server.js', false, '', 'Fichier server.js manquant');
 }
 
-// 3. Vérifier que le test existe
-const testPath = path.join(__dirname, 'test-schema-validator.js');
-check(
-  'Script de test',
-  fs.existsSync(testPath),
-  'test-schema-validator.js trouvé',
-  'Script de test manquant'
-);
-
-// 4. Vérifier la documentation
-const docsPath = path.join(__dirname, 'MIGRATIONS.md');
-check(
-  'Documentation',
-  fs.existsSync(docsPath),
-  'MIGRATIONS.md trouvé',
-  'Documentation manquante'
-);
-
-const quickStartPath = path.join(__dirname, 'QUICK_START_MIGRATIONS.md');
-check(
-  'Guide rapide',
-  fs.existsSync(quickStartPath),
-  'QUICK_START_MIGRATIONS.md trouvé',
-  'Guide rapide manquant'
-);
-
-// 5. Vérifier le backend embarqué
-const embeddedBackend = path.join(
-  process.env.LOCALAPPDATA,
-  'LOGESCO',
-  'backend'
-);
-
-if (fs.existsSync(embeddedBackend)) {
-  const embeddedValidator = path.join(embeddedBackend, 'src', 'utils', 'schema-validator.js');
+// 5. L'installeur livre bien prisma/migrations/ chez le client
+//    (sans ça, tout ce qui précède est vérifié... mais jamais présent sur
+//    le poste client : c'est exactement le bug qui a cassé la migration
+//    commerciaux/parametres chez plusieurs clients.)
+const installerPath = path.join(__dirname, '..', 'installer-setup.iss');
+if (fs.existsSync(installerPath)) {
+  const installerContent = fs.readFileSync(installerPath, 'utf8');
   check(
-    'Backend embarqué - Validator',
-    fs.existsSync(embeddedValidator),
-    'Copié dans backend embarqué',
-    'Pas encore copié (exécuter: Copy-Item backend\\src\\utils\\schema-validator.js $env:LOCALAPPDATA\\LOGESCO\\backend\\src\\utils\\'
+    'Installeur ↔ prisma/migrations',
+    /prisma\\migrations\\\*/i.test(installerContent),
+    'installer-setup.iss copie bien prisma\\migrations\\* chez le client',
+    "installer-setup.iss ne copie PAS prisma\\migrations\\* — aucune migration ne pourra jamais s'appliquer sur un poste client !"
   );
-  
-  const embeddedServer = path.join(embeddedBackend, 'src', 'server.js');
-  if (fs.existsSync(embeddedServer)) {
-    const embeddedServerContent = fs.readFileSync(embeddedServer, 'utf8');
-    check(
-      'Backend embarqué - Server',
-      embeddedServerContent.includes('_validateSchema'),
-      'Méthode présente dans backend embarqué',
-      'server.js du backend embarqué non mis à jour'
-    );
-  }
 } else {
-  console.log('ℹ️  Backend embarqué non installé (normal en développement)');
-}
-
-// 6. Test de chargement du module
-try {
-  const SchemaValidator = require('./src/utils/schema-validator');
-  check(
-    'Chargement du module',
-    typeof SchemaValidator === 'function',
-    'Module chargeable sans erreur',
-    'Erreur lors du chargement'
-  );
-  
-  // Vérifier les méthodes essentielles
-  const validator = new SchemaValidator(null);
-  check(
-    'Méthodes du validateur',
-    typeof validator.validateAndFix === 'function' &&
-    typeof validator.quickValidate === 'function' &&
-    typeof validator.getRequiredSchema === 'function',
-    'Toutes les méthodes présentes',
-    'Méthodes manquantes'
-  );
-} catch (error) {
-  check('Chargement du module', false, '', `Erreur: ${error.message}`);
+  check('Installeur', false, '', 'installer-setup.iss introuvable (chemin attendu : ../installer-setup.iss)');
 }
 
 // Résumé
@@ -147,14 +103,9 @@ console.log(`✅ Réussies            : ${checks.passed}`);
 console.log(`❌ Échouées            : ${checks.failed}`);
 
 if (checks.failed === 0) {
-  console.log('\n🎉 Système de migration automatique opérationnel !');
-  console.log('\n📖 Prochaines étapes :');
-  console.log('   1. Tester : node backend/test-schema-validator.js');
-  console.log('   2. Lire : backend/QUICK_START_MIGRATIONS.md');
-  console.log('   3. Déployer sur backend embarqué si nécessaire');
+  console.log('\n🎉 Système de migration automatique opérationnel.');
   process.exit(0);
 } else {
-  console.log('\n⚠️  Certaines vérifications ont échoué.');
-  console.log('   Corrigez les erreurs ci-dessus avant de continuer.');
+  console.log('\n⚠️  Corrigez les erreurs ci-dessus avant de livrer une nouvelle version.');
   process.exit(1);
 }

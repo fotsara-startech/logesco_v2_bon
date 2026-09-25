@@ -97,6 +97,25 @@ function createSalesRouter({ prisma, authService, syncService }) {
         const { page = 1, limit = 20, dateDebut, dateFin, ...otherParams } = req.query;
         const skip = (page - 1) * limit;
 
+        // Sécurité : un utilisateur non-admin ne doit voir que ses propres
+        // ventes, sauf si l'admin a activé "les vendeurs voient toutes les
+        // ventes" dans les paramètres d'entreprise. Avant cette vérification,
+        // cette restriction n'existait que côté Flutter (contournable via un
+        // appel API direct) — on la fait maintenant respecter ici, avant le
+        // branchement ci-dessous, car les deux chemins de lecture (SQL brut
+        // avec filtre date / Prisma sans filtre date) partagent `otherParams`.
+        if (req.user?.id) {
+          const [fullUser, companySettings] = await Promise.all([
+            prisma.utilisateur.findUnique({ where: { id: req.user.id }, include: { role: true } }),
+            prisma.parametresEntreprise.findFirst()
+          ]);
+          const isAdmin = !!fullUser?.role?.isAdmin;
+          const vendeursVoientTout = !!companySettings?.vendeursVoientToutesVentes;
+          if (!isAdmin && !vendeursVoientTout) {
+            otherParams.vendeurId = req.user.id;
+          }
+        }
+
         // Si on a des filtres de date, utiliser une requête SQL brute pour éviter les problèmes de timezone
         if (dateDebut || dateFin) {
           console.log('📅 [SALES ROUTE] Utilisation de requête SQL brute pour filtrage par date');
@@ -165,6 +184,10 @@ function createSalesRouter({ prisma, authService, syncService }) {
             whereClause += ' AND vendeur_id = ?';
             params.push(conditions.vendeurId);
           }
+          if (conditions.commercialId) {
+            whereClause += ' AND commercial_id = ?';
+            params.push(conditions.commercialId);
+          }
           if (conditions.statut) {
             whereClause += ' AND statut = ?';
             params.push(conditions.statut);
@@ -219,6 +242,12 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   vendeur: {
                     select: { id: true, nomUtilisateur: true }
                   },
+                  commercial: {
+                    select: {
+                      id: true, nom: true, prenom: true,
+                      zone: { select: { id: true, nom: true, ville: { select: { id: true, nom: true } } } }
+                    }
+                  },
                   details: {
                     include: {
                       produit: {
@@ -255,6 +284,12 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 },
                 vendeur: {
                   select: { id: true, nomUtilisateur: true }
+                },
+                commercial: {
+                  select: {
+                    id: true, nom: true, prenom: true,
+                    zone: { select: { id: true, nom: true, ville: { select: { id: true, nom: true } } } }
+                  }
                 },
                 details: {
                   include: {
@@ -513,6 +548,15 @@ function createSalesRouter({ prisma, authService, syncService }) {
           where: { id: parseInt(id) },
           include: {
             client: true,
+            vendeur: {
+              select: { id: true, nomUtilisateur: true }
+            },
+            commercial: {
+              select: {
+                id: true, nom: true, prenom: true,
+                zone: { select: { id: true, nom: true, ville: { select: { id: true, nom: true } } } }
+              }
+            },
             details: {
               include: {
                 produit: {
@@ -568,7 +612,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
           final: boutiqueIdFromRequest
         });
 
-        const { clientId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente } = req.body;
+        const { clientId, commercialId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente } = req.body;
         const boutiqueId = boutiqueIdFromRequest;
 
         // DEBUG: Log des données reçues
@@ -782,11 +826,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
         const montantVerse = montantPaye || 0;
         let modeDeTermine;
         let montantRestant = 0;
-        
+
         // CORRECTION: La monnaie à rendre ne doit être calculée QUE si le client n'a pas de dette
         // Si le client a une dette, l'excédent sert à la rembourser
         let monnaieARendre = 0;
-        
+
         if (montantVerse >= montantTotalAPayer) {
           // Le client a payé le total (commande + dette)
           modeDeTermine = 'comptant';
@@ -838,6 +882,23 @@ function createSalesRouter({ prisma, authService, syncService }) {
             console.log(`✅ Session active trouvée: ID ${activeSession.id}`);
           }
 
+          // Zone/ville du commercial FIGÉES au moment de cette vente (pas
+          // recalculées à la lecture) : sinon une réaffectation ultérieure
+          // du commercial réécrirait silencieusement l'historique du
+          // rapport par zone/ville. Voir commercial-report.js.
+          let zoneIdVente = null;
+          let villeIdVente = null;
+          if (commercialId) {
+            const commercialActuel = await tx.commercial.findUnique({
+              where: { id: commercialId },
+              select: { zoneId: true, zone: { select: { villeId: true } } }
+            });
+            if (commercialActuel) {
+              zoneIdVente = commercialActuel.zoneId;
+              villeIdVente = commercialActuel.zone.villeId;
+            }
+          }
+
           // Créer la vente avec la logique automatique
           // SOLUTION 2: Toutes les ventes sont marquées "terminee"
           // Le compte client gère les dettes, pas le statut de la vente
@@ -847,6 +908,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
               ...(clientId ? { client: { connect: { id: clientId } } } : {}),
               ...(sessionId ? { session: { connect: { id: sessionId } } } : {}),
               ...(req.user?.id ? { vendeur: { connect: { id: req.user.id } } } : {}),
+              ...(commercialId ? { commercial: { connect: { id: commercialId } } } : {}),
+              ...(zoneIdVente ? { zone: { connect: { id: zoneIdVente } } } : {}),
+              ...(villeIdVente ? { ville: { connect: { id: villeIdVente } } } : {}),
               ...(boutiqueId ? { boutique: { connect: { id: parseInt(boutiqueId) } } } : {}),
               modePaiement: modeDeTermine,
               sousTotal: montantVente,
@@ -872,6 +936,12 @@ function createSalesRouter({ prisma, authService, syncService }) {
             },
             include: {
               client: true,
+              commercial: {
+                select: {
+                  id: true, nom: true, prenom: true,
+                  zone: { select: { id: true, nom: true, ville: { select: { id: true, nom: true } } } }
+                }
+              },
               details: {
                 include: {
                   produit: {
@@ -1040,17 +1110,29 @@ function createSalesRouter({ prisma, authService, syncService }) {
               nouveauSolde = montantVerse - montantTotalAPayer;
             }
             
-            const compteClientUpdated = await tx.compteClient.upsert({
-              where: { clientId },
-              create: {
-                clientId,
-                soldeActuel: nouveauSolde,
-                limiteCredit: 0
-              },
-              update: {
-                soldeActuel: nouveauSolde
-              }
+            // Vérifier si le compte client existe déjà
+            let compteClientUpdated = await tx.compteClient.findUnique({
+              where: { clientId }
             });
+
+            if (compteClientUpdated) {
+              // Mise à jour du compte existant
+              compteClientUpdated = await tx.compteClient.update({
+                where: { clientId },
+                data: {
+                  soldeActuel: nouveauSolde
+                }
+              });
+            } else {
+              // Création d'un nouveau compte
+              compteClientUpdated = await tx.compteClient.create({
+                data: {
+                  clientId,
+                  soldeActuel: nouveauSolde,
+                  limiteCredit: 0
+                }
+              });
+            }
 
             console.log('=== CRÉATION DES TRANSACTIONS ===');
             console.log(`Dette précédente: ${dettePrecedente} FCFA`);
@@ -1215,6 +1297,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   date_vente: vente.dateVente,
                   boutique_id: boutiqueId ? parseInt(boutiqueId) : null,
                   vendeur_id: vente.utilisateurId,
+                  commercial_id: vente.commercialId,
+                  zone_id: vente.zoneId,
+                  ville_id: vente.villeId,
                   session_id: vente.sessionId,
                   mode_paiement: vente.modePaiement,
                 });
