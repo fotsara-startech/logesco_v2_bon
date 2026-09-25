@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:logesco_v2/features/subscription/models/license_data.dart';
@@ -16,6 +17,14 @@ class SubscriptionController extends GetxController {
   final RxBool _isLoading = false.obs;
   final RxString _errorMessage = ''.obs;
   final RxList<String> _notifications = <String>[].obs;
+
+  // Complété une fois la première initialisation terminée (succès ou échec) —
+  // permet à AppInitializationService d'attendre la vraie fin d'init au lieu
+  // d'un délai fixe, qui était insuffisant sur une machine lente (NTP +
+  // déchiffrement plus lents) et provoquait un double-appel concurrent dans
+  // le pipeline de stockage de licence.
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> get whenInitialized => _initCompleter.future;
 
   SubscriptionController({required ISubscriptionManager subscriptionManager}) : _subscriptionManager = subscriptionManager;
 
@@ -56,6 +65,7 @@ class SubscriptionController extends GetxController {
         remainingDays: null,
         warnings: [],
       );
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
       return;
     }
 
@@ -80,6 +90,7 @@ class SubscriptionController extends GetxController {
       _errorMessage.value = 'Erreur d\'initialisation: ${e.toString()}';
     } finally {
       _isLoading.value = false;
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
     }
   }
 

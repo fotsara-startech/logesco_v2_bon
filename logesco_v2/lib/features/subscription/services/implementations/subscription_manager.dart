@@ -56,6 +56,11 @@ class SubscriptionManager implements ISubscriptionManager {
   // Cache du statut actuel avec optimisations
   SubscriptionStatus? _cachedStatus;
   DateTime? _lastCacheUpdate;
+  // Un statut "non fiable" (issu d'une exception ou d'une absence de
+  // licence qui pourrait venir d'un echec de lecture transitoire, ex.
+  // machine lente) ne beneficie que du cache rapide (30s) — jamais des 5
+  // minutes complets, pour ne pas bloquer l'appli sur un faux "non actif".
+  bool _cachedStatusReliable = true;
 
   // Cache en mémoire pour les validations fréquentes
   final Map<String, dynamic> _validationCache = {};
@@ -123,8 +128,9 @@ class SubscriptionManager implements ISubscriptionManager {
       if (cacheAge.inSeconds < _fastCacheValiditySeconds) {
         return _cachedStatus!;
       }
-      // Utiliser le cache normal si récent (moins de 5 minutes)
-      if (cacheAge.inMinutes < _cacheValidityMinutes) {
+      // Utiliser le cache normal si récent (moins de 5 minutes) — seulement
+      // pour un statut fiable (voir _cachedStatusReliable).
+      if (_cachedStatusReliable && cacheAge.inMinutes < _cacheValidityMinutes) {
         return _cachedStatus!;
       }
     }
@@ -152,7 +158,10 @@ class SubscriptionManager implements ISubscriptionManager {
         return status;
       }
 
-      // Aucun abonnement actif
+      // Aucun abonnement actif — peut aussi venir d'un echec de lecture
+      // transitoire de la licence stockee (machine lente, plugin natif
+      // lent) plutot que d'une reelle absence : ne pas figer ce verdict 5
+      // minutes, seulement le cache rapide de 30s.
       final expiredStatus = SubscriptionStatus(
         isActive: false,
         type: SubscriptionType.trial,
@@ -160,7 +169,7 @@ class SubscriptionManager implements ISubscriptionManager {
         warnings: ['Aucun abonnement actif'],
       );
 
-      _updateCachedStatus(expiredStatus);
+      _updateCachedStatus(expiredStatus, reliable: false);
       return expiredStatus;
     } catch (e) {
       final errorStatus = SubscriptionStatus(
@@ -169,7 +178,7 @@ class SubscriptionManager implements ISubscriptionManager {
         warnings: ['Erreur de validation: ${e.toString()}'],
       );
 
-      _updateCachedStatus(errorStatus);
+      _updateCachedStatus(errorStatus, reliable: false);
       return errorStatus;
     }
   }
@@ -923,9 +932,10 @@ class SubscriptionManager implements ISubscriptionManager {
     _statusController.add(status);
   }
 
-  void _updateCachedStatus(SubscriptionStatus status) {
+  void _updateCachedStatus(SubscriptionStatus status, {bool reliable = true}) {
     _cachedStatus = status;
     _lastCacheUpdate = DateTime.now();
+    _cachedStatusReliable = reliable;
   }
 
   Future<DateTime?> _getGracePeriodStart() async {

@@ -208,18 +208,38 @@ class LicenseService implements ILicenseService {
       // Utiliser le stockage sécurisé avec vérification d'intégrité
       final license = await _secureStorage.retrieveLicense();
 
-      // Mettre à jour le cache si récupération réussie
       if (license != null) {
+        // Mettre à jour le cache si récupération réussie
         _cachedLicense = license;
+        _lastValidation = DateTime.now();
+        return license;
       }
 
-      return license;
+      // Rien retourné : peut être une absence réelle de licence, ou un
+      // échec de lecture silencieux côté stockage sécurisé (voir
+      // SecureLicenseStorage.retrieveLicense — disque lent, plugin natif
+      // en retard...). Sur une machine lente ce cas est bien plus fréquent
+      // qu'ailleurs ; sans ce filet, il était interprété comme "aucune
+      // licence" et déclenchait un faux écran "essai expiré" malgré une
+      // licence active. On ne perd donc la dernière licence connue que si
+      // sa fenêtre de confiance (5 min) est dépassée.
+      return _recentCachedLicenseOrNull();
     } catch (e) {
       if (e is LicenseException) {
         rethrow;
       }
-      return null;
+      return _recentCachedLicenseOrNull();
     }
+  }
+
+  /// Renvoie la licence en cache si elle a été validée avec succès
+  /// récemment, sinon `null`. Évite de traduire un échec de lecture
+  /// transitoire en "aucune licence" tant qu'une lecture réussie récente
+  /// existe.
+  LicenseData? _recentCachedLicenseOrNull() {
+    if (_cachedLicense == null || _lastValidation == null) return null;
+    final age = DateTime.now().difference(_lastValidation!);
+    return age < _validationCacheTimeout ? _cachedLicense : null;
   }
 
   @override

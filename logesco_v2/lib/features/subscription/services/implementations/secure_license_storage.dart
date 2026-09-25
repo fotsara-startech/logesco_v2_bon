@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -24,6 +25,17 @@ class SecureLicenseStorage {
   // Clés de chiffrement dérivées
   String? _primaryEncryptionKey;
   String? _backupEncryptionKey;
+
+  // Empreinte d'appareil mise en cache pour tout le processus : la
+  // regénérer à chaque lecture (detectTampering + createTamperDetectionData
+  // + logAccess, jusqu'à 3 fois par vérification de licence) multipliait
+  // inutilement les allers-retours de plateforme natifs, un facteur
+  // aggravant sur une machine lente.
+  String? _fingerprintCache;
+
+  Future<String> _getCachedFingerprint() async {
+    return _fingerprintCache ??= await _deviceService.generateDeviceFingerprint();
+  }
 
   SecureLicenseStorage({
     required CryptoService cryptoService,
@@ -91,46 +103,60 @@ class SecureLicenseStorage {
     }
   }
 
-  /// Récupère une licence stockée avec vérification d'intégrité
+  /// Récupère une licence stockée avec vérification d'intégrité.
+  ///
+  /// Réessaie une fois avant de conclure à une absence de licence : sur une
+  /// machine lente, un aller-retour de plateforme natif (lecture DPAPI,
+  /// antivirus qui intercepte l'appel...) peut échouer ponctuellement sans
+  /// que la licence ait réellement disparu — c'est ce qui provoquait un
+  /// faux écran "essai expiré" malgré une licence active configurée.
   Future<LicenseData?> retrieveLicense() async {
     try {
-      // 1. Vérifier la détection de manipulation (empreinte appareil uniquement)
-      final tamperDetected = await _detectTampering();
-      if (tamperDetected) {
-        // Log l'incident mais ne pas bloquer — laisser la vérification d'intégrité décider
-        await _logAccess('tamper_warning', 'system');
-      }
-
-      // 2. Récupérer les données principales
-      final primaryData = await _secureStorage.read(key: _primaryStorageKey);
-      if (primaryData == null) {
+      return await _retrieveLicenseOnce();
+    } catch (e) {
+      if (e is LicenseException) rethrow;
+      try {
+        await Future.delayed(const Duration(milliseconds: 300));
+        return await _retrieveLicenseOnce();
+      } catch (_) {
         return null;
       }
+    }
+  }
 
-      // 3. Vérifier l'intégrité des données principales
-      final integrityValid = await _verifyDataIntegrity(primaryData, true);
-      if (!integrityValid) {
-        // Essayer de récupérer depuis la sauvegarde
-        return await _recoverFromBackup();
-      }
+  Future<LicenseData?> _retrieveLicenseOnce() async {
+    // 1. Vérifier la détection de manipulation (empreinte appareil uniquement)
+    final tamperDetected = await _detectTampering();
+    if (tamperDetected) {
+      // Log l'incident mais ne pas bloquer — laisser la vérification d'intégrité décider
+      unawaited(_logAccess('tamper_warning', 'system'));
+    }
 
-      // 4. Déchiffrer les données
-      final decryptedJson = await _decryptWithPrimaryKey(primaryData);
-
-      // 5. Désérialiser la licence
-      final licenseJson = jsonDecode(decryptedJson) as Map<String, dynamic>;
-      final license = LicenseData.fromJson(licenseJson);
-
-      // 6. Enregistrer l'accès
-      await _logAccess('retrieve', license.userId);
-
-      return license;
-    } catch (e) {
-      if (e is LicenseException) {
-        rethrow;
-      }
+    // 2. Récupérer les données principales
+    final primaryData = await _secureStorage.read(key: _primaryStorageKey);
+    if (primaryData == null) {
       return null;
     }
+
+    // 3. Vérifier l'intégrité des données principales
+    final integrityValid = await _verifyDataIntegrity(primaryData, true);
+    if (!integrityValid) {
+      // Essayer de récupérer depuis la sauvegarde
+      return await _recoverFromBackup();
+    }
+
+    // 4. Déchiffrer les données
+    final decryptedJson = await _decryptWithPrimaryKey(primaryData);
+
+    // 5. Désérialiser la licence
+    final licenseJson = jsonDecode(decryptedJson) as Map<String, dynamic>;
+    final license = LicenseData.fromJson(licenseJson);
+
+    // 6. Enregistrer l'accès — en tâche de fond : ne doit jamais retarder
+    // (ni faire échouer) la lecture de la licence elle-même.
+    unawaited(_logAccess('retrieve', license.userId));
+
+    return license;
   }
 
   /// Vérifie l'intégrité complète du stockage
@@ -258,7 +284,7 @@ class SecureLicenseStorage {
   /// Reproduit l'ancien calcul de clé (dérivée de l'empreinte d'appareil + salt),
   /// utilisé uniquement pour amorcer la clé persistée lors de la migration.
   Future<String> _computeLegacyDerivedKey(String salt) async {
-    final deviceFingerprint = await _deviceService.generateDeviceFingerprint();
+    final deviceFingerprint = await _getCachedFingerprint();
     return _cryptoService.generateHash('$deviceFingerprint$salt');
   }
 
@@ -287,7 +313,7 @@ class SecureLicenseStorage {
         // Créer les données initiales de détection
         final initialTamperData = {
           'initialized': DateTime.now().toIso8601String(),
-          'deviceFingerprint': await _deviceService.generateDeviceFingerprint(),
+          'deviceFingerprint': await _getCachedFingerprint(),
           'checksum': _cryptoService.generateRandomKey(16),
         };
 
@@ -361,7 +387,7 @@ class SecureLicenseStorage {
     return {
       'tamperHash': tamperHash,
       'createdAt': DateTime.now().toIso8601String(),
-      'deviceFingerprint': await _deviceService.generateDeviceFingerprint(),
+      'deviceFingerprint': await _getCachedFingerprint(),
       'randomSalt': _cryptoService.generateRandomKey(8),
     };
   }
@@ -406,7 +432,7 @@ class SecureLicenseStorage {
 
       final storedFingerprint = tamperData['deviceFingerprint'] as String?;
       if (storedFingerprint != null) {
-        final currentFingerprint = await _deviceService.generateDeviceFingerprint();
+        final currentFingerprint = await _getCachedFingerprint();
         if (storedFingerprint != currentFingerprint) {
           return true; // Appareil différent = manipulation possible
         }
@@ -487,7 +513,7 @@ class SecureLicenseStorage {
         'action': action,
         'userId': userId,
         'timestamp': DateTime.now().toIso8601String(),
-        'deviceFingerprint': await _deviceService.generateDeviceFingerprint(),
+        'deviceFingerprint': await _getCachedFingerprint(),
       });
 
       // Garder seulement les 100 derniers logs

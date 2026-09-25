@@ -80,7 +80,18 @@ class AppInitializationService extends GetxService {
       print('🔍 [AppInit] Initialisation du système d\'abonnement...');
 
       final subscriptionController = Get.find<SubscriptionController>();
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Attendre la vraie fin de l'initialisation (démarrée dans onInit())
+      // au lieu d'un délai fixe : sur une machine lente (NTP + déchiffrement
+      // de la licence plus lents), 500ms ne suffisait pas toujours, et un
+      // refreshStatus() lancé pendant que l'init tournait encore créait un
+      // second appel concurrent dans le pipeline de stockage sécurisé —
+      // un facteur aggravant du faux "essai expiré" sur ces machines.
+      await subscriptionController.whenInitialized.timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          print('⚠️ [AppInit] Initialisation abonnement toujours en cours après 15s — on continue quand même');
+        },
+      );
       await subscriptionController.refreshStatus();
 
       final status = subscriptionController.currentStatus;
