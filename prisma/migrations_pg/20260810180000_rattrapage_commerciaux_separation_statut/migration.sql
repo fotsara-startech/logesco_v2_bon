@@ -56,31 +56,31 @@ ALTER TABLE "ventes" ADD COLUMN IF NOT EXISTS "ville_id" INTEGER;
 
 DO $$ BEGIN
     ALTER TABLE "villes" ADD CONSTRAINT "villes_nom_key" UNIQUE ("nom");
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "zones" ADD CONSTRAINT "zones_ville_id_fkey" FOREIGN KEY ("ville_id") REFERENCES "villes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "zones" ADD CONSTRAINT "zones_ville_id_nom_key" UNIQUE ("ville_id", "nom");
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "commerciaux" ADD CONSTRAINT "commerciaux_zone_id_fkey" FOREIGN KEY ("zone_id") REFERENCES "zones"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "ventes" ADD CONSTRAINT "ventes_commercial_id_fkey" FOREIGN KEY ("commercial_id") REFERENCES "commerciaux"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "ventes" ADD CONSTRAINT "ventes_zone_id_fkey" FOREIGN KEY ("zone_id") REFERENCES "zones"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
     ALTER TABLE "ventes" ADD CONSTRAINT "ventes_ville_id_fkey" FOREIGN KEY ("ville_id") REFERENCES "villes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
 
 CREATE INDEX IF NOT EXISTS "idx_villes_nom" ON "villes"("nom");
 CREATE INDEX IF NOT EXISTS "idx_zones_ville" ON "zones"("ville_id");

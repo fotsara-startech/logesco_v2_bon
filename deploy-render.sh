@@ -47,10 +47,31 @@ elif grep -qiE "P3005|already exists|duplicate" "$DEPLOY_LOG"; then
     if [ -d "$migration_dir" ]; then
       migration_name=$(basename "$migration_dir")
       echo "📌 Marking migration as applied: $migration_name"
-      npx prisma migrate resolve --applied "$migration_name" --schema=prisma/schema.postgresql.prisma
+      RESOLVE_OUT=$(npx prisma migrate resolve --applied "$migration_name" --schema=prisma/schema.postgresql.prisma 2>&1) && echo "$RESOLVE_OUT" || {
+        echo "$RESOLVE_OUT"
+        # P3008 = deja marquee appliquee : rien a faire, ce n'est pas une erreur.
+        echo "$RESOLVE_OUT" | grep -q "P3008" || { echo "❌ Echec du baseline sur $migration_name"; exit 1; }
+      }
     fi
   done
   echo "🔄 Retrying migration deploy after baseline..."
+  npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
+elif grep -q "P3009" "$DEPLOY_LOG"; then
+  # Un essai precedent (ex. avant correction d'un bug dans le SQL) a laisse
+  # une migration enregistree en echec — Prisma bloque tout tant qu'elle
+  # n'est pas explicitement resolue. On la marque "rolled-back" (pas
+  # "applied" : on ne sait pas ce qui a reellement ete execute) puis on la
+  # rejoue en entier — sans risque tant que le SQL de chaque migration est
+  # idempotent (IF NOT EXISTS / EXCEPTION WHEN duplicate_object...).
+  FAILED_NAME=$(sed -n "s/.*\`\([0-9A-Za-z_]*\)\`.*migration started.*/\1/p" "$DEPLOY_LOG" | head -1)
+  if [ -z "$FAILED_NAME" ]; then
+    echo "❌ P3009 detecte mais impossible d'identifier la migration en echec — abandon."
+    rm -f "$DEPLOY_LOG"
+    exit 1
+  fi
+  echo "⚠️ P3009 : migration '$FAILED_NAME' bloquee en echec depuis une tentative precedente — rollback puis nouvelle tentative."
+  npx prisma migrate resolve --rolled-back "$FAILED_NAME" --schema=prisma/schema.postgresql.prisma
+  echo "🔄 Retrying migration deploy after rollback..."
   npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
 else
   echo "❌ Migration deploy failed pour une raison inattendue — abandon du deploiement (voir le log ci-dessus)."
