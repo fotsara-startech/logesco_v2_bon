@@ -88,6 +88,9 @@ class SyncServiceV2 {
     this.syncInterval = null;
     this.isSyncing = false;
     this.cloudUrl = process.env.CLOUD_DB_URL;
+    this.lastCloudError = null;
+    this.consecutiveCloudFailures = 0;
+    this.lastSuccessfulSyncAt = null;
     this._modColumnCache = {};
   }
 
@@ -128,33 +131,76 @@ class SyncServiceV2 {
     console.log('✅ SyncService V2 démarré (Event Sourcing + Hybrid Mode)');
   }
 
+  _createCloudPool() {
+    const pool = new Pool({
+      connectionString: this.cloudUrl,
+      ssl: { rejectUnauthorized: false },
+      max: 3,
+      idleTimeoutMillis: 10000,
+      // Liaisons lentes/instables : 10 s était trop court (Neon met 3 à 8 s à répondre)
+      connectionTimeoutMillis: 30000,
+      // Évite que routeur/FAI abandonne silencieusement une connexion inactive
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+    });
+    // Sans ce handler, une coupure sur une connexion inactive fait tomber le processus
+    pool.on('error', (e) => console.warn('⚠️  Neon: connexion inactive perdue —', e.message));
+    return pool;
+  }
+
+  /**
+   * Teste la connexion à Neon. Une micro-coupure ne suffit pas à passer hors
+   * ligne : on retente (1 s puis 3 s) avec un pool neuf avant de conclure.
+   * L'erreur réelle est conservée dans this.lastCloudError pour l'affichage.
+   */
   async _checkCloudConnection() {
     if (!this.cloudUrl) return false;
-    try {
-      if (!this.cloudPool) {
-        this.cloudPool = new Pool({
-          connectionString: this.cloudUrl,
-          ssl: { rejectUnauthorized: false },
-          max: 3,
-          idleTimeoutMillis: 10000,
-          connectionTimeoutMillis: 10000,
-        });
+    const delaisEntreEssais = [0, 1000, 3000];
+    let derniereErreur = null;
+
+    for (let i = 0; i < delaisEntreEssais.length; i++) {
+      if (delaisEntreEssais[i] > 0) {
+        await new Promise((r) => setTimeout(r, delaisEntreEssais[i]));
       }
-      const client = await this.cloudPool.connect();
-      await client.query('SELECT 1');
-      client.release();
-      if (!this.isCloudAvailable) {
-        console.log('☁️  Connexion Neon établie — mode hybride actif');
-        this.isCloudAvailable = true;
+      try {
+        if (!this.cloudPool) this.cloudPool = this._createCloudPool();
+        const client = await this.cloudPool.connect();
+        try {
+          await client.query('SELECT 1');
+        } finally {
+          client.release();
+        }
+        if (!this.isCloudAvailable) {
+          console.log('☁️  Connexion Neon établie — mode hybride actif');
+          this.isCloudAvailable = true;
+        }
+        this.lastCloudError = null;
+        this.consecutiveCloudFailures = 0;
+        return true;
+      } catch (e) {
+        derniereErreur = e;
+        // Pool potentiellement porteur de sockets mortes : on repart de zéro
+        const ancien = this.cloudPool;
+        this.cloudPool = null;
+        if (ancien) ancien.end().catch(() => {});
       }
-      return true;
-    } catch (e) {
-      if (this.isCloudAvailable) {
-        console.warn('⚠️  Neon inaccessible — mode offline-fallback');
-      }
-      this.isCloudAvailable = false;
-      return false;
     }
+
+    this.consecutiveCloudFailures = (this.consecutiveCloudFailures || 0) + 1;
+    this.lastCloudError = {
+      code: derniereErreur.code || null,
+      message: derniereErreur.message,
+      at: new Date().toISOString(),
+    };
+    // Journaliser au 1er échec puis toutes les 10 tentatives, sans inonder le log
+    if (this.consecutiveCloudFailures === 1 || this.consecutiveCloudFailures % 10 === 0) {
+      console.warn(
+        `⚠️  Neon inaccessible (échec n°${this.consecutiveCloudFailures}, 3 essais) : ` +
+        `${derniereErreur.code || 'sans code'} — ${derniereErreur.message}`
+      );
+    }
+    this.isCloudAvailable = false;
+    return false;
   }
 
   /**
@@ -1194,6 +1240,7 @@ class SyncServiceV2 {
       if (!available) return;
       await this._replayPendingOperations();
       await this._pullDeltaFromNeon();
+      this.lastSuccessfulSyncAt = new Date().toISOString();
     } catch (e) {
       console.error('❌ Erreur sync:', e.message);
     } finally {
@@ -1572,6 +1619,8 @@ class SyncServiceV2 {
       cloudEnabled: !!this.cloudUrl,
       cloudAvailable: this.isCloudAvailable,
       installationId: installation.getInstallationId(),
+      lastError: this.lastCloudError,
+      lastSuccessfulSyncAt: this.lastSuccessfulSyncAt,
       mode: !this.cloudUrl ? 'local-only' : this.isCloudAvailable ? 'hybrid' : 'offline-fallback'
     };
   }

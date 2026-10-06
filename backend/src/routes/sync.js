@@ -34,6 +34,23 @@ function createSyncRouter({ authService }) {
         });
       }
 
+      // Vraie date de dernière synchro réussie : celle de ce démarrage, sinon la
+      // dernière opération confirmée par Neon (journal local)
+      let lastSync = status.lastSuccessfulSyncAt;
+      if (!lastSync) {
+        const row = await syncService.localPrisma.$queryRawUnsafe(
+          `SELECT MAX(synced_at) as last FROM operation_log WHERE status = 'synced'`
+        );
+        const v = row[0]?.last;
+        if (v) {
+          // synced_at est stocké en UTC ("YYYY-MM-DD HH:MM:SS") ou en ms epoch selon l'écriture
+          const d = typeof v === 'number' || typeof v === 'bigint'
+            ? new Date(Number(v))
+            : new Date(String(v).includes('T') ? v : String(v).replace(' ', 'T') + 'Z');
+          if (!isNaN(d)) lastSync = d.toISOString();
+        }
+      }
+
       // Lire l'operation_log en attente depuis la BD locale (V2 Event Sourcing)
       const pending = await syncService.localPrisma.$queryRawUnsafe(
         `SELECT table_name, COUNT(*) as count
@@ -74,7 +91,8 @@ function createSyncRouter({ authService }) {
           failedCount,
           pullIssues,
           pullIssuesCount: pullIssues.reduce((n, i) => n + i.enAttente, 0),
-          lastSync: new Date().toISOString(),
+          lastSync,
+          lastError: status.lastError,
         }
       });
     } catch (e) {
@@ -95,8 +113,18 @@ function createSyncRouter({ authService }) {
         return res.json({ success: false, message: 'Mode local uniquement — pas de cloud configuré' });
       }
 
+      // Si le poste est passé « hors ligne » sur une micro-coupure, on retente
+      // la connexion tout de suite au lieu de bloquer l'utilisateur
       if (!status.cloudAvailable) {
-        return res.json({ success: false, message: 'Neon inaccessible — vérifiez la connexion internet' });
+        const reconnecte = await syncService._checkCloudConnection();
+        if (!reconnecte) {
+          const err = syncService.getStatus().lastError;
+          const motif = err ? ` (${err.code || 'erreur'} : ${err.message})` : '';
+          return res.json({
+            success: false,
+            message: 'Neon inaccessible — vérifiez la connexion internet' + motif
+          });
+        }
       }
 
       // Déclencher le cycle de sync

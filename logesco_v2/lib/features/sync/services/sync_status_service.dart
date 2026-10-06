@@ -12,6 +12,7 @@ class SyncStatus {
   final Map<String, int> pendingByTable;
   final int failedCount;
   final String? lastSync;
+  final String? lastErrorMessage;
 
   SyncStatus({
     required this.mode,
@@ -21,6 +22,7 @@ class SyncStatus {
     required this.pendingByTable,
     required this.failedCount,
     this.lastSync,
+    this.lastErrorMessage,
   });
 
   factory SyncStatus.fromJson(Map<String, dynamic> json) {
@@ -35,7 +37,16 @@ class SyncStatus {
       pendingByTable: byTable,
       failedCount: (json['failedCount'] as num?)?.toInt() ?? 0,
       lastSync: json['lastSync'],
+      lastErrorMessage: _parseError(json['lastError']),
     );
+  }
+
+  static String? _parseError(dynamic e) {
+    if (e is! Map) return null;
+    final code = e['code'];
+    final msg = e['message'];
+    if (msg == null) return null;
+    return code != null ? '$code : $msg' : '$msg';
   }
 
   bool get isType3 => cloudEnabled;
@@ -71,18 +82,18 @@ class SyncStatusService {
     }
   }
 
-  Future<bool> triggerSync() async {
+  /// Retourne null en cas de succès, sinon le motif de l'échec.
+  Future<String?> triggerSync() async {
     try {
+      // Le backend retente la connexion jusqu'à 3 fois (30 s chacune) avant de renoncer
       final response = await http
           .post(Uri.parse('$_baseUrl/sync/trigger'), headers: _headers())
-          .timeout(const Duration(seconds: 60));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['success'] == true;
-      }
-      return false;
+          .timeout(const Duration(seconds: 150));
+      final json = jsonDecode(response.body);
+      if (response.statusCode == 200 && json['success'] == true) return null;
+      return (json['message'] as String?) ?? 'Échec de la synchronisation';
     } catch (_) {
-      return false;
+      return 'Le serveur local ne répond pas';
     }
   }
 }

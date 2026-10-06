@@ -37,13 +37,13 @@ class SyncController extends GetxController {
     if (isSyncing.value) return;
     isSyncing.value = true;
     try {
-      final ok = await _service.triggerSync();
-      if (ok) {
+      final error = await _service.triggerSync();
+      if (error == null) {
         SnackbarHelper.success('sync_success'.tr);
-        await _fetchStatus();
       } else {
-        SnackbarHelper.error('sync_failed'.tr);
+        SnackbarHelper.error(error);
       }
+      await _fetchStatus();
     } finally {
       isSyncing.value = false;
     }

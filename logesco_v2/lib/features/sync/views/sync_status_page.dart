@@ -98,6 +98,22 @@ class SyncStatusPage extends StatelessWidget {
                 ),
               ],
             ),
+            if (!s.isOnline && s.lastErrorMessage != null) ...[
+              const Divider(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Dernière erreur de connexion : ${s.lastErrorMessage}',
+                      style: TextStyle(fontSize: 12, color: Colors.red[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (s.lastSync != null) ...[
               const Divider(height: 24),
               Row(
@@ -173,7 +189,7 @@ class SyncStatusPage extends StatelessWidget {
 
   Widget _buildSyncButton(SyncController controller, SyncStatus s) {
     return Obx(() => ElevatedButton.icon(
-          onPressed: (!s.isOnline || controller.isSyncing.value) ? null : controller.triggerSync,
+          onPressed: (!s.cloudEnabled || controller.isSyncing.value) ? null : controller.triggerSync,
           icon: controller.isSyncing.value
               ? const SizedBox(
                   width: 18,
