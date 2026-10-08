@@ -80,6 +80,9 @@ const ALT_MODIFICATION_COLUMNS = {
   'inventory_items':    'date_comptage',
 };
 
+// Durée max d'un cycle de synchro avant qu'on le considère bloqué
+const SYNC_CYCLE_MAX_MS = 5 * 60 * 1000;
+
 class SyncServiceV2 {
   constructor() {
     this.localPrisma = null;
@@ -91,6 +94,7 @@ class SyncServiceV2 {
     this.lastCloudError = null;
     this.consecutiveCloudFailures = 0;
     this.lastSuccessfulSyncAt = null;
+    this.syncStartedAt = null;
     this._modColumnCache = {};
   }
 
@@ -142,10 +146,34 @@ class SyncServiceV2 {
       // Évite que routeur/FAI abandonne silencieusement une connexion inactive
       keepAlive: true,
       keepAliveInitialDelayMillis: 10000,
+      // Sans ces délais, une requête restée sans réponse (liaison qui "gèle" en
+      // plein envoi) n'échoue jamais : le cycle de synchro reste bloqué pour
+      // toujours alors que le statut continue d'afficher "connecté".
+      query_timeout: 60000,
+      statement_timeout: 60000,
     });
     // Sans ce handler, une coupure sur une connexion inactive fait tomber le processus
     pool.on('error', (e) => console.warn('⚠️  Neon: connexion inactive perdue —', e.message));
     return pool;
+  }
+
+  /**
+   * true si l'erreur vient de la liaison (coupure, délai, DNS) et non des
+   * données : dans ce cas l'opération n'est PAS en échec, elle doit simplement
+   * rester en attente et repartir au prochain cycle.
+   */
+  _isConnectionError(e) {
+    const code = e && e.code;
+    if (['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'EPIPE', 'ENETUNREACH', 'EHOSTUNREACH', '57P01', '57P02', '57P03', '08000', '08003', '08006'].includes(code)) return true;
+    const msg = String((e && e.message) || '').toLowerCase();
+    return (
+      msg.includes('connection terminated') ||
+      msg.includes('timeout') ||
+      msg.includes('timed out') ||
+      msg.includes('socket') ||
+      msg.includes('client has encountered a connection error') ||
+      msg.includes('connection closed')
+    );
   }
 
   /**
@@ -317,7 +345,9 @@ class SyncServiceV2 {
 
       console.log(`📋 [V2] Replay de ${pending.length} opération(s) en attente...`);
       const client = await this.cloudPool.connect();
+      let connexionPerdue = false;
 
+      try {
       for (const op of pending) {
         try {
           // Sauter les INSERT/UPDATE si un DELETE synced existe pour le même enregistrement
@@ -355,6 +385,15 @@ class SyncServiceV2 {
 
           console.log(`  ✅ Synced: ${op.table_name} (id=${op.record_id})`);
         } catch (e) {
+          // Coupure de liaison : l'opération n'est pas en échec, elle reste en
+          // attente. On arrête ici (inutile de marquer "failed" toutes les
+          // opérations restantes une par une) ; le prochain cycle reprend.
+          if (this._isConnectionError(e)) {
+            console.warn(`  📡 Liaison perdue pendant le replay (${e.message}) — reprise au prochain cycle`);
+            connexionPerdue = true;
+            this.isCloudAvailable = false;
+            break;
+          }
           console.error(`  ❌ Erreur replay ${op.table_name}: ${e.message}`);
           
           await this.localPrisma.$executeRawUnsafe(
@@ -365,8 +404,10 @@ class SyncServiceV2 {
           );
         }
       }
-
-      client.release();
+      } finally {
+        // true => la connexion est détruite et non remise dans le pool
+        client.release(connexionPerdue ? true : undefined);
+      }
       console.log('✅ Replay terminé');
     } catch (e) {
       console.error('❌ Erreur replay:', e.message);
@@ -1040,7 +1081,9 @@ class SyncServiceV2 {
     try {
       const client = await this.cloudPool.connect();
       let pulled = 0;
+      let connexionPerdue = false;
 
+      try {
       // ── Étape 1 : Propager les suppressions depuis deleted_records ────────
       await this._applyRemoteDeletions(client);
 
@@ -1139,8 +1182,17 @@ class SyncServiceV2 {
           console.log(`  📥 ${table}: ${applied} appliquée(s)${details ? `, ${details}` : ''}`);
         } catch (e) {
           console.warn(`  ⚠️  ${table}: erreur pull - ${e.message}`);
+          // Liaison perdue : inutile d'attendre un délai par table restante.
+          // Le curseur n'a pas avancé, la table sera reprise au prochain cycle.
+          if (this._isConnectionError(e)) {
+            connexionPerdue = true;
+            this.isCloudAvailable = false;
+            break;
+          }
         }
       }
+
+      if (connexionPerdue) return;
 
       // ── Étape 3 : rejouer les lignes différées, parents désormais présents ──
       await this._processPullRetryQueue();
@@ -1149,8 +1201,14 @@ class SyncServiceV2 {
       // (le pull vient peut-être de descendre l'équivalent cloud d'un
       //  enregistrement que ce poste avait créé de son côté)
       await this._reconcileNaturalKeyDuplicates(client);
-
-      client.release();
+      } catch (e) {
+        if (this._isConnectionError(e)) connexionPerdue = true;
+        throw e;
+      } finally {
+        // true => connexion détruite au lieu d'être remise (cassée) dans le pool ;
+        // et surtout : jamais de connexion "oubliée" si une étape lève une erreur.
+        client.release(connexionPerdue ? true : undefined);
+      }
       if (pulled > 0) console.log(`📥 Pull delta: ${pulled} enregistrement(s) depuis Neon`);
     } catch (e) {
       console.error('❌ Erreur pull delta:', e.message);
@@ -1233,13 +1291,28 @@ class SyncServiceV2 {
   }
 
   async _syncCycle() {
-    if (this.isSyncing) return;
+    // Garde-fou : un cycle resté bloqué (liaison gelée) ne doit pas empêcher
+    // toutes les synchros suivantes. Au-delà de 5 min on le déclare mort.
+    if (this.isSyncing) {
+      const depuis = Date.now() - (this.syncStartedAt || Date.now());
+      if (depuis < SYNC_CYCLE_MAX_MS) return;
+      console.warn(`⚠️  Cycle de synchro bloqué depuis ${Math.round(depuis / 1000)} s — réinitialisation`);
+      if (this.cloudPool) {
+        const ancien = this.cloudPool;
+        this.cloudPool = null;
+        ancien.end().catch(() => {});
+      }
+    }
     this.isSyncing = true;
+    this.syncStartedAt = Date.now();
     try {
       const available = await this._checkCloudConnection();
       if (!available) return;
       await this._replayPendingOperations();
+      // Liaison perdue pendant l'envoi : on laisse le reste en attente
+      if (!this.isCloudAvailable) return;
       await this._pullDeltaFromNeon();
+      if (!this.isCloudAvailable) return;
       this.lastSuccessfulSyncAt = new Date().toISOString();
     } catch (e) {
       console.error('❌ Erreur sync:', e.message);
