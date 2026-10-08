@@ -6,6 +6,7 @@ import '../interfaces/i_device_service.dart';
 import '../../models/license_data.dart';
 import '../../models/license_errors.dart';
 import 'crypto_service.dart';
+import '../license_log.dart';
 
 /// Service de stockage sécurisé spécialisé pour les licences
 class SecureLicenseStorage {
@@ -95,7 +96,9 @@ class SecureLicenseStorage {
 
       // 8. Enregistrer l'accès
       await _logAccess('store', license.userId);
+      LicenseLog.log('stockage', 'licence ÉCRITE (type=${license.subscriptionType.name}, expire=${license.expiresAt.toIso8601String()})');
     } catch (e) {
+      LicenseLog.error('stockage', 'ÉCHEC écriture de la licence', e);
       throw LicenseException(
         LicenseError.storageError,
         'Erreur lors du stockage sécurisé: ${e.toString()}',
@@ -114,11 +117,15 @@ class SecureLicenseStorage {
     try {
       return await _retrieveLicenseOnce();
     } catch (e) {
+      LicenseLog.error('lecture', '1re lecture de la licence en échec (nouvel essai dans 300 ms)', e);
       if (e is LicenseException) rethrow;
       try {
         await Future.delayed(const Duration(milliseconds: 300));
-        return await _retrieveLicenseOnce();
-      } catch (_) {
+        final retry = await _retrieveLicenseOnce();
+        LicenseLog.log('lecture', 'nouvel essai: ${retry == null ? 'AUCUNE licence' : 'licence lue'}');
+        return retry;
+      } catch (e2) {
+        LicenseLog.error('lecture', '2e lecture AUSSI en échec → conclu "aucune licence"', e2);
         return null;
       }
     }
@@ -129,12 +136,14 @@ class SecureLicenseStorage {
     final tamperDetected = await _detectTampering();
     if (tamperDetected) {
       // Log l'incident mais ne pas bloquer — laisser la vérification d'intégrité décider
+      LicenseLog.log('lecture', 'alerte: détection de manipulation du stockage (empreinte appareil différente)');
       unawaited(_logAccess('tamper_warning', 'system'));
     }
 
     // 2. Récupérer les données principales
     final primaryData = await _secureStorage.read(key: _primaryStorageKey);
     if (primaryData == null) {
+      LicenseLog.log('lecture', 'AUCUNE donnée de licence dans le stockage sécurisé (entrée principale absente)');
       return null;
     }
 
@@ -142,7 +151,10 @@ class SecureLicenseStorage {
     final integrityValid = await _verifyDataIntegrity(primaryData, true);
     if (!integrityValid) {
       // Essayer de récupérer depuis la sauvegarde
-      return await _recoverFromBackup();
+      LicenseLog.log('lecture', 'intégrité des données principales INVALIDE → tentative depuis la sauvegarde');
+      final recovered = await _recoverFromBackup();
+      LicenseLog.log('lecture', 'sauvegarde: ${recovered == null ? 'ÉCHEC, licence perdue' : 'licence récupérée'}');
+      return recovered;
     }
 
     // 4. Déchiffrer les données
@@ -469,11 +481,17 @@ class SecureLicenseStorage {
   Future<LicenseData?> _recoverFromBackup() async {
     try {
       final backupData = await _secureStorage.read(key: _backupStorageKey);
-      if (backupData == null) return null;
+      if (backupData == null) {
+        LicenseLog.log('sauvegarde', 'aucune sauvegarde de licence');
+        return null;
+      }
 
       // Vérifier l'intégrité de la sauvegarde
       final backupIntegrityValid = await _verifyDataIntegrity(backupData, false);
-      if (!backupIntegrityValid) return null;
+      if (!backupIntegrityValid) {
+        LicenseLog.log('sauvegarde', 'intégrité de la sauvegarde INVALIDE');
+        return null;
+      }
 
       // Déchiffrer depuis la sauvegarde
       final decryptedJson = await _decryptWithBackupKey(backupData);
@@ -481,6 +499,7 @@ class SecureLicenseStorage {
 
       return LicenseData.fromJson(licenseJson);
     } catch (e) {
+      LicenseLog.error('sauvegarde', 'déchiffrement de la sauvegarde impossible', e);
       return null;
     }
   }

@@ -2,6 +2,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ntp/ntp.dart';
+import '../license_log.dart';
 
 /// Erreurs liées à la validation du temps
 enum TimeValidationError {
@@ -118,6 +119,7 @@ class SecureTimeService {
       );
 
       if (ntpTime != null) {
+        LicenseLog.log('horloge', 'NTP OK: heure réseau=${ntpTime.toIso8601String()} | écart avec l\'horloge système=${ntpTime.difference(DateTime.now()).inSeconds} s');
         _cachedNtpTime = ntpTime;
         _cachedNtpTimestamp = DateTime.now();
         await _storeNtpTime(ntpTime);
@@ -125,11 +127,13 @@ class SecureTimeService {
         _isOfflineMode = false;
       } else {
         _ntpFailureCount++;
+        LicenseLog.log('horloge', 'NTP indisponible au démarrage (échec n°$_ntpFailureCount) — heure système utilisée');
         if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
           _isOfflineMode = true;
         }
       }
     } catch (e) {
+      LicenseLog.error('horloge', 'erreur pendant la vérification NTP', e);
       _ntpFailureCount++;
       if (_ntpFailureCount >= _maxNtpFailuresBeforeOffline) {
         _isOfflineMode = true;

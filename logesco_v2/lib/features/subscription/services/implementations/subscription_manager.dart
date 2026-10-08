@@ -8,6 +8,7 @@ import '../../models/subscription_status.dart';
 import '../../models/license_data.dart';
 import '../../../../../core/config/app_config.dart';
 import 'secure_time_service.dart';
+import '../license_log.dart';
 
 /// Modes de dégradation de l'application
 enum DegradationMode {
@@ -88,6 +89,7 @@ class SubscriptionManager implements ISubscriptionManager {
   /// Initie le service - NTP check uniquement ici
   @override
   Future<void> initialize() async {
+    LicenseLog.log('démarrage', '──── démarrage de l\'application (vérification de licence) ────');
     try {
       // Initialiser le SecureTimeService (NTP check au démarrage UNIQUEMENT)
       await _secureTimeService.initialize();
@@ -105,11 +107,13 @@ class SubscriptionManager implements ISubscriptionManager {
 
       // Effectuer une validation initiale (avec les données mises en cache)
       final status = await getCurrentStatus();
+      LicenseLog.log('démarrage', 'statut initial: actif=${status.isActive}, type=${status.type.name}, jours restants=${status.remainingDays}, avertissements=${status.warnings.join(' | ')}');
       _updateStatus(status);
 
       // NE PAS démarrer de validations périodiques
       // Tout fonctionne avec le cache
     } catch (e) {
+      LicenseLog.error('démarrage', 'erreur d\'initialisation', e);
       // En cas d'erreur, créer un statut d'erreur
       final errorStatus = SubscriptionStatus(
         isActive: false,
@@ -143,6 +147,7 @@ class SubscriptionManager implements ISubscriptionManager {
         return await _getSubscriptionStatus(storedLicense);
       }
 
+      LicenseLog.log('statut', 'pas de licence stockée → vérification de la période d\'essai');
       // Sinon, vérifier la période d'essai
       final isTrialActive = await this.isTrialActive();
       if (isTrialActive) {
@@ -162,6 +167,7 @@ class SubscriptionManager implements ISubscriptionManager {
       // transitoire de la licence stockee (machine lente, plugin natif
       // lent) plutot que d'une reelle absence : ne pas figer ce verdict 5
       // minutes, seulement le cache rapide de 30s.
+      LicenseLog.log('statut', 'RÉSULTAT: AUCUN ABONNEMENT ACTIF (pas de licence lisible et essai terminé/absent)');
       final expiredStatus = SubscriptionStatus(
         isActive: false,
         type: SubscriptionType.trial,
@@ -172,6 +178,7 @@ class SubscriptionManager implements ISubscriptionManager {
       _updateCachedStatus(expiredStatus, reliable: false);
       return expiredStatus;
     } catch (e) {
+      LicenseLog.error('statut', 'RÉSULTAT: erreur de validation', e);
       final errorStatus = SubscriptionStatus(
         isActive: false,
         type: SubscriptionType.trial,
@@ -190,6 +197,7 @@ class SubscriptionManager implements ISubscriptionManager {
       final validationResult = await _licenseService.validateLicense(licenseKey);
 
       if (!validationResult.isValid) {
+        LicenseLog.log('activation', 'activation REFUSÉE: ${validationResult.error?.error.name} — ${validationResult.error?.message}');
         return false;
       }
 
@@ -212,8 +220,10 @@ class SubscriptionManager implements ISubscriptionManager {
       final newStatus = await _getSubscriptionStatus(validationResult.licenseData!);
       _updateStatus(newStatus);
 
+      LicenseLog.log('activation', 'activation RÉUSSIE (type=${newStatus.type.name}, actif=${newStatus.isActive}, jours restants=${newStatus.remainingDays})');
       return true;
     } catch (e) {
+      LicenseLog.error('activation', 'activation en ERREUR', e);
       return false;
     }
   }
@@ -861,8 +871,11 @@ class SubscriptionManager implements ISubscriptionManager {
       secureNow = DateTime.now();
     }
 
+    LicenseLog.log('statut', 'licence type=${license.subscriptionType.name} expire=${license.expiresAt.toIso8601String()} | heure de référence=${secureNow.toIso8601String()} | horloge système=${DateTime.now().toIso8601String()} | manipulation=$manipulationDetected');
+
     // Si manipulation détectée, bloquer immédiatement
     if (manipulationDetected) {
+      LicenseLog.log('statut', 'RÉSULTAT: BLOQUÉ — manipulation de la date système détectée');
       return SubscriptionStatus(
         isActive: false,
         type: license.subscriptionType,
@@ -880,6 +893,7 @@ class SubscriptionManager implements ISubscriptionManager {
     List<String> warnings = [];
 
     if (isExpired) {
+      LicenseLog.log('statut', 'RÉSULTAT: licence EXPIRÉE (période de grâce=$isInGracePeriod)');
       if (isInGracePeriod) {
         warnings.add('Période de grâce active');
         final gracePeriodStart = await _getGracePeriodStart();
@@ -898,6 +912,7 @@ class SubscriptionManager implements ISubscriptionManager {
       );
     }
 
+    LicenseLog.log('statut', 'RÉSULTAT: licence ACTIVE, $remainingDays jour(s) restant(s)');
     if (remainingDays <= _urgentWarningDaysThreshold) {
       warnings.add('Expiration imminente dans $remainingDays jour(s)');
     } else if (remainingDays <= _warningDaysThreshold) {

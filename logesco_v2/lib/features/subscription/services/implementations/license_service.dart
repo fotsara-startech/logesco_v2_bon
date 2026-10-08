@@ -7,6 +7,7 @@ import 'crypto_service.dart';
 import 'secure_license_storage.dart';
 import 'license_management_service.dart';
 import 'secure_time_service.dart';
+import '../license_log.dart';
 
 /// Implémentation du service de validation des licences
 class LicenseService implements ILicenseService {
@@ -59,6 +60,16 @@ class LicenseService implements ILicenseService {
 
   @override
   Future<LicenseValidationResult> validateLicense(String licenseKey) async {
+    final result = await _validateLicenseInner(licenseKey);
+    if (result.isValid) {
+      LicenseLog.log('validation', 'licence VALIDE (expire=${result.licenseData?.expiresAt.toIso8601String()}${result.warnings.isEmpty ? '' : ', avertissements=${result.warnings.join(' | ')}'})');
+    } else {
+      LicenseLog.log('validation', 'licence REFUSÉE: ${result.error?.error.name} — ${result.error?.message}');
+    }
+    return result;
+  }
+
+  Future<LicenseValidationResult> _validateLicenseInner(String licenseKey) async {
     return await _executeWithErrorRecovery(() async {
       // 1. Validation du format de la clé
       final keyValidation = LicenseKeyUtils.validateLicenseKey(licenseKey);
@@ -223,8 +234,11 @@ class LicenseService implements ILicenseService {
       // licence" et déclenchait un faux écran "essai expiré" malgré une
       // licence active. On ne perd donc la dernière licence connue que si
       // sa fenêtre de confiance (5 min) est dépassée.
-      return _recentCachedLicenseOrNull();
+      final fallback = _recentCachedLicenseOrNull();
+      LicenseLog.log('lecture', 'aucune licence lue → ${fallback != null ? 'repli sur la licence validée il y a moins de 5 min' : 'PAS de repli possible (aucune licence récente en mémoire)'}');
+      return fallback;
     } catch (e) {
+      LicenseLog.error('lecture', 'exception pendant la lecture de la licence', e);
       if (e is LicenseException) {
         rethrow;
       }
@@ -397,6 +411,7 @@ class LicenseService implements ILicenseService {
         referenceTime = DateTime.now();
       }
 
+      LicenseLog.log('expiration', 'expire=${expirationDate.toIso8601String()} | référence=${referenceTime.toIso8601String()} | horloge système=${DateTime.now().toIso8601String()}');
       if (referenceTime.isAfter(expirationDate)) {
         final gracePeriodEnd = expirationDate.add(const Duration(days: 3));
         if (referenceTime.isBefore(gracePeriodEnd)) {
