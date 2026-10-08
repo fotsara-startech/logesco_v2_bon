@@ -2821,8 +2821,8 @@ const Map<String, String> frTranslations = {
   // ============================================================================
   // RELEVÉS DE COMPTE - TRADUCTIONS PDF
   // ============================================================================
-  'statement_title_customer': 'RELEVÀ DE COMPTE CLIENT',
-  'statement_title_supplier': 'RELEVÀ DE COMPTE FOURNISSEUR',
+  'statement_title_customer': 'RELEVÉ DE COMPTE CLIENT',
+  'statement_title_supplier': 'RELEVÉ DE COMPTE FOURNISSEUR',
   'statement_generated_date': 'Date: @date',
   'statement_client_label': 'CLIENT',
   'statement_supplier_label': 'FOURNISSEUR',

@@ -269,14 +269,14 @@ class SupplierStatementPdfService {
       }
     }
 
+    // MultiPage : un tableau trop long pour une seule feuille serait sinon
+    // abandonné en entier, sans erreur (relevé vide).
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(30),
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
+          return [
               //  En-tête : logo + infos entreprise
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -563,7 +563,7 @@ class SupplierStatementPdfService {
                   ],
                 ),
 
-              pw.Spacer(),
+              pw.SizedBox(height: 16),
 
               //  Pied de page
               pw.Divider(),
@@ -575,11 +575,10 @@ class SupplierStatementPdfService {
                     _getTranslation('statement_generated_on').replaceAll('@date', _formatDateFull(DateTime.now())),
                     style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
                   ),
-                  pw.Text('Page 1/1', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
+                  pw.Text('Page ${context.pageNumber}/${context.pagesCount}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
                 ],
               ),
-            ],
-          );
+          ];
         },
       ),
     );

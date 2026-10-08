@@ -70,14 +70,15 @@ class StatementPdfService {
       print('⚠️ Logo path non défini ou vide');
     }
 
+    // MultiPage (et non Page) : le tableau des transactions peut compter jusqu'à
+    // 100 lignes. Dans une Page à une seule feuille, un tableau qui ne tient pas
+    // est abandonné en entier, sans erreur — le relevé sortait alors vide.
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(30),
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
+          return [
               // "?"? En-tête : logo + infos entreprise "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -333,7 +334,7 @@ class StatementPdfService {
                   children: _buildTransactionRows(transactions),
                 ),
 
-              pw.Spacer(),
+              pw.SizedBox(height: 16),
 
               // "?"? Pied de page "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
               pw.Divider(),
@@ -342,8 +343,7 @@ class StatementPdfService {
                 _getTranslation('statement_generated_on').replaceAll('@date', _formatDateForPDF(DateTime.now())),
                 style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
               ),
-            ],
-          );
+          ];
         },
       ),
     );
