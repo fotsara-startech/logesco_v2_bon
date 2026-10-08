@@ -21,6 +21,9 @@ class CustomerController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isLoadingMore = false.obs;
   final RxString searchQuery = ''.obs;
+
+  /// Filtre par état du compte : 'all' (tous), 'debt' (avec dette), 'nodebt' (sans dette)
+  final RxString debtFilter = 'all'.obs;
   final RxString errorMessage = ''.obs;
   final RxBool hasError = false.obs;
 
@@ -28,6 +31,9 @@ class CustomerController extends GetxController {
   final RxInt currentPage = 1.obs;
   final RxBool hasMoreData = true.obs;
   final int _pageSize = 20;
+
+  // Identifiant de la dernière requête de liste (écarte les réponses périmées)
+  int _loadRequestId = 0;
 
   // Debouncing pour la recherche
   Timer? _debounceTimer;
@@ -50,6 +56,7 @@ class CustomerController extends GetxController {
 
   /// Charge la liste des clients
   Future<void> loadCustomers({bool refresh = false}) async {
+    var requestId = 0;
     try {
       if (refresh) {
         currentPage.value = 1;
@@ -59,20 +66,40 @@ class CustomerController extends GetxController {
 
       if (!hasMoreData.value) return;
 
+      requestId = ++_loadRequestId;
       isLoading.value = currentPage.value == 1;
       isLoadingMore.value = currentPage.value > 1;
       hasError.value = false;
       errorMessage.value = '';
 
-      final newCustomers = await _customerService.getCustomers(
+      final fetched = await _customerService.getCustomers(
         search: searchQuery.value.isEmpty ? null : searchQuery.value,
         page: currentPage.value,
         limit: _pageSize,
+        dette: debtFilter.value == 'debt' ? 'avec' : (debtFilter.value == 'nodebt' ? 'sans' : null),
       );
 
-      if (newCustomers.length < _pageSize) {
+      // Une réponse arrivée après un changement de filtre/recherche est périmée :
+      // l'ignorer, sinon elle écraserait la liste du filtre choisi entre-temps.
+      if (requestId != _loadRequestId) return;
+
+      // Fin de pagination calculée sur la réponse brute du serveur.
+      if (fetched.length < _pageSize) {
         hasMoreData.value = false;
       }
+
+      // Filtre dette / sans dette aussi appliqué ici : un serveur plus ancien
+      // (sans le paramètre "dette") renvoie sinon toute la liste sans broncher.
+      final newCustomers = fetched.where((c) {
+        switch (debtFilter.value) {
+          case 'debt':
+            return c.solde < 0;
+          case 'nodebt':
+            return c.solde >= 0;
+          default:
+            return true;
+        }
+      }).toList();
 
       if (currentPage.value == 1) {
         customers.assignAll(newCustomers);
@@ -91,8 +118,11 @@ class CustomerController extends GetxController {
 
       SnackbarHelper.error(errorMessage.value);
     } finally {
-      isLoading.value = false;
-      isLoadingMore.value = false;
+      // Une requête plus récente est en cours : c'est elle qui rend la main.
+      if (requestId == 0 || requestId == _loadRequestId) {
+        isLoading.value = false;
+        isLoadingMore.value = false;
+      }
     }
   }
 
@@ -114,6 +144,22 @@ class CustomerController extends GetxController {
   /// Met à jour la requête de recherche
   void updateSearchQuery(String query) {
     searchQuery.value = query;
+  }
+
+  /// Change le filtre dette / sans dette (filtrage côté serveur, donc complet
+  /// même quand la liste compte plusieurs pages)
+  void setDebtFilter(String filter) {
+    if (debtFilter.value == filter) return;
+    debtFilter.value = filter;
+    _resetAndLoadCustomers();
+  }
+
+  /// Remet le filtre sur "tous" : la liste est partagée avec la recherche client
+  /// de la page de vente, qui ne doit pas rester limitée aux débiteurs.
+  void resetDebtFilter() {
+    if (debtFilter.value == 'all') return;
+    debtFilter.value = 'all';
+    _resetAndLoadCustomers();
   }
 
   /// Efface la recherche

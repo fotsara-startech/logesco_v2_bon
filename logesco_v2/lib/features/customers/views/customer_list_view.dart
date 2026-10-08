@@ -6,12 +6,39 @@ import '../controllers/customer_controller.dart';
 import '../models/customer.dart';
 
 /// Vue de la liste des clients
-class CustomerListView extends GetView<CustomerController> {
+class CustomerListView extends StatefulWidget {
   const CustomerListView({super.key});
+
+  @override
+  State<CustomerListView> createState() => _CustomerListViewState();
+}
+
+class _CustomerListViewState extends State<CustomerListView> {
+  CustomerController get controller => Get.find<CustomerController>();
+
+  @override
+  void dispose() {
+    // La liste de clients est partagée avec la page de vente : on ne la laisse
+    // pas filtrée sur les débiteurs en quittant cette page.
+    if (Get.isRegistered<CustomerController>()) {
+      Future.microtask(() => controller.resetDebtFilter());
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: PermissionWidget(
+        module: 'customers',
+        privilege: 'CREATE',
+        child: FloatingActionButton.extended(
+          onPressed: controller.goToCreateCustomer,
+          icon: const Icon(Icons.person_add),
+          label: Text('customers_add'.tr),
+          tooltip: 'customers_add'.tr,
+        ),
+      ),
       appBar: AppBar(
         title: Text('customers_title'.tr),
         actions: [
@@ -74,15 +101,6 @@ class CustomerListView extends GetView<CustomerController> {
               ],
             ),
           ),
-          PermissionWidget(
-            module: 'customers',
-            privilege: 'CREATE',
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: controller.goToCreateCustomer,
-              tooltip: 'customers_add'.tr,
-            ),
-          ),
         ],
       ),
       body: Column(
@@ -106,6 +124,26 @@ class CustomerListView extends GetView<CustomerController> {
                 ),
               ),
             ),
+          ),
+          // Filtre : tous / avec dette / sans dette
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Obx(() => Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final f in const [
+                      ['all', 'Tous', Icons.people_outline],
+                      ['debt', 'Avec dette', Icons.warning_amber_rounded],
+                      ['nodebt', 'Sans dette', Icons.check_circle_outline],
+                    ])
+                      ChoiceChip(
+                        avatar: Icon(f[2] as IconData, size: 18),
+                        label: Text(f[1] as String),
+                        selected: controller.debtFilter.value == f[0],
+                        onSelected: (_) => controller.setDebtFilter(f[0] as String),
+                      ),
+                  ],
+                )),
           ),
           // Liste des clients
           Expanded(
@@ -139,6 +177,15 @@ class CustomerListView extends GetView<CustomerController> {
                         child: Text('customers_retry'.tr),
                       ),
                     ],
+                  ),
+                );
+              }
+
+              if (controller.customers.isEmpty && controller.debtFilter.value != 'all') {
+                return Center(
+                  child: Text(
+                    controller.debtFilter.value == 'debt' ? 'Aucun client avec dette' : 'Aucun client sans dette',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                   ),
                 );
               }
@@ -187,6 +234,7 @@ class CustomerListView extends GetView<CustomerController> {
               return RefreshIndicator(
                 onRefresh: controller.refreshCustomers,
                 child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 88),
                   itemCount: controller.customers.length + (controller.hasMoreData.value ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == controller.customers.length) {

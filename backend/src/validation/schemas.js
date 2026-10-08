@@ -108,6 +108,7 @@ const clientSchemas = {
     q: Joi.string().max(100),
     telephone: baseSchemas.telephone,
     email: baseSchemas.email,
+    dette: Joi.string().valid('avec', 'sans'),
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20)
   })

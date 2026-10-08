@@ -767,6 +767,19 @@ class ClientModel extends BaseModel {
       where.email = { contains: searchParams.email };
     }
 
+    // Filtre par état du compte : dette = solde négatif ('avec'),
+    // sinon solde nul/positif ou pas encore de compte ('sans').
+    if (searchParams.dette === 'avec') {
+      where.compte = { is: { soldeActuel: { lt: 0 } } };
+    } else if (searchParams.dette === 'sans') {
+      where.AND = [{
+        OR: [
+          { compte: { is: null } },
+          { compte: { is: { soldeActuel: { gte: 0 } } } }
+        ]
+      }];
+    }
+
     const [clients, total] = await Promise.all([
       this.model.findMany({
         where,

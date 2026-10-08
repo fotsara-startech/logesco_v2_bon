@@ -16,6 +16,7 @@ class ApiCustomerService extends GetxService implements CustomerService {
     String? search,
     int page = 1,
     int limit = 20,
+    String? dette,
   }) async {
     final queryParams = <String, String>{
       'page': page.toString(),
@@ -24,6 +25,10 @@ class ApiCustomerService extends GetxService implements CustomerService {
 
     if (search != null && search.isNotEmpty) {
       queryParams['q'] = search;
+    }
+
+    if (dette != null) {
+      queryParams['dette'] = dette;
     }
 
     final queryString = queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');

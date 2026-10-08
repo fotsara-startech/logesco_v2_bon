@@ -8,6 +8,7 @@ abstract class CustomerService {
     String? search,
     int page = 1,
     int limit = 20,
+    String? dette, // 'avec' | 'sans' | null (tous)
   });
 
   /// Récupère un client par son ID
