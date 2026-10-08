@@ -13,6 +13,7 @@ import '../../printing/models/print_format.dart';
 import '../../products/models/product.dart';
 import '../../customers/models/customer.dart';
 import '../../customers/services/customer_service.dart';
+import '../../customers/controllers/customer_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../models/sale.dart';
 import '../services/sales_service.dart';
@@ -892,12 +893,37 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   Future<void> _refreshSelectedCustomerDebt(int customerId) async {
     try {
       final fresh = await Get.find<CustomerService>().getCustomerById(customerId);
-      if (fresh != null && _selectedCustomer.value?.id == customerId) {
+      if (fresh == null) return;
+      _syncCustomerInList(fresh);
+      if (_selectedCustomer.value?.id == customerId) {
         _selectedCustomer.value = fresh;
       }
-    } catch (_) {
+    } catch (e) {
       // Le solde en cache reste affiché si le rafraîchissement échoue.
+      print('⚠️ Rafraîchissement du solde client $customerId impossible: $e');
     }
+  }
+
+  Future<void> _refreshSelectedCustomerDebtById(int customerId) => _refreshSelectedCustomerDebt(customerId);
+
+  /// Recharge le solde du client sélectionné depuis le serveur. À attendre
+  /// juste avant d'afficher le paiement pour ne jamais présenter une dette
+  /// périmée (au plus 4 s : on garde la valeur en cache si le serveur tarde).
+  Future<void> refreshSelectedCustomer() async {
+    final id = _selectedCustomer.value?.id;
+    if (id == null) return;
+    await _refreshSelectedCustomerDebt(id).timeout(const Duration(seconds: 4), onTimeout: () {});
+  }
+
+  /// Met à jour le solde d'un client dans la liste en mémoire du module client
+  /// (utilisée par la recherche de la page de vente) : sans cela, un client
+  /// resélectionné après une vente à crédit réapparaît avec son ancien solde
+  /// tant qu'on n'a pas rouvert le module client.
+  void _syncCustomerInList(Customer fresh) {
+    if (!Get.isRegistered<CustomerController>()) return;
+    final list = Get.find<CustomerController>().customers;
+    final index = list.indexWhere((c) => c.id == fresh.id);
+    if (index >= 0) list[index] = fresh;
   }
 
   void setSelectedCommercial(Commercial? commercial) {
@@ -1097,7 +1123,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         await _generateReceiptForSale(sale);
 
         // SnackbarUtils.showSuccess(response.message ?? 'Vente créée avec succès');
+        // La vente (surtout à crédit) a modifié le solde du client : on le
+        // recharge dans la liste en mémoire avant que clearCart() ne l'oublie.
+        final soldCustomerId = _selectedCustomer.value?.id;
         clearCart();
+        if (soldCustomerId != null) _refreshSelectedCustomerDebtById(soldCustomerId);
         _searchQuery.value = '';
         saleCreatedTrigger.value++;
         await loadSales(refresh: true);
