@@ -52,258 +52,332 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
           },
         },
         child: Dialog(
-          child: Container(
-            width: 500,
-            constraints: const BoxConstraints(maxHeight: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                // Titre
-                Row(
-                  children: [
-                    const Icon(Icons.payment, size: 28, color: Colors.blue),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Paiement',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Écran large : récapitulatif à gauche, saisie à droite → tout est
+              // visible d'un coup, sans défilement. Écran étroit (mobile) : une
+              // seule colonne, qui ne défile qu'en dernier recours.
+              final wide = constraints.maxWidth >= 640;
+              final summary = Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildCustomerCard(salesController),
+                  _buildTotalSummary(salesController),
+                ],
+              );
+              final inputs = Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTvaToggle(salesController),
+                  const SizedBox(height: 12),
+                  _buildAmountPaidField(salesController),
+                  const SizedBox(height: 12),
+                  _buildFinalSummary(salesController),
+                ],
+              );
 
-                const Divider(height: 32),
-
-                // Contenu scrollable
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
+              final body = wide
+                  ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Résumé du montant total
-                        _buildTotalSummary(salesController),
+                        Expanded(child: summary),
+                        const SizedBox(width: 20),
+                        Expanded(child: inputs),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [summary, const SizedBox(height: 12), inputs],
+                      ),
+                    );
+
+              return ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: wide ? 820 : 500),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Titre
+                        Row(
+                          children: [
+                            const Icon(Icons.payment, size: 28, color: Colors.blue),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Paiement',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 20),
+
+                        // Contenu (Flexible : ne déborde jamais de l'écran)
+                        Flexible(child: body),
 
                         const SizedBox(height: 16),
 
-                        // Toggle TVA
-                        _buildTvaToggle(salesController),
-
-                        const SizedBox(height: 24),
-
-                        // Montant payé
-                        _buildAmountPaidField(salesController),
-
-                        const SizedBox(height: 24),
-
-                        // Résumé final (monnaie/reste)
-                        _buildFinalSummary(salesController),
+                        // Boutons d'action
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                child: Text('cancel'.tr),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: Obx(() => ElevatedButton.icon(
+                                    onPressed: salesController.isCreating ? null : _finalizeSale,
+                                    icon: salesController.isCreating
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          )
+                                        : const Icon(Icons.check_circle),
+                                    label: Text(salesController.isCreating ? 'sales_creating'.tr : 'confirm'.tr),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      backgroundColor: Colors.blue[600],
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  )),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Boutons d'action
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: Text('cancel'.tr),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: Obx(() => ElevatedButton.icon(
-                            onPressed: salesController.isCreating ? null : _finalizeSale,
-                            icon: salesController.isCreating
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.check_circle),
-                            label: Text(salesController.isCreating ? 'sales_creating'.tr : 'confirm'.tr),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.blue[600],
-                              foregroundColor: Colors.white,
-                            ),
-                          )),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              );
+            },
           ),
-        ),
-      ),
         ),
       ),
     );
   }
 
+  /// Nom du client et état de son solde (dette / avance / à jour).
+  /// solde < 0 = le client doit de l'argent ; solde > 0 = il a une avance.
+  Widget _buildCustomerCard(SalesController salesController) {
+    return Obx(() {
+      final customer = salesController.selectedCustomer;
+      if (customer == null) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, color: Colors.grey[600], size: 22),
+              const SizedBox(width: 10),
+              Text('Aucun client sélectionné', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+            ],
+          ),
+        );
+      }
+
+      final solde = customer.solde;
+      final MaterialColor color;
+      final IconData icon;
+      final String label;
+      if (solde < 0) {
+        color = Colors.red;
+        icon = Icons.warning_amber_rounded;
+        label = 'Dette : ${(-solde).toStringAsFixed(0)} FCFA';
+      } else if (solde > 0) {
+        color = Colors.green;
+        icon = Icons.savings_outlined;
+        label = 'Avance : ${solde.toStringAsFixed(0)} FCFA';
+      } else {
+        color = Colors.green;
+        icon = Icons.check_circle_outline;
+        label = 'Solde à jour';
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.person, color: color.shade700, size: 24),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    customer.nomComplet,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(icon, size: 16, color: color.shade700),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color.shade700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Ligne label / montant du récapitulatif.
+  Widget _summaryLine(String label, String value, {Color? color, bool strong = false, double size = 15, IconData? icon}) {
+    final c = color ?? Colors.grey[800]!;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Row(
+            children: [
+              if (icon != null) ...[Icon(icon, size: 18, color: c), const SizedBox(width: 8)],
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: strong ? 15 : 14, color: c, fontWeight: strong ? FontWeight.bold : FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(value, style: TextStyle(fontSize: size, fontWeight: FontWeight.bold, color: c)),
+      ],
+    );
+  }
+
+  /// Récapitulatif : Montant HT → Remise → Net HT → TVA → Net à payer (TTC).
+  /// La remise commerciale est accordée sur le HT et la TVA se calcule sur le
+  /// net HT. Le panier est déjà calculé avec les prix remisés (= Net HT) ; on
+  /// reconstitue le montant avant remise (prix catalogue) pour l'affichage.
   Widget _buildTotalSummary(SalesController salesController) {
     return Obx(() {
-      final subtotal = salesController.cartSubtotal;
       final tvaEnabled = salesController.tvaEnabled;
       final tvaRate = salesController.tvaRate;
-      final tvaAmount = salesController.tvaAmount;
-      final total = salesController.cartTotalTTC;
       final itemCount = salesController.cartItems.length;
       final customer = salesController.selectedCustomer;
       final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
-      final totalWithDebt = total + customerDebt;
+      final net = salesController.cartTotalTTC;
+      final totalWithDebt = net + customerDebt;
+
+      // Remise accordée = écart prix catalogue / prix saisi, par ligne (HT)
+      double remise = 0.0;
+      for (final item in salesController.cartItems) {
+        final diff = item.originalPrice - item.unitPrice;
+        if (diff > 0) remise += diff * item.quantity;
+      }
+      final netHT = salesController.cartSubtotal;
+      final montantHT = netHT + remise;
+      String fmt(double v) => '${v.toStringAsFixed(0)} FCFA';
 
       return Card(
         color: Colors.blue.shade50,
         elevation: 0,
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Montant HT / commande
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tvaEnabled ? 'Montant HT' : 'sales_order_amount'.tr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${subtotal.toStringAsFixed(0)} FCFA',
-                        style: TextStyle(
-                          fontSize: tvaEnabled ? 20 : 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                  child: Text(
+                    '$itemCount article${itemCount > 1 ? 's' : ''}',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blue[700]),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '$itemCount article${itemCount > 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Ligne TVA si activée
-              if (tvaEnabled) ...[
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.receipt_long, color: Colors.orange[700], size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'TVA (${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%)',
-                          style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '+${tvaAmount.toStringAsFixed(0)} FCFA',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Montant TTC',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[800], fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${total.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 8),
+
+              // 1. Montant HT (sans TVA : simple "Montant")
+              _summaryLine(tvaEnabled ? 'Montant HT' : 'Montant', fmt(montantHT), size: 16),
+
+              // 2. Remise
+              if (remise > 0) ...[
+                const SizedBox(height: 8),
+                _summaryLine(
+                  'Remise',
+                  '-${remise.toStringAsFixed(0)} FCFA',
+                  color: Colors.green[700],
+                  icon: Icons.local_offer_outlined,
+                  size: 16,
                 ),
               ],
 
-              // Dette existante
+              if (tvaEnabled) ...[
+                // 3. Net HT (affiché seulement s'il y a une remise, sinon identique au HT)
+                if (remise > 0) ...[
+                  const Divider(height: 20),
+                  _summaryLine('Net HT', fmt(netHT), strong: true, size: 16),
+                ],
+                // 4. TVA sur le net HT
+                const SizedBox(height: 8),
+                _summaryLine(
+                  'TVA (${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%)',
+                  '+${salesController.tvaAmount.toStringAsFixed(0)} FCFA',
+                  color: Colors.orange[700],
+                  icon: Icons.receipt_long,
+                  size: 16,
+                ),
+              ],
+
+              // 5. Net à payer
+              const Divider(height: 20),
+              _summaryLine(tvaEnabled ? 'Net à payer (TTC)' : 'Net à payer', fmt(net), color: Colors.blue, strong: true, size: 26),
+
+              // Dette existante du client (s'ajoute au net à payer)
               if (customerDebt > 0) ...[
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'sales_existing_debt'.tr,
-                          style: TextStyle(fontSize: 14, color: Colors.red[700], fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${customerDebt.toStringAsFixed(0)} FCFA',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red[700]),
-                    ),
-                  ],
+                const Divider(height: 20),
+                _summaryLine(
+                  'sales_existing_debt'.tr,
+                  fmt(customerDebt),
+                  color: Colors.red[700],
+                  icon: Icons.warning_amber_rounded,
+                  size: 18,
                 ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'sales_total_to_pay'.tr,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${totalWithDebt.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepOrange),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 8),
+                _summaryLine('sales_total_to_pay'.tr, fmt(totalWithDebt), color: Colors.deepOrange, strong: true, size: 28),
               ],
             ],
           ),
@@ -380,7 +454,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         TextFormField(
           controller: _amountController,
           decoration: InputDecoration(
@@ -399,7 +473,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
           keyboardType: TextInputType.number,
           style: const TextStyle(
@@ -439,7 +513,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       final color = isChange ? Colors.green : Colors.orange;
 
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color.shade50,
           borderRadius: BorderRadius.circular(12),

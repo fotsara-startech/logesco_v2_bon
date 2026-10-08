@@ -218,16 +218,19 @@ class _CreateSalePageState extends State<CreateSalePage> {
                   searchFocusNode: _searchFocusNode,
                   primaryActionFocusNode: _primaryActionFocusNode,
                 ),
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildSelectedCustomerBanner(),
-                      _buildBackdateSection(),
-                      _buildInlineCart(),
-                      _buildPaymentSection(),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                // Seul le panier défile ; le bandeau client et la section
+                // paiement (bouton "Procéder au paiement") restent fixes.
+                Column(
+                  children: [
+                    _buildSelectedCustomerBanner(),
+                    _buildBackdateSection(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildInlineCart(),
+                      ),
+                    ),
+                    _buildPaymentSection(),
+                  ],
                 ),
               ],
             ),
@@ -406,16 +409,18 @@ class _CreateSalePageState extends State<CreateSalePage> {
           flex: 5,
           child: Container(
             decoration: BoxDecoration(color: Colors.grey[50], border: Border(left: BorderSide(color: Colors.grey[200]!, width: 1))),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildSelectedCustomerBanner(),
-                  _buildBackdateSection(),
-                  Container(
+            // Seul le contenu du panier défile ; le bandeau client, l'en-tête du
+            // panier et la section paiement (bouton "Procéder au paiement")
+            // restent fixes.
+            child: Column(
+              children: [
+                _buildSelectedCustomerBanner(),
+                _buildBackdateSection(),
+                Expanded(
+                  child: Container(
                     color: Colors.white,
                     margin: const EdgeInsets.all(12),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -431,19 +436,23 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                 child: Text('${_salesController.cartItems.length}', style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600, fontSize: 12)))),
                           ]),
                         ),
-                        // CartWidget s'ajuste à son contenu (pas de hauteur fixe/estimée
-                        // à recalculer ici) — voir cart_widget.dart.
-                        CartWidget(
-                          onQuantityChanged: (productId, quantity) => _salesController.updateCartItemQuantity(productId, quantity),
-                          onPriceChanged: (productId, price) => _salesController.updateCartItemPrice(productId, price),
-                          onRemoveItem: (productId) => _salesController.removeFromCart(productId),
+                        // CartWidget s'ajuste à son contenu (pas de Expanded/ListView) :
+                        // on le place donc dans un parent scrollable — voir cart_widget.dart.
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: CartWidget(
+                              onQuantityChanged: (productId, quantity) => _salesController.updateCartItemQuantity(productId, quantity),
+                              onPriceChanged: (productId, price) => _salesController.updateCartItemPrice(productId, price),
+                              onRemoveItem: (productId) => _salesController.removeFromCart(productId),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  _buildPaymentSection(),
-                ],
-              ),
+                ),
+                _buildPaymentSection(),
+              ],
             ),
           ),
         ),
@@ -1094,6 +1103,9 @@ class _CreateSalePageState extends State<CreateSalePage> {
       // prix plus tard côté backend.
       _salesController.clampCartPricesToMinimum();
       setState(() => _priceErrors.clear());
+
+      // Solde client à jour avant d'afficher le paiement (dette éventuelle)
+      await _salesController.refreshSelectedCustomer();
 
       // Ouvrir le dialog de paiement simplifié
       await Get.dialog(
