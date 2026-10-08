@@ -13,6 +13,7 @@ class SyncStatus {
   final int failedCount;
   final String? lastSync;
   final String? lastErrorMessage;
+  final DateTime? oldestPendingAt;
 
   SyncStatus({
     required this.mode,
@@ -23,6 +24,7 @@ class SyncStatus {
     required this.failedCount,
     this.lastSync,
     this.lastErrorMessage,
+    this.oldestPendingAt,
   });
 
   factory SyncStatus.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class SyncStatus {
       failedCount: (json['failedCount'] as num?)?.toInt() ?? 0,
       lastSync: json['lastSync'],
       lastErrorMessage: _parseError(json['lastError']),
+      oldestPendingAt: json['oldestPendingAt'] != null ? DateTime.tryParse(json['oldestPendingAt'].toString())?.toLocal() : null,
     );
   }
 
@@ -52,6 +55,23 @@ class SyncStatus {
   bool get isType3 => cloudEnabled;
   bool get isOnline => cloudAvailable;
   bool get hasPending => pendingCount > 0;
+
+  /// Délai au-delà duquel des opérations en attente sont jugées anormales
+  static const Duration staleThreshold = Duration(hours: 24);
+
+  /// Ancienneté de la plus vieille opération non synchronisée
+  Duration? get pendingAge => (hasPending && oldestPendingAt != null) ? DateTime.now().difference(oldestPendingAt!) : null;
+
+  /// true si des données restent sans synchroniser depuis plus de 24 h
+  bool get isStale => (pendingAge ?? Duration.zero) >= staleThreshold;
+
+  /// "3 jours", "30 heures"… pour les messages d'alerte
+  String get pendingAgeLabel {
+    final a = pendingAge;
+    if (a == null) return '';
+    if (a.inDays >= 2) return '${a.inDays} jours';
+    return '${a.inHours} heures';
+  }
 }
 
 class SyncStatusService {

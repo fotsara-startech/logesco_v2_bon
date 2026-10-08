@@ -64,6 +64,21 @@ function createSyncRouter({ authService }) {
         `SELECT COUNT(*) as count FROM operation_log WHERE status = 'failed'`
       );
 
+      // Ancienneté de la plus vieille opération qui n'est pas partie vers Neon :
+      // sert à alerter quand la synchro est bloquée depuis longtemps.
+      const oldestRow = await syncService.localPrisma.$queryRawUnsafe(
+        `SELECT MIN(timestamp) as oldest FROM operation_log WHERE status IN ('pending', 'failed')`
+      );
+      let oldestPendingAt = null;
+      const o = oldestRow[0]?.oldest;
+      if (o) {
+        // "YYYY-MM-DD HH:MM:SS" (UTC, datetime('now') de SQLite) ou époque en ms
+        const d = typeof o === 'number' || typeof o === 'bigint'
+          ? new Date(Number(o))
+          : new Date(String(o).includes('T') ? o : String(o).replace(' ', 'T') + 'Z');
+        if (!isNaN(d)) oldestPendingAt = d.toISOString();
+      }
+
       const pendingByTable = {};
       let totalPending = 0;
       for (const row of pending) {
@@ -92,6 +107,7 @@ function createSyncRouter({ authService }) {
           pullIssues,
           pullIssuesCount: pullIssues.reduce((n, i) => n + i.enAttente, 0),
           lastSync,
+          oldestPendingAt,
           lastError: status.lastError,
         }
       });

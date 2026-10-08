@@ -11,6 +11,7 @@ class SyncController extends GetxController {
   final RxBool isSyncing = false.obs;
 
   Timer? _pollTimer;
+  bool _staleWarned = false;
 
   @override
   void onInit() {
@@ -28,7 +29,20 @@ class SyncController extends GetxController {
 
   Future<void> _fetchStatus() async {
     final result = await _service.getStatus();
-    if (result != null) status.value = result;
+    if (result != null) {
+      status.value = result;
+      // Alerte visible une fois par session : des données restent sans partir
+      // vers le cloud depuis plus de 24 h (liaison bloquée, serveur injoignable…)
+      if (result.isType3 && result.isStale && !_staleWarned) {
+        _staleWarned = true;
+        SnackbarHelper.warning(
+          '${result.pendingCount} opération(s) ne sont pas synchronisées depuis ${result.pendingAgeLabel}. '
+          'Vérifiez la connexion internet (menu Synchronisation).',
+          duration: const Duration(seconds: 10),
+        );
+      }
+      if (!result.isStale) _staleWarned = false;
+    }
   }
 
   Future<void> refresh() => _fetchStatus();

@@ -20,6 +20,7 @@ class SyncIndicatorWidget extends StatelessWidget {
 
       final pending = s.pendingCount;
       final isOffline = !s.isOnline;
+      final stale = s.isStale;
 
       return GestureDetector(
         onTap: () => Get.to(() => const SyncStatusPage()),
@@ -29,8 +30,10 @@ class SyncIndicatorWidget extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               Icon(
-                isOffline ? Icons.cloud_off : (pending > 0 ? Icons.sync_problem : Icons.cloud_done),
-                color: isOffline
+                stale ? Icons.error : (isOffline ? Icons.cloud_off : (pending > 0 ? Icons.sync_problem : Icons.cloud_done)),
+                color: stale
+                    ? Colors.red
+                    : isOffline
                     ? Colors.red[300]
                     : pending > 0
                         ? Colors.orange[300]
@@ -44,8 +47,8 @@ class SyncIndicatorWidget extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(2),
                     constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    decoration: const BoxDecoration(
-                      color: Colors.orange,
+                    decoration: BoxDecoration(
+                      color: stale ? Colors.red : Colors.orange,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -78,14 +81,15 @@ class SyncDrawerMenuItem extends StatelessWidget {
 
       final pending = s.pendingCount;
       final isOffline = !s.isOnline;
+      final stale = s.isStale;
 
       return ListTile(
         leading: Stack(
           clipBehavior: Clip.none,
           children: [
             Icon(
-              isOffline ? Icons.cloud_off : (pending > 0 ? Icons.sync_problem : Icons.cloud_done),
-              color: isOffline ? Colors.red : (pending > 0 ? Colors.orange : Colors.green),
+              stale ? Icons.error : (isOffline ? Icons.cloud_off : (pending > 0 ? Icons.sync_problem : Icons.cloud_done)),
+              color: (stale || isOffline) ? Colors.red : (pending > 0 ? Colors.orange : Colors.green),
             ),
             if (pending > 0)
               Positioned(
@@ -106,14 +110,16 @@ class SyncDrawerMenuItem extends StatelessWidget {
         ),
         title: Text('sync_title'.tr),
         subtitle: Text(
-          isOffline
+          stale
+              ? '$pending en attente depuis ${s.pendingAgeLabel}'
+              : isOffline
               ? 'sync_neon_offline'.tr
               : pending > 0
                   ? '$pending ${'sync_pending_short'.tr}'
                   : 'sync_up_to_date'.tr,
           style: TextStyle(
             fontSize: 12,
-            color: isOffline ? Colors.red : (pending > 0 ? Colors.orange : Colors.green),
+            color: (stale || isOffline) ? Colors.red : (pending > 0 ? Colors.orange : Colors.green),
           ),
         ),
         onTap: () {

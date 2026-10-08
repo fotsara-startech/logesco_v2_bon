@@ -34,6 +34,10 @@ class SyncStatusPage extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (s.isStale) ...[
+              _buildStaleBanner(s),
+              const SizedBox(height: 16),
+            ],
             _buildStatusCard(s),
             const SizedBox(height: 16),
             if (s.hasPending) ...[
@@ -44,6 +48,45 @@ class SyncStatusPage extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+
+  /// Alerte : des données restent sans partir vers le cloud depuis plus de 24 h
+  Widget _buildStaleBanner(SyncStatus s) {
+    return Card(
+      color: Colors.red.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.red.shade300),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error, color: Colors.red.shade700, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Synchronisation bloquée depuis ${s.pendingAgeLabel}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.red.shade800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${s.pendingCount} opération(s) n'ont pas encore été envoyées vers le cloud. "
+                    'Vos données sont conservées sur ce poste, mais les autres postes ne les voient pas. '
+                    'Vérifiez la connexion internet puis appuyez sur « Synchroniser maintenant ».',
+                    style: TextStyle(fontSize: 13, color: Colors.red.shade900),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
