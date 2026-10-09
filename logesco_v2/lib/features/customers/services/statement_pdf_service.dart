@@ -5,11 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/utils/pdf_save_helper.dart';
+import '../../../core/utils/pdf_text.dart';
 
 /// Service pour générer les PDF de relevés de compte
 class StatementPdfService {
   /// Génère le PDF du relevé de compte
-  static Future<Uint8List> generateStatementPDF(Map<String, dynamic> data) async {
+  static Future<Uint8List> generateStatementPDF(Map<String, dynamic> rawData) async {
+    // Les polices standard des PDF n'affichent que Latin-1 : tiret long, guillemets
+    // typographiques... sortaient en carrés vides (y compris dans les descriptions déjà enregistrées).
+    final data = pdfSafeData(rawData) as Map<String, dynamic>;
     final pdf = pw.Document();
 
     // print('');

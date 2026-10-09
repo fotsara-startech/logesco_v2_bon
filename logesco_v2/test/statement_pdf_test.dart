@@ -83,4 +83,24 @@ void main() {
     expect(text, contains('[(+20000)]TJ'));
     expect(text, contains('[(Approvisionnement)]TJ'));
   });
+
+  test('une description avec tiret long ou guillemets typographiques ne produit pas de carré vide', () async {
+    final data = _data(0);
+    data['transactions'] = [
+      {
+        'id': 1,
+        'typeTransaction': 'depot',
+        'typeTransactionDetail': 'depot_avance',
+        'montant': 50000.0,
+        'description': 'Approvisionnement du compte de 50000 FCFA — Pour la construction',
+        'dateTransaction': '2026-10-09T10:00:00.000Z',
+        'soldeApres': 50000.0,
+        'venteReference': null,
+        'isCredit': true,
+      },
+    ];
+    final text = _pdfText(await StatementPdfService.generateStatementPDF(data));
+    expect(text, contains('[(-)]TJ')); // le tiret long est devenu un tiret simple
+    expect(text, contains('[(construction)]TJ'));
+  });
 }

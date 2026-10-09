@@ -1038,7 +1038,7 @@ function createCustomerRouter(models) {
                 typeCompte: 'client', compteId: compte.id,
                 typeTransaction: 'paiement', typeTransactionDetail: 'paiement_dette',
                 montant: detteReglee,
-                description: `Dépôt : règlement de dette de ${detteReglee} FCFA${note ? ` — ${note}` : ''}`,
+                description: `Dépôt : règlement de dette de ${detteReglee} FCFA${note ? ` - ${note}` : ''}`,
                 referenceType: 'depot', soldeApres
               }
             }));
@@ -1049,7 +1049,7 @@ function createCustomerRouter(models) {
                 typeCompte: 'client', compteId: compte.id,
                 typeTransaction: 'depot', typeTransactionDetail: 'depot_avance',
                 montant: avanceCreditee,
-                description: `Approvisionnement du compte de ${avanceCreditee} FCFA${note ? ` — ${note}` : ''}`,
+                description: `Approvisionnement du compte de ${avanceCreditee} FCFA${note ? ` - ${note}` : ''}`,
                 referenceType: 'depot', soldeApres
               }
             }));
@@ -1072,7 +1072,7 @@ function createCustomerRouter(models) {
               boutiqueId: session.boutiqueId || null,
               type: 'entree',
               montant,
-              description: `Dépôt client: ${nomClient}${note ? ` — ${note}` : ''}`,
+              description: `Dépôt client: ${nomClient}${note ? ` - ${note}` : ''}`,
               utilisateurId: req.user?.id || null,
               metadata: JSON.stringify({
                 categorie: 'depot_client',

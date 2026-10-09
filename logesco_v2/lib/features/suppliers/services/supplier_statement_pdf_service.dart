@@ -212,11 +212,14 @@ import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/utils/pdf_save_helper.dart';
+import '../../../core/utils/pdf_text.dart';
 
 /// Service pour générer les PDF de relevés de compte fournisseur
 class SupplierStatementPdfService {
   /// Génère le PDF du relevé de compte fournisseur
-  static Future<Uint8List> generateStatementPDF(Map<String, dynamic> data) async {
+  static Future<Uint8List> generateStatementPDF(Map<String, dynamic> rawData) async {
+    // Polices standard des PDF = Latin-1 seulement : voir pdf_text.dart
+    final data = pdfSafeData(rawData) as Map<String, dynamic>;
     final pdf = pw.Document();
 
     final entreprise = data['entreprise'] as Map<String, dynamic>?;
