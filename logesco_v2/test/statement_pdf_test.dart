@@ -103,4 +103,11 @@ void main() {
     expect(text, contains('[(-)]TJ')); // le tiret long est devenu un tiret simple
     expect(text, contains('[(construction)]TJ'));
   });
+
+  test("sans logo d'entreprise : aucun cadre LOGO réservé, le nom de l'entreprise reste affiché", () async {
+    final text = _pdfText(await StatementPdfService.generateStatementPDF(_data(2)));
+    expect(text, isNot(contains('(LOGO)')));
+    expect(text, contains('[(LAURY)]TJ'));
+    expect(text, contains('[(EVENT)]TJ'));
+  });
 }

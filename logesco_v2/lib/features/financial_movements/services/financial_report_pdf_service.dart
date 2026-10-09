@@ -275,27 +275,6 @@ class FinancialReportPdfService {
                         pw.MemoryImage(logoBytes),
                         fit: pw.BoxFit.contain,
                       ),
-                    )
-                  else
-                    pw.Container(
-                      width: 60,
-                      height: 60,
-                      margin: const pw.EdgeInsets.only(right: 15),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.blue200,
-                        borderRadius: pw.BorderRadius.circular(8),
-                        border: pw.Border.all(color: PdfColors.blue700, width: 2),
-                      ),
-                      child: pw.Center(
-                        child: pw.Text(
-                          'LOGO',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue700,
-                          ),
-                        ),
-                      ),
                     ),
                   // Informations entreprise
                   pw.Expanded(

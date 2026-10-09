@@ -300,20 +300,6 @@ class SupplierStatementPdfService {
                           pw.MemoryImage(logoBytes),
                           fit: pw.BoxFit.contain,
                         ),
-                      )
-                    else
-                      pw.Container(
-                        width: 45,
-                        height: 45,
-                        margin: const pw.EdgeInsets.only(right: 12),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.blue100,
-                          borderRadius: pw.BorderRadius.circular(3),
-                          border: pw.Border.all(color: PdfColors.blue, width: 1),
-                        ),
-                        child: pw.Center(
-                          child: pw.Text('LOGO', style: const pw.TextStyle(fontSize: 7, color: PdfColors.blue)),
-                        ),
                       ),
                     // Informations entreprise
                     pw.Expanded(
