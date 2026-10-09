@@ -6,6 +6,7 @@ import '../controllers/supplier_controller.dart';
 import '../widgets/unpaid_procurements_selector_dialog.dart';
 import '../services/supplier_statement_pdf_service.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
+import '../../cash_registers/controllers/cash_session_controller.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
 import '../../../core/services/permission_service.dart';
 import '../../../shared/widgets/date_filter_bar.dart';
@@ -635,6 +636,19 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
         } catch (e) {
           print('⚠️ [_processPayment] Erreur lors du rafraîchissement des mouvements: $e');
           // Ne pas bloquer le flux si le contrôleur n'est pas trouvé
+        }
+
+        // Le mouvement financier a fait SORTIR l'argent de la caisse ouverte : le solde
+        // affiché (tableau de bord) baisse tout de suite, puis la valeur exacte est
+        // rechargée depuis le serveur.
+        try {
+          if (Get.isRegistered<CashSessionController>()) {
+            final session = Get.find<CashSessionController>();
+            session.addToCurrentBalance(-amount);
+            await session.refreshActiveSessionSilently();
+          }
+        } catch (e) {
+          print('⚠️ [_processPayment] Erreur lors de la mise à jour du solde de caisse: $e');
         }
       }
     } else {
