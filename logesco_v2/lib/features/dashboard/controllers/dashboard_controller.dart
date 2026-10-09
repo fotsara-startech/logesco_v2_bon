@@ -1,5 +1,6 @@
 ﻿import 'package:get/get.dart';
 import '../services/dashboard_stats_service.dart';
+import '../../cash_registers/controllers/cash_session_controller.dart';
 
 /// Contrôleur pour le dashboard
 class DashboardController extends GetxController {
@@ -103,7 +104,17 @@ class DashboardController extends GetxController {
 
   /// Actualiser toutes les données
   Future<void> refresh() async {
-    await loadAllData();
+    await Future.wait([
+      loadAllData(),
+      // Le solde de la caisse ouverte (en haut à droite) est lu depuis la session
+      _refreshCashSession(),
+    ]);
+  }
+
+  Future<void> _refreshCashSession() async {
+    if (Get.isRegistered<CashSessionController>()) {
+      await Get.find<CashSessionController>().refreshActiveSessionSilently();
+    }
   }
 
   /// Obtenir le pourcentage de croissance

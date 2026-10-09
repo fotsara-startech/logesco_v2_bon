@@ -69,6 +69,22 @@ class CashSessionController extends GetxController {
     }
   }
 
+  /// Recharge la session active depuis le serveur SANS indicateur de chargement
+  /// (le solde affiché sur le tableau de bord se met à jour discrètement).
+  ///
+  /// Le solde attendu est calculé par le serveur ; le recharger est plus fiable
+  /// que d'y ajouter localement un montant (un paiement par l'avance du client,
+  /// de la monnaie rendue ou un dépôt n'ont pas le même effet sur la caisse).
+  /// Un échec réseau, ou l'absence de session, ne remplace jamais la valeur affichée.
+  Future<void> refreshActiveSessionSilently() async {
+    try {
+      final session = await CashSessionService.getActiveSession();
+      if (session != null) activeSession.value = session;
+    } catch (e) {
+      print('⚠️ Rafraîchissement silencieux de la session impossible: $e');
+    }
+  }
+
   /// Charger les caisses disponibles
   Future<void> loadAvailableCashRegisters() async {
     try {

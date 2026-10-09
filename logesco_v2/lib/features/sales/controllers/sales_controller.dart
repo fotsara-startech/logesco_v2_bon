@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/api_service.dart';
@@ -1119,9 +1120,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         try {
           final cashSessionController = Get.find<CashSessionController>();
           if (cashSessionController.canMakeSales) {
-            // Ajouter le montant payé au solde de la caisse
-            cashSessionController.addToCurrentBalance(sale.montantPaye);
-            print('✅ Solde de caisse mis à jour: +${sale.montantPaye.toStringAsFixed(0)} FCFA');
+            // Le montant payé inclut l'avance du client (qui n'entre pas en caisse) et
+            // ne tient pas compte du reste ajouté au solde : on recharge le solde
+            // attendu calculé par le serveur plutôt que d'y ajouter ce montant.
+            unawaited(cashSessionController.refreshActiveSessionSilently());
           }
         } catch (e) {
           print('⚠️ Impossible de mettre à jour le solde de caisse: $e');

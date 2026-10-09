@@ -7,6 +7,7 @@ import '../../accounts/models/account.dart';
 import '../../accounts/widgets/unpaid_sales_selector_dialog.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
 import '../../../core/services/cash_register_refresh_service.dart';
+import '../../cash_registers/controllers/cash_session_controller.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../../../core/services/permission_service.dart';
 import '../../../shared/widgets/date_filter_bar.dart';
@@ -495,6 +496,17 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     try {
       await CashRegisterRefreshService().refreshCashRegisters();
     } catch (_) {}
+    // L'argent déposé est entré en caisse : le solde du tableau de bord suit tout de suite
+    await _refreshCashSessionBalance(montant);
+  }
+
+  /// Met à jour le solde de la caisse ouverte (tableau de bord) après une entrée d'argent.
+  /// Affichage immédiat avec le montant, puis valeur exacte rechargée depuis le serveur.
+  Future<void> _refreshCashSessionBalance(double entree) async {
+    if (!Get.isRegistered<CashSessionController>()) return;
+    final session = Get.find<CashSessionController>();
+    if (entree > 0) session.addToCurrentBalance(entree);
+    await session.refreshActiveSessionSilently();
   }
 
   /// Affiche le dialogue de paiement de dette
@@ -713,6 +725,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       try {
         final refreshService = CashRegisterRefreshService();
         await refreshService.refreshCashRegisters();
+        await _refreshCashSessionBalance(amount);
         print(' [_processPayment] Solde de la caisse rafraîchi avec succès');
       } catch (e) {
         print('⚠️ [_processPayment] Erreur lors du rafraîchissement de la caisse: $e');
