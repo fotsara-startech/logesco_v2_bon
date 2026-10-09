@@ -660,7 +660,7 @@ function createCustomerRouter(models) {
             dateTransaction: t.dateTransaction,
             soldeApres: parseFloat(t.soldeApres),
             venteReference: t.venteReference,
-            isCredit: t.typeTransaction === 'paiement' || t.typeTransaction.includes('paiement')
+            isCredit: t.typeTransaction === 'paiement' || t.typeTransaction.includes('paiement') || t.typeTransaction === 'depot'
           })),
           dateGeneration: new Date(),
           format: format
@@ -946,6 +946,193 @@ function createCustomerRouter(models) {
           success: false,
           message: 'Erreur lors de l\'enregistrement du paiement'
         });
+      }
+    }
+  );
+
+  /**
+   * POST /customers/:id/deposit
+   * Approvisionne le compte d'un client : il dépose de l'argent d'avance, qu'il
+   * utilisera ensuite pour ses achats (voir services/sale-settlement.js).
+   *
+   * - le solde est crédité du montant déposé ; s'il y a une dette, elle est
+   *   réglée en premier (ventes impayées de la plus ancienne à la plus récente)
+   *   et seul le reste devient une avance
+   * - l'argent entre dans la caisse de la session ouverte (espèces) : sans
+   *   session ouverte le dépôt est refusé, l'argent ne pourrait pas être tracé
+   */
+  router.post('/:id/deposit',
+    authenticateToken(models.authService),
+    validateId,
+    async (req, res) => {
+      try {
+        const clientId = parseInt(req.params.id);
+        const montant = Number(req.body.montant);
+        const note = (req.body.description || '').toString().trim().slice(0, 200);
+
+        if (!Number.isFinite(montant) || montant <= 0) {
+          return res.status(400).json({ success: false, message: 'Le montant du dépôt doit être supérieur à 0' });
+        }
+
+        const client = await models.prisma.client.findUnique({
+          where: { id: clientId },
+          select: { id: true, nom: true, prenom: true }
+        });
+        if (!client) {
+          return res.status(404).json({ success: false, message: 'Client non trouvé' });
+        }
+        const nomClient = `${client.nom} ${client.prenom || ''}`.trim();
+
+        const boutiqueId = req.body.boutiqueId || req.headers['x-boutique-id'] || req.query.boutiqueId;
+        const sessionWhere = { utilisateurId: req.user?.id, isActive: true, dateFermeture: null };
+        if (boutiqueId) sessionWhere.boutiqueId = parseInt(boutiqueId);
+
+        const result = await models.prisma.$transaction(async (tx) => {
+          // Un dépôt = de l'argent qui entre en caisse : session ouverte obligatoire
+          const session = await tx.cashSession.findFirst({ where: sessionWhere, include: { caisse: true } });
+          if (!session || !session.caisse) {
+            const e = new Error('SESSION_REQUISE');
+            e.code = 'SESSION_REQUISE';
+            throw e;
+          }
+
+          let compte = await tx.compteClient.findUnique({ where: { clientId } });
+          let compteCree = false;
+          if (!compte) {
+            compte = await tx.compteClient.create({ data: { clientId, soldeActuel: 0, limiteCredit: 0 } });
+            compteCree = true;
+          }
+
+          const soldeAvant = parseFloat(compte.soldeActuel) || 0;
+          const soldeApres = soldeAvant + montant;
+          const detteReglee = soldeAvant < 0 ? Math.min(montant, -soldeAvant) : 0;
+          const avanceCreditee = montant - detteReglee;
+
+          // Règlement des ventes impayées, de la plus ancienne à la plus récente
+          const ventesMaj = [];
+          if (detteReglee > 0) {
+            const impayees = await tx.vente.findMany({
+              where: { clientId, montantRestant: { gt: 0 }, statut: { not: 'annulee' } },
+              orderBy: { id: 'asc' }
+            });
+            let reste = detteReglee;
+            for (const v of impayees) {
+              if (reste <= 0) break;
+              const part = Math.min(reste, v.montantRestant);
+              const maj = await tx.vente.update({
+                where: { id: v.id },
+                data: { montantPaye: v.montantPaye + part, montantRestant: v.montantRestant - part }
+              });
+              ventesMaj.push(maj);
+              reste -= part;
+            }
+          }
+
+          const compteMaj = await tx.compteClient.update({ where: { clientId }, data: { soldeActuel: soldeApres } });
+
+          // Écritures de compte (historique / relevé)
+          const txCrees = [];
+          if (detteReglee > 0) {
+            txCrees.push(await tx.transactionCompte.create({
+              data: {
+                typeCompte: 'client', compteId: compte.id,
+                typeTransaction: 'paiement', typeTransactionDetail: 'paiement_dette',
+                montant: detteReglee,
+                description: `Dépôt : règlement de dette de ${detteReglee} FCFA${note ? ` - ${note}` : ''}`,
+                referenceType: 'depot', soldeApres
+              }
+            }));
+          }
+          if (avanceCreditee > 0) {
+            txCrees.push(await tx.transactionCompte.create({
+              data: {
+                typeCompte: 'client', compteId: compte.id,
+                typeTransaction: 'depot', typeTransactionDetail: 'depot_avance',
+                montant: avanceCreditee,
+                description: `Approvisionnement du compte de ${avanceCreditee} FCFA${note ? ` - ${note}` : ''}`,
+                referenceType: 'depot', soldeApres
+              }
+            }));
+          }
+
+          // Entrée en caisse (espèces)
+          const caisseMaj = await tx.cashRegister.update({
+            where: { id: session.caisse.id },
+            data: { soldeActuel: { increment: montant } }
+          });
+          const attendu = session.soldeAttendu ? parseFloat(session.soldeAttendu) : parseFloat(session.soldeOuverture);
+          const sessionMaj = await tx.cashSession.update({
+            where: { id: session.id },
+            data: { soldeAttendu: attendu + montant }
+          });
+          const mouvement = await tx.cashMovement.create({
+            data: {
+              caisseId: session.caisse.id,
+              sessionId: session.id,
+              boutiqueId: session.boutiqueId || null,
+              type: 'entree',
+              montant,
+              description: `Dépôt client: ${nomClient}${note ? ` - ${note}` : ''}`,
+              utilisateurId: req.user?.id || null,
+              metadata: JSON.stringify({
+                categorie: 'depot_client',
+                referenceType: 'depot_client',
+                clientId: client.id,
+                clientNom: nomClient,
+                detteReglee,
+                avanceCreditee
+              })
+            }
+          });
+
+          return { soldeAvant, soldeApres, detteReglee, avanceCreditee, compte: compteMaj, compteCree, txCrees, ventesMaj, caisseMaj, sessionMaj, mouvement };
+        }, { timeout: 15000 });
+
+        // Synchronisation vers Neon après la transaction (ne bloque pas la réponse)
+        const syncSvc = getSyncService(req);
+        if (syncSvc) {
+          setImmediate(async () => {
+            try {
+              if (result.compteCree) await syncSvc.enqueue('comptes_clients', 'INSERT', result.compte);
+              else await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compte);
+              for (const t of result.txCrees) await syncSvc.enqueue('transactions_comptes', 'INSERT', t);
+              for (const v of result.ventesMaj) await syncSvc.enqueue('ventes', 'UPDATE', v, req.user?.id);
+              await syncSvc.enqueue('cash_movements', 'INSERT', result.mouvement);
+              const s = result.sessionMaj;
+              await syncSvc.enqueue('cash_sessions', 'UPDATE', {
+                id: s.id, caisse_id: s.caisseId, utilisateur_id: s.utilisateurId, boutique_id: s.boutiqueId,
+                solde_ouverture: s.soldeOuverture, solde_attendu: s.soldeAttendu, solde_fermeture: s.soldeFermeture,
+                ecart: s.ecart, date_ouverture: s.dateOuverture, date_fermeture: s.dateFermeture, is_active: s.isActive
+              });
+              await syncSvc.enqueue('cash_registers', 'UPDATE', result.caisseMaj);
+            } catch (syncErr) {
+              console.error('❌ [Deposit] Erreur sync:', syncErr.message);
+            }
+          });
+        }
+
+        res.json({
+          success: true,
+          message: 'Dépôt enregistré',
+          data: {
+            montant,
+            detteReglee: result.detteReglee,
+            avanceCreditee: result.avanceCreditee,
+            soldeAvant: result.soldeAvant,
+            nouveauSolde: result.soldeApres,
+            client: { id: client.id, nom: client.nom, prenom: client.prenom }
+          }
+        });
+      } catch (error) {
+        if (error.code === 'SESSION_REQUISE') {
+          return res.status(409).json({
+            success: false,
+            code: 'SESSION_REQUISE',
+            message: "Ouvrez une session de caisse avant d'enregistrer un dépôt : l'argent déposé doit entrer en caisse."
+          });
+        }
+        console.error('Erreur lors du dépôt client:', error);
+        res.status(500).json({ success: false, message: "Erreur lors de l'enregistrement du dépôt" });
       }
     }
   );

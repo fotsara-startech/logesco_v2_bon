@@ -108,6 +108,7 @@ const clientSchemas = {
     q: Joi.string().max(100),
     telephone: baseSchemas.telephone,
     email: baseSchemas.email,
+    dette: Joi.string().valid('avec', 'sans'),
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20)
   })
@@ -333,6 +334,8 @@ const venteSchemas = {
     modePaiement: baseSchemas.modePaiement.default('comptant'),
     montantRemise: baseSchemas.montant.default(0),
     montantPaye: baseSchemas.montant.default(0),
+    // true : l'excédent payé est ajouté au solde du client (pas de monnaie) au lieu d'être rendu
+    resteVersSolde: Joi.boolean().default(false),
     montantTva: baseSchemas.montant.default(0),
     tauxTva: Joi.number().min(0).max(100).allow(null).default(null),
     dateVente: baseSchemas.date.allow(null),

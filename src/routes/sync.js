@@ -34,6 +34,23 @@ function createSyncRouter({ authService }) {
         });
       }
 
+      // Vraie date de dernière synchro réussie : celle de ce démarrage, sinon la
+      // dernière opération confirmée par Neon (journal local)
+      let lastSync = status.lastSuccessfulSyncAt;
+      if (!lastSync) {
+        const row = await syncService.localPrisma.$queryRawUnsafe(
+          `SELECT MAX(synced_at) as last FROM operation_log WHERE status = 'synced'`
+        );
+        const v = row[0]?.last;
+        if (v) {
+          // synced_at est stocké en UTC ("YYYY-MM-DD HH:MM:SS") ou en ms epoch selon l'écriture
+          const d = typeof v === 'number' || typeof v === 'bigint'
+            ? new Date(Number(v))
+            : new Date(String(v).includes('T') ? v : String(v).replace(' ', 'T') + 'Z');
+          if (!isNaN(d)) lastSync = d.toISOString();
+        }
+      }
+
       // Lire l'operation_log en attente depuis la BD locale (V2 Event Sourcing)
       const pending = await syncService.localPrisma.$queryRawUnsafe(
         `SELECT table_name, COUNT(*) as count
@@ -46,6 +63,21 @@ function createSyncRouter({ authService }) {
       const failed = await syncService.localPrisma.$queryRawUnsafe(
         `SELECT COUNT(*) as count FROM operation_log WHERE status = 'failed'`
       );
+
+      // Ancienneté de la plus vieille opération qui n'est pas partie vers Neon :
+      // sert à alerter quand la synchro est bloquée depuis longtemps.
+      const oldestRow = await syncService.localPrisma.$queryRawUnsafe(
+        `SELECT MIN(timestamp) as oldest FROM operation_log WHERE status IN ('pending', 'failed')`
+      );
+      let oldestPendingAt = null;
+      const o = oldestRow[0]?.oldest;
+      if (o) {
+        // "YYYY-MM-DD HH:MM:SS" (UTC, datetime('now') de SQLite) ou époque en ms
+        const d = typeof o === 'number' || typeof o === 'bigint'
+          ? new Date(Number(o))
+          : new Date(String(o).includes('T') ? o : String(o).replace(' ', 'T') + 'Z');
+        if (!isNaN(d)) oldestPendingAt = d.toISOString();
+      }
 
       const pendingByTable = {};
       let totalPending = 0;
@@ -74,7 +106,9 @@ function createSyncRouter({ authService }) {
           failedCount,
           pullIssues,
           pullIssuesCount: pullIssues.reduce((n, i) => n + i.enAttente, 0),
-          lastSync: new Date().toISOString(),
+          lastSync,
+          oldestPendingAt,
+          lastError: status.lastError,
         }
       });
     } catch (e) {
@@ -95,8 +129,18 @@ function createSyncRouter({ authService }) {
         return res.json({ success: false, message: 'Mode local uniquement — pas de cloud configuré' });
       }
 
+      // Si le poste est passé « hors ligne » sur une micro-coupure, on retente
+      // la connexion tout de suite au lieu de bloquer l'utilisateur
       if (!status.cloudAvailable) {
-        return res.json({ success: false, message: 'Neon inaccessible — vérifiez la connexion internet' });
+        const reconnecte = await syncService._checkCloudConnection();
+        if (!reconnecte) {
+          const err = syncService.getStatus().lastError;
+          const motif = err ? ` (${err.code || 'erreur'} : ${err.message})` : '';
+          return res.json({
+            success: false,
+            message: 'Neon inaccessible — vérifiez la connexion internet' + motif
+          });
+        }
       }
 
       // Déclencher le cycle de sync

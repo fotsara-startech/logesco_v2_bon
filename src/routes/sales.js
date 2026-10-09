@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { computeSaleSettlement } = require('../services/sale-settlement');
 const { venteSchemas } = require('../validation/schemas');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
@@ -612,7 +613,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
           final: boutiqueIdFromRequest
         });
 
-        const { clientId, commercialId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente } = req.body;
+        const { clientId, commercialId, modePaiement, montantRemise, montantPaye, montantTva, tauxTva, details, dateVente, resteVersSolde } = req.body;
         const boutiqueId = boutiqueIdFromRequest;
 
         // DEBUG: Log des données reçues
@@ -804,55 +805,46 @@ function createSalesRouter({ prisma, authService, syncService }) {
         const montantTvaVal = montantTva || 0;
         const montantVenteTotal = montantVenteNet + montantTvaVal; // HT - remise + TVA = TTC
 
-        // Si un client est sélectionné, vérifier son crédit existant
-        let dettePrecedente = 0;
-        let montantTotalAPayer = montantVenteTotal;
-
+        // Solde du compte client AVANT la vente (signé : < 0 dette, > 0 avance)
+        let soldeClientAvant = 0;
         if (clientId) {
           const compteClient = await prisma.compteClient.findUnique({
             where: { clientId },
             include: { client: { select: { nom: true, prenom: true } } }
           });
-
-          if (compteClient && compteClient.soldeActuel < 0) {
-            dettePrecedente = Math.abs(compteClient.soldeActuel);
-            montantTotalAPayer = montantVenteTotal + dettePrecedente;
-            console.log(`Client ${compteClient.client.nom} a une dette de ${dettePrecedente} FCFA`);
-            console.log(`Montant total à payer: ${montantTotalAPayer} FCFA`);
+          if (compteClient) {
+            soldeClientAvant = parseFloat(compteClient.soldeActuel) || 0;
+            console.log(`Client ${compteClient.client.nom} : solde avant vente = ${soldeClientAvant} FCFA`);
           }
         }
 
-        // Déterminer automatiquement le mode de paiement
+        // Règlement de la vente : dette, avance utilisée, monnaie ou reste ajouté au solde.
+        // (calcul pur et testé : services/sale-settlement.js)
         const montantVerse = montantPaye || 0;
-        let modeDeTermine;
-        let montantRestant = 0;
-
-        // CORRECTION: La monnaie à rendre ne doit être calculée QUE si le client n'a pas de dette
-        // Si le client a une dette, l'excédent sert à la rembourser
-        let monnaieARendre = 0;
-
-        if (montantVerse >= montantTotalAPayer) {
-          // Le client a payé le total (commande + dette)
-          modeDeTermine = 'comptant';
-          monnaieARendre = montantVerse - montantTotalAPayer;
-        } else if (montantVerse >= montantVenteTotal && dettePrecedente === 0) {
-          // Pas de dette et paiement >= commande
-          modeDeTermine = 'comptant';
-          monnaieARendre = montantVerse - montantVenteTotal;
-        } else {
-          // Paiement partiel
-          modeDeTermine = 'credit';
-          montantRestant = montantTotalAPayer - montantVerse;
-        }
+        const reglement = computeSaleSettlement({
+          soldeAvant: soldeClientAvant,
+          montantVenteTotal,
+          montantVerse,
+          resteVersSolde: !!resteVersSolde,
+          hasClient: !!clientId
+        });
+        const {
+          dettePrecedente,
+          avanceUtilisee,
+          montantTotalAPayer,
+          monnaieARendre,
+          ajouteAuSolde,
+          especesConservees,
+          montantRestant,
+          montantPayePourCetteVente
+        } = reglement;
+        const modeDeTermine = reglement.mode;
 
         console.log(`Mode de paiement déterminé: ${modeDeTermine}`);
-        console.log(`Montant versé: ${montantVerse} FCFA`);
+        console.log(`Espèces données: ${montantVerse} FCFA | avance utilisée: ${avanceUtilisee} FCFA`);
         console.log(`Montant restant: ${montantRestant} FCFA`);
-        console.log(`Monnaie à rendre: ${monnaieARendre} FCFA`);
-
-        // Calculer le montant payé pour CETTE vente uniquement (pour le reçu)
-        // Si le client a une dette, l'excédent sert à la rembourser, pas à payer cette vente
-        const montantPayePourCetteVente = Math.min(montantVerse, montantVenteTotal);
+        console.log(`Monnaie à rendre: ${monnaieARendre} FCFA | ajouté au solde: ${ajouteAuSolde} FCFA`);
+        console.log(`Espèces conservées en caisse: ${especesConservees} FCFA`);
         console.log(`💰 Montant payé pour cette vente (reçu): ${montantPayePourCetteVente} FCFA`);
 
         // Générer le numéro de vente
@@ -1091,25 +1083,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
               }
             }
 
-            // Calculer le nouveau solde du compte
-            // CORRECTION: La monnaie à rendre ne doit PAS être enregistrée comme crédit client
-            // Solde négatif = Dette client (montant dû par le client)
-            // Solde positif = Crédit client (montant dû au client - SEULEMENT si paiement volontaire en excès)
-            // Si montantVerse > montantTotalAPayer, c'est de la monnaie à rendre, PAS un crédit
-            
-            let nouveauSolde;
-            if (montantRestantADistribuer > 0) {
-              // Il reste de l'argent après paiement de toutes les dettes
-              // C'est de la MONNAIE À RENDRE, pas un crédit client
-              // Le solde reste 0 (ou le solde précédent s'il y en avait un)
-              nouveauSolde = 0;
-              console.log(`💵 Monnaie à rendre au client: ${montantRestantADistribuer} FCFA`);
-            } else {
-              // Le client a payé exactement ou moins que le total
-              // Calculer le solde réel: montantVerse - montantTotalAPayer
-              nouveauSolde = montantVerse - montantTotalAPayer;
-            }
-            
+            // Nouveau solde = ancien solde + espèces conservées − montant de la vente.
+            // (une avance existante n'est donc plus écrasée ; la monnaie rendue
+            // n'est jamais créditée ; le reste "ajouté au solde" l'est.)
+            const nouveauSolde = reglement.soldeApres;
+
             // Vérifier si le compte client existe déjà
             let compteClientUpdated = await tx.compteClient.findUnique({
               where: { clientId }
@@ -1183,6 +1161,46 @@ function createSalesRouter({ prisma, authService, syncService }) {
               createdTransactionIds.push(createdTx.id);
             }
             
+            // Avance du client utilisée pour cette vente
+            if (avanceUtilisee > 0) {
+              const avanceTx = await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'client',
+                  compteId: compteClientUpdated.id,
+                  typeTransaction: 'paiement',
+                  typeTransactionDetail: 'utilisation_avance',
+                  montant: avanceUtilisee,
+                  description: `Avance utilisée pour la vente ${numeroVente}`,
+                  referenceType: 'vente',
+                  referenceId: nouvelleVente.id,
+                  venteId: nouvelleVente.id,
+                  venteReference: numeroVente,
+                  soldeApres: nouveauSolde
+                }
+              });
+              createdTransactionIds.push(avanceTx.id);
+            }
+
+            // Reste d'argent (pas de monnaie) ajouté au solde du client
+            if (ajouteAuSolde > 0) {
+              const resteTx = await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'client',
+                  compteId: compteClientUpdated.id,
+                  typeTransaction: 'depot',
+                  typeTransactionDetail: 'reste_ajoute_au_solde',
+                  montant: ajouteAuSolde,
+                  description: `Reste ajouté au solde (pas de monnaie) - Vente ${numeroVente}`,
+                  referenceType: 'vente',
+                  referenceId: nouvelleVente.id,
+                  venteId: nouvelleVente.id,
+                  venteReference: numeroVente,
+                  soldeApres: nouveauSolde
+                }
+              });
+              createdTransactionIds.push(resteTx.id);
+            }
+
             console.log('=== FIN CRÉATION TRANSACTIONS ===');
 
             // Afficher le statut du compte
@@ -1200,7 +1218,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
 
           // CORRECTION: Créer un mouvement de caisse pour traçabilité (DANS la transaction)
           let cashMovementCreated = null;
-          if (sessionId && montantVerse > 0) {
+          if (sessionId && especesConservees > 0) {
             const clientInfo = nouvelleVente.client;
             cashMovementCreated = await tx.cashMovement.create({
               data: {
@@ -1208,7 +1226,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 sessionId: sessionId,
                 boutiqueId: activeSession.boutiqueId || null,
                 type: 'vente',
-                montant: montantVerse,
+                montant: especesConservees,
                 description: `Vente ${nouvelleVente.numeroVente}${clientInfo ? ` - Client: ${clientInfo.nom} ${clientInfo.prenom || ''}` : ''}`,
                 utilisateurId: req.user?.id || null,
                 metadata: JSON.stringify({
@@ -1220,11 +1238,14 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   clientNom: clientInfo ? `${clientInfo.nom} ${clientInfo.prenom || ''}` : null,
                   montantTotal: montantVenteNet,
                   montantVerse: montantVerse,
+                  monnaieRendue: monnaieARendre,
+                  avanceUtilisee: avanceUtilisee,
+                  ajouteAuSolde: ajouteAuSolde,
                   montantRestant: montantRestant
                 })
               }
             });
-            console.log(`✅ Mouvement de caisse créé pour la vente (${montantVerse} FCFA)`);
+            console.log(`✅ Mouvement de caisse créé pour la vente (${especesConservees} FCFA conservés sur ${montantVerse} donnés)`);
           }
 
           return { vente: nouvelleVente, cashMovement: cashMovementCreated, compteClient: compteClientToSync, transactionIds: createdTransactionIds };
@@ -1444,7 +1465,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
 
           if (activeSession) {
             const currentSoldeAttendu = activeSession.soldeAttendu ? parseFloat(activeSession.soldeAttendu) : parseFloat(activeSession.soldeOuverture);
-            const newSoldeAttendu = currentSoldeAttendu + montantVerse; // Ajouter le montant payé
+            const newSoldeAttendu = currentSoldeAttendu + especesConservees; // Espèces qui restent en caisse (monnaie rendue déduite)
 
             await prisma.cashSession.update({
               where: { id: activeSession.id },
@@ -1455,7 +1476,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
 
             console.log(`💰 Session de caisse mise à jour:`);
             console.log(`   Solde attendu avant: ${currentSoldeAttendu} FCFA`);
-            console.log(`   Montant vente: +${montantVerse} FCFA`);
+            console.log(`   Espèces conservées: +${especesConservees} FCFA`);
             console.log(`   Solde attendu après: ${newSoldeAttendu} FCFA`);
 
             // CORRECTION: Mettre à jour aussi le solde de la caisse (pas seulement la session)
@@ -1464,7 +1485,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
               where: { id: activeSession.caisseId },
               data: {
                 soldeActuel: {
-                  increment: montantVerse
+                  increment: especesConservees
                 }
               }
             });
@@ -1507,7 +1528,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
           montantTotalAPayer,
           montantVerse,
           montantRestant,
-          monnaieARendre
+          monnaieARendre,
+          avanceUtilisee,
+          ajouteAuSolde,
+          soldeClientAvant,
+          soldeClientApres: reglement.soldeApres
         };
 
         res.status(201).json({
@@ -1795,9 +1820,21 @@ function createSalesRouter({ prisma, authService, syncService }) {
           // Rouvrir une session déjà clôturée reviendrait à modifier un écart
           // de caisse déjà validé par le caissier — un état arrêté ne se
           // corrige pas rétroactivement, on compense dans la période courante.
+          // Part de la vente payée avec l'AVANCE du client : ce n'est pas de
+          // l'espèce, donc rien à rembourser en caisse. Elle est restituée sur
+          // le compte du client (voir plus bas).
+          let avanceUtilisee = 0;
+          if (vente.clientId) {
+            const avanceTxs = await tx.transactionCompte.findMany({
+              where: { venteId: parseInt(id), typeTransactionDetail: 'utilisation_avance' }
+            });
+            avanceUtilisee = avanceTxs.reduce((somme, t) => somme + (parseFloat(t.montant) || 0), 0);
+          }
+          const remboursementEspeces = Math.max(0, vente.montantPaye - avanceUtilisee);
+
           let cancelMovementCreated = null;
           let sessionCorrigee = null;
-          if (vente.montantPaye > 0) {
+          if (remboursementEspeces > 0) {
             const sessionOuverte = await tx.cashSession.findFirst({
               where: {
                 isActive: true,
@@ -1814,7 +1851,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
             }
 
             const surSessionOrigine = sessionOuverte.id === vente.sessionId;
-            console.log(`💰 Remboursement de ${vente.montantPaye} FCFA sur la session ${sessionOuverte.id}` +
+            console.log(`💰 Remboursement de ${remboursementEspeces} FCFA sur la session ${sessionOuverte.id}` +
               (surSessionOrigine ? '' : ` (session d'origine ${vente.sessionId} clôturée)`));
 
             // Montant NÉGATIF : une vente comptant avait fait ENTRER l'argent
@@ -1827,7 +1864,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 sessionId: sessionOuverte.id,
                 boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
                 type: 'annulation_vente',
-                montant: -vente.montantPaye,
+                montant: -remboursementEspeces,
                 description: `Annulation vente ${vente.numeroVente}`,
                 utilisateurId: req.user?.id || null,
                 metadata: JSON.stringify({
@@ -1835,7 +1872,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   referenceType: 'vente_annulee',
                   referenceId: parseInt(id),
                   venteReference: vente.numeroVente,
-                  montantOriginal: vente.montantPaye,
+                  montantOriginal: remboursementEspeces,
                   sessionOrigine: vente.sessionId,
                   imputeSurSessionCourante: !surSessionOrigine
                 })
@@ -1845,7 +1882,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
             const soldeCourant = sessionOuverte.soldeAttendu != null
               ? sessionOuverte.soldeAttendu
               : sessionOuverte.soldeOuverture;
-            const nouveauSoldeAttendu = soldeCourant - vente.montantPaye;
+            const nouveauSoldeAttendu = soldeCourant - remboursementEspeces;
 
             sessionCorrigee = await tx.cashSession.update({
               where: { id: sessionOuverte.id },
@@ -1854,7 +1891,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
 
             await tx.cashRegister.update({
               where: { id: sessionOuverte.caisseId },
-              data: { soldeActuel: { decrement: vente.montantPaye } }
+              data: { soldeActuel: { decrement: remboursementEspeces } }
             });
 
             console.log(`✅ Solde attendu de la session ${sessionOuverte.id}: ${nouveauSoldeAttendu} FCFA`);
@@ -1897,8 +1934,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
           let compteClientAnnulation = null;
           const detteAAnnuler = vente.montantRestant || 0;
 
-          if (vente.clientId && detteAAnnuler > 0) {
-            console.log(`👤 Annulation de la dette client ${vente.clientId} : ${detteAAnnuler} FCFA`);
+          // Crédité sur le compte : la dette de la vente (non payée) + l'avance utilisée
+          const creditARestituer = detteAAnnuler + avanceUtilisee;
+
+          if (vente.clientId && creditARestituer > 0) {
+            console.log(`👤 Annulation vente client ${vente.clientId} : dette ${detteAAnnuler} FCFA + avance restituée ${avanceUtilisee} FCFA`);
 
             const compteClient = await tx.compteClient.findUnique({
               where: { clientId: vente.clientId }
@@ -1906,7 +1946,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
 
             if (compteClient) {
               // Le solde est négatif lorsqu'il y a dette : on la résorbe
-              const nouveauSolde = compteClient.soldeActuel + detteAAnnuler;
+              const nouveauSolde = compteClient.soldeActuel + creditARestituer;
 
               compteClientAnnulation = await tx.compteClient.update({
                 where: { clientId: vente.clientId },
@@ -1925,8 +1965,8 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   compteId: compteClient.id,
                   typeTransaction: 'annulation',
                   typeTransactionDetail: 'annulation_vente',
-                  montant: detteAAnnuler,
-                  description: `Annulation vente ${vente.numeroVente}`,
+                  montant: creditARestituer,
+                  description: `Annulation vente ${vente.numeroVente}${avanceUtilisee > 0 ? ` (dont ${avanceUtilisee} FCFA d'avance restituée)` : ''}`,
                   referenceType: 'vente_annulee',
                   referenceId: parseInt(id),
                   venteId: parseInt(id),
