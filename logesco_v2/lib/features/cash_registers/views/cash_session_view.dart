@@ -59,31 +59,38 @@ class CashSessionView extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
+        // Contenu centré, largeur limitée : sur un grand écran les cartes ne
+        // s'étirent plus d'un bord à l'autre de la fenêtre.
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Affichage du solde de caisse en temps réel
-              const CashBalanceDisplay(
-                showDetails: true,
-                isCompact: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Affichage du solde de caisse en temps réel
+                  const CashBalanceDisplay(
+                    showDetails: true,
+                    isCompact: false,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Actions rapides
+                  const CashQuickActions(),
+                  const SizedBox(height: 24),
+
+                  // Statut de la session (détails supplémentaires)
+                  _buildSessionStatus(controller),
+                  const SizedBox(height: 24),
+
+                  // Historique des sessions
+                  if (controller.sessionHistory.isNotEmpty) ...[
+                    _buildSessionHistory(controller),
+                  ],
+                ],
               ),
-              const SizedBox(height: 16),
-
-              // Actions rapides
-              const CashQuickActions(),
-              const SizedBox(height: 24),
-
-              // Statut de la session (détails supplémentaires)
-              _buildSessionStatus(controller),
-              const SizedBox(height: 24),
-
-              // Historique des sessions
-              if (controller.sessionHistory.isNotEmpty) ...[
-                _buildSessionHistory(controller),
-              ],
-            ],
+            ),
           ),
         );
       }),

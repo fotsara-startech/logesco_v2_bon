@@ -113,8 +113,23 @@ class CashSessionController extends GetxController {
     }
   }
 
+  /// Dernière session clôturée, pour afficher son résumé APRÈS la fermeture de la
+  /// fenêtre de clôture (voir [showClosedSessionSummary]).
+  CashSession? lastClosedSession;
+
+  /// Affiche le résumé de la dernière session clôturée
+  void showClosedSessionSummary() {
+    final session = lastClosedSession;
+    if (session != null) _showSessionSummary(session);
+  }
+
   /// Se déconnecter de la caisse (clôturer la session)
-  Future<bool> disconnectFromCashRegister(double soldeFermeture) async {
+  ///
+  /// [showSummary] : false quand l'appelant ferme lui-même sa fenêtre de clôture
+  /// puis appelle [showClosedSessionSummary]. Ouvrir le résumé ici, pendant que
+  /// la fenêtre de clôture est encore là, faisait fermer le résumé par le
+  /// `Navigator.pop()` de l'appelant et laissait la fenêtre de clôture ouverte.
+  Future<bool> disconnectFromCashRegister(double soldeFermeture, {bool showSummary = true}) async {
     try {
       isDisconnecting.value = true;
 
@@ -134,8 +149,9 @@ class CashSessionController extends GetxController {
       print('   Type ecart: ${session.ecart.runtimeType}');
       print('═══════════════════════════════════════════════════════════');
 
+      lastClosedSession = session;
       // Afficher le résumé de la session
-      _showSessionSummary(session);
+      if (showSummary) _showSessionSummary(session);
 
       activeSession.value = null;
 
@@ -621,9 +637,11 @@ class CashSessionController extends GetxController {
                                     ? null
                                     : () async {
                                         if (formKey.currentState!.validate()) {
-                                          final success = await disconnectFromCashRegister(soldeFermeture);
+                                          final success = await disconnectFromCashRegister(soldeFermeture, showSummary: false);
                                           if (success) {
+                                            // D'abord fermer cette fenêtre, ensuite seulement ouvrir le résumé
                                             Navigator.of(context).pop();
+                                            showClosedSessionSummary();
                                           }
                                         }
                                       },

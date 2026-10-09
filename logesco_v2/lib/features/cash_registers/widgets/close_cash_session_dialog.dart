@@ -438,10 +438,11 @@ class _CloseCashSessionDialogState extends State<CloseCashSessionDialog> {
 
     if (!confirmed) return;
 
-    final success = await sessionController.disconnectFromCashRegister(_soldeFermeture);
+    final success = await sessionController.disconnectFromCashRegister(_soldeFermeture, showSummary: false);
 
     if (success) {
-      Navigator.of(context).pop(); // Close the dialog
+      Navigator.of(context).pop(); // Fermer cette fenêtre d'abord...
+      sessionController.showClosedSessionSummary(); // ...puis ouvrir le résumé
     }
   }
 }
