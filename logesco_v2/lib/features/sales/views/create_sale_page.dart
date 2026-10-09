@@ -10,6 +10,7 @@ import '../../customers/controllers/customer_controller.dart';
 import '../widgets/product_selector.dart';
 import '../widgets/cart_widget.dart';
 import '../widgets/finalize_sale_dialog.dart';
+import '../utils/sale_settlement.dart';
 import '../widgets/quick_billing_view.dart';
 import '../utils/post_sale_printing.dart';
 import '../../customers/models/customer.dart';
@@ -1059,11 +1060,15 @@ class _CreateSalePageState extends State<CreateSalePage> {
       return await _salesController.createPendingOrder();
     }
 
-    final total = _salesController.cartTotalTTC;
     final customer = _salesController.selectedCustomer;
-    final customerDebt = customer != null && customer.solde < 0 ? -customer.solde : 0.0;
-    final totalWithDebt = total + customerDebt;
-    final remaining = totalWithDebt - montantVerse;
+    // Règlement tel que le serveur l'appliquera (l'avance du client couvre le manque)
+    final settlement = SaleSettlement.compute(
+      soldeAvant: customer?.solde ?? 0.0,
+      venteTotal: _salesController.cartTotalTTC,
+      montantVerse: montantVerse,
+      hasClient: customer != null,
+    );
+    final remaining = settlement.montantRestant;
 
     if (remaining > 0 && customer == null) {
       SnackbarHelper.warning(

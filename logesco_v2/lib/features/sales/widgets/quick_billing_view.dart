@@ -7,6 +7,7 @@ import '../../customers/models/customer.dart';
 import '../../products/controllers/product_controller.dart';
 import '../../products/models/product.dart';
 import '../controllers/sales_controller.dart';
+import '../utils/sale_settlement.dart';
 import '../models/sale.dart';
 import 'product_selector.dart' show showAddToCartQuantityDialog;
 
@@ -80,6 +81,8 @@ class _QuickBillingViewState extends State<QuickBillingView> {
   TextEditingController? _clientController;
   TextEditingController? _productTextController;
   final TextEditingController _montantController = TextEditingController(text: '0');
+  // Pas de monnaie : l'excédent est ajouté au solde du client au lieu d'être rendu
+  bool _addExcessToBalance = false;
 
   bool _isSubmitting = false;
 
@@ -667,7 +670,29 @@ class _QuickBillingViewState extends State<QuickBillingView> {
       final total = _salesController.cartTotal;
       final discount = _salesController.discount;
       final netAPayer = total;
-      final monnaie = widget.includePayment ? (_montantVerse - netAPayer) : null;
+      final customer = _salesController.selectedCustomer;
+      // Règlement tel que le serveur l'appliquera : l'avance du client couvre ce
+      // que le montant versé ne couvre pas de la vente.
+      final settlement = SaleSettlement.compute(
+        soldeAvant: customer?.solde ?? 0.0,
+        venteTotal: _salesController.cartTotalTTC,
+        montantVerse: _montantVerse,
+        resteVersSolde: _addExcessToBalance,
+        hasClient: customer != null,
+      );
+      final bool couvert = settlement.montantRestant <= 0;
+      final String ligneReste;
+      final Color couleurReste;
+      if (!couvert) {
+        ligneReste = '${'quick_billing_remaining'.tr}: ${settlement.montantRestant.toStringAsFixed(0)} FCFA';
+        couleurReste = Colors.orange[700]!;
+      } else if (settlement.ajouteAuSolde > 0) {
+        ligneReste = 'Ajouté au solde: ${settlement.ajouteAuSolde.toStringAsFixed(0)} FCFA';
+        couleurReste = Colors.green[700]!;
+      } else {
+        ligneReste = '${'quick_billing_change'.tr}: ${settlement.monnaieARendre.toStringAsFixed(0)} FCFA';
+        couleurReste = Colors.grey[600]!;
+      }
 
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -680,6 +705,8 @@ class _QuickBillingViewState extends State<QuickBillingView> {
                 _totalRow('quick_billing_discount'.tr, '${discount.toStringAsFixed(0)} FCFA'),
                 const SizedBox(height: 4),
                 _totalRow('quick_billing_net_due'.tr, '${netAPayer.toStringAsFixed(0)} FCFA', bold: true, big: true),
+                if (widget.includePayment && settlement.avanceUtilisee > 0)
+                  _totalRow('Avance utilisée', '-${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
               ],
             ),
           ),
@@ -704,9 +731,30 @@ class _QuickBillingViewState extends State<QuickBillingView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    monnaie != null && monnaie >= 0 ? '${'quick_billing_change'.tr}: ${monnaie.toStringAsFixed(0)} FCFA' : '${'quick_billing_remaining'.tr}: ${(-(monnaie ?? 0)).toStringAsFixed(0)} FCFA',
-                    style: TextStyle(fontSize: 12, color: (monnaie ?? 0) >= 0 ? Colors.grey[600] : Colors.orange[700], fontWeight: FontWeight.w600),
+                    ligneReste,
+                    style: TextStyle(fontSize: 12, color: couleurReste, fontWeight: FontWeight.w600),
                   ),
+                  // Pas de monnaie : proposer d'ajouter l'excédent au solde du client
+                  if (customer != null && settlement.excedent > 0)
+                    InkWell(
+                      onTap: () => setState(() => _addExcessToBalance = !_addExcessToBalance),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 28,
+                            width: 28,
+                            child: Checkbox(
+                              value: _addExcessToBalance,
+                              onChanged: (v) => setState(() => _addExcessToBalance = v ?? false),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Flexible(child: Text('Pas de monnaie : ajouter au solde du client', style: TextStyle(fontSize: 11))),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -768,6 +816,15 @@ class _QuickBillingViewState extends State<QuickBillingView> {
     _salesController.clampCartPricesToMinimum();
     setState(() => _isSubmitting = true);
     try {
+      // Le choix "ajouter au solde" n'a de sens que s'il reste un excédent
+      final customer = _salesController.selectedCustomer;
+      final excedent = SaleSettlement.compute(
+        soldeAvant: customer?.solde ?? 0.0,
+        venteTotal: _salesController.cartTotalTTC,
+        montantVerse: _montantVerse,
+        hasClient: customer != null,
+      ).excedent;
+      _salesController.setResteVersSolde(_addExcessToBalance && excedent > 0 && customer != null);
       final success = await widget.onFinalize(_montantVerse);
       if (success) {
         _resetForNextSale();
@@ -781,6 +838,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
     _clientController?.clear();
     _productTextController?.clear();
     _montantController.text = '0';
+    _addExcessToBalance = false;
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) => _clientFocusNode?.requestFocus());
   }

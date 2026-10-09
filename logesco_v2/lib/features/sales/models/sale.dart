@@ -211,6 +211,9 @@ class CreateSaleRequest {
   final String modePaiement;
   final double montantRemise;
   final double montantPaye;
+  /// true : l'excédent payé est ajouté au solde du client au lieu d'être rendu
+  @JsonKey(defaultValue: false)
+  final bool resteVersSolde;
   final double montantTva;
   final double? tauxTva;
   final List<CreateSaleDetailRequest> details;
@@ -224,6 +227,7 @@ class CreateSaleRequest {
     required this.modePaiement,
     required this.montantRemise,
     required this.montantPaye,
+    this.resteVersSolde = false,
     this.montantTva = 0.0,
     this.tauxTva,
     required this.details,

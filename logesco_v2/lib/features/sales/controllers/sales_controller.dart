@@ -68,6 +68,8 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final RxString _paymentMode = 'comptant'.obs;
   final RxDouble _discount = 0.0.obs;
   final RxDouble _amountPaid = 0.0.obs;
+  // L'excédent payé est ajouté au solde du client (pas de monnaie) au lieu d'être rendu
+  final RxBool _resteVersSolde = false.obs;
   final Rx<PrintFormat> _selectedReceiptFormat = PrintFormat.thermal.obs;
   final Rx<PrintMode> _printMode = PrintMode.preview.obs;
   final Rx<DateTime?> _customSaleDate = Rx<DateTime?>(null);
@@ -843,6 +845,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _paymentMode.value = 'comptant';
     _discount.value = 0.0;
     _amountPaid.value = 0.0;
+    _resteVersSolde.value = false;
     _customSaleDate.value = null;
     _tvaEnabled.value = false;
     _productsWithLineError.clear();
@@ -944,6 +947,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   void setAmountPaid(double amount) {
     _amountPaid.value = amount;
+  }
+
+  void setResteVersSolde(bool value) {
+    _resteVersSolde.value = value;
   }
 
   void setReceiptFormat(String format) {
@@ -1068,6 +1075,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         modePaiement: _paymentMode.value,
         montantRemise: _discount.value,
         montantPaye: _amountPaid.value,
+        resteVersSolde: _resteVersSolde.value,
         montantTva: tvaAmount,
         tauxTva: _tvaEnabled.value ? (_companyProfile.value?.tvaRate) : null,
         dateVente: _customSaleDate.value,
