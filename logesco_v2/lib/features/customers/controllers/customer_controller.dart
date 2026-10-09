@@ -476,6 +476,35 @@ class CustomerController extends GetxController {
     }
   }
 
+  /// Approvisionne le compte d'un client. Renvoie le détail du dépôt, ou null
+  /// en cas d'échec (le message du serveur est alors affiché à l'utilisateur).
+  Future<Map<String, dynamic>?> depositToCustomerAccount(int customerId, double montant, {String? description}) async {
+    try {
+      isLoading.value = true;
+      if (_customerService is! ApiCustomerService) {
+        throw Exception('Service non supporté pour le dépôt');
+      }
+      final result = await (_customerService as ApiCustomerService).depositToAccount(customerId, montant, description: description);
+
+      // Le solde du client a changé : mettre à jour la liste en mémoire
+      // (utilisée par la recherche de la page de vente)
+      final nouveauSolde = (result['nouveauSolde'] as num?)?.toDouble();
+      final index = customers.indexWhere((c) => c.id == customerId);
+      if (index >= 0 && nouveauSolde != null) {
+        customers[index] = customers[index].copyWith(solde: nouveauSolde);
+      }
+
+      SnackbarHelper.success('Dépôt de ${montant.toStringAsFixed(0)} FCFA enregistré');
+      return result;
+    } catch (e) {
+      final message = e is ApiException ? e.message : e.toString().replaceFirst('Exception: ', '');
+      SnackbarHelper.error(message);
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   /// Récupère les données du relevé de compte
   Future<Map<String, dynamic>?> getCustomerStatement(int customerId) async {
     try {

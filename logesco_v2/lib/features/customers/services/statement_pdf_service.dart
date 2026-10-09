@@ -396,7 +396,7 @@ class StatementPdfService {
         print('   - Clés: ${(t as Map).keys.toList()}');
 
         final typeStr = t['typeTransaction']?.toString() ?? '';
-        final isCredit = t['isCredit'] == true || (typeStr.isNotEmpty && !typeStr.startsWith('achat') && (typeStr.contains('paiement') || typeStr == 'credit'));
+        final isCredit = t['isCredit'] == true || (typeStr.isNotEmpty && !typeStr.startsWith('achat') && (typeStr.contains('paiement') || typeStr == 'credit' || typeStr == 'depot'));
 
         final typeDetail = t['typeTransactionDetail'] ?? t['typeTransaction'] ?? 'Transaction';
 
@@ -465,6 +465,13 @@ class StatementPdfService {
         return 'Paiement comptant';
       case 'paiement_dette':
         return 'Paiement dette';
+      case 'depot':
+      case 'depot_avance':
+        return 'Approvisionnement du compte';
+      case 'utilisation_avance':
+        return 'Avance utilisée';
+      case 'reste_ajoute_au_solde':
+        return 'Reste ajouté au solde';
       case 'credit':
         return 'Crédit';
       case 'debit':

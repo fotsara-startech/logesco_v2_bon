@@ -214,6 +214,17 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                   ),
                 ),
               if (aDette) const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _showDepositDialog,
+                icon: const Icon(Icons.savings_outlined, size: 18),
+                label: const Text('Approvisionner'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: aDette ? Colors.red.shade700 : Colors.green.shade700,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: _printTransactions,
                 icon: const Icon(Icons.print, color: Colors.white),
@@ -292,7 +303,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   }
 
   Widget _buildTransactionItem(dynamic transaction) {
-    final bool isCredit = transaction.typeTransaction.contains('paiement');
+    final bool isCredit = transaction.typeTransaction.contains('paiement') || transaction.typeTransaction == 'depot';
     final IconData icon = isCredit ? Icons.add_circle : Icons.remove_circle;
     final Color color = isCredit ? Colors.green : Colors.red;
 
@@ -351,6 +362,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
         return 'Paiement';
       case 'paiement_dette':
         return 'Paiement de dette';
+      case 'depot':
+        return 'Approvisionnement';
       case 'credit':
         return 'Crédit';
       case 'debit':
@@ -362,6 +375,126 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Dialogue d'approvisionnement du compte (dépôt d'avance en espèces)
+  void _showDepositDialog() {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    final double soldeActuel = _calculateFilteredBalance();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          final montant = double.tryParse(amountController.text.replaceAll(' ', '')) ?? 0;
+          final detteReglee = (soldeActuel < 0 && montant > 0) ? (montant < -soldeActuel ? montant : -soldeActuel) : 0.0;
+          final nouveauSolde = soldeActuel + montant;
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.savings_outlined, color: Colors.green.shade700),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Approvisionner le compte')),
+              ],
+            ),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_customer?.nomComplet ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text(
+                      soldeActuel < 0
+                          ? 'Dette actuelle : ${(-soldeActuel).toStringAsFixed(0)} FCFA'
+                          : soldeActuel > 0
+                              ? 'Avance actuelle : ${soldeActuel.toStringAsFixed(0)} FCFA'
+                              : 'Solde actuel : 0 FCFA',
+                      style: TextStyle(color: soldeActuel < 0 ? Colors.red.shade700 : Colors.grey.shade700),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Montant déposé (espèces)',
+                        suffixText: 'FCFA',
+                        border: OutlineInputBorder(),
+                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Note (facultatif)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    if (montant > 0) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (detteReglee > 0) Text('Dette réglée : ${detteReglee.toStringAsFixed(0)} FCFA'),
+                            if (nouveauSolde > 0) Text('Avance disponible après dépôt : ${nouveauSolde.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
+                            if (nouveauSolde < 0) Text('Dette restante : ${(-nouveauSolde).toStringAsFixed(0)} FCFA', style: TextStyle(color: Colors.red.shade700)),
+                            if (nouveauSolde == 0) const Text('Le compte sera soldé (solde = 0)'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text('cancel'.tr)),
+              ElevatedButton.icon(
+                onPressed: montant > 0
+                    ? () async {
+                        Navigator.of(dialogContext).pop();
+                        await _processDeposit(montant, noteController.text.trim());
+                      }
+                    : null,
+                icon: const Icon(Icons.check_circle),
+                label: const Text('Enregistrer le dépôt'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Enregistre le dépôt puis rafraîchit l'historique et la caisse
+  Future<void> _processDeposit(double montant, String note) async {
+    final result = await _controller.depositToCustomerAccount(_customer!.id, montant, description: note.isEmpty ? null : note);
+    if (result == null) return;
+
+    await _loadTransactions();
+
+    try {
+      if (Get.isRegistered<FinancialMovementController>()) {
+        await Get.find<FinancialMovementController>().refreshMovements();
+      }
+    } catch (_) {}
+    try {
+      await CashRegisterRefreshService().refreshCashRegisters();
+    } catch (_) {}
   }
 
   /// Affiche le dialogue de paiement de dette

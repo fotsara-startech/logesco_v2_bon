@@ -61,4 +61,26 @@ void main() {
       expect(found, n);
     });
   }
+
+  test('un dépôt (approvisionnement) est affiché en crédit (+) avec son libellé', () async {
+    final data = _data(0);
+    data['transactions'] = [
+      {
+        'id': 1,
+        'typeTransaction': 'depot',
+        'typeTransactionDetail': 'depot_avance',
+        'montant': 20000.0,
+        'description': null,
+        'dateTransaction': '2026-10-09T10:00:00.000Z',
+        'soldeApres': 20000.0,
+        'venteReference': null,
+        // le serveur marque le dépôt comme crédit
+        'isCredit': true,
+      },
+    ];
+    final text = _pdfText(await StatementPdfService.generateStatementPDF(data));
+    // le PDF écrit chaque mot séparément : (+20000) puis (F), (Approvisionnement) (du) (compte)
+    expect(text, contains('[(+20000)]TJ'));
+    expect(text, contains('[(Approvisionnement)]TJ'));
+  });
 }

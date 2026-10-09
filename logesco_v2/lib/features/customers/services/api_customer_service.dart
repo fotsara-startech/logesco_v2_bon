@@ -252,6 +252,27 @@ class ApiCustomerService extends GetxService implements CustomerService {
     }
   }
 
+  /// Approvisionne le compte du client (dépôt d'avance en espèces).
+  /// Renvoie les données du dépôt (dette réglée, avance créditée, nouveau solde).
+  /// Lève une exception portant le message du serveur en cas de refus
+  /// (par exemple : aucune session de caisse ouverte).
+  Future<Map<String, dynamic>> depositToAccount(int customerId, double montant, {String? description}) async {
+    final boutiqueId = BoutiqueController.getActiveBoutiqueId();
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      '/customers/$customerId/deposit',
+      {
+        'montant': montant,
+        if (description != null && description.isNotEmpty) 'description': description,
+        if (boutiqueId != null) 'boutiqueId': boutiqueId,
+      },
+    );
+
+    if (response.isSuccess && response.data != null) {
+      return (response.data!['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    }
+    throw Exception(response.message ?? 'Échec du dépôt');
+  }
+
   /// Enregistre un paiement de dette pour une vente spécifique
   Future<bool> payCustomerDebtForSale(int customerId, double montant, int venteId, {String? description}) async {
     try {
