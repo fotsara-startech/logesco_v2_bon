@@ -213,7 +213,9 @@ async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAnc
   // Ancienneté : première détection conservée tant que l'écart dure ; effacée dès qu'il disparaît
   const inexpliques = constats.filter((c) => !CONNUES.has(c.cause));
   const vus = new Map();
-  const suivis = await prisma.$queryRawUnsafe(`SELECT table_name, record_id, sens, first_seen_at FROM sync_drift_state`);
+  // CAST : Prisma refuse de relire en entier une colonne INTEGER qui contient un horodatage en millisecondes
+  // (trop grand pour 32 bits) — erreur « does not fit in an INT column » invisible avec un SQLite brut.
+  const suivis = await prisma.$queryRawUnsafe(`SELECT table_name, record_id, sens, CAST(first_seen_at AS TEXT) AS first_seen_at FROM sync_drift_state`);
   for (const s of suivis) vus.set(`${s.table_name}|${Number(s.record_id)}|${s.sens}`, Number(s.first_seen_at));
   const encore = new Set();
   for (const c of inexpliques.slice(0, MAX_SUIVIS)) {
