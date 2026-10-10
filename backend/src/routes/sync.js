@@ -6,6 +6,7 @@
 const express = require('express');
 const syncService = require('../services/sync-service');
 const { getSyncDetails } = require('../services/sync-detail');
+const { renvoyerVersCloud } = require('../services/sync-resend');
 
 /** Résumé du dernier contrôle d'écart (null tant qu'aucun contrôle n'a abouti) */
 function driftSummary() {
@@ -148,6 +149,41 @@ function createSyncRouter({ authService }) {
     } catch (e) {
       console.error('⚠️  Erreur GET /sync/drift:', e.message);
       res.status(500).json({ success: false, message: "Erreur du contrôle d'écart: " + e.message });
+    }
+  });
+
+  /**
+   * POST /sync/drift/resend   { dryRun?: boolean }
+   * Renvoie vers le cloud les lignes locales que le système n'a jamais envoyées, mais seulement celles dont le
+   * renvoi est sans risque (voir sync-resend.js). dryRun : aperçu sans rien envoyer. Réservé aux administrateurs.
+   */
+  router.post('/drift/resend', authenticateToken(authService), async (req, res) => {
+    let client = null;
+    let perdue = false;
+    try {
+      const status = syncService.getStatus();
+      if (!status.cloudEnabled || !syncService.cloudPool) {
+        return res.status(409).json({ success: false, message: 'Pas de cloud configuré sur ce poste.' });
+      }
+      const user = await syncService.localPrisma.utilisateur.findUnique({ where: { id: Number(req.user.id) }, include: { role: true } });
+      if (!(user && user.role && user.role.isAdmin)) {
+        return res.status(403).json({ success: false, message: 'Seul un administrateur peut renvoyer des données vers le cloud.' });
+      }
+      client = await syncService.cloudPool.connect();
+      const resultat = await renvoyerVersCloud({
+        prisma: syncService.localPrisma,
+        client,
+        logOperation: (t, o, d) => syncService.logOperation(t, o, d, Number(req.user.id)),
+        dryRun: req.body && req.body.dryRun === true,
+        isConnectionError: (e) => syncService._isConnectionError(e),
+      });
+      res.json({ success: true, message: resultat.dryRun ? 'Aperçu' : `${resultat.envoyes} élément(s) mis en file d'envoi`, data: resultat });
+    } catch (e) {
+      perdue = syncService._isConnectionError(e);
+      console.error('⚠️  Erreur POST /sync/drift/resend:', e.message);
+      res.status(perdue ? 503 : 500).json({ success: false, message: perdue ? 'Cloud injoignable : réessayez dans un instant.' : 'Erreur lors du renvoi: ' + e.message });
+    } finally {
+      if (client) client.release(perdue ? true : undefined);
     }
   });
 
