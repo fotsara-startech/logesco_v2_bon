@@ -9,7 +9,7 @@ import '../widgets/product_card.dart';
 import '../widgets/product_search_bar.dart';
 import '../widgets/product_filter_bar.dart';
 import '../widgets/product_sort_bar.dart';
-import '../widgets/service_products_alert.dart';
+import '../../decisions/widgets/decisions_alert.dart';
 import '../../../core/routes/app_routes.dart';
 import 'excel_import_export_page.dart';
 
@@ -84,8 +84,8 @@ class ProductListView extends StatelessWidget {
           // Information mode développement
           // const DevModeInfo(),
 
-          // Produits marqués « service » qui ont du stock (invisible s'il n'y en a pas)
-          const ServiceProductsAlert(),
+          // Décisions à prendre sur le stock (invisible s'il n'y en a pas)
+          const DecisionsAlert(),
 
           // Barre de recherche
           const ProductSearchBar(),

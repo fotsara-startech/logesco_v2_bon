@@ -12,7 +12,7 @@ import '../widgets/profitability_stat_card.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/permission_service.dart';
 import '../../subscription/widgets/subscription_status_widget.dart';
-import '../../products/widgets/service_products_alert.dart';
+import '../../decisions/widgets/decisions_alert.dart';
 import '../../subscription/views/subscription_status_page.dart';
 import '../../cash_registers/widgets/cash_session_indicator.dart';
 import '../../boutiques/widgets/boutique_selector_widget.dart';
@@ -294,8 +294,8 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
 
                 const SizedBox(height: 16),
 
-                // Produits marqués « service » qui ont du stock (invisible s'il n'y en a pas)
-                const ServiceProductsAlert(margin: EdgeInsets.only(bottom: 16)),
+                // Décisions à prendre sur le stock (invisible s'il n'y en a pas)
+                const DecisionsAlert(margin: EdgeInsets.only(bottom: 16)),
 
                 // Solde de la caisse courante
                 // const CashBalanceWidget(),
