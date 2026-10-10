@@ -171,6 +171,38 @@ class SyncDriftExample {
   const SyncDriftExample(this.resume);
 }
 
+/// Référence d'un élément en écart (pour l'ignorer ou le renvoyer)
+class SyncDriftId {
+  final String table;
+  final int id;
+  final String sens;
+  const SyncDriftId({required this.table, required this.id, required this.sens});
+
+  factory SyncDriftId.fromJson(Map<String, dynamic> json) =>
+      SyncDriftId(table: (json['table'] ?? '').toString(), id: (json['id'] as num?)?.toInt() ?? 0, sens: (json['sens'] ?? '').toString());
+
+  Map<String, dynamic> toJson() => {'table': table, 'id': id, 'sens': sens};
+}
+
+/// Ce que le renvoi ferait des éléments « ici, pas dans le cloud » d'un groupe (calculé par le serveur)
+class SyncDriftRenvoi {
+  final int envoyables;
+  final int refuses;
+  final List<String> raisons;
+
+  /// Le refus peut être levé par la personne (« envoyer quand même »)
+  final bool forcable;
+
+  const SyncDriftRenvoi({required this.envoyables, required this.refuses, required this.raisons, required this.forcable});
+
+  factory SyncDriftRenvoi.fromJson(Map<String, dynamic> json) => SyncDriftRenvoi(
+        envoyables: (json['envoyables'] as num?)?.toInt() ?? 0,
+        refuses: (json['refuses'] as num?)?.toInt() ?? 0,
+        raisons: (json['raisons'] as List<dynamic>? ?? const []).map((e) => e.toString()).toList(),
+        forcable: json['forcable'] == true,
+      );
+}
+
 /// Un groupe d'écarts : même table, même sens, même cause
 class SyncDriftGroup {
   final String tableLabel;
@@ -186,6 +218,12 @@ class SyncDriftGroup {
   final DateTime? depuis;
   final List<SyncDriftExample> exemples;
 
+  /// Références des éléments du groupe (jusqu'à 500), pour les ignorer ou les renvoyer
+  final List<SyncDriftId> ids;
+
+  /// Verdict du renvoi (seulement pour « ici, pas dans le cloud ») ; null si non calculé
+  final SyncDriftRenvoi? renvoi;
+
   const SyncDriftGroup({
     required this.tableLabel,
     required this.sens,
@@ -195,6 +233,8 @@ class SyncDriftGroup {
     required this.anciens,
     required this.exemples,
     this.depuis,
+    this.ids = const [],
+    this.renvoi,
   });
 
   factory SyncDriftGroup.fromJson(Map<String, dynamic> json) => SyncDriftGroup(
@@ -206,7 +246,12 @@ class SyncDriftGroup {
         anciens: (json['anciens'] as num?)?.toInt() ?? 0,
         depuis: json['depuis'] != null ? DateTime.tryParse(json['depuis'].toString())?.toLocal() : null,
         exemples: (json['exemples'] as List<dynamic>? ?? const []).map((e) => SyncDriftExample(((e as Map)['resume'] ?? '').toString())).toList(),
+        ids: (json['ids'] as List<dynamic>? ?? const []).map((e) => SyncDriftId.fromJson((e as Map).cast<String, dynamic>())).toList(),
+        renvoi: json['renvoi'] is Map ? SyncDriftRenvoi.fromJson((json['renvoi'] as Map).cast<String, dynamic>()) : null,
       );
+
+  /// Cet écart de présence peut être déclaré « vu, volontaire » (pas les valeurs différentes)
+  bool get ignorable => sens == 'a_envoyer' || sens == 'a_recevoir';
 }
 
 /// Résultat d'un contrôle d'écart entre ce poste et le cloud
@@ -215,9 +260,12 @@ class SyncDriftReport {
   final int inexpliques;
   final int anciens;
   final int connus;
+
+  /// Écarts qu'une personne a déclarés « vus, volontaires » (non listés)
+  final int ignores;
   final List<SyncDriftGroup> ecarts;
 
-  const SyncDriftReport({this.verifieLe, required this.inexpliques, required this.anciens, required this.connus, required this.ecarts});
+  const SyncDriftReport({this.verifieLe, required this.inexpliques, required this.anciens, required this.connus, required this.ecarts, this.ignores = 0});
 
   factory SyncDriftReport.fromJson(Map<String, dynamic> json) {
     final resume = (json['resume'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
@@ -226,6 +274,7 @@ class SyncDriftReport {
       inexpliques: (resume['inexpliques'] as num?)?.toInt() ?? 0,
       anciens: (resume['anciens'] as num?)?.toInt() ?? 0,
       connus: (resume['connus'] as num?)?.toInt() ?? 0,
+      ignores: (resume['ignores'] as num?)?.toInt() ?? 0,
       ecarts: (json['ecarts'] as List<dynamic>? ?? const []).map((e) => SyncDriftGroup.fromJson((e as Map).cast<String, dynamic>())).toList(),
     );
   }
@@ -236,12 +285,20 @@ class SyncResendLine {
   final String tableLabel;
   final String resume;
   final String? raison;
-  const SyncResendLine({required this.tableLabel, required this.resume, this.raison});
+
+  /// Le refus peut être levé par la personne (« envoyer quand même »)
+  final bool forcable;
+  final String table;
+  final int id;
+  const SyncResendLine({required this.tableLabel, required this.resume, this.raison, this.forcable = false, this.table = '', this.id = 0});
 
   factory SyncResendLine.fromJson(Map<String, dynamic> json) => SyncResendLine(
         tableLabel: (json['tableLabel'] ?? json['table'] ?? '').toString(),
         resume: (json['resume'] ?? '').toString(),
         raison: json['raison']?.toString(),
+        forcable: json['forcable'] == true,
+        table: (json['table'] ?? '').toString(),
+        id: (json['id'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -331,15 +388,33 @@ class SyncStatusService {
   }
 
   /// Aperçu ([dryRun]) ou envoi des éléments jamais envoyés vers le cloud. Lève une exception avec le message du serveur.
-  Future<SyncResendResult> resend({required bool dryRun}) async {
+  /// [forcer] : éléments à envoyer malgré le seul refus levable (historique déjà présent dans le cloud pour ce produit)
+  Future<SyncResendResult> resend({required bool dryRun, List<SyncDriftId> forcer = const []}) async {
     final response = await http
-        .post(Uri.parse('$_baseUrl/sync/drift/resend'), headers: _headers(), body: jsonEncode({'dryRun': dryRun}))
+        .post(Uri.parse('$_baseUrl/sync/drift/resend'),
+            headers: _headers(), body: jsonEncode({'dryRun': dryRun, if (forcer.isNotEmpty) 'forcer': forcer.map((e) => e.toJson()).toList()}))
         .timeout(const Duration(seconds: 90));
     final json = jsonDecode(response.body);
     if (response.statusCode != 200 || json['success'] != true) {
       throw Exception((json['message'] as String?) ?? 'Échec du renvoi');
     }
     return SyncResendResult.fromJson((json['data'] as Map).cast<String, dynamic>());
+  }
+
+  /// Déclare des écarts « vus, volontaires » ; renvoie le rapport mis à jour. Lève une exception avec le message du serveur.
+  Future<SyncDriftReport?> ignorer(List<SyncDriftId> items, {String? note}) => _ignore({'items': items.map((e) => e.toJson()).toList(), if (note != null && note.trim().isNotEmpty) 'note': note.trim()});
+
+  /// Réaffiche tous les écarts précédemment ignorés
+  Future<SyncDriftReport?> restaurerIgnores() => _ignore({'restaurer': true});
+
+  Future<SyncDriftReport?> _ignore(Map<String, dynamic> corps) async {
+    final response = await http.post(Uri.parse('$_baseUrl/sync/drift/ignore'), headers: _headers(), body: jsonEncode(corps)).timeout(const Duration(seconds: 90));
+    final json = jsonDecode(response.body);
+    if (response.statusCode != 200 || json['success'] != true) {
+      throw Exception((json['message'] as String?) ?? "Échec de la prise en compte de l'écart");
+    }
+    final rapport = json['data']?['rapport'];
+    return rapport is Map ? SyncDriftReport.fromJson(rapport.cast<String, dynamic>()) : null;
   }
 
   /// Retourne null en cas de succès, sinon le motif de l'échec.

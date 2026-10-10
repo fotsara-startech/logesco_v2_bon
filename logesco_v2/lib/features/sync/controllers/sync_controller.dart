@@ -79,10 +79,36 @@ class SyncController extends GetxController {
   /// Aperçu de ce qui peut être renvoyé vers le cloud (lève une exception avec le message du serveur)
   Future<SyncResendResult> apercuRenvoi() => _service.resend(dryRun: true);
 
-  /// Renvoie vers le cloud ce qui est sans risque ; le contrôle d'écart sera à jour après l'envoi
-  Future<SyncResendResult?> renvoyer() async {
+  /// Déclare des écarts « vus, volontaires » : ils ne sont plus signalés (la décision est tracée côté serveur)
+  Future<bool> ignorerEcart(List<SyncDriftId> items, {String? note}) async {
     try {
-      final r = await _service.resend(dryRun: false);
+      final rapport = await _service.ignorer(items, note: note);
+      if (rapport != null) drift.value = rapport;
+      SnackbarHelper.success('Écart ignoré. Il sera de nouveau signalé s\'il change.');
+      await _fetchStatus();
+      return true;
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+      return false;
+    }
+  }
+
+  /// Réaffiche les écarts précédemment ignorés
+  Future<void> reafficherEcartsIgnores() async {
+    try {
+      final rapport = await _service.restaurerIgnores();
+      if (rapport != null) drift.value = rapport;
+      await _fetchStatus();
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  /// Renvoie vers le cloud ce qui est sans risque ; le contrôle d'écart sera à jour après l'envoi.
+  /// [forcer] : éléments à envoyer malgré le seul refus levable.
+  Future<SyncResendResult?> renvoyer({List<SyncDriftId> forcer = const []}) async {
+    try {
+      final r = await _service.resend(dryRun: false, forcer: forcer);
       SnackbarHelper.success('${r.envoyes} élément(s) mis en file d\'envoi vers le cloud.');
       await _fetchStatus();
       return r;

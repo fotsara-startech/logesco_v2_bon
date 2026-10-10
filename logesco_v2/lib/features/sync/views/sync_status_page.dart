@@ -56,6 +56,9 @@ class SyncStatusPage extends StatelessWidget {
                 checking: controller.isCheckingDrift.value,
                 onCheck: controller.verifierEcart,
                 onResend: () => _renvoyer(context, controller),
+                onForce: (g) => _forcer(context, controller, g),
+                onIgnore: (g) => _ignorer(context, controller, g),
+                onRestore: controller.reafficherEcartsIgnores,
               ),
               const SizedBox(height: 16),
             ],
@@ -111,6 +114,88 @@ class SyncStatusPage extends StatelessWidget {
       ),
     );
     if (confirme == true) await controller.renvoyer();
+  }
+
+  /// « Envoyer quand même » : le cloud a déjà un historique pour ce produit, la personne choisit d'y ajouter la ligne
+  Future<void> _forcer(BuildContext context, SyncController controller, SyncDriftGroup g) async {
+    SyncResendResult apercu;
+    try {
+      apercu = await controller.apercuRenvoi(); // sans forçage : c'est ce qui révèle les refus levables
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+      return;
+    }
+    // seules les lignes de CE groupe dont le refus est levable peuvent partir
+    final duGroupe = g.ids.map((i) => '${i.table}|${i.id}').toSet();
+    final forcables = apercu.refuses.where((l) => l.forcable && duGroupe.contains('${l.table}|${l.id}')).toList();
+    if (!context.mounted) return;
+    if (forcables.isEmpty) {
+      SnackbarHelper.warning('Rien ne peut être envoyé de force pour cet écart.');
+      return;
+    }
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Envoyer quand même ?'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${forcables.length} élément(s) seront ajoutés au cloud :', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ...forcables.take(6).map((l) => Text('• ${l.resume}', style: const TextStyle(fontSize: 12))),
+              const SizedBox(height: 10),
+              Text(forcables.first.raison ?? '', style: TextStyle(fontSize: 12, color: Colors.orange.shade900)),
+              const SizedBox(height: 10),
+              const Text("N'envoyez que si ce mouvement est bien réel (vérifié avec le magasin). Rien n'est écrasé dans le cloud : la ligne est ajoutée.", style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer quand même')),
+        ],
+      ),
+    );
+    if (confirme == true) {
+      await controller.renvoyer(forcer: forcables.map((l) => SyncDriftId(table: l.table, id: l.id, sens: 'a_envoyer')).toList());
+    }
+  }
+
+  /// « Ignorer cet écart » : vu, volontaire. Tracé côté serveur, et de nouveau signalé s'il change.
+  Future<void> _ignorer(BuildContext context, SyncController controller, SyncDriftGroup g) async {
+    final note = TextEditingController();
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ignorer cet écart ?'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${g.tableLabel} · ${g.nombre} élément(s)', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ...g.exemples.take(4).map((e) => Text('• ${e.resume}', style: const TextStyle(fontSize: 12))),
+              const SizedBox(height: 10),
+              const Text(
+                "Il ne sera plus signalé tant qu'il existe, mais rien n'est corrigé : les deux côtés resteront différents. "
+                "Il réapparaîtra si vous cliquez sur « Réafficher ».",
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              TextField(controller: note, decoration: const InputDecoration(labelText: 'Pourquoi ? (facultatif)', isDense: true, border: OutlineInputBorder())),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Ignorer')),
+        ],
+      ),
+    );
+    final texte = note.text;
+    note.dispose();
+    if (confirme == true) await controller.ignorerEcart(g.ids, note: texte);
   }
 
   /// Alerte : des données restent sans partir vers le cloud depuis plus de 24 h

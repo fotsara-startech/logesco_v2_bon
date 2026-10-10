@@ -84,25 +84,113 @@ void main() {
     expect(find.textContaining('NOUVEAU'), findsNothing, reason: "ce que le système connaît déjà est dans « ce qui n'est pas synchronisé »");
   });
 
-  testWidgets("renvoi : bouton proposé seulement s'il y a des éléments « ici, pas dans le cloud »", (tester) async {
-    const aEnvoyer = SyncDriftGroup(tableLabel: 'Stock boutique', sens: 'a_envoyer', libelle: 'jamais arrivé', connue: false, nombre: 1, anciens: 0, exemples: [SyncDriftExample('MC4')]);
-    const aRecevoir = SyncDriftGroup(tableLabel: 'Produit', sens: 'a_recevoir', libelle: 'jamais reçu', connue: false, nombre: 1, anciens: 0, exemples: [SyncDriftExample('LUSTRE')]);
-    var envois = 0;
+  SyncDriftGroup groupe({SyncDriftRenvoi? renvoi, String sens = 'a_envoyer', List<SyncDriftId> ids = const []}) => SyncDriftGroup(
+        tableLabel: 'Mouvement de stock',
+        sens: sens,
+        libelle: 'Présent sur ce poste mais jamais arrivé dans le cloud',
+        connue: false,
+        nombre: 1,
+        anciens: 0,
+        exemples: const [SyncDriftExample('CONTROLLEUR DE TENSION 230V — achat +100')],
+        renvoi: renvoi,
+        ids: ids,
+      );
 
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: SingleChildScrollView(
-                child: SyncDriftCard(
-                    report: const SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [aEnvoyer]), checking: false, onCheck: () {}, onResend: () => envois++)))));
+  Widget carte(SyncDriftReport r, {VoidCallback? onResend, void Function(SyncDriftGroup)? onForce, void Function(SyncDriftGroup)? onIgnore, VoidCallback? onRestore}) =>
+      MaterialApp(home: Scaffold(body: SingleChildScrollView(child: SyncDriftCard(report: r, checking: false, onCheck: () {}, onResend: onResend, onForce: onForce, onIgnore: onIgnore, onRestore: onRestore))));
+
+  testWidgets("renvoi : le verdict est écrit dans la carte ; le bouton « Renvoyer » n'apparaît que s'il y a quelque chose d'envoyable", (tester) async {
+    var envois = 0;
+    // refusé (cas du contrôleur de tension) : la raison est visible sans cliquer, pas de bouton Renvoyer
+    await tester.pumpWidget(carte(
+      SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [
+        groupe(renvoi: const SyncDriftRenvoi(envoyables: 0, refuses: 1, raisons: ["Le cloud a déjà 3 mouvement(s) pour ce produit"], forcable: true))
+      ]),
+      onResend: () => envois++,
+    ));
+    expect(find.textContaining('Le cloud a déjà 3 mouvement(s)'), findsOneWidget);
+    expect(find.textContaining('ne sera/seront pas renvoyé'), findsOneWidget);
+    expect(find.text('Renvoyer vers le cloud'), findsNothing, reason: 'rien à envoyer sans risque');
+
+    // envoyable : le bouton apparaît
+    await tester.pumpWidget(carte(
+      SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [groupe(renvoi: const SyncDriftRenvoi(envoyables: 1, refuses: 0, raisons: [], forcable: false))]),
+      onResend: () => envois++,
+    ));
+    expect(find.textContaining('sans risque'), findsOneWidget);
     await tester.tap(find.text('Renvoyer vers le cloud'));
     expect(envois, 1);
 
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: SingleChildScrollView(
-                child: SyncDriftCard(
-                    report: const SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [aRecevoir]), checking: false, onCheck: () {}, onResend: () => envois++)))));
-    expect(find.text('Renvoyer vers le cloud'), findsNothing, reason: 'on ne renvoie pas ce qui est à recevoir');
+    // écart « à recevoir » : jamais de bouton de renvoi
+    await tester.pumpWidget(carte(SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [groupe(sens: 'a_recevoir')]), onResend: () => envois++));
+    expect(find.text('Renvoyer vers le cloud'), findsNothing);
+  });
+
+  testWidgets('« Envoyer quand même » seulement si le refus est levable ; « Ignorer cet écart » pour les écarts de présence', (tester) async {
+    final forces = <SyncDriftGroup>[];
+    final ignores = <SyncDriftGroup>[];
+    const ids = [SyncDriftId(table: 'mouvements_stock', id: 16, sens: 'a_envoyer')];
+
+    await tester.pumpWidget(carte(
+      SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [
+        groupe(ids: ids, renvoi: const SyncDriftRenvoi(envoyables: 0, refuses: 1, raisons: ['historique déjà présent'], forcable: true))
+      ]),
+      onForce: forces.add,
+      onIgnore: ignores.add,
+    ));
+    await tester.tap(find.text('Envoyer quand même'));
+    await tester.tap(find.text('Ignorer cet écart'));
+    expect(forces.single.ids.single.id, 16);
+    expect(ignores.single.ids.single.table, 'mouvements_stock');
+
+    // refus NON levable (produit supprimé dans le cloud) : pas de « Envoyer quand même », mais on peut l'ignorer
+    await tester.pumpWidget(carte(
+      SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [
+        groupe(renvoi: const SyncDriftRenvoi(envoyables: 0, refuses: 1, raisons: ['produit supprimé dans le cloud'], forcable: false))
+      ]),
+      onForce: forces.add,
+      onIgnore: ignores.add,
+    ));
+    expect(find.text('Envoyer quand même'), findsNothing);
+    expect(find.text('Ignorer cet écart'), findsOneWidget);
+
+    // une valeur différente (stock, solde) ne s'ignore pas
+    await tester.pumpWidget(carte(SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [groupe(sens: 'valeur')]), onIgnore: ignores.add));
+    expect(find.text('Ignorer cet écart'), findsNothing);
+  });
+
+  testWidgets('écarts ignorés : comptés, avec un bouton pour les réafficher', (tester) async {
+    var restaures = 0;
+    await tester.pumpWidget(carte(const SyncDriftReport(inexpliques: 0, anciens: 0, connus: 0, ignores: 2, ecarts: []), onRestore: () => restaures++));
+    expect(find.text('2 écart(s) ignoré(s)'), findsOneWidget);
+    await tester.tap(find.text('Réafficher'));
+    expect(restaures, 1);
+  });
+
+  test("le verdict du renvoi, les références et le nombre d'ignorés sont lus", () {
+    final r = SyncDriftReport.fromJson({
+      'resume': {'inexpliques': 1, 'anciens': 0, 'connus': 0, 'ignores': 3},
+      'ecarts': [
+        {
+          'tableLabel': 'Mouvement de stock',
+          'sens': 'a_envoyer',
+          'libelle': 'x',
+          'connue': false,
+          'nombre': 1,
+          'anciens': 0,
+          'exemples': [],
+          'ids': [
+            {'table': 'mouvements_stock', 'id': 16, 'sens': 'a_envoyer'}
+          ],
+          'renvoi': {'envoyables': 0, 'refuses': 1, 'raisons': ['historique déjà présent'], 'forcable': true},
+        }
+      ],
+    });
+    expect(r.ignores, 3);
+    final g = r.ecarts.single;
+    expect(g.renvoi!.forcable, isTrue);
+    expect(g.ids.single.toJson(), {'table': 'mouvements_stock', 'id': 16, 'sens': 'a_envoyer'});
+    expect(g.ignorable, isTrue);
   });
 
   test("le résultat du renvoi est lu : compte, lignes envoyables, refus et leur raison", () {
