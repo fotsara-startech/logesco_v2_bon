@@ -123,6 +123,7 @@ class SyncServiceV2 {
         client,
         tables: PULL_TABLES,
         isConnectionError: (e) => this._isConnectionError(e),
+        avecRenvoi: true,
       });
       this.lastDriftError = null;
       const r = this.driftReport.resume;

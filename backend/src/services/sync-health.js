@@ -15,6 +15,7 @@
  */
 
 const { describeRecord, tableLabel } = require('./sync-detail');
+const { planifierRenvoi } = require('./sync-resend');
 
 /** Chiffres comparés valeur par valeur (id → colonne) */
 const VALEURS = {
@@ -58,6 +59,38 @@ async function assurerSuivi(prisma) {
        PRIMARY KEY ("table_name", "record_id", "sens")
      )`
   );
+  await prisma.$executeRawUnsafe(
+    `CREATE TABLE IF NOT EXISTS "sync_drift_ignored" (
+       "table_name"  TEXT NOT NULL,
+       "record_id"   INTEGER NOT NULL,
+       "sens"        TEXT NOT NULL,
+       "ignored_at"  INTEGER NOT NULL,
+       "ignored_by"  INTEGER,
+       "note"        TEXT,
+       PRIMARY KEY ("table_name", "record_id", "sens")
+     )`
+  );
+}
+
+/** Écarts qu'une personne a déclarés « vus, volontaires » : seuls les écarts de présence peuvent l'être */
+const SENS_IGNORABLES = ['a_envoyer', 'a_recevoir'];
+
+async function ignorerEcarts(prisma, items, { userId = null, note = null, now = Date.now() } = {}) {
+  await assurerSuivi(prisma);
+  let n = 0;
+  for (const it of items || []) {
+    if (!it || !it.table || !SENS_IGNORABLES.includes(it.sens) || !Number.isFinite(Number(it.id))) continue;
+    n += await prisma.$executeRawUnsafe(
+      `INSERT OR REPLACE INTO sync_drift_ignored (table_name, record_id, sens, ignored_at, ignored_by, note) VALUES (?, ?, ?, ?, ?, ?)`,
+      it.table, Number(it.id), it.sens, now, userId, note
+    );
+  }
+  return n;
+}
+
+async function restaurerEcarts(prisma) {
+  await assurerSuivi(prisma);
+  return prisma.$executeRawUnsafe(`DELETE FROM sync_drift_ignored`);
 }
 
 async function idsLocaux(prisma, table, colonneValeur) {
@@ -95,7 +128,7 @@ function aDansEnsemble(map, table, id) {
  * @param {{prisma:Object, client:Object, tables:string[], now?:number, seuilAncienMs?:number,
  *          isConnectionError?:Function}} p
  */
-async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAncienMs = UN_JOUR_MS, isConnectionError = () => false }) {
+async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAncienMs = UN_JOUR_MS, isConnectionError = () => false, avecRenvoi = false }) {
   await assurerSuivi(prisma);
 
   // Ce que le système sait déjà
@@ -157,6 +190,26 @@ async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAnc
     }
   }
 
+  // Écarts déclarés « vus » par une personne : écartés du rapport tant qu'ils existent ; oubliés dès qu'ils disparaissent
+  const ignores = new Set();
+  for (const r of await prisma.$queryRawUnsafe(`SELECT table_name, record_id, sens FROM sync_drift_ignored`)) {
+    ignores.add(`${r.table_name}|${Number(r.record_id)}|${r.sens}`);
+  }
+  const presents = new Set(constats.map((c) => `${c.table}|${c.id}|${c.sens}`));
+  for (const k of ignores) {
+    if (presents.has(k)) continue;
+    const [t, id, sens] = k.split('|');
+    await prisma.$executeRawUnsafe(`DELETE FROM sync_drift_ignored WHERE table_name = ? AND record_id = ? AND sens = ?`, t, Number(id), sens);
+  }
+  let nbIgnores = 0;
+  for (let i = constats.length - 1; i >= 0; i--) {
+    const c = constats[i];
+    if (!CONNUES.has(c.cause) && ignores.has(`${c.table}|${c.id}|${c.sens}`)) {
+      constats.splice(i, 1);
+      nbIgnores++;
+    }
+  }
+
   // Ancienneté : première détection conservée tant que l'écart dure ; effacée dès qu'il disparaît
   const inexpliques = constats.filter((c) => !CONNUES.has(c.cause));
   const vus = new Map();
@@ -179,6 +232,14 @@ async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAnc
     if (encore.has(k)) continue;
     const [t, id, sens] = k.split('|');
     await prisma.$executeRawUnsafe(`DELETE FROM sync_drift_state WHERE table_name = ? AND record_id = ? AND sens = ?`, t, Number(id), sens);
+  }
+
+  // Verdict du renvoi pour chaque ligne « ici, pas dans le cloud » (même règles que le bouton « Renvoyer »)
+  const verdicts = new Map();
+  if (avecRenvoi && constats.some((c) => c.sens === 'a_envoyer' && !CONNUES.has(c.cause))) {
+    const plan = await planifierRenvoi({ prisma, client, isConnectionError });
+    for (const e of plan.envoyables) verdicts.set(`${e.table}|${e.id}`, { ok: true });
+    for (const r of plan.refuses) verdicts.set(`${r.table}|${r.id}`, { ok: false, raison: r.raison, forcable: !!r.forcable });
   }
 
   // Regroupement par table / sens / cause
@@ -208,8 +269,22 @@ async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAnc
       }
       exemples.push({ id: l.id, resume, ...(l.sens === 'valeur' ? { local: l.local, cloud: l.cloud } : {}) });
     }
+    let renvoi = null;
+    if (verdicts.size && g.sens === 'a_envoyer' && !g.connue) {
+      const v = g.lignes.map((l) => verdicts.get(`${l.table}|${l.id}`)).filter(Boolean);
+      if (v.length) {
+        renvoi = {
+          envoyables: v.filter((x) => x.ok).length,
+          refuses: v.filter((x) => !x.ok).length,
+          raisons: [...new Set(v.filter((x) => !x.ok).map((x) => x.raison))],
+          forcable: v.some((x) => !x.ok && x.forcable),
+        };
+      }
+    }
     ecarts.push({
       table: g.table, tableLabel: g.label, sens: g.sens, cause: g.cause, connue: g.connue, libelle: g.libelle,
+      ids: g.lignes.slice(0, 500).map((l) => ({ table: l.table, id: l.id, sens: l.sens })),
+      renvoi,
       nombre: g.lignes.length,
       anciens: g.connue ? 0 : anciens.length,
       depuis: !g.connue && premieres.length ? new Date(Math.min(...premieres)).toISOString() : null,
@@ -234,8 +309,9 @@ async function computeDrift({ prisma, client, tables, now = Date.now(), seuilAnc
       inexpliques: inexpliques.length,
       anciens: ecarts.reduce((n, e) => n + e.anciens, 0),
       connus: constats.length - inexpliques.length,
+      ignores: nbIgnores,
     },
   };
 }
 
-module.exports = { computeDrift, CAUSES, VALEURS };
+module.exports = { computeDrift, ignorerEcarts, restaurerEcarts, CAUSES, VALEURS };

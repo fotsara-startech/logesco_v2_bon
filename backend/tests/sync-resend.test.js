@@ -146,3 +146,18 @@ test('déjà prévu à l\'envoi : non doublonné ; cloud injoignable : l\'erreur
   );
   assert.deepStrictEqual(ops, []);
 });
+
+test("« envoyer quand même » : seul le refus de l'historique existant est levable, et seulement pour la ligne choisie", { skip }, async () => {
+  const r = await lancer(nouvelleBase(), CLOUD(), { forcer: [{ table: 'mouvements_stock', id: 16 }] });
+  assert.ok(r.ops.some(([t, o, d]) => t === 'mouvements_stock' && d.id === 16 && o === 'INSERT'), 'le mouvement du contrôleur est envoyé');
+  assert.strictEqual(r.refuses, 2, 'il ne reste que le coussin');
+
+  // les autres refus ne se forcent pas : produit supprimé dans le cloud
+  const r2 = await lancer(nouvelleBase(), CLOUD(), { forcer: [{ table: 'stock_boutiques', id: 26 }, { table: 'stock', id: 29 }] });
+  assert.ok(!r2.ops.some(([, , d]) => d.id === 26 || d.id === 29), 'le coussin reste refusé');
+
+  // le refus indique s'il est levable
+  const apercu = await lancer(nouvelleBase(), CLOUD(), { dryRun: true });
+  const parId = Object.fromEntries(apercu.details.refuses.map((x) => [x.id, x.forcable]));
+  assert.deepStrictEqual([parId[16], parId[29], parId[26]], [true, false, false]);
+});

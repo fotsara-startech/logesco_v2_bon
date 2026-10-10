@@ -7,12 +7,14 @@ const express = require('express');
 const syncService = require('../services/sync-service');
 const { getSyncDetails } = require('../services/sync-detail');
 const { renvoyerVersCloud } = require('../services/sync-resend');
+const { ignorerEcarts, restaurerEcarts } = require('../services/sync-health');
+const { DecisionCenter } = require('../services/decision-center');
 
 /** Résumé du dernier contrôle d'écart (null tant qu'aucun contrôle n'a abouti) */
 function driftSummary() {
   const r = syncService.driftReport;
   if (!r) return null;
-  return { verifieLe: r.verifieLe, inexpliques: r.resume.inexpliques, anciens: r.resume.anciens, connus: r.resume.connus };
+  return { verifieLe: r.verifieLe, inexpliques: r.resume.inexpliques, anciens: r.resume.anciens, connus: r.resume.connus, ignores: r.resume.ignores || 0 };
 }
 
 function createSyncRouter({ authService }) {
@@ -152,10 +154,33 @@ function createSyncRouter({ authService }) {
     }
   });
 
+  /** Administrateur seulement (les actions ci-dessous modifient ce qui part vers le cloud ou ce qui est signalé) */
+  async function estAdmin(userId) {
+    const user = await syncService.localPrisma.utilisateur.findUnique({ where: { id: Number(userId) }, include: { role: true } });
+    return !!(user && user.role && user.role.isAdmin);
+  }
+
+  /** Trace d'une décision prise sur un écart (même journal que le centre de décisions ; SQLite local seulement) */
+  async function tracer(caseKey, optionId, userId, details) {
+    try {
+      const centre = new DecisionCenter({ prisma: syncService.localPrisma });
+      if (!centre.journalDisponible) return;
+      await centre._assurerJournal();
+      await syncService.localPrisma.$executeRawUnsafe(
+        `INSERT INTO decision_log (case_key, type, option_id, status, user_id, details) VALUES (?, 'sync_ecart', ?, 'applique', ?, ?)`,
+        caseKey, optionId, userId || null, JSON.stringify(details)
+      );
+    } catch (e) {
+      console.warn('⚠️  Décision appliquée mais trace non enregistrée:', e.message);
+    }
+  }
+
   /**
-   * POST /sync/drift/resend   { dryRun?: boolean }
+   * POST /sync/drift/resend   { dryRun?: boolean, forcer?: [{table, id}] }
    * Renvoie vers le cloud les lignes locales que le système n'a jamais envoyées, mais seulement celles dont le
-   * renvoi est sans risque (voir sync-resend.js). dryRun : aperçu sans rien envoyer. Réservé aux administrateurs.
+   * renvoi est sans risque (voir sync-resend.js). dryRun : aperçu sans rien envoyer.
+   * forcer : lignes à envoyer malgré le seul refus levable (mouvement de stock alors que le cloud a déjà un
+   * historique pour ce produit). Réservé aux administrateurs.
    */
   router.post('/drift/resend', authenticateToken(authService), async (req, res) => {
     let client = null;
@@ -165,25 +190,64 @@ function createSyncRouter({ authService }) {
       if (!status.cloudEnabled || !syncService.cloudPool) {
         return res.status(409).json({ success: false, message: 'Pas de cloud configuré sur ce poste.' });
       }
-      const user = await syncService.localPrisma.utilisateur.findUnique({ where: { id: Number(req.user.id) }, include: { role: true } });
-      if (!(user && user.role && user.role.isAdmin)) {
+      if (!(await estAdmin(req.user.id))) {
         return res.status(403).json({ success: false, message: 'Seul un administrateur peut renvoyer des données vers le cloud.' });
       }
+      const dryRun = !!(req.body && req.body.dryRun === true);
+      const forcer = Array.isArray(req.body && req.body.forcer) ? req.body.forcer : [];
       client = await syncService.cloudPool.connect();
       const resultat = await renvoyerVersCloud({
         prisma: syncService.localPrisma,
         client,
         logOperation: (t, o, d) => syncService.logOperation(t, o, d, Number(req.user.id)),
-        dryRun: req.body && req.body.dryRun === true,
+        dryRun,
+        forcer,
         isConnectionError: (e) => syncService._isConnectionError(e),
       });
-      res.json({ success: true, message: resultat.dryRun ? 'Aperçu' : `${resultat.envoyes} élément(s) mis en file d'envoi`, data: resultat });
+      if (!dryRun && resultat.envoyes > 0) {
+        await tracer('sync_ecart:renvoi', forcer.length ? 'renvoyer_force' : 'renvoyer', req.user.id, {
+          envoyes: resultat.details.envoyables.map((e) => `${e.table}#${e.id}`),
+          forces: forcer.map((f) => `${f.table}#${f.id}`),
+        });
+      }
+      res.json({ success: true, message: dryRun ? 'Aperçu' : `${resultat.envoyes} élément(s) mis en file d'envoi`, data: resultat });
     } catch (e) {
       perdue = syncService._isConnectionError(e);
       console.error('⚠️  Erreur POST /sync/drift/resend:', e.message);
       res.status(perdue ? 503 : 500).json({ success: false, message: perdue ? 'Cloud injoignable : réessayez dans un instant.' : 'Erreur lors du renvoi: ' + e.message });
     } finally {
       if (client) client.release(perdue ? true : undefined);
+    }
+  });
+
+  /**
+   * POST /sync/drift/ignore   { items: [{table, id, sens}], note? }
+   * Déclare des écarts de présence « vus, volontaires » : ils ne sont plus signalés tant qu'ils existent (compte à
+   * part dans le rapport) et sont oubliés dès qu'ils disparaissent. Les valeurs différentes ne s'ignorent pas.
+   * POST /sync/drift/ignore   { restaurer: true }  réaffiche tout ce qui avait été ignoré. Administrateurs seulement.
+   */
+  router.post('/drift/ignore', authenticateToken(authService), async (req, res) => {
+    try {
+      if (!(await estAdmin(req.user.id))) {
+        return res.status(403).json({ success: false, message: 'Seul un administrateur peut ignorer un écart.' });
+      }
+      const corps = req.body || {};
+      let nombre;
+      if (corps.restaurer === true) {
+        nombre = await restaurerEcarts(syncService.localPrisma);
+        await tracer('sync_ecart:ignore', 'restaurer', req.user.id, { restaures: nombre });
+      } else {
+        const items = Array.isArray(corps.items) ? corps.items.slice(0, 500) : [];
+        if (!items.length) return res.status(400).json({ success: false, message: 'Aucun élément à ignorer.' });
+        nombre = await ignorerEcarts(syncService.localPrisma, items, { userId: Number(req.user.id), note: corps.note ? String(corps.note).slice(0, 300) : null });
+        await tracer('sync_ecart:ignore', 'ignorer', req.user.id, { ignores: items.map((i) => `${i.table}#${i.id}:${i.sens}`), note: corps.note || null });
+      }
+      // le rapport affiché doit refléter le choix tout de suite
+      const rapport = await syncService.checkDrift();
+      res.json({ success: true, message: corps.restaurer === true ? 'Écarts réaffichés' : 'Écart ignoré', data: { nombre, rapport } });
+    } catch (e) {
+      console.error('⚠️  Erreur POST /sync/drift/ignore:', e.message);
+      res.status(500).json({ success: false, message: "Erreur lors de la prise en compte de l'écart: " + e.message });
     }
   });
 

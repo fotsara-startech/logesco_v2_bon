@@ -14,7 +14,7 @@ let DatabaseSync = null;
 try { ({ DatabaseSync } = require('node:sqlite')); } catch (_) { /* option --experimental-sqlite absente */ }
 const skip = DatabaseSync ? false : 'node:sqlite indisponible (lancer avec --experimental-sqlite)';
 
-const { computeDrift } = skip ? {} : require('../src/services/sync-health');
+const { computeDrift, ignorerEcarts, restaurerEcarts } = skip ? {} : require('../src/services/sync-health');
 
 const JOUR = 24 * 60 * 60 * 1000;
 const T0 = Date.parse('2026-10-10T10:00:00Z');
@@ -47,6 +47,11 @@ function fauxNeon(tables, { panne = false } = {}) {
       const table = m && m[1];
       if (table === 'deleted_records') return { rows: tables.deleted_records || [] };
       if (!tables[table]) throw new Error(`relation "${table}" does not exist`);
+      if (/COUNT\(\*\)/.test(sql)) return { rows: [{ n: tables[table].filter((r) => r.produit_id === params[0]).length }] };
+      if (/SELECT 1 FROM/.test(sql)) {
+        const col = /WHERE id = \$1/.test(sql) ? 'id' : 'produit_id';
+        return { rows: tables[table].filter((r) => r[col] === params[0]).slice(0, 1).map(() => ({ '?column?': 1 })) };
+      }
       if (/WHERE id = \$1/.test(sql)) return { rows: tables[table].filter((r) => r.id === params[0]).slice(0, 1) };
       const v = sql.match(/"(\w+)" AS v/);
       return { rows: tables[table].map((r) => (v ? { id: r.id, v: r[v[1]] } : { id: r.id })) };
@@ -62,7 +67,7 @@ test('tout concorde : aucun écart, rien à signaler', { skip }, async () => {
   p.db.exec(`INSERT INTO produits VALUES (1, 'LUSTRE', 'R1'), (2, 'POTEAU', 'R2'); INSERT INTO stock_boutiques VALUES (10, 1, 1, 5);`);
   const r = await lancer(p, { produits: [{ id: 1 }, { id: 2 }], stock_boutiques: [{ id: 10, quantite_disponible: 5 }] });
   assert.deepStrictEqual(r.ecarts, []);
-  assert.deepStrictEqual(r.resume, { inexpliques: 0, anciens: 0, connus: 0 });
+  assert.deepStrictEqual(r.resume, { inexpliques: 0, anciens: 0, connus: 0, ignores: 0 });
   assert.deepStrictEqual(r.tables.map((t) => [t.table, t.nbLocal, t.nbCloud]), [['produits', 2, 2], ['stock_boutiques', 1, 1]]);
 });
 
@@ -139,4 +144,49 @@ test('table absente du cloud (ancienne installation) : ignorée sans bloquer le 
   const r = await lancer(p, { produits: [{ id: 1 }, { id: 2, nom: 'A' }] }); // pas de stock_boutiques côté cloud
   assert.deepStrictEqual(r.tables.map((t) => t.table), ['produits']);
   assert.strictEqual(r.resume.inexpliques, 1);
+});
+
+test("écart « ignoré » par une personne : retiré du rapport (compté à part), tracé, oublié dès qu'il disparaît ; restaurable", { skip }, async () => {
+  const p = nouvelleBase();
+  p.db.exec(`INSERT INTO produits VALUES (16, 'CONTROLLEUR', 'R16'); INSERT INTO stock_boutiques VALUES (10, 1, 16, 5);`);
+  const cloud = { produits: [{ id: 16 }], stock_boutiques: [] }; // la ligne de stock 10 n'est pas dans le cloud
+  const avant = await lancer(p, cloud);
+  assert.strictEqual(avant.resume.inexpliques, 1);
+
+  const n = await ignorerEcarts(p, avant.ecarts[0].ids, { userId: 3, note: 'vu avec le magasin', now: T0 });
+  assert.strictEqual(n, 1);
+  const apres = await lancer(p, cloud);
+  assert.deepStrictEqual([apres.resume.inexpliques, apres.resume.ignores, apres.ecarts.length], [0, 1, 0]);
+  const trace = p.db.prepare('SELECT ignored_by, note FROM sync_drift_ignored').get();
+  assert.deepStrictEqual([trace.ignored_by, trace.note], [3, 'vu avec le magasin']);
+
+  // l'écart disparaît (la ligne arrive dans le cloud) : l'ignorance est oubliée, un futur écart sera de nouveau signalé
+  const resolu = await lancer(p, { produits: [{ id: 16 }], stock_boutiques: [{ id: 10, quantite_disponible: 5 }] });
+  assert.strictEqual(resolu.resume.ignores, 0);
+  assert.strictEqual(p.db.prepare('SELECT COUNT(*) c FROM sync_drift_ignored').get().c, 0);
+
+  await ignorerEcarts(p, avant.ecarts[0].ids, {});
+  await restaurerEcarts(p);
+  assert.strictEqual((await lancer(p, cloud)).resume.inexpliques, 1, 'restauré : de nouveau signalé');
+});
+
+test("on n'ignore pas une valeur différente (stock, solde) : trop grave pour être masquée", { skip }, async () => {
+  const p = nouvelleBase();
+  const n = await ignorerEcarts(p, [{ table: 'stock_boutiques', id: 10, sens: 'valeur' }, { table: 'produits', id: 1, sens: 'inconnu' }, null]);
+  assert.strictEqual(n, 0);
+});
+
+test('verdict du renvoi dans le rapport : envoyable, ou refusé avec sa raison et « forçable » (cas du contrôleur de tension)', { skip }, async () => {
+  const p = nouvelleBase();
+  p.db.exec(`CREATE TABLE mouvements_stock (id INTEGER PRIMARY KEY, produit_id INTEGER, boutique_id INTEGER, type_mouvement TEXT, changement_quantite INTEGER);
+    INSERT INTO produits VALUES (16, 'CONTROLLEUR', 'R16'), (51, 'MC4', 'R51');
+    INSERT INTO mouvements_stock VALUES (1, 16, 1, 'achat', 1), (2, 16, 1, 'achat', 1), (3, 16, 1, 'achat', 1), (16, 16, 1, 'achat', 100), (14, 51, 1, 'achat', 400);`);
+  const cloud = { produits: [{ id: 16 }, { id: 51 }], boutiques: [{ id: 1 }], mouvements_stock: [{ id: 1, produit_id: 16 }, { id: 2, produit_id: 16 }, { id: 3, produit_id: 16 }] };
+  const r = await computeDrift({ prisma: p, client: fauxNeon(cloud), tables: ['mouvements_stock'], now: T0, avecRenvoi: true });
+  assert.strictEqual(r.ecarts.length, 1);
+  const g = r.ecarts[0];
+  assert.strictEqual(g.nombre, 2);
+  assert.deepStrictEqual([g.renvoi.envoyables, g.renvoi.refuses, g.renvoi.forcable], [1, 1, true]);
+  assert.match(g.renvoi.raisons[0], /3 mouvement\(s\)/);
+  assert.deepStrictEqual(g.ids.map((x) => x.id).sort((a, b) => a - b), [14, 16]);
 });
