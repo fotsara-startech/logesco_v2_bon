@@ -225,37 +225,37 @@ const DOUBLON_PAR_TABLE = {
   comptes_clients: {
     titre: 'Deux comptes pour le même client',
     explication: "Le compte de ce client a été créé sur deux postes. Les deux soldes doivent être additionnés, pas choisis l'un ou l'autre.",
-    action: 'Ne corrigez rien à la main : transmettez ce détail au support pour fusionner les comptes sans fausser le solde.',
+    action: 'Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, d\'additionner les soldes ou de garder l\'un des deux.',
   },
   comptes_fournisseurs: {
     titre: 'Deux comptes pour le même fournisseur',
     explication: "Le compte de ce fournisseur a été créé sur deux postes. Les deux soldes doivent être additionnés, pas choisis l'un ou l'autre.",
-    action: 'Ne corrigez rien à la main : transmettez ce détail au support pour fusionner les comptes sans fausser le solde.',
+    action: 'Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, d\'additionner les soldes ou de garder l\'un des deux.',
   },
   produits: {
     titre: 'Deux produits avec la même référence',
     explication: "Un produit portant cette référence existe déjà dans le cloud. Il peut s'agir du même produit saisi deux fois, ou de deux produits différents.",
-    action: "Vérifiez dans la liste des produits : si c'est le même, supprimez le doublon ; sinon, donnez une référence différente à l'un des deux.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, si c'est le même produit (fusion) ou deux produits (nouvelle référence).",
   },
   utilisateurs: {
     titre: "Un utilisateur du même nom existe déjà dans le cloud",
     explication: "Deux postes ont créé un utilisateur portant le même nom. Les remplacer l'un par l'autre changerait un mot de passe ou des droits.",
-    action: "Ne corrigez rien à la main : transmettez ce détail au support pour choisir l'utilisateur à conserver.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, si c'est la même personne ou deux personnes (nouveau nom).",
   },
   cash_registers: {
     titre: "Une caisse du même nom existe déjà dans le cloud",
     explication: "Deux postes ont chacun créé une caisse portant ce nom. Chacune a son propre solde d'argent, qu'on ne peut pas écraser sans vérification.",
-    action: "Transmettez ce détail au support : les deux caisses doivent être vérifiées avant d'être fusionnées ou renommées.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, de fusionner les deux caisses ou de renommer la vôtre.",
   },
   boutiques: {
     titre: "Une boutique du même nom existe déjà dans le cloud",
     explication: "Deux postes ont chacun créé une boutique portant ce nom : stocks et ventes sont rattachés à chacune.",
-    action: "Transmettez ce détail au support : les deux boutiques doivent être fusionnées avec leurs stocks, ou renommées.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, de fusionner les deux boutiques (stocks rattachés) ou de renommer la vôtre.",
   },
   stock_inventories: {
     titre: 'Deux inventaires avec le même nom',
     explication: 'Un inventaire portant ce nom existe déjà dans le cloud.',
-    action: "Renommez l'un des deux inventaires, puis relancez la synchronisation.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, le nouveau nom de votre inventaire.",
   },
   ventes: numeroDocument('de vente'),
   commandes_approvisionnement: numeroDocument('de commande'),
@@ -269,7 +269,7 @@ function numeroDocument(quoi) {
   return {
     titre: `Même numéro ${quoi} sur deux postes`,
     explication: `Deux postes ont généré le même numéro ${quoi} (anciens numéros sans identifiant de poste). Le cloud n'accepte qu'un seul exemplaire.`,
-    action: "Transmettez ce détail au support : le numéro doit être corrigé sur l'un des deux postes. Les nouveaux numéros portent un identifiant de poste et ne se répètent plus.",
+    action: "Ouvrez « Décisions à prendre » (bandeau du tableau de bord) : vous y choisissez, en voyant les deux fiches côte à côte, le nouveau numéro de votre document. Les nouveaux numéros portent un identifiant de poste et ne se répètent plus.",
   };
 }
 
@@ -422,4 +422,4 @@ async function getSyncDetails(localPrisma, { limit = 200 } = {}) {
   return items;
 }
 
-module.exports = { getSyncDetails, describeRecord, classifyError, tableLabel, columnsFromConstraint, TABLE_LABELS };
+module.exports = { getSyncDetails, describeRecord, classifyError, tableLabel, columnsFromConstraint, TABLE_LABELS, DOUBLON_PAR_TABLE };

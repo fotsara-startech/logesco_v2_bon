@@ -11,7 +11,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "generate": "prisma generate",
     "studio": "prisma studio",
-    "test:sync": "node --experimental-sqlite --test tests/sync-reconcile.test.js tests/sync-detail.test.js tests/sale-settlement.test.js tests/document-numbers.test.js tests/service-guard.test.js tests/decision-center.test.js",
+    "test:sync": "node --experimental-sqlite --test tests/sync-reconcile.test.js tests/sync-detail.test.js tests/sale-settlement.test.js tests/document-numbers.test.js tests/service-guard.test.js tests/decision-center.test.js tests/sync-conflicts.test.js",
     "db:indexes": "node scripts/apply-indexes.js",
     "db:setup": "npm run migrate && npm run generate && npm run db:indexes",
     "db:reset": "prisma migrate reset --force && npm run db:indexes",
