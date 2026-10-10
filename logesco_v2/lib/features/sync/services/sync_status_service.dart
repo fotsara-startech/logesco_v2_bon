@@ -231,6 +231,43 @@ class SyncDriftReport {
   }
 }
 
+/// Une ligne que le renvoi a refusée (ou prévue), avec sa raison
+class SyncResendLine {
+  final String tableLabel;
+  final String resume;
+  final String? raison;
+  const SyncResendLine({required this.tableLabel, required this.resume, this.raison});
+
+  factory SyncResendLine.fromJson(Map<String, dynamic> json) => SyncResendLine(
+        tableLabel: (json['tableLabel'] ?? json['table'] ?? '').toString(),
+        resume: (json['resume'] ?? '').toString(),
+        raison: json['raison']?.toString(),
+      );
+}
+
+/// Résultat (ou aperçu) du renvoi des éléments jamais envoyés vers le cloud
+class SyncResendResult {
+  final bool dryRun;
+  final int aEnvoyer;
+  final int envoyes;
+  final List<SyncResendLine> envoyables;
+  final List<SyncResendLine> refuses;
+
+  const SyncResendResult({required this.dryRun, required this.aEnvoyer, required this.envoyes, required this.envoyables, required this.refuses});
+
+  factory SyncResendResult.fromJson(Map<String, dynamic> json) {
+    final d = (json['details'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    List<SyncResendLine> lignes(String k) => (d[k] as List<dynamic>? ?? const []).map((e) => SyncResendLine.fromJson((e as Map).cast<String, dynamic>())).toList();
+    return SyncResendResult(
+      dryRun: json['dryRun'] == true,
+      aEnvoyer: (json['aEnvoyer'] as num?)?.toInt() ?? 0,
+      envoyes: (json['envoyes'] as num?)?.toInt() ?? 0,
+      envoyables: lignes('envoyables'),
+      refuses: lignes('refuses'),
+    );
+  }
+}
+
 class SyncStatusService {
   final String _baseUrl = AppConfig.baseUrl;
 
@@ -291,6 +328,18 @@ class SyncStatusService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Aperçu ([dryRun]) ou envoi des éléments jamais envoyés vers le cloud. Lève une exception avec le message du serveur.
+  Future<SyncResendResult> resend({required bool dryRun}) async {
+    final response = await http
+        .post(Uri.parse('$_baseUrl/sync/drift/resend'), headers: _headers(), body: jsonEncode({'dryRun': dryRun}))
+        .timeout(const Duration(seconds: 90));
+    final json = jsonDecode(response.body);
+    if (response.statusCode != 200 || json['success'] != true) {
+      throw Exception((json['message'] as String?) ?? 'Échec du renvoi');
+    }
+    return SyncResendResult.fromJson((json['data'] as Map).cast<String, dynamic>());
   }
 
   /// Retourne null en cas de succès, sinon le motif de l'échec.

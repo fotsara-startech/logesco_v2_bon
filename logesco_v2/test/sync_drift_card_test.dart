@@ -84,6 +84,46 @@ void main() {
     expect(find.textContaining('NOUVEAU'), findsNothing, reason: "ce que le système connaît déjà est dans « ce qui n'est pas synchronisé »");
   });
 
+  testWidgets("renvoi : bouton proposé seulement s'il y a des éléments « ici, pas dans le cloud »", (tester) async {
+    const aEnvoyer = SyncDriftGroup(tableLabel: 'Stock boutique', sens: 'a_envoyer', libelle: 'jamais arrivé', connue: false, nombre: 1, anciens: 0, exemples: [SyncDriftExample('MC4')]);
+    const aRecevoir = SyncDriftGroup(tableLabel: 'Produit', sens: 'a_recevoir', libelle: 'jamais reçu', connue: false, nombre: 1, anciens: 0, exemples: [SyncDriftExample('LUSTRE')]);
+    var envois = 0;
+
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: SyncDriftCard(
+                    report: const SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [aEnvoyer]), checking: false, onCheck: () {}, onResend: () => envois++)))));
+    await tester.tap(find.text('Renvoyer vers le cloud'));
+    expect(envois, 1);
+
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: SyncDriftCard(
+                    report: const SyncDriftReport(inexpliques: 1, anciens: 0, connus: 0, ecarts: [aRecevoir]), checking: false, onCheck: () {}, onResend: () => envois++)))));
+    expect(find.text('Renvoyer vers le cloud'), findsNothing, reason: 'on ne renvoie pas ce qui est à recevoir');
+  });
+
+  test("le résultat du renvoi est lu : compte, lignes envoyables, refus et leur raison", () {
+    final r = SyncResendResult.fromJson({
+      'dryRun': true,
+      'aEnvoyer': 14,
+      'envoyes': 0,
+      'details': {
+        'envoyables': [
+          {'tableLabel': 'Stock boutique', 'resume': 'MC4 (Petit) — quantité 400'}
+        ],
+        'refuses': [
+          {'tableLabel': 'Mouvement de stock', 'resume': 'CONTROLLEUR — achat +100', 'raison': 'Le cloud a déjà 3 mouvement(s)'}
+        ],
+      },
+    });
+    expect([r.dryRun, r.aEnvoyer, r.envoyes], [true, 14, 0]);
+    expect(r.envoyables.single.resume, 'MC4 (Petit) — quantité 400');
+    expect(r.refuses.single.raison, 'Le cloud a déjà 3 mouvement(s)');
+  });
+
   testWidgets('vérification en cours : bouton désactivé', (tester) async {
     await tester.pumpWidget(_carte(null, checking: true));
     expect(find.text('Comparaison en cours…'), findsOneWidget);

@@ -51,7 +51,12 @@ class SyncStatusPage extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             if (s.isType3) ...[
-              SyncDriftCard(report: controller.drift.value, checking: controller.isCheckingDrift.value, onCheck: controller.verifierEcart),
+              SyncDriftCard(
+                report: controller.drift.value,
+                checking: controller.isCheckingDrift.value,
+                onCheck: controller.verifierEcart,
+                onResend: () => _renvoyer(context, controller),
+              ),
               const SizedBox(height: 16),
             ],
             _buildSyncButton(controller, s),
@@ -59,6 +64,53 @@ class SyncStatusPage extends StatelessWidget {
         );
       }),
     );
+  }
+
+  /// Aperçu de ce qui peut être renvoyé vers le cloud, confirmation, puis envoi
+  Future<void> _renvoyer(BuildContext context, SyncController controller) async {
+    SyncResendResult apercu;
+    try {
+      apercu = await controller.apercuRenvoi();
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+      return;
+    }
+    if (!context.mounted) return;
+    if (apercu.aEnvoyer == 0 && apercu.refuses.isEmpty) {
+      SnackbarHelper.warning('Rien à renvoyer.');
+      return;
+    }
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Renvoyer vers le cloud ?'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${apercu.aEnvoyer} élément(s) peuvent être envoyés sans risque (rien n\'est écrasé dans le cloud).',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              ...apercu.envoyables.take(6).map((l) => Text('• ${l.resume}', style: const TextStyle(fontSize: 12))),
+              if (apercu.envoyables.length > 6) Text('… et ${apercu.envoyables.length - 6} autre(s)', style: const TextStyle(fontSize: 12)),
+              if (apercu.refuses.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text('${apercu.refuses.length} élément(s) NE seront PAS envoyés :', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+                ...apercu.refuses.take(6).map((l) => Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text('• ${l.resume}\n   ${l.raison ?? ''}', style: const TextStyle(fontSize: 12)),
+                    )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          if (apercu.aEnvoyer > 0) ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer')),
+        ],
+      ),
+    );
+    if (confirme == true) await controller.renvoyer();
   }
 
   /// Alerte : des données restent sans partir vers le cloud depuis plus de 24 h

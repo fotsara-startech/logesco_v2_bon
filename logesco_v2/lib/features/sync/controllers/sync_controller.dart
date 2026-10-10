@@ -76,6 +76,22 @@ class SyncController extends GetxController {
     }
   }
 
+  /// Aperçu de ce qui peut être renvoyé vers le cloud (lève une exception avec le message du serveur)
+  Future<SyncResendResult> apercuRenvoi() => _service.resend(dryRun: true);
+
+  /// Renvoie vers le cloud ce qui est sans risque ; le contrôle d'écart sera à jour après l'envoi
+  Future<SyncResendResult?> renvoyer() async {
+    try {
+      final r = await _service.resend(dryRun: false);
+      SnackbarHelper.success('${r.envoyes} élément(s) mis en file d\'envoi vers le cloud.');
+      await _fetchStatus();
+      return r;
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+      return null;
+    }
+  }
+
   /// Relance la comparaison avec le cloud et affiche le résultat
   Future<void> verifierEcart() async {
     if (isCheckingDrift.value) return;

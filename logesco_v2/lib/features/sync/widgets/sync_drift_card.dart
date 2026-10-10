@@ -10,7 +10,10 @@ class SyncDriftCard extends StatelessWidget {
   final bool checking;
   final VoidCallback onCheck;
 
-  const SyncDriftCard({super.key, required this.report, required this.checking, required this.onCheck});
+  /// Proposer le renvoi vers le cloud des éléments présents ici mais jamais arrivés dans le cloud
+  final VoidCallback? onResend;
+
+  const SyncDriftCard({super.key, required this.report, required this.checking, required this.onCheck, this.onResend});
 
   String _quand(DateTime? d) {
     if (d == null) return '';
@@ -88,13 +91,23 @@ class SyncDriftCard extends StatelessWidget {
                   )),
             ],
             const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                onPressed: checking ? null : onCheck,
-                icon: checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh),
-                label: Text(checking ? 'Comparaison en cours…' : "Vérifier l'écart avec le cloud"),
-              ),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (onResend != null && groupes.any((g) => g.sens == 'a_envoyer'))
+                  ElevatedButton.icon(
+                    onPressed: checking ? null : onResend,
+                    icon: const Icon(Icons.cloud_upload_outlined),
+                    label: const Text('Renvoyer vers le cloud'),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: checking ? null : onCheck,
+                  icon: checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh),
+                  label: Text(checking ? 'Comparaison en cours…' : "Vérifier l'écart avec le cloud"),
+                ),
+              ],
             ),
           ],
         ),
