@@ -64,6 +64,7 @@ const { createExpirationDatesRouter } = require('./routes/expiration-dates');
 const { createProformaRouter } = require('./routes/proformas');
 const { createBoutiquesRouter } = require('./routes/boutiques');
 const { createSyncRouter } = require('./routes/sync');
+const { createDecisionsRouter } = require('./routes/decisions');
 
 /**
  * Serveur principal LOGESCO API
@@ -857,6 +858,13 @@ class LogescoServer {
     // Routes de synchronisation (Type 3 — hybride local + Neon)
     this.app.use(`/api/${apiVersion}/sync`, createSyncRouter({
       authService: this.authService
+    }));
+
+    // Centre de décisions : cas ambigus (stock) que l'application ne peut pas trancher seule
+    this.app.use(`/api/${apiVersion}/decisions`, createDecisionsRouter({
+      authService: this.authService,
+      prisma: this.models.prisma,
+      syncService: this.syncService
     }));
 
     // Route pour les statistiques de la base de données
