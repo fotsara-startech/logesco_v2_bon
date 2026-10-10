@@ -68,7 +68,7 @@ test('doublons NON fusionnés automatiquement : explication dédiée, jamais de 
   assert.match(compte.titre, /Deux comptes pour le même client/);
   assert.match(compte.explication, /additionnés/);
   assert.doesNotMatch(compte.action, /automatiquement/);
-  assert.match(compte.action, /support/);
+  assert.match(compte.action, /Décisions à prendre/);
 
   const produit = classifyError('duplicate key value violates unique constraint "produits_reference_key"', 'produits');
   assert.match(produit.titre, /même référence/);
