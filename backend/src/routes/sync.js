@@ -5,6 +5,7 @@
 
 const express = require('express');
 const syncService = require('../services/sync-service');
+const { getSyncDetails } = require('../services/sync-detail');
 
 function createSyncRouter({ authService }) {
   const router = express.Router();
@@ -114,6 +115,36 @@ function createSyncRouter({ authService }) {
     } catch (e) {
       console.error('⚠️  Erreur GET /sync/status:', e.message);
       res.status(500).json({ success: false, message: 'Erreur lecture statut sync: ' + e.message });
+    }
+  });
+
+  /**
+   * GET /sync/details
+   * Détail de chaque élément non synchronisé : quel produit / quelle vente...,
+   * l'opération, et l'erreur expliquée en clair (cause + action à mener).
+   * Regroupe les envois en attente ou refusés ET les lignes reçues du cloud
+   * qui n'ont pas pu être appliquées.
+   */
+  router.get('/details', authenticateToken(authService), async (req, res) => {
+    try {
+      const status = syncService.getStatus();
+      if (!status.cloudEnabled) {
+        return res.json({ success: true, data: { items: [], total: 0, genereLe: new Date().toISOString() } });
+      }
+      const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
+      const items = await getSyncDetails(syncService.localPrisma, { limit });
+      res.json({
+        success: true,
+        data: {
+          items,
+          total: items.length,
+          erreurs: items.filter((i) => i.status === 'failed').length,
+          genereLe: new Date().toISOString(),
+        }
+      });
+    } catch (e) {
+      console.error('⚠️  Erreur GET /sync/details:', e.message);
+      res.status(500).json({ success: false, message: 'Erreur lecture du détail de synchronisation: ' + e.message });
     }
   });
 

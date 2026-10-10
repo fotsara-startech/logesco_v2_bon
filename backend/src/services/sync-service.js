@@ -789,6 +789,146 @@ class SyncServiceV2 {
   }
 
   /**
+   * Débloque les fiches de stock en doublon entre ce poste et Neon.
+   *
+   * Cas typique : le poste crée la ligne de stock (boutique 1, produit 3) sous
+   * l'identifiant 150000001 alors que Neon en possède déjà une pour le même couple
+   * sous l'identifiant 100000003 (créée par un autre poste). Neon refuse la
+   * nôtre (clé unique boutique + produit) et nous refusons la sienne : chacun
+   * attend que l'autre cède sa place, indéfiniment.
+   *
+   * L'identifiant du cloud est la référence commune : on y aligne la ligne
+   * locale (un seul UPDATE, rien n'est supprimé), puis on garde la quantité
+   * la PLUS RÉCENTE (derniere_maj) ; si c'est la nôtre et qu'elle diffère, elle
+   * est renvoyée à Neon. Les envois devenus sans objet sont annulés.
+   */
+  async _reconcileCompositeKeyConflicts(client) {
+    const CLES = {
+      stock_boutiques: ['boutique_id', 'produit_id'],
+      stock: ['produit_id'],
+    };
+    const toMs = (v) => {
+      if (v === null || v === undefined) return 0;
+      if (v instanceof Date) return v.getTime();
+      if (typeof v === 'number' || typeof v === 'bigint') return Number(v);
+      const t = Date.parse(String(v));
+      return Number.isNaN(t) ? 0 : t;
+    };
+    const num = (v) => (typeof v === 'bigint' ? Number(v) : v);
+
+    let fusions = 0;
+
+    for (const [table, cols] of Object.entries(CLES)) {
+      // 1. Couples en conflit : envois refusés pour doublon + lignes reçues non appliquées
+      const couples = new Map();
+      try {
+        const echecs = await this.localPrisma.$queryRawUnsafe(
+          `SELECT data FROM operation_log
+           WHERE table_name = ? AND status = 'failed'
+             AND (error_message LIKE '%duplicate key%' OR error_message LIKE '%UNIQUE constraint%')`,
+          table
+        );
+        const recues = await this.localPrisma.$queryRawUnsafe(
+          `SELECT payload AS data FROM sync_pull_retry WHERE table_name = ? AND last_error LIKE '%UNIQUE constraint%'`,
+          table
+        );
+        for (const e of [...echecs, ...recues]) {
+          let d;
+          try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (_) { continue; }
+          if (d && cols.every((c) => d[c] !== undefined && d[c] !== null)) {
+            const valeurs = cols.map((c) => Number(d[c]));
+            couples.set(valeurs.join(':'), valeurs);
+          }
+        }
+      } catch (_) { continue; } // tables de suivi absentes : rien à faire
+      if (couples.size === 0) continue;
+
+      for (const valeurs of couples.values()) {
+        try {
+          // 2. Ligne du cloud et ligne locale pour ce couple
+          const distant = await client.query(
+            `SELECT * FROM "${table}" WHERE ${cols.map((c, i) => `"${c}" = $${i + 1}`).join(' AND ')} LIMIT 1`,
+            valeurs
+          );
+          if (!distant.rows.length) continue;
+          const cloud = distant.rows[0];
+
+          const locales = await this.localPrisma.$queryRawUnsafe(
+            `SELECT * FROM "${table}" WHERE ${cols.map((c) => `"${c}" = ?`).join(' AND ')} LIMIT 1`,
+            ...valeurs
+          );
+          if (!locales.length) continue;
+          const locale = locales[0];
+          const ancienId = Number(locale.id);
+          const nouveauId = Number(cloud.id);
+
+          // Même identifiant des deux côtés : le refus avait une autre cause ; on rejoue
+          if (ancienId === nouveauId) {
+            await this.localPrisma.$executeRawUnsafe(
+              `UPDATE operation_log SET status = 'pending', error_message = NULL
+               WHERE table_name = ? AND record_id = ? AND status = 'failed'`,
+              table, ancienId
+            );
+            continue;
+          }
+
+          // 3. Quantité la plus récente (avant de toucher à quoi que ce soit)
+          const localGagne = toMs(locale.derniere_maj) > toMs(cloud.derniere_maj)
+            && Number(locale.quantite_disponible) !== Number(cloud.quantite_disponible);
+          const valeursLocales = {
+            quantite_disponible: num(locale.quantite_disponible),
+            quantite_reservee: num(locale.quantite_reservee),
+            derniere_maj: num(locale.derniere_maj),
+          };
+
+          // 4. Aligner la ligne locale sur l'identifiant du cloud (un seul UPDATE : rien n'est supprimé)
+          await this.localPrisma.$executeRawUnsafe(`UPDATE "${table}" SET id = ? WHERE id = ?`, nouveauId, ancienId);
+          await this._repointerReferences(table, ancienId, nouveauId);
+
+          // 5. Les envois portant l'ancien identifiant n'ont plus d'objet
+          await this.localPrisma.$executeRawUnsafe(
+            `UPDATE operation_log
+             SET status = 'cancelled', error_message = ?
+             WHERE table_name = ? AND record_id = ? AND status IN ('pending', 'failed')`,
+            `Fiche fusionnée avec celle du cloud (identifiant ${ancienId} → ${nouveauId})`, table, ancienId
+          );
+
+          // 6. Valeurs du cloud, puis valeurs locales si elles sont plus récentes
+          await this._mergeRemoteRow(table, cloud);
+          if (localGagne) {
+            await this.localPrisma.$executeRawUnsafe(
+              `UPDATE "${table}" SET quantite_disponible = ?, quantite_reservee = ?, derniere_maj = ? WHERE id = ?`,
+              valeursLocales.quantite_disponible, valeursLocales.quantite_reservee, valeursLocales.derniere_maj, nouveauId
+            );
+            const miseAJour = { ...Object.fromEntries(Object.entries(locale).map(([k, v]) => [k, num(v)])), id: nouveauId, ...valeursLocales };
+            await this.logOperation(table, 'UPDATE', miseAJour);
+          }
+
+          // 7. La ligne reçue n'est plus en échec
+          await this.localPrisma.$executeRawUnsafe(
+            `DELETE FROM sync_pull_retry WHERE table_name = ? AND record_id IN (?, ?)`,
+            table, String(nouveauId), String(ancienId)
+          );
+
+          console.log(
+            `🔗 ${table} (${cols.join(', ')} = ${valeurs.join(', ')}) : identifiant local ${ancienId} aligné sur celui du cloud ${nouveauId}` +
+            (localGagne ? ` — quantité locale plus récente (${valeursLocales.quantite_disponible}) renvoyée au cloud` : '')
+          );
+          fusions++;
+        } catch (e) {
+          console.warn(`⚠️  Fusion ${table} (${valeurs.join(', ')}) impossible: ${e.message}`);
+        }
+      }
+    }
+
+    if (fusions > 0) {
+      await this._rafraichirPayloadsEnAttente();
+      console.log(`✅ ${fusions} fiche(s) de stock en doublon réconciliée(s) avec le cloud`);
+    }
+    return fusions;
+  }
+
+  /**
    * Repointe toutes les clés étrangères visant `cible.ancienId` vers `nouveauId`.
    * Les relations sont découvertes dynamiquement : aucune liste à maintenir.
    */
@@ -1201,6 +1341,9 @@ class SyncServiceV2 {
       // (le pull vient peut-être de descendre l'équivalent cloud d'un
       //  enregistrement que ce poste avait créé de son côté)
       await this._reconcileNaturalKeyDuplicates(client);
+
+      // ── Étape 5 : débloquer les fiches de stock en doublon avec le cloud ────
+      await this._reconcileCompositeKeyConflicts(client);
       } catch (e) {
         if (this._isConnectionError(e)) connexionPerdue = true;
         throw e;
