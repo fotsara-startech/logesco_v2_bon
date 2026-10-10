@@ -16,6 +16,10 @@ class SyncStatus {
   final DateTime? oldestPendingAt;
   final int pullIssuesCount;
 
+  /// Contrôle d'écart avec le cloud : éléments non expliqués au dernier contrôle (null = pas encore contrôlé)
+  final int? driftInexpliques;
+  final int driftAnciens;
+
   SyncStatus({
     required this.mode,
     required this.cloudEnabled,
@@ -27,6 +31,8 @@ class SyncStatus {
     this.lastErrorMessage,
     this.oldestPendingAt,
     this.pullIssuesCount = 0,
+    this.driftInexpliques,
+    this.driftAnciens = 0,
   });
 
   factory SyncStatus.fromJson(Map<String, dynamic> json) {
@@ -43,6 +49,8 @@ class SyncStatus {
       lastSync: json['lastSync'],
       lastErrorMessage: _parseError(json['lastError']),
       pullIssuesCount: (json['pullIssuesCount'] as num?)?.toInt() ?? 0,
+      driftInexpliques: ((json['drift'] as Map?)?['inexpliques'] as num?)?.toInt(),
+      driftAnciens: (((json['drift'] as Map?)?['anciens']) as num?)?.toInt() ?? 0,
       oldestPendingAt: json['oldestPendingAt'] != null ? DateTime.tryParse(json['oldestPendingAt'].toString())?.toLocal() : null,
     );
   }
@@ -157,6 +165,72 @@ class SyncDetailItem {
   }
 }
 
+/// Un exemple d'élément en écart (décrit en clair par le serveur)
+class SyncDriftExample {
+  final String resume;
+  const SyncDriftExample(this.resume);
+}
+
+/// Un groupe d'écarts : même table, même sens, même cause
+class SyncDriftGroup {
+  final String tableLabel;
+
+  /// a_recevoir | a_envoyer | valeur
+  final String sens;
+  final String libelle;
+
+  /// true si le système le connaît déjà (envoi en attente, file de reprise...) : pas une alerte
+  final bool connue;
+  final int nombre;
+  final int anciens;
+  final DateTime? depuis;
+  final List<SyncDriftExample> exemples;
+
+  const SyncDriftGroup({
+    required this.tableLabel,
+    required this.sens,
+    required this.libelle,
+    required this.connue,
+    required this.nombre,
+    required this.anciens,
+    required this.exemples,
+    this.depuis,
+  });
+
+  factory SyncDriftGroup.fromJson(Map<String, dynamic> json) => SyncDriftGroup(
+        tableLabel: (json['tableLabel'] ?? json['table'] ?? '').toString(),
+        sens: (json['sens'] ?? '').toString(),
+        libelle: (json['libelle'] ?? '').toString(),
+        connue: json['connue'] == true,
+        nombre: (json['nombre'] as num?)?.toInt() ?? 0,
+        anciens: (json['anciens'] as num?)?.toInt() ?? 0,
+        depuis: json['depuis'] != null ? DateTime.tryParse(json['depuis'].toString())?.toLocal() : null,
+        exemples: (json['exemples'] as List<dynamic>? ?? const []).map((e) => SyncDriftExample(((e as Map)['resume'] ?? '').toString())).toList(),
+      );
+}
+
+/// Résultat d'un contrôle d'écart entre ce poste et le cloud
+class SyncDriftReport {
+  final DateTime? verifieLe;
+  final int inexpliques;
+  final int anciens;
+  final int connus;
+  final List<SyncDriftGroup> ecarts;
+
+  const SyncDriftReport({this.verifieLe, required this.inexpliques, required this.anciens, required this.connus, required this.ecarts});
+
+  factory SyncDriftReport.fromJson(Map<String, dynamic> json) {
+    final resume = (json['resume'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    return SyncDriftReport(
+      verifieLe: json['verifieLe'] != null ? DateTime.tryParse(json['verifieLe'].toString())?.toLocal() : null,
+      inexpliques: (resume['inexpliques'] as num?)?.toInt() ?? 0,
+      anciens: (resume['anciens'] as num?)?.toInt() ?? 0,
+      connus: (resume['connus'] as num?)?.toInt() ?? 0,
+      ecarts: (json['ecarts'] as List<dynamic>? ?? const []).map((e) => SyncDriftGroup.fromJson((e as Map).cast<String, dynamic>())).toList(),
+    );
+  }
+}
+
 class SyncStatusService {
   final String _baseUrl = AppConfig.baseUrl;
 
@@ -196,6 +270,24 @@ class SyncStatusService {
       if (json['success'] != true || json['data'] == null) return null;
       final items = (json['data']['items'] as List<dynamic>? ?? const []);
       return items.map((e) => SyncDetailItem.fromJson((e as Map).cast<String, dynamic>())).toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Rapport du contrôle d'écart avec le cloud (null si le serveur est trop ancien, injoignable ou sans cloud).
+  /// [refresh] relance la comparaison (quelques secondes à quelques dizaines de secondes).
+  Future<SyncDriftReport?> getDrift({bool refresh = false}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$_baseUrl/sync/drift${refresh ? '?refresh=1' : ''}'), headers: _headers())
+          .timeout(Duration(seconds: refresh ? 90 : 15));
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body);
+      if (json['success'] != true) return null;
+      final rapport = json['data']?['rapport'];
+      if (rapport is! Map) return null;
+      return SyncDriftReport.fromJson(rapport.cast<String, dynamic>());
     } catch (_) {
       return null;
     }

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../controllers/sync_controller.dart';
 import '../services/sync_status_service.dart';
+import '../widgets/sync_drift_card.dart';
 
 class SyncStatusPage extends StatelessWidget {
   const SyncStatusPage({super.key});
@@ -47,6 +48,10 @@ class SyncStatusPage extends StatelessWidget {
               const SizedBox(height: 16),
             ] else if (s.hasPending) ...[
               _buildPendingCard(s),
+              const SizedBox(height: 16),
+            ],
+            if (s.isType3) ...[
+              SyncDriftCard(report: controller.drift.value, checking: controller.isCheckingDrift.value, onCheck: controller.verifierEcart),
               const SizedBox(height: 16),
             ],
             _buildSyncButton(controller, s),

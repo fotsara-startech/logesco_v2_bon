@@ -13,8 +13,13 @@ class SyncController extends GetxController {
   /// Détail de chaque élément non synchronisé (vide si tout est à jour)
   final RxList<SyncDetailItem> details = <SyncDetailItem>[].obs;
 
+  /// Dernier contrôle d'écart avec le cloud (null tant qu'aucun n'a abouti)
+  final Rx<SyncDriftReport?> drift = Rx<SyncDriftReport?>(null);
+  final RxBool isCheckingDrift = false.obs;
+
   Timer? _pollTimer;
   bool _staleWarned = false;
+  bool _driftWarned = false;
 
   @override
   void onInit() {
@@ -46,12 +51,44 @@ class SyncController extends GetxController {
       }
       if (!result.isStale) _staleWarned = false;
 
+      // Écart avec le cloud qui dure depuis plus d'un jour : invisible ailleurs, donc signalé une fois par session
+      if (result.isType3 && result.driftAnciens > 0 && !_driftWarned) {
+        _driftWarned = true;
+        SnackbarHelper.warning(
+          '${result.driftAnciens} élément(s) diffèrent entre ce poste et le cloud depuis plus d\'un jour. '
+          'Voir le menu Synchronisation.',
+          duration: const Duration(seconds: 10),
+        );
+      }
+
       // Détail de ce qui n'est pas synchronisé : seulement s'il y a quelque chose à expliquer
       if (result.isType3 && (result.hasPending || result.pullIssuesCount > 0)) {
         await _fetchDetails();
       } else {
         details.clear();
       }
+
+      // Contrôle d'écart : on rapatrie le rapport quand le serveur en a un
+      if (result.isType3 && result.driftInexpliques != null && !isCheckingDrift.value) {
+        final rapport = await _service.getDrift();
+        if (rapport != null) drift.value = rapport;
+      }
+    }
+  }
+
+  /// Relance la comparaison avec le cloud et affiche le résultat
+  Future<void> verifierEcart() async {
+    if (isCheckingDrift.value) return;
+    isCheckingDrift.value = true;
+    try {
+      final rapport = await _service.getDrift(refresh: true);
+      if (rapport == null) {
+        SnackbarHelper.error('Contrôle impossible : cloud injoignable ou serveur trop ancien.');
+      } else {
+        drift.value = rapport;
+      }
+    } finally {
+      isCheckingDrift.value = false;
     }
   }
 
