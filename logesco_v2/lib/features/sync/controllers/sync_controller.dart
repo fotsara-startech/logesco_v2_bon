@@ -10,6 +10,9 @@ class SyncController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isSyncing = false.obs;
 
+  /// Détail de chaque élément non synchronisé (vide si tout est à jour)
+  final RxList<SyncDetailItem> details = <SyncDetailItem>[].obs;
+
   Timer? _pollTimer;
   bool _staleWarned = false;
 
@@ -42,7 +45,20 @@ class SyncController extends GetxController {
         );
       }
       if (!result.isStale) _staleWarned = false;
+
+      // Détail de ce qui n'est pas synchronisé : seulement s'il y a quelque chose à expliquer
+      if (result.isType3 && (result.hasPending || result.pullIssuesCount > 0)) {
+        await _fetchDetails();
+      } else {
+        details.clear();
+      }
     }
+  }
+
+  Future<void> _fetchDetails() async {
+    final items = await _service.getDetails();
+    // null = serveur ancien sans cette route : on garde l'affichage par module
+    if (items != null) details.assignAll(items);
   }
 
   Future<void> refresh() => _fetchStatus();

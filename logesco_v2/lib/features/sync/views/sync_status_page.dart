@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../core/utils/snackbar_helper.dart';
 import '../controllers/sync_controller.dart';
 import '../services/sync_status_service.dart';
 
@@ -40,7 +42,10 @@ class SyncStatusPage extends StatelessWidget {
             ],
             _buildStatusCard(s),
             const SizedBox(height: 16),
-            if (s.hasPending) ...[
+            if (controller.details.isNotEmpty) ...[
+              _buildDetailsCard(controller.details),
+              const SizedBox(height: 16),
+            ] else if (s.hasPending) ...[
               _buildPendingCard(s),
               const SizedBox(height: 16),
             ],
@@ -176,6 +181,59 @@ class SyncStatusPage extends StatelessWidget {
     );
   }
 
+  /// Détail de chaque élément non synchronisé, avec la cause du blocage en clair
+  Widget _buildDetailsCard(List<SyncDetailItem> items) {
+    final erreurs = items.where((i) => i.isFailed).length;
+    // Les éléments refusés d'abord : ce sont eux qui demandent une attention
+    final tries = [...items]..sort((a, b) {
+        if (a.isFailed != b.isFailed) return a.isFailed ? -1 : 1;
+        return (a.createdAt ?? DateTime(2100)).compareTo(b.createdAt ?? DateTime(2100));
+      });
+
+    return Card(
+      color: erreurs > 0 ? Colors.red.shade50 : Colors.orange[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.fact_check_outlined, color: erreurs > 0 ? Colors.red.shade700 : Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Détail de ce qui n\'est pas synchronisé (${items.length})',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Copier le détail (pour le support)',
+                  icon: const Icon(Icons.copy_all_outlined),
+                  onPressed: () async {
+                    final texte = 'Synchronisation — ${items.length} élément(s) non synchronisé(s)\n${tries.map((i) => i.toReportLine()).join('\n')}';
+                    await Clipboard.setData(ClipboardData(text: texte));
+                    SnackbarHelper.success('Détail copié dans le presse-papiers');
+                  },
+                ),
+              ],
+            ),
+            if (erreurs > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text(
+                  '$erreurs élément(s) refusé(s) par le cloud. Touchez un élément pour voir pourquoi et que faire.',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade800),
+                ),
+              ),
+            const SizedBox(height: 4),
+            ...tries.map((i) => _SyncDetailTile(item: i)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPendingCard(SyncStatus s) {
     return Card(
       color: Colors.orange[50],
@@ -289,5 +347,87 @@ class SyncStatusPage extends StatelessWidget {
     } catch (_) {
       return iso;
     }
+  }
+}
+
+/// Un élément non synchronisé : titre clair, puis cause et action au toucher
+class _SyncDetailTile extends StatelessWidget {
+  final SyncDetailItem item;
+  const _SyncDetailTile({required this.item});
+
+  String _date(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final color = item.isFailed ? Colors.red : Colors.orange;
+    final statut = item.isFailed ? (item.isReception ? 'Non appliqué' : 'Refusé') : 'En attente';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: color.shade200),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: item.isFailed,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          leading: Icon(item.isFailed ? Icons.error_outline : Icons.hourglass_top, color: color.shade700),
+          title: Text(
+            item.summary.isEmpty ? item.tableLabel : item.summary,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              '${item.tableLabel} · ${item.operationLabel}${item.createdAt != null ? ' · ${_date(item.createdAt!)}' : ''}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: color.shade100, borderRadius: BorderRadius.circular(10)),
+            child: Text(statut, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color.shade800)),
+          ),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.error.titre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(item.error.explication, style: const TextStyle(fontSize: 13)),
+            if (item.error.action.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.lightbulb_outline, size: 16, color: Colors.green.shade800),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(item.error.action, style: TextStyle(fontSize: 12, color: Colors.green.shade900))),
+                  ],
+                ),
+              ),
+            ],
+            if (item.isReception && item.attempts > 0) ...[
+              const SizedBox(height: 6),
+              Text('Application tentée ${item.attempts} fois', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            ],
+            if ((item.error.technique ?? '').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Message technique', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+              SelectableText(item.error.technique!, style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontFamily: 'Consolas')),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
