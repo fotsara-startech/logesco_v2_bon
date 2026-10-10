@@ -5,6 +5,7 @@
 
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
+const installation = require('../utils/installation');
 
 function createProformaRouter({ prisma, authService, syncService }) {
   const router = express.Router();
@@ -22,12 +23,17 @@ function createProformaRouter({ prisma, authService, syncService }) {
       orderBy: { id: 'desc' },
     });
 
+    // Séquence = 3e segment (PRF-AAAAMM-0007 ou PRF-AAAAMM-0007-P15) : le suffixe de
+    // poste, ajouté en fin, ne doit pas être pris pour la séquence.
     let seq = 1;
     if (last) {
       const parts = last.numeroProforma.split('-');
-      seq = (parseInt(parts[parts.length - 1], 10) || 0) + 1;
+      seq = (parseInt(parts[2], 10) || 0) + 1;
     }
-    return `${prefix}${String(seq).padStart(4, '0')}`;
+    // Suffixe de poste (comme les ventes, commandes et reçus) : deux postes qui créent leur
+    // première proforma du mois produisaient sinon le même numéro, refusé par Neon
+    // (numero_proforma est unique) et donc jamais synchronisé.
+    return `${prefix}${String(seq).padStart(4, '0')}${installation.documentSuffix()}`;
   }
 
   // ── Inclusions communes ───────────────────────────────────────────────────

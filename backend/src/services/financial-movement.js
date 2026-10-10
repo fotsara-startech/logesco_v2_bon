@@ -3,6 +3,8 @@
  * Gère les sorties d'argent de la boutique avec traçabilité complète
  */
 
+const installation = require('../utils/installation');
+
 class FinancialMovementService {
   constructor(prisma, syncService = null) {
     this.prisma = prisma;
@@ -11,13 +13,15 @@ class FinancialMovementService {
 
   /**
    * Génère un numéro de référence unique pour un mouvement
-   * Format: MF-YYYYMMDD-XXXX
+   * Format: MF-YYYYMMDD-XXXX (suivi de -P<n> sur les postes autres que le premier)
    */
   generateReference() {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomSuffix = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    return `MF-${dateStr}-${randomSuffix}`;
+    // Suffixe de poste : 4 chiffres au hasard ne suffisent pas à garantir l'unicité entre
+    // plusieurs postes (la référence est unique côté Neon : un doublon n'est jamais synchronisé)
+    return `MF-${dateStr}-${randomSuffix}${installation.documentSuffix()}`;
   }
 
   /**
