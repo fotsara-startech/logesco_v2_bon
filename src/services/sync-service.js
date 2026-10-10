@@ -821,7 +821,9 @@ class SyncServiceV2 {
    * Les envois devenus sans objet sont annulés.
    *
    * Volontairement NON traités ici : comptes clients / fournisseurs (deux soldes à
-   * additionner, pas à choisir), références de produit, inventaires nommés. Un
+   * additionner, pas à choisir), références de produit, inventaires nommés, et les
+   * utilisateurs, caisses et boutiques (mots de passe, soldes d'argent, identité d'un
+   * point de vente : on ne les remplace pas par ceux d'un autre poste sans décision humaine). Un
    * doublon y peut être une vraie différence ; il est signalé en clair sur l'écran
    * Synchronisation plutôt que fusionné à l'aveugle.
    *
@@ -830,6 +832,12 @@ class SyncServiceV2 {
   async _reconcileCompositeKeyConflicts(client = null) {
     // ordre = dépendances : une ville avant ses zones
     const CLES = [
+      // Référentiels créés par l'auto-seed de chaque poste (« admin », « VENDEUR »...) : l'index
+      // unique local sur le nom empêche tout doublon local, donc _reconcileNaturalKeyDuplicates
+      // (qui cherche des doublons LOCAUX) ne se déclenche jamais face à la ligne du cloud.
+      ['user_roles', ['nom'], 'cloud'],
+      ['categories', ['nom'], 'cloud'],
+      ['movement_categories', ['nom'], 'cloud'],
       ['villes', ['nom'], 'cloud'],
       ['zones', ['ville_id', 'nom'], 'cloud'],
       ['user_boutique_assignments', ['utilisateur_id', 'boutique_id'], 'cloud'],

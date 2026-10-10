@@ -217,7 +217,7 @@ function columnsFromConstraint(constraint, table) {
 // et _reconcileNaturalKeyDuplicates)
 const AUTO_FUSION = new Set([
   'stock', 'stock_boutiques', 'user_boutique_assignments', 'villes', 'zones',
-  'cash_registers', 'user_roles', 'utilisateurs', 'categories', 'movement_categories', 'boutiques',
+  'user_roles', 'categories', 'movement_categories',
 ]);
 
 // Doublons qu'on NE fusionne volontairement PAS à l'aveugle : explication et marche à suivre dédiées
@@ -236,6 +236,21 @@ const DOUBLON_PAR_TABLE = {
     titre: 'Deux produits avec la même référence',
     explication: "Un produit portant cette référence existe déjà dans le cloud. Il peut s'agir du même produit saisi deux fois, ou de deux produits différents.",
     action: "Vérifiez dans la liste des produits : si c'est le même, supprimez le doublon ; sinon, donnez une référence différente à l'un des deux.",
+  },
+  utilisateurs: {
+    titre: "Un utilisateur du même nom existe déjà dans le cloud",
+    explication: "Deux postes ont créé un utilisateur portant le même nom. Les remplacer l'un par l'autre changerait un mot de passe ou des droits.",
+    action: "Ne corrigez rien à la main : transmettez ce détail au support pour choisir l'utilisateur à conserver.",
+  },
+  cash_registers: {
+    titre: "Une caisse du même nom existe déjà dans le cloud",
+    explication: "Deux postes ont chacun créé une caisse portant ce nom. Chacune a son propre solde d'argent, qu'on ne peut pas écraser sans vérification.",
+    action: "Transmettez ce détail au support : les deux caisses doivent être vérifiées avant d'être fusionnées ou renommées.",
+  },
+  boutiques: {
+    titre: "Une boutique du même nom existe déjà dans le cloud",
+    explication: "Deux postes ont chacun créé une boutique portant ce nom : stocks et ventes sont rattachés à chacune.",
+    action: "Transmettez ce détail au support : les deux boutiques doivent être fusionnées avec leurs stocks, ou renommées.",
   },
   stock_inventories: {
     titre: 'Deux inventaires avec le même nom',
@@ -384,6 +399,9 @@ async function getSyncDetails(localPrisma, { limit = 200 } = {}) {
     );
   } catch (_) { /* table absente : rien à afficher */ }
   for (const r of retries) {
+    // Déjà présente localement sous le même identifiant : la ligne a fini par être appliquée
+    // (ou fusionnée) par un autre chemin ; l'entrée de reprise est périmée, on ne la montre pas.
+    if (await lookup(localPrisma, r.table_name, Number(r.record_id), ['id'])) continue;
     const data = safeParse(r.payload);
     items.push({
       source: 'reception',
