@@ -15,13 +15,25 @@ class _Appel {
 
 class _FakeService implements DecisionsService {
   List<DecisionCase>? cases;
+  List<SyncConflict> conflits;
   final List<_Appel> appels = [];
+  final List<List<String?>> appelsConflit = []; // [clé, option, valeur]
   String? erreur;
 
-  _FakeService(this.cases);
+  _FakeService(this.cases, {this.conflits = const []});
 
   @override
   Future<List<DecisionCase>?> fetch() async => cases == null ? null : [...cases!];
+
+  @override
+  Future<DecisionsData?> fetchAll() async => cases == null ? null : DecisionsData(cases: [...cases!], conflits: [...conflits], cloud: 'ok');
+
+  @override
+  Future<void> applyConflict({required String caseKey, required String optionId, String? valeur}) async {
+    if (erreur != null) throw Exception(erreur);
+    appelsConflit.add([caseKey, optionId, valeur]);
+    conflits = conflits.where((c) => c.key != caseKey).toList();
+  }
 
   @override
   Future<void> apply({required String caseKey, required String optionId, required int stockVu, int? cible}) async {
@@ -65,6 +77,38 @@ DecisionCase _doublon() => const DecisionCase(
       options: [
         DecisionOption(id: 'garder', label: 'Garder le stock affiché (104)', description: 'Aucune correction.', cible: 104, delta: 0, consequence: 'Stock 104 → 104 (+0)'),
         DecisionOption(id: 'sans_doublon', label: 'Annuler la réception en double (52)', description: 'Livraison saisie deux fois.', cible: 52, delta: -52, consequence: 'Stock 104 → 52 (-52)'),
+      ],
+    );
+
+SyncConflict _conflitProduit() => const SyncConflict(
+      key: 'sync:produits:150000005',
+      table: 'produits',
+      libelle: 'Produit',
+      titre: 'Deux produits avec la même référence',
+      explication: 'Un produit portant cette référence existe déjà dans le cloud.',
+      cleMot: 'référence',
+      cleValeur: 'LUS-1',
+      local: SyncConflictSide(id: 150000005, resume: ['Nom : LUSTRE LOCAL']),
+      cloud: SyncConflictSide(id: 7, resume: ['Nom : LUSTRE CLOUD']),
+      options: [
+        SyncConflictOption(id: 'fusionner', label: "C'est la même fiche : garder celle du cloud", description: 'Fusion.', consequence: 'Tout est rattaché à la fiche du cloud n° 7.'),
+        SyncConflictOption(id: 'renommer', label: 'Ce sont deux fiches différentes : renommer celle de ce poste', description: 'Renommage.', consequence: 'Les deux fiches coexistent.', valeurSuggeree: 'LUS-1-2'),
+      ],
+    );
+
+SyncConflict _conflitCompte() => const SyncConflict(
+      key: 'sync:comptes_clients:150000001',
+      table: 'comptes_clients',
+      libelle: 'Compte client',
+      titre: 'Compte client de MBARGA Paul en double',
+      explication: '',
+      cleMot: 'client',
+      cleValeur: '4',
+      local: SyncConflictSide(id: 150000001, resume: ['Solde : -5 000 FCFA']),
+      cloud: SyncConflictSide(id: 3, resume: ['Solde : -20 000 FCFA']),
+      options: [
+        SyncConflictOption(id: 'additionner', label: 'Additionner les deux soldes', description: 'Cumul.', consequence: 'Solde final : -25 000 FCFA', recommandee: true),
+        SyncConflictOption(id: 'garder_cloud', label: 'Garder le solde du cloud', description: 'Cloud.', consequence: 'Solde final : -20 000 FCFA'),
       ],
     );
 
@@ -233,6 +277,90 @@ void main() {
     testWidgets('aucun débordement sur mobile', (tester) async {
       await _ouvrir(tester, _FakeService([_lustre(), _doublon()]), size: const Size(380, 800));
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('conflits de synchronisation', () {
+    testWidgets("la bannière les compte et l'écran montre les deux fiches côte à côte", (tester) async {
+      await tester.pumpWidget(GetMaterialApp(home: Scaffold(body: DecisionsAlert(service: _FakeService([], conflits: [_conflitProduit(), _conflitCompte()])))));
+      await tester.pumpAndSettle();
+      expect(find.text('2 décision(s) à prendre'), findsOneWidget);
+      expect(find.textContaining('2 conflit(s) de synchronisation'), findsOneWidget);
+
+      await _ouvrir(tester, _FakeService([], conflits: [_conflitProduit()]));
+      expect(find.text('Conflits de synchronisation'), findsOneWidget);
+      await tester.tap(find.text('Deux produits avec la même référence'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sur ce poste'), findsOneWidget);
+      expect(find.text('Dans le cloud'), findsOneWidget);
+      expect(find.text('Nom : LUSTRE LOCAL'), findsOneWidget);
+      expect(find.text('Nom : LUSTRE CLOUD'), findsOneWidget);
+      expect(find.text('Appliquer cette décision'), findsOneWidget);
+      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Appliquer cette décision')).onPressed, isNull, reason: 'aucune option conseillée : on choisit');
+    });
+
+    testWidgets('renommer : valeur proposée modifiable, confirmation, envoi avec la valeur choisie', (tester) async {
+      final svc = _FakeService([], conflits: [_conflitProduit()]);
+      await _ouvrir(tester, svc);
+      await tester.tap(find.text('Deux produits avec la même référence'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ce sont deux fiches différentes : renommer celle de ce poste'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'LUS-1-2'), findsOneWidget, reason: 'valeur proposée');
+      await tester.enterText(find.byType(TextField), 'LUS-LOCAL');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      expect(find.text('Confirmer cette décision ?'), findsOneWidget);
+      expect(find.text('Nouveau référence : LUS-LOCAL'), findsOneWidget);
+      await tester.tap(find.text('Appliquer'));
+      await tester.pumpAndSettle();
+      expect(svc.appelsConflit, [
+        ['sync:produits:150000005', 'renommer', 'LUS-LOCAL']
+      ]);
+      expect(find.text('Aucune décision à prendre'), findsOneWidget, reason: 'le conflit résolu disparaît');
+      await _viderMessages(tester);
+    });
+
+    testWidgets("compte : l'option conseillée (additionner) est présélectionnée, annuler n'envoie rien", (tester) async {
+      final svc = _FakeService([], conflits: [_conflitCompte()]);
+      await _ouvrir(tester, svc);
+      await tester.tap(find.text('Compte client de MBARGA Paul en double'));
+      await tester.pumpAndSettle();
+      expect(find.text('conseillé'), findsOneWidget);
+      await tester.ensureVisible(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      expect(find.text('Solde final : -25 000 FCFA'), findsWidgets);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(svc.appelsConflit, isEmpty);
+    });
+
+    testWidgets("refus du serveur : conflit conservé, rien n'est enregistré", (tester) async {
+      final svc = _FakeService([], conflits: [_conflitCompte()])..erreur = "Ce conflit n'existe plus";
+      await _ouvrir(tester, svc);
+      await tester.tap(find.text('Compte client de MBARGA Paul en double'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Appliquer cette décision'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Appliquer'));
+      await tester.pumpAndSettle();
+      expect(svc.appelsConflit, isEmpty);
+      expect(find.text('Compte client de MBARGA Paul en double'), findsOneWidget, reason: 'conservé');
+      await _viderMessages(tester);
+    });
+
+    testWidgets('non-administrateur : consultation seulement', (tester) async {
+      await _ouvrir(tester, _FakeService([], conflits: [_conflitCompte()]), canDecide: false);
+      await tester.tap(find.text('Compte client de MBARGA Paul en double'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Appliquer cette décision')).onPressed, isNull);
     });
   });
 }

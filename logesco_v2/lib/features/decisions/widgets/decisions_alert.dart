@@ -21,6 +21,7 @@ class DecisionsAlert extends StatefulWidget {
 class _DecisionsAlertState extends State<DecisionsAlert> {
   late final DecisionsService _service = widget.service ?? DecisionsService();
   List<DecisionCase> _cases = const [];
+  int _conflits = 0;
 
   @override
   void initState() {
@@ -29,13 +30,18 @@ class _DecisionsAlertState extends State<DecisionsAlert> {
   }
 
   Future<void> _load() async {
-    final cases = await _service.fetch();
-    if (mounted && cases != null) setState(() => _cases = cases);
+    final data = await _service.fetchAll();
+    if (mounted && data != null) {
+      setState(() {
+        _cases = data.cases;
+        _conflits = data.conflits.length;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_cases.isEmpty) return const SizedBox.shrink();
+    if (_cases.isEmpty && _conflits == 0) return const SizedBox.shrink();
     final unites = _cases.fold<int>(0, (s, c) => s + c.unitesVenduesSansSortie);
 
     return Padding(
@@ -59,7 +65,12 @@ class _DecisionsAlertState extends State<DecisionsAlert> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${_cases.length} décision(s) à prendre sur le stock', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(
+                        _conflits == 0 ? '${_cases.length} décision(s) à prendre sur le stock' : '${_cases.length + _conflits} décision(s) à prendre',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      if (_conflits > 0)
+                        Text("$_conflits conflit(s) de synchronisation bloquent l'envoi de données", style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
                       if (unites > 0)
                         Text("$unites unité(s) vendues n'ont jamais diminué le stock", style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
                     ],

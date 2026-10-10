@@ -137,22 +137,122 @@ class DecisionCase {
   int get unitesVenduesSansSortie => ventes.fold(0, (s, v) => s + v.quantite);
 }
 
+/// Une des deux fiches en conflit (celle de ce poste ou celle du cloud), résumée en quelques lignes
+class SyncConflictSide {
+  final int id;
+  final List<String> resume;
+
+  const SyncConflictSide({required this.id, required this.resume});
+
+  factory SyncConflictSide.fromJson(Map<String, dynamic> json) => SyncConflictSide(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        resume: (json['resume'] as List<dynamic>? ?? const []).map((e) => e.toString()).toList(),
+      );
+}
+
+class SyncConflictOption {
+  final String id;
+  final String label;
+  final String description;
+  final String consequence;
+  final bool recommandee;
+
+  /// Pour « renommer » : valeur proposée, modifiable par la personne
+  final String? valeurSuggeree;
+
+  const SyncConflictOption({
+    required this.id,
+    required this.label,
+    required this.description,
+    required this.consequence,
+    this.recommandee = false,
+    this.valeurSuggeree,
+  });
+
+  factory SyncConflictOption.fromJson(Map<String, dynamic> json) => SyncConflictOption(
+        id: (json['id'] ?? '').toString(),
+        label: (json['label'] ?? '').toString(),
+        description: (json['description'] ?? '').toString(),
+        consequence: (json['consequence'] ?? '').toString(),
+        recommandee: json['recommandee'] == true,
+        valeurSuggeree: json['valeurSuggeree']?.toString(),
+      );
+}
+
+/// Conflit de synchronisation : la même clé existe sur ce poste et dans le cloud, sous deux identifiants
+class SyncConflict {
+  final String key;
+  final String table;
+  final String libelle;
+  final String titre;
+  final String explication;
+  final String cleMot;
+  final String cleValeur;
+  final SyncConflictSide local;
+  final SyncConflictSide cloud;
+  final List<SyncConflictOption> options;
+
+  const SyncConflict({
+    required this.key,
+    required this.table,
+    required this.libelle,
+    required this.titre,
+    required this.explication,
+    required this.cleMot,
+    required this.cleValeur,
+    required this.local,
+    required this.cloud,
+    required this.options,
+  });
+
+  factory SyncConflict.fromJson(Map<String, dynamic> json) {
+    final cle = (json['cle'] as Map?)?.cast<String, dynamic>() ?? const {};
+    return SyncConflict(
+      key: (json['key'] ?? '').toString(),
+      table: (json['table'] ?? '').toString(),
+      libelle: (json['libelle'] ?? '').toString(),
+      titre: (json['titre'] ?? '').toString(),
+      explication: (json['explication'] ?? '').toString(),
+      cleMot: (cle['mot'] ?? '').toString(),
+      cleValeur: (cle['valeur'] ?? '').toString(),
+      local: SyncConflictSide.fromJson((json['local'] as Map).cast<String, dynamic>()),
+      cloud: SyncConflictSide.fromJson((json['cloud'] as Map).cast<String, dynamic>()),
+      options: (json['options'] as List<dynamic>? ?? const []).map((e) => SyncConflictOption.fromJson((e as Map).cast<String, dynamic>())).toList(),
+    );
+  }
+}
+
+/// Tout ce qu'il y a à décider : cas de stock + conflits de synchronisation
+class DecisionsData {
+  final List<DecisionCase> cases;
+  final List<SyncConflict> conflits;
+
+  /// 'ok', 'indisponible' (cloud injoignable : les conflits ne peuvent pas être listés) ou 'inactif'
+  final String cloud;
+
+  const DecisionsData({required this.cases, this.conflits = const [], this.cloud = 'inactif'});
+}
+
 /// Accès aux cas à décider et application d'une décision
 class DecisionsService {
   ApiClient get _api => Get.find<ApiClient>();
 
   /// null si le serveur est trop ancien pour fournir la liste (ou en cas d'erreur réseau)
-  Future<List<DecisionCase>?> fetch() async {
+  Future<DecisionsData?> fetchAll() async {
     try {
       final response = await _api.get<Map<String, dynamic>>('/decisions');
       if (!response.isSuccess || response.data == null) return null;
       final data = response.data!['data'] as Map<String, dynamic>?;
-      final cases = (data?['cases'] as List<dynamic>? ?? const []);
-      return cases.map((e) => DecisionCase.fromJson((e as Map).cast<String, dynamic>())).toList();
+      final cases = (data?['cases'] as List<dynamic>? ?? const []).map((e) => DecisionCase.fromJson((e as Map).cast<String, dynamic>())).toList();
+      final conflits = (data?['conflits'] as List<dynamic>? ?? const []).map((e) => SyncConflict.fromJson((e as Map).cast<String, dynamic>())).toList();
+      return DecisionsData(cases: cases, conflits: conflits, cloud: (data?['cloud'] ?? 'inactif').toString());
     } catch (_) {
       return null;
     }
   }
+
+  /// Cas de stock seulement
+  Future<List<DecisionCase>?> fetch() async => (await fetchAll())?.cases;
 
   /// Applique la décision. Lève une exception portant le message du serveur en cas de refus.
   Future<void> apply({required String caseKey, required String optionId, required int stockVu, int? cible}) async {
@@ -164,6 +264,18 @@ class DecisionsService {
     });
     if (!response.isSuccess) {
       throw Exception(response.message ?? 'Échec de l\'application de la décision');
+    }
+  }
+
+  /// Tranche un conflit de synchronisation. [valeur] : nouveau nom / référence / numéro pour « renommer ».
+  Future<void> applyConflict({required String caseKey, required String optionId, String? valeur}) async {
+    final response = await _api.post<Map<String, dynamic>>('/decisions/apply', {
+      'caseKey': caseKey,
+      'optionId': optionId,
+      if (valeur != null && valeur.trim().isNotEmpty) 'valeur': valeur.trim(),
+    });
+    if (!response.isSuccess) {
+      throw Exception(response.message ?? "Échec de l'application de la décision");
     }
   }
 }

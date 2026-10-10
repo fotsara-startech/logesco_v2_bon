@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../services/decisions_service.dart';
+import '../widgets/sync_conflict_card.dart';
 
 /// Centre de décisions : les cas où l'application ne peut pas trancher seule.
 ///
@@ -24,6 +25,8 @@ class DecisionCenterPage extends StatefulWidget {
 class _DecisionCenterPageState extends State<DecisionCenterPage> {
   late final DecisionsService _service = widget.service ?? DecisionsService();
   List<DecisionCase>? _cases;
+  List<SyncConflict> _conflits = const [];
+  String _cloud = 'inactif';
   bool _loading = true;
   final Set<String> _working = {};
 
@@ -54,10 +57,13 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final cases = await _service.fetch();
+    final data = await _service.fetchAll();
+    final cases = data?.cases;
     if (!mounted) return;
     setState(() {
       _cases = cases;
+      _conflits = data?.conflits ?? const [];
+      _cloud = data?.cloud ?? 'inactif';
       _loading = false;
       // option recommandée pré-sélectionnée ; sinon aucune (la personne doit choisir)
       for (final c in cases ?? const <DecisionCase>[]) {
@@ -156,6 +162,16 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     }
   }
 
+  Future<void> _envoyerConflit(SyncConflict k, String optionId, String? valeur) async {
+    try {
+      await _service.applyConflict(caseKey: k.key, optionId: optionId, valeur: valeur);
+      SnackbarHelper.success('Décision appliquée : « ${k.titre} »');
+    } catch (e) {
+      SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
+    }
+    await _load(); // le conflit a disparu (ou l'état a changé entre-temps)
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,7 +197,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     ),
                   ),
                 )
-              : _cases!.isEmpty
+              : (_cases!.isEmpty && _conflits.isEmpty)
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -214,7 +230,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     Icon(Icons.rule, color: Colors.orange.shade800),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('${cases.length} cas où l\'application ne peut pas trancher seule',
+                      child: Text('${cases.length + _conflits.length} cas où l\'application ne peut pas trancher seule',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ],
@@ -236,6 +252,33 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
         ),
         const SizedBox(height: 12),
         ...cases.map((c) => _buildCase(c, peutDecider)),
+        if (_conflits.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 8, 4, 6),
+            child: Text('Conflits de synchronisation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Text(
+              "La même fiche existe sur ce poste et dans le cloud : la synchronisation reste bloquée tant que vous n'avez pas dit "
+              "s'il s'agit de la même fiche ou de deux fiches différentes.",
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ),
+          ..._conflits.map((k) => SyncConflictCard(
+                key: ValueKey(k.key),
+                conflict: k,
+                peutDecider: peutDecider,
+                onApply: (optionId, valeur) => _envoyerConflit(k, optionId, valeur),
+              )),
+        ] else if (_cloud == 'indisponible')
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'Les conflits de synchronisation ne peuvent pas être vérifiés : le cloud est injoignable pour le moment.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ),
       ],
     );
   }
