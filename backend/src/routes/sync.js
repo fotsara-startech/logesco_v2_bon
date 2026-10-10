@@ -7,6 +7,13 @@ const express = require('express');
 const syncService = require('../services/sync-service');
 const { getSyncDetails } = require('../services/sync-detail');
 
+/** Résumé du dernier contrôle d'écart (null tant qu'aucun contrôle n'a abouti) */
+function driftSummary() {
+  const r = syncService.driftReport;
+  if (!r) return null;
+  return { verifieLe: r.verifieLe, inexpliques: r.resume.inexpliques, anciens: r.resume.anciens, connus: r.resume.connus };
+}
+
 function createSyncRouter({ authService }) {
   const router = express.Router();
   const { authenticateToken } = require('../middleware/auth');
@@ -110,11 +117,37 @@ function createSyncRouter({ authService }) {
           lastSync,
           oldestPendingAt,
           lastError: status.lastError,
+          drift: driftSummary(),
         }
       });
     } catch (e) {
       console.error('⚠️  Erreur GET /sync/status:', e.message);
       res.status(500).json({ success: false, message: 'Erreur lecture statut sync: ' + e.message });
+    }
+  });
+
+  /**
+   * GET /sync/drift
+   * Contrôle d'écart avec le cloud : lignes présentes d'un seul côté, valeurs de stock ou de solde différentes.
+   * Renvoie le dernier rapport ; ?refresh=1 relance la comparaison (quelques secondes).
+   */
+  router.get('/drift', authenticateToken(authService), async (req, res) => {
+    try {
+      const status = syncService.getStatus();
+      if (!status.cloudEnabled) {
+        return res.json({ success: true, data: { actif: false, rapport: null } });
+      }
+      let rapport = syncService.driftReport;
+      if (req.query.refresh === '1' || !rapport) {
+        rapport = await syncService.checkDrift();
+      }
+      res.json({
+        success: true,
+        data: { actif: true, rapport, erreur: syncService.lastDriftError || null },
+      });
+    } catch (e) {
+      console.error('⚠️  Erreur GET /sync/drift:', e.message);
+      res.status(500).json({ success: false, message: "Erreur du contrôle d'écart: " + e.message });
     }
   });
 
