@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { messageProduitService } = require('../utils/service-guard');
 const { validate } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { commandeApprovisionnementSchemas, idParamSchema } = require('../validation/schemas');
@@ -603,6 +604,21 @@ function createProcurementRouter(services) {
               message: 'Impossible de réceptionner une commande annulée',
               code: 'ORDER_CANCELLED'
             }
+          });
+        }
+
+        // Un produit marqué « service » n'a pas de stock : y recevoir de la marchandise ferait
+        // monter un stock que les ventes ne diminueraient jamais.
+        const servicesRecus = [];
+        for (const r of details) {
+          if (!(r.quantiteRecue > 0)) continue;
+          const d = commande.details.find((x) => x.id === r.detailId);
+          if (d && d.produit && d.produit.estService) servicesRecus.push(d.produit.nom);
+        }
+        if (servicesRecus.length > 0) {
+          return res.status(422).json({
+            success: false,
+            error: { message: messageProduitService(servicesRecus), code: 'PRODUCT_IS_SERVICE' }
           });
         }
 

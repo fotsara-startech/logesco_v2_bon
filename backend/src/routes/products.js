@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { messageProduitService, stockTotalProduit, produitsServiceAvecStock } = require('../utils/service-guard');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -278,6 +279,59 @@ function createProductRouter(models) {
    * GET /products/:id
    * Récupère un produit par son ID
    */
+  /**
+   * GET /products/service-with-stock
+   * Produits marqués « service » qui ont pourtant reçu du stock (probablement des produits
+   * physiques mal marqués) : quantités reçues, vendues sans sortie de stock, stock affiché.
+   */
+  router.get('/service-with-stock',
+    authenticateToken(models.authService),
+    async (req, res) => {
+      try {
+        const produits = await produitsServiceAvecStock(models.prisma);
+        res.json(BaseResponseDTO.success({
+          produits,
+          total: produits.length,
+          unitesVenduesSansSortie: produits.reduce((s, p) => s + p.quantiteVendue, 0)
+        }, 'Produits à vérifier'));
+      } catch (error) {
+        console.error('Erreur liste produits service avec stock:', error);
+        res.status(500).json(BaseResponseDTO.error('Erreur lors de la recherche des produits à vérifier'));
+      }
+    }
+  );
+
+  /**
+   * POST /products/:id/mark-physical
+   * Corrige un produit marqué « service » à tort : il redevient un produit physique géré en stock.
+   * (Ne modifie ni le stock ni l'historique : la régularisation des ventes passées est une
+   * décision à part.)
+   */
+  router.post('/:id/mark-physical',
+    authenticateToken(models.authService),
+    validateId,
+    async (req, res) => {
+      try {
+        const produit = await models.prisma.produit.findUnique({ where: { id: parseInt(req.params.id) } });
+        if (!produit) {
+          return res.status(404).json(BaseResponseDTO.error('Produit non trouvé'));
+        }
+        if (!produit.estService) {
+          return res.json(BaseResponseDTO.success({ id: produit.id, estService: false }, 'Ce produit est déjà un produit physique'));
+        }
+        const maj = await models.prisma.produit.update({
+          where: { id: produit.id },
+          data: { estService: false },
+          select: { id: true, nom: true, estService: true }
+        });
+        res.json(BaseResponseDTO.success(maj, 'Produit remis en produit physique'));
+      } catch (error) {
+        console.error('Erreur mark-physical:', error);
+        res.status(500).json(BaseResponseDTO.error('Erreur lors de la modification du produit'));
+      }
+    }
+  );
+
   router.get('/:id',
     validateId,
     async (req, res) => {
@@ -471,6 +525,18 @@ function createProductRouter(models) {
           return res.status(404).json(
             BaseResponseDTO.error('Produit non trouvé')
           );
+        }
+
+        // Passer un produit en « service » alors qu'il a du stock le ferait sortir de la gestion de
+        // stock : ses ventes ne le diminueraient plus jamais.
+        if (updateData.estService === true && !existingProduct.estService) {
+          const enStock = await stockTotalProduit(models.prisma, produitId);
+          if (enStock !== 0) {
+            return res.status(409).json(BaseResponseDTO.error(
+              `Ce produit a ${enStock} unité(s) en stock : il ne peut pas être marqué « service » (un service n'a pas de stock). `
+              + `Videz d'abord son stock, ou laissez-le comme produit physique.`
+            ));
+          }
         }
 
         // Vérifier l'unicité de la référence si elle est modifiée

@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { messageProduitService } = require('../utils/service-guard');
 const Joi = require('joi');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
@@ -55,6 +56,10 @@ function createInventoryRouter(models) {
           return res.status(404).json(
             BaseResponseDTO.error('Produit non trouvé')
           );
+        }
+
+        if (produit.estService) {
+          return res.status(422).json(BaseResponseDTO.error(messageProduitService(produit.nom)));
         }
 
         if (boutiqueId) {
@@ -526,6 +531,10 @@ function createInventoryRouter(models) {
           );
         }
 
+        if (produit.estService && changementQuantite !== 0) {
+          return res.status(422).json(BaseResponseDTO.error(messageProduitService(produit.nom)));
+        }
+
         // Vérifier que le stock existe
         const stockActuel = await models.prisma.stock.findUnique({
           where: { produitId },
@@ -792,6 +801,10 @@ function createInventoryRouter(models) {
           return res.status(404).json(
             BaseResponseDTO.error('Produit non trouvé')
           );
+        }
+
+        if (produit.estService && changementQuantite !== 0) {
+          return res.status(422).json(BaseResponseDTO.error(messageProduitService(produit.nom)));
         }
 
         // Pour les mouvements qui affectent le stock (achat, ajustement, retour, correction)
@@ -1146,6 +1159,14 @@ function createInventoryRouter(models) {
                 erreurs.push({
                   produitId,
                   erreur: 'Produit non trouvé'
+                });
+                continue;
+              }
+
+              if (produit.estService && changementQuantite !== 0) {
+                erreurs.push({
+                  produitId,
+                  erreur: messageProduitService(produit.nom)
                 });
                 continue;
               }
