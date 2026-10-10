@@ -61,3 +61,27 @@ test('description d\'une vente (payload camelCase accepté) et repli quand le no
   const s = await describeRecord(fakePrisma, 'stock', { produit_id: 999, quantite_disponible: 5 }, 1);
   assert.strictEqual(s, 'Produit n° 999 — quantité 5');
 });
+
+test('doublons NON fusionnés automatiquement : explication dédiée, jamais de promesse de correction automatique', () => {
+  const compte = classifyError('duplicate key value violates unique constraint "comptes_clients_client_id_key"', 'comptes_clients');
+  assert.strictEqual(compte.code, 'doublon');
+  assert.match(compte.titre, /Deux comptes pour le même client/);
+  assert.match(compte.explication, /additionnés/);
+  assert.doesNotMatch(compte.action, /automatiquement/);
+  assert.match(compte.action, /support/);
+
+  const produit = classifyError('duplicate key value violates unique constraint "produits_reference_key"', 'produits');
+  assert.match(produit.titre, /même référence/);
+  assert.match(produit.action, /même|différente/);
+
+  const vente = classifyError('duplicate key value violates unique constraint "ventes_numero_vente_key"', 'ventes');
+  assert.match(vente.titre, /Même numéro de vente/);
+  assert.doesNotMatch(vente.action, /automatiquement/);
+});
+
+test('doublons fusionnés automatiquement : villes, zones, affectations, stock', () => {
+  for (const [table, c] of [['villes', 'villes_nom_key'], ['zones', 'zones_ville_id_nom_key'], ['user_boutique_assignments', 'user_boutique_assignments_utilisateur_id_boutique_id_key'], ['stock', 'stock_produit_id_key']]) {
+    const r = classifyError(`duplicate key value violates unique constraint "${c}"`, table);
+    assert.match(r.action, /automatiquement/, table);
+  }
+});

@@ -213,6 +213,51 @@ function columnsFromConstraint(constraint, table) {
   return cols;
 }
 
+// Tables dont le doublon est fusionné automatiquement (voir sync-service : _reconcileCompositeKeyConflicts
+// et _reconcileNaturalKeyDuplicates)
+const AUTO_FUSION = new Set([
+  'stock', 'stock_boutiques', 'user_boutique_assignments', 'villes', 'zones',
+  'cash_registers', 'user_roles', 'utilisateurs', 'categories', 'movement_categories', 'boutiques',
+]);
+
+// Doublons qu'on NE fusionne volontairement PAS à l'aveugle : explication et marche à suivre dédiées
+const DOUBLON_PAR_TABLE = {
+  comptes_clients: {
+    titre: 'Deux comptes pour le même client',
+    explication: "Le compte de ce client a été créé sur deux postes. Les deux soldes doivent être additionnés, pas choisis l'un ou l'autre.",
+    action: 'Ne corrigez rien à la main : transmettez ce détail au support pour fusionner les comptes sans fausser le solde.',
+  },
+  comptes_fournisseurs: {
+    titre: 'Deux comptes pour le même fournisseur',
+    explication: "Le compte de ce fournisseur a été créé sur deux postes. Les deux soldes doivent être additionnés, pas choisis l'un ou l'autre.",
+    action: 'Ne corrigez rien à la main : transmettez ce détail au support pour fusionner les comptes sans fausser le solde.',
+  },
+  produits: {
+    titre: 'Deux produits avec la même référence',
+    explication: "Un produit portant cette référence existe déjà dans le cloud. Il peut s'agir du même produit saisi deux fois, ou de deux produits différents.",
+    action: "Vérifiez dans la liste des produits : si c'est le même, supprimez le doublon ; sinon, donnez une référence différente à l'un des deux.",
+  },
+  stock_inventories: {
+    titre: 'Deux inventaires avec le même nom',
+    explication: 'Un inventaire portant ce nom existe déjà dans le cloud.',
+    action: "Renommez l'un des deux inventaires, puis relancez la synchronisation.",
+  },
+  ventes: numeroDocument('de vente'),
+  commandes_approvisionnement: numeroDocument('de commande'),
+  ventes_proforma: numeroDocument('de proforma'),
+  historique_recus: numeroDocument('de reçu'),
+  financial_movements: numeroDocument('de mouvement financier'),
+  transferts_stock: numeroDocument('de transfert'),
+};
+
+function numeroDocument(quoi) {
+  return {
+    titre: `Même numéro ${quoi} sur deux postes`,
+    explication: `Deux postes ont généré le même numéro ${quoi} (anciens numéros sans identifiant de poste). Le cloud n'accepte qu'un seul exemplaire.`,
+    action: "Transmettez ce détail au support : le numéro doit être corrigé sur l'un des deux postes. Les nouveaux numéros portent un identifiant de poste et ne se répètent plus.",
+  };
+}
+
 /**
  * Traduit une erreur technique en explication claire.
  * @returns {{code:string, titre:string, explication:string, action:string}}
@@ -237,14 +282,17 @@ function classifyError(message, table) {
       return `${feminin ? 'la même' : 'le même'} ${mot}`;
     });
     const sur = mots.length ? ` pour ${mots.join(' et ')}` : '';
-    const auto = ['stock_boutiques', 'stock'].includes(table);
+    const conseil = DOUBLON_PAR_TABLE[table];
+    const auto = AUTO_FUSION.has(table);
     return {
       code: 'doublon',
-      titre: 'Doublon : cet élément existe déjà de l\'autre côté',
-      explication: `Une fiche existe déjà${sur} avec un autre identifiant (créée sur un autre poste, ou ici avant d'avoir reçu celle du cloud). Chaque côté attend que l'autre cède sa place.`,
+      titre: conseil && conseil.titre ? conseil.titre : "Doublon : cet élément existe déjà de l'autre côté",
+      explication: conseil && conseil.explication
+        ? conseil.explication
+        : `Une fiche existe déjà${sur} avec un autre identifiant (créée sur un autre poste, ou ici avant d'avoir reçu celle du cloud). Chaque côté attend que l'autre cède sa place.`,
       action: auto
         ? 'Corrigé automatiquement : les deux fiches sont fusionnées à la prochaine synchronisation, sans perte.'
-        : 'Les deux fiches doivent être fusionnées. Si cela persiste après plusieurs synchronisations, transmettez ce détail au support.',
+        : (conseil && conseil.action) || 'Les deux fiches doivent être fusionnées. Si cela persiste après plusieurs synchronisations, transmettez ce détail au support.',
     };
   }
 
