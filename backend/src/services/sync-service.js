@@ -9,7 +9,7 @@ const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
 
 // Fréquence du contrôle d'écart avec le cloud
-const DRIFT_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const DRIFT_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
 const PULL_TABLES = [
@@ -103,6 +103,8 @@ class SyncServiceV2 {
     this.driftReport = null;
     this.lastDriftError = null;
     this._driftEnCours = false;
+    // Lignes reçues du cloud mais laissées de côté parce qu'une écriture locale était en attente (table → ids)
+    this._protegees = new Map();
   }
 
   /**
@@ -126,6 +128,19 @@ class SyncServiceV2 {
         avecRenvoi: true,
       });
       this.lastDriftError = null;
+
+      // Rattrapage : des lignes du cloud jamais reçues ici sont récupérées, puis le rapport est refait
+      const recuperes = await this._recupererManquants(client, this.driftReport);
+      if (recuperes > 0) {
+        this.driftReport = await computeDrift({
+          prisma: this.localPrisma,
+          client,
+          tables: PULL_TABLES,
+          isConnectionError: (e) => this._isConnectionError(e),
+          avecRenvoi: true,
+        });
+        this.driftReport.recuperes = recuperes;
+      }
       const r = this.driftReport.resume;
       if (r.inexpliques > 0) {
         console.warn(`⚠️  Contrôle d'écart : ${r.inexpliques} élément(s) non expliqué(s) entre ce poste et le cloud (${r.anciens} depuis plus de ${this.driftReport.seuilAncienHeures} h)`);
@@ -1288,29 +1303,45 @@ class SyncServiceV2 {
   /**
    * Rejoue les lignes en échec, dans l'ordre des dépendances FK.
    * Appelé après le pull de toutes les tables, quand les parents sont présents.
+   *
+   * Une ligne n'est JAMAIS abandonnée. Au-delà de MAX_TENTATIVES (échec probablement structurel : parent pas
+   * encore arrivé, conflit de clé) elle n'est plus rejouée à chaque cycle mais une fois par heure. L'ancien plafond
+   * définitif laissait des lignes bloquées pendant des semaines alors que leur parent était arrivé depuis longtemps.
+   *
+   * @param {{ignorerDelai?: boolean}} [options]  ignorerDelai : rejoue aussi les lignes en pause (après un rattrapage)
    */
-  async _processPullRetryQueue() {
+  async _processPullRetryQueue({ ignorerDelai = false } = {}) {
     try {
-      // Au-delà de MAX_TENTATIVES l'échec est structurel (conflit de clé
-      // naturelle, parent réellement absent) : on cesse de le rejouer à chaque
-      // cycle mais on le conserve, visible via GET /sync/status.
       const MAX_TENTATIVES = 20;
 
-      const rows = await this.localPrisma.$queryRawUnsafe(
-        `SELECT id, table_name, record_id, payload, attempts FROM sync_pull_retry
-         WHERE attempts < ? LIMIT 5000`,
-        MAX_TENTATIVES
-      );
+      const rows = ignorerDelai
+        ? await this.localPrisma.$queryRawUnsafe(
+            `SELECT id, table_name, record_id, payload, attempts FROM sync_pull_retry LIMIT 5000`
+          )
+        : await this.localPrisma.$queryRawUnsafe(
+            `SELECT id, table_name, record_id, payload, attempts FROM sync_pull_retry
+             WHERE attempts < ? OR updated_at IS NULL OR updated_at <= datetime('now', '-1 hour') LIMIT 5000`,
+            MAX_TENTATIVES
+          );
       if (rows.length === 0) return;
 
       rows.sort((a, b) => PULL_TABLES.indexOf(a.table_name) - PULL_TABLES.indexOf(b.table_name));
 
       let repaired = 0;
+      let perimees = 0;
       const stillFailing = {};
 
       for (const entry of rows) {
         try {
-          await this._mergeRemoteRow(entry.table_name, JSON.parse(entry.payload));
+          const payload = JSON.parse(entry.payload);
+          // Entre-temps la ligne a pu arriver par le chemin normal, dans une version plus récente : ce qui est en file
+          // est périmé et ne doit surtout pas l'écraser (risque réel quand une ligne reste des heures en file).
+          if (await this._localePlusRecente(entry.table_name, payload)) {
+            await this.localPrisma.$executeRawUnsafe(`DELETE FROM sync_pull_retry WHERE id = ?`, entry.id);
+            perimees++;
+            continue;
+          }
+          await this._mergeRemoteRow(entry.table_name, payload);
           await this.localPrisma.$executeRawUnsafe(`DELETE FROM sync_pull_retry WHERE id = ?`, entry.id);
           repaired++;
         } catch (e) {
@@ -1324,6 +1355,7 @@ class SyncServiceV2 {
       }
 
       if (repaired > 0) console.log(`🔁 File de reprise: ${repaired} ligne(s) réparée(s)`);
+      if (perimees > 0) console.log(`🔁 File de reprise: ${perimees} ligne(s) périmée(s) retirée(s) (version plus récente déjà reçue)`);
       const remaining = Object.entries(stillFailing);
       if (remaining.length > 0) {
         console.warn(`⚠️  File de reprise: ${remaining.map(([t, n]) => `${t}=${n}`).join(', ')} encore en échec`);
@@ -1331,6 +1363,162 @@ class SyncServiceV2 {
     } catch (e) {
       console.warn('⚠️  Erreur traitement file de reprise:', e.message);
     }
+  }
+
+  /** La ligne locale existe déjà avec une modification au moins aussi récente que celle de `payload` */
+  async _localePlusRecente(table, payload) {
+    try {
+      const toMs = (v) => {
+        if (v === null || v === undefined) return 0;
+        if (typeof v === 'number' || typeof v === 'bigint') return Number(v);
+        const t = Date.parse(String(v).includes('T') ? String(v) : String(v).replace(' ', 'T') + 'Z');
+        return Number.isNaN(t) ? 0 : t;
+      };
+      const local = await this.localPrisma.$queryRawUnsafe(`SELECT "date_modification" AS m FROM "${table}" WHERE id = ? LIMIT 1`, Number(payload.id));
+      if (!local.length) return false;
+      const mLocal = toMs(local[0].m);
+      const mDistant = toMs(payload.date_modification);
+      return mLocal > 0 && mDistant > 0 && mLocal >= mDistant;
+    } catch (_) {
+      return false; // table sans date de modification : on rejoue comme avant
+    }
+  }
+
+  // ── Réception : application des lignes du cloud ───────────────────────────
+
+  /** Ce qui empêche d'appliquer une ligne reçue : suppression locale en cours, ou écriture locale pas encore partie */
+  async _contexteReception(table) {
+    // Ne pas ré-insérer un enregistrement supprimé localement.
+    //
+    // Le statut 'failed' doit impérativement être couvert : une suppression rejetée par Neon laisse la ligne présente
+    // côté cloud, et sans ce garde-fou le pull la réinsère en local — l'élément supprimé « revient » à l'écran. Tant
+    // que la suppression n'est pas aboutie, on ignore la ligne distante, sans limite de temps.
+    const recentDeletes = await this.localPrisma.$queryRawUnsafe(
+      `SELECT record_id FROM operation_log
+       WHERE table_name = ? AND operation_type = 'DELETE'
+       AND ( status IN ('pending', 'failed')
+          OR (status = 'synced' AND timestamp > datetime('now', '-1 hour')) )`,
+      table
+    );
+
+    // Ne pas écraser une ligne dont la modification locale n'est pas encore partie vers le cloud.
+    //
+    // Sans ce garde-fou, le pull applique la valeur (périmée) de Neon par-dessus une écriture locale toute fraîche :
+    // le stock restauré après une annulation repassait à sa valeur d'avant, jusqu'à ce que la poussée finisse par le
+    // rétablir — et parfois définitivement si c'est la valeur périmée qui remportait la course.
+    const enAttenteLocale = await this.localPrisma.$queryRawUnsafe(
+      `SELECT DISTINCT record_id FROM operation_log
+       WHERE table_name = ? AND status IN ('pending', 'failed')
+       AND operation_type <> 'DELETE' AND record_id IS NOT NULL`,
+      table
+    );
+    return {
+      deletedIds: new Set(recentDeletes.map((r) => Number(r.record_id))),
+      idsEnAttente: new Set(enAttenteLocale.map((r) => Number(r.record_id))),
+    };
+  }
+
+  /**
+   * Applique des lignes reçues du cloud à la base locale.
+   *
+   * Une ligne laissée de côté parce qu'une écriture locale est en attente est MÉMORISÉE : elle est redemandée au
+   * cloud au cycle suivant (voir _reprendreProtegees). Avant, le curseur avançait au-delà d'elle et elle n'était
+   * plus jamais reçue tant que quelqu'un ne la modifiait pas à nouveau, malgré un commentaire disant le contraire.
+   *
+   * @returns {{applied:number, deferred:number, conflits:number, protegees:number, maxSeen:string}}
+   */
+  async _appliquerLignesDistantes(table, rows, since, ctx) {
+    let maxSeen = since;
+    let applied = 0, deferred = 0, conflits = 0;
+    const protegees = [];
+
+    for (const row of rows) {
+      const brut = row.__mod_col_raw;
+      delete row.__mod_col_raw;
+      const tsIso = brut ? this._rawTimestampToIso(brut) : null;
+      if (tsIso && tsIso > maxSeen) maxSeen = tsIso;
+
+      if (ctx.deletedIds.has(Number(row.id))) continue;
+
+      // Écriture locale pas encore poussée : elle fait foi, on ne l'écrase pas, mais on se souvient de la ligne
+      if (ctx.idsEnAttente.has(Number(row.id))) { protegees.push(Number(row.id)); continue; }
+
+      try {
+        await this._mergeRemoteRow(table, row);
+        applied++;
+      } catch (insertErr) {
+        // Un conflit UNIQUE signale une divergence réelle : la ligne distante entre en collision avec une AUTRE ligne
+        // locale sur une clé naturelle. L'ignorer silencieusement fait disparaître la donnée sans la moindre trace —
+        // on la conserve et on la signale.
+        if (insertErr.message.includes('UNIQUE constraint failed')) conflits++;
+        deferred++;
+        await this._enqueuePullRetry(table, row, insertErr.message);
+      }
+    }
+
+    if (protegees.length > 0) {
+      const memo = this._protegees.get(table) || new Set();
+      for (const id of protegees) if (memo.size < 2000) memo.add(id);
+      this._protegees.set(table, memo);
+    }
+    return { applied, deferred, conflits, protegees: protegees.length, maxSeen };
+  }
+
+  /** Redemande au cloud les lignes laissées de côté (écriture locale en attente) dont l'envoi est maintenant parti */
+  async _reprendreProtegees(client, table) {
+    const memo = this._protegees.get(table);
+    if (!memo || memo.size === 0) return 0;
+    const ctx = await this._contexteReception(table);
+    const libres = [...memo].filter((id) => !ctx.idsEnAttente.has(id));
+    if (libres.length === 0) return 0;
+    const res = await client.query(`SELECT * FROM "${table}" WHERE id = ANY($1::bigint[])`, [libres]);
+    const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
+    for (const id of libres) memo.delete(id);
+    if (st.applied > 0) console.log(`  📥 ${table}: ${st.applied} ligne(s) laissée(s) de côté reprise(s) après l'envoi local`);
+    return st.applied;
+  }
+
+  /**
+   * Va chercher dans le cloud des lignes précises (par identifiant) et les applique. Sert au rattrapage des lignes
+   * que le curseur de réception n'a jamais ramenées : ligne poussée tard par un poste resté hors ligne (sa date de
+   * modification d'origine est plus ancienne que le curseur), ou sans date de modification.
+   */
+  async _recupererLignes(client, table, ids) {
+    const total = { applied: 0, deferred: 0, conflits: 0, protegees: 0 };
+    if (!ids.length) return total;
+    const ctx = await this._contexteReception(table);
+    for (let i = 0; i < ids.length; i += 500) {
+      const lot = ids.slice(i, i + 500);
+      const res = await client.query(`SELECT * FROM "${table}" WHERE id = ANY($1::bigint[])`, [lot]);
+      const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
+      total.applied += st.applied; total.deferred += st.deferred; total.conflits += st.conflits; total.protegees += st.protegees;
+    }
+    return total;
+  }
+
+  /**
+   * Rattrapage : applique les lignes que le contrôle d'écart a trouvées dans le cloud sans trace locale
+   * (« jamais reçues », cause inconnue). Les lignes déjà connues du système (file de reprise, suppression) sont exclues.
+   * @returns {Promise<number>} nombre de lignes récupérées
+   */
+  async _recupererManquants(client, rapport) {
+    let recuperes = 0;
+    for (const g of (rapport && rapport.ecarts) || []) {
+      if (g.sens !== 'a_recevoir' || g.connue || g.cause !== 'inconnue' || !Array.isArray(g.ids) || g.ids.length === 0) continue;
+      try {
+        const st = await this._recupererLignes(client, g.table, g.ids.map((i) => Number(i.id)));
+        recuperes += st.applied;
+        console.log(`🩹 Rattrapage ${g.table}: ${st.applied} ligne(s) jamais reçue(s) récupérée(s)` + (st.deferred ? `, ${st.deferred} différée(s)` : '') + (st.protegees ? `, ${st.protegees} protégée(s)` : ''));
+      } catch (e) {
+        if (this._isConnectionError(e)) throw e;
+        console.warn(`⚠️  Rattrapage ${g.table} impossible: ${e.message}`);
+      }
+    }
+    if (recuperes > 0) {
+      // Les parents viennent peut-être d'arriver : on rejoue aussi les lignes mises en pause
+      await this._processPullRetryQueue({ ignorerDelai: true });
+    }
+    return recuperes;
   }
 
   /**
@@ -1368,81 +1556,27 @@ class SyncServiceV2 {
           // ligne redevient "nouvelle" à chaque cycle, indéfiniment. Le cast
           // ::text contourne la conversion du driver et lit la valeur telle
           // qu'écrite (voir _rawTimestampToIso ci-dessous).
+          // Lignes laissées de côté au cycle précédent (écriture locale en attente) : redemandées au cloud
+          await this._reprendreProtegees(client, table);
+
           const result = await client.query(
             `SELECT *, "${modCol}"::text AS __mod_col_raw FROM "${table}" WHERE "${modCol}" > $1 ORDER BY "${modCol}" ASC LIMIT 5000`,
             [since]
           );
           if (result.rows.length === 0) continue;
 
-          // Ne pas ré-insérer un enregistrement supprimé localement.
-          //
-          // Le statut 'failed' doit impérativement être couvert : une
-          // suppression rejetée par Neon laisse la ligne présente côté cloud,
-          // et sans ce garde-fou le pull la réinsère en local — l'élément
-          // supprimé « revient » à l'écran. Tant que la suppression n'est pas
-          // aboutie, on ignore la ligne distante, sans limite de temps.
-          const recentDeletes = await this.localPrisma.$queryRawUnsafe(
-            `SELECT record_id FROM operation_log
-             WHERE table_name = ? AND operation_type = 'DELETE'
-             AND ( status IN ('pending', 'failed')
-                OR (status = 'synced' AND timestamp > datetime('now', '-1 hour')) )`,
-            table
-          );
-          const deletedIds = new Set(recentDeletes.map(r => Number(r.record_id)));
+          const ctx = await this._contexteReception(table);
+          const st = await this._appliquerLignesDistantes(table, result.rows, since, ctx);
+          pulled += st.applied;
 
-          // Ne pas écraser une ligne dont la modification locale n'est pas
-          // encore partie vers le cloud.
-          //
-          // Sans ce garde-fou, le pull applique la valeur (périmée) de Neon
-          // par-dessus une écriture locale toute fraîche : le stock restauré
-          // après une annulation repassait à sa valeur d'avant, jusqu'à ce que
-          // la poussée finisse par le rétablir — et parfois définitivement si
-          // c'est la valeur périmée qui remportait la course.
-          const enAttenteLocale = await this.localPrisma.$queryRawUnsafe(
-            `SELECT DISTINCT record_id FROM operation_log
-             WHERE table_name = ? AND status IN ('pending', 'failed')
-             AND operation_type <> 'DELETE' AND record_id IS NOT NULL`,
-            table
-          );
-          const idsEnAttente = new Set(enAttenteLocale.map(r => Number(r.record_id)));
-
-          let maxSeen = since;
-          let applied = 0, deferred = 0, conflits = 0, protegees = 0;
-
-          for (const row of result.rows) {
-            const tsIso = this._rawTimestampToIso(row.__mod_col_raw);
-            delete row.__mod_col_raw;
-            if (tsIso && tsIso > maxSeen) maxSeen = tsIso;
-
-            if (deletedIds.has(Number(row.id))) continue;
-
-            // Écriture locale pas encore poussée : elle fait foi, on ne
-            // l'écrase pas. Le curseur avance quand même (la ligne sera
-            // reprise au cycle suivant, une fois la poussée effectuée).
-            if (idsEnAttente.has(Number(row.id))) { protegees++; continue; }
-
-            try {
-              await this._mergeRemoteRow(table, row);
-              applied++; pulled++;
-            } catch (insertErr) {
-              // Un conflit UNIQUE signale une divergence réelle : la ligne
-              // distante entre en collision avec une AUTRE ligne locale sur une
-              // clé naturelle. L'ignorer silencieusement fait disparaître la
-              // donnée sans la moindre trace — on la conserve et on la signale.
-              if (insertErr.message.includes('UNIQUE constraint failed')) conflits++;
-              deferred++;
-              await this._enqueuePullRetry(table, row, insertErr.message);
-            }
-          }
-
-          if (maxSeen !== since) await this._setPullWatermark(table, maxSeen);
+          if (st.maxSeen !== since) await this._setPullWatermark(table, st.maxSeen);
 
           const details = [
-            deferred ? `${deferred} différée(s)` : null,
-            conflits ? `dont ${conflits} conflit(s) de clé` : null,
-            protegees ? `${protegees} protégée(s) (écriture locale en attente)` : null,
+            st.deferred ? `${st.deferred} différée(s)` : null,
+            st.conflits ? `dont ${st.conflits} conflit(s) de clé` : null,
+            st.protegees ? `${st.protegees} protégée(s) (écriture locale en attente)` : null,
           ].filter(Boolean).join(', ');
-          console.log(`  📥 ${table}: ${applied} appliquée(s)${details ? `, ${details}` : ''}`);
+          console.log(`  📥 ${table}: ${st.applied} appliquée(s)${details ? `, ${details}` : ''}`);
         } catch (e) {
           console.warn(`  ⚠️  ${table}: erreur pull - ${e.message}`);
           // Liaison perdue : inutile d'attendre un délai par table restante.
@@ -1972,7 +2106,7 @@ class SyncServiceV2 {
     try {
       const rows = await this.localPrisma.$queryRawUnsafe(
         `SELECT table_name, COUNT(*) AS total,
-                SUM(CASE WHEN attempts >= 20 THEN 1 ELSE 0 END) AS abandonnees,
+                SUM(CASE WHEN attempts >= 20 THEN 1 ELSE 0 END) AS abandonnees, -- en pause : rejouées 1 fois par heure
                 MAX(last_error) AS derniere_erreur
          FROM sync_pull_retry GROUP BY table_name ORDER BY total DESC`
       );
