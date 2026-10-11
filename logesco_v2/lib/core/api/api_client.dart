@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +8,7 @@ import '../config/environment_config.dart';
 import '../constants/app_constants.dart';
 import '../models/api_response.dart';
 import '../utils/exceptions.dart';
+import '../utils/friendly_error.dart';
 import '../utils/app_logger.dart';
 import '../services/backend_service.dart' if (dart.library.html) '../services/backend_service_stub.dart';
 
@@ -15,6 +17,17 @@ class ApiClient extends GetxService {
   late http.Client _client;
   String? _authToken;
   bool _isRefreshing = false;
+
+  /// Client HTTP et pause entre deux essais : remplaçables (tests)
+  final http.Client? _clientInjecte;
+  final Duration Function(int essai, ApiException erreur)? _pauseReprise;
+
+  ApiClient({http.Client? client, Duration Function(int essai, ApiException erreur)? pauseReprise})
+      : _clientInjecte = client,
+        _pauseReprise = pauseReprise;
+
+  /// Nombre de nouveaux essais d'une LECTURE (GET) quand le serveur est surchargé ou injoignable un instant
+  static const int reprisesMax = 2;
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
@@ -34,7 +47,7 @@ class ApiClient extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    _client = http.Client();
+    _client = _clientInjecte ?? http.Client();
   }
 
   @override
@@ -152,8 +165,53 @@ class ApiClient extends GetxService {
     } catch (_) {}
   }
 
-  /// Requête GET générique
+  /// Requête GET générique.
+  ///
+  /// Une lecture est sans risque à répéter : si le serveur est momentanément surchargé (429) ou injoignable (réseau
+  /// instable, serveur qui se réveille), elle est retentée jusqu'à [reprisesMax] fois avant d'afficher une erreur.
+  /// Les écritures (POST, PUT, DELETE) ne sont JAMAIS retentées automatiquement : un doublon serait pire qu'une erreur.
   Future<ApiResponse<T>> get<T>(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+    for (var essai = 0;; essai++) {
+      try {
+        return await _getUneFois<T>(endpoint, queryParameters: queryParameters);
+      } on ApiException catch (e) {
+        if (essai >= reprisesMax || !_reessayable(e)) rethrow;
+        AppLogger.debug('GET retenté', data: {'endpoint': endpoint, 'essai': essai + 1, 'statut': e.statusCode});
+        await Future<void>.delayed(_pause(essai, e));
+      }
+    }
+  }
+
+  /// Une erreur passagère qui mérite un nouvel essai : serveur surchargé, indisponible, ou réseau instable
+  bool _reessayable(ApiException e) {
+    if (e.code == backendDownCode) return false; // le backend local est arrêté : inutile d'insister
+    return e.statusCode == 429 || e.statusCode == 502 || e.statusCode == 503 || e.statusCode == 504 || e.statusCode == 0;
+  }
+
+  Duration _pause(int essai, ApiException e) {
+    final perso = _pauseReprise;
+    if (perso != null) return perso(essai, e);
+    if (e.statusCode == 429) {
+      // Délai demandé par le serveur, mais jamais plus de 6 s : au-delà, mieux vaut afficher l'explication
+      final secondes = (e.retryAfterSeconds ?? 2).clamp(1, 6);
+      return Duration(seconds: secondes);
+    }
+    return Duration(milliseconds: 1500 * (essai + 1));
+  }
+
+  /// Traduit une erreur technique (réseau, délai, format) en ApiException au message compréhensible
+  ApiException _traduireErreur(Object e, String methode, String endpoint) {
+    AppLogger.error('Erreur sur $methode $endpoint', error: e);
+    if (e is TimeoutException) {
+      return ApiException(message: FriendlyError.delai, code: _backendDownCode, statusCode: 0);
+    }
+    if (e is SocketException || e is http.ClientException || FriendlyError.explication(e.toString()) == FriendlyError.reseau) {
+      return ApiException(message: FriendlyError.reseau, code: _backendDownCode, statusCode: 0);
+    }
+    return ApiException(message: FriendlyError.message(e), code: 'UNKNOWN_ERROR', statusCode: 500);
+  }
+
+  Future<ApiResponse<T>> _getUneFois<T>(String endpoint, {Map<String, dynamic>? queryParameters}) async {
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -172,14 +230,10 @@ class ApiClient extends GetxService {
         endpoint,
         stopwatch,
       );
-    } on SocketException catch (e) {
-      AppLogger.error('Network error on GET $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
-      AppLogger.error('Unexpected error on GET $endpoint', error: e);
-      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
+      throw _traduireErreur(e, 'GET', endpoint);
     }
   }
 
@@ -200,14 +254,10 @@ class ApiClient extends GetxService {
         endpoint,
         stopwatch,
       );
-    } on SocketException catch (e) {
-      AppLogger.error('Network error on POST $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
-      AppLogger.error('Unexpected error on POST $endpoint', error: e);
-      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
+      throw _traduireErreur(e, 'POST', endpoint);
     }
   }
 
@@ -228,14 +278,10 @@ class ApiClient extends GetxService {
         endpoint,
         stopwatch,
       );
-    } on SocketException catch (e) {
-      AppLogger.error('Network error on PUT $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
-      AppLogger.error('Unexpected error on PUT $endpoint', error: e);
-      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
+      throw _traduireErreur(e, 'PUT', endpoint);
     }
   }
 
@@ -255,14 +301,10 @@ class ApiClient extends GetxService {
         endpoint,
         stopwatch,
       );
-    } on SocketException catch (e) {
-      AppLogger.error('Network error on DELETE $endpoint', error: e);
-      throw ApiException(message: 'Pas de connexion internet', code: _backendDownCode, statusCode: 0);
     } on ApiException {
       rethrow;
     } catch (e) {
-      AppLogger.error('Unexpected error on DELETE $endpoint', error: e);
-      throw ApiException(message: 'Erreur inattendue: ${e.toString()}', code: 'UNKNOWN_ERROR', statusCode: 500);
+      throw _traduireErreur(e, 'DELETE', endpoint);
     }
   }
 
@@ -285,7 +327,7 @@ class ApiClient extends GetxService {
         });
 
         throw ApiException(
-          message: 'Erreur de format de réponse',
+          message: FriendlyError.reponse,
           code: 'PARSE_ERROR',
           statusCode: response.statusCode,
         );

@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'package:get/get.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
+import 'package:logesco_v2/core/utils/friendly_error.dart';
 import '../models/stock_model.dart';
 import '../services/inventory_service.dart';
 import '../services/export_service.dart';
@@ -178,8 +179,8 @@ class InventoryGetxController extends GetxController {
       hasMoreStocks.value = false;
     } catch (e) {
       print(' Erreur lors du chargement complet: $e');
-      stocksError.value = e.toString();
-      SnackbarHelper.error('Impossible de charger les stocks: $e');
+      stocksError.value = FriendlyError.message(e);
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger les stocks'));
     } finally {
       isLoading.value = false;
     }
@@ -194,8 +195,8 @@ class InventoryGetxController extends GetxController {
       final result = await _inventoryService.getStockSummary();
       summary.value = result;
     } catch (e) {
-      summaryError.value = e.toString();
-      SnackbarHelper.error('Impossible de charger le résumé des stocks');
+      summaryError.value = FriendlyError.message(e);
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger le résumé des stocks'));
     } finally {
       isLoadingSummary.value = false;
     }
@@ -277,8 +278,8 @@ class InventoryGetxController extends GetxController {
       alertsPage.value = 1;
       hasMoreAlerts.value = false;
     } catch (e) {
-      alertsError.value = e.toString();
-      SnackbarHelper.error('Impossible de charger les alertes: $e');
+      alertsError.value = FriendlyError.message(e);
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger les alertes'));
     } finally {
       isLoadingAlerts.value = false;
     }

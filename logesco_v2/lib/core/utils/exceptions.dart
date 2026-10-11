@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'friendly_error.dart';
 
 /// Exception personnalisée pour les erreurs d'API
 class ApiException implements Exception {
@@ -7,14 +8,19 @@ class ApiException implements Exception {
   final String code;
   final int statusCode;
 
+  /// Délai d'attente conseillé par le serveur avant de réessayer (en-tête Retry-After), en secondes
+  final int? retryAfterSeconds;
+
   ApiException({
     required this.message,
     required this.code,
     required this.statusCode,
+    this.retryAfterSeconds,
   });
 
   /// Crée une ApiException à partir d'une réponse HTTP
   factory ApiException.fromResponse(http.Response response) {
+    final retryAfter = int.tryParse(response.headers['retry-after'] ?? '');
     try {
       final body = json.decode(response.body);
 
@@ -50,12 +56,15 @@ class ApiException implements Exception {
         message: message,
         code: code,
         statusCode: response.statusCode,
+        retryAfterSeconds: retryAfter ?? (body is Map<String, dynamic> ? (body['retryAfterSeconds'] as num?)?.toInt() : null),
       );
     } catch (e) {
+      // Réponse qui n'est pas du JSON (texte brut d'un proxy ou d'un limiteur de débit, page d'erreur HTML...)
       return ApiException(
-        message: 'Erreur de communication avec le serveur (${response.statusCode})',
-        code: 'COMMUNICATION_ERROR',
+        message: FriendlyError.pourStatut(response.statusCode) ?? 'Erreur de communication avec le serveur (${response.statusCode})',
+        code: response.statusCode == 429 ? 'RATE_LIMITED' : 'COMMUNICATION_ERROR',
         statusCode: response.statusCode,
+        retryAfterSeconds: retryAfter,
       );
     }
   }
