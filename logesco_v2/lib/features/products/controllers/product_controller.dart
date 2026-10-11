@@ -8,7 +8,10 @@ import '../services/api_product_service.dart';
 
 /// Contrôleur pour la gestion des produits avec GetX
 class ProductController extends GetxController {
-  final ApiProductService _productService = Get.find<ApiProductService>();
+  final ApiProductService _productService;
+
+  /// Le service est celui de l'application ; un remplaçant peut être fourni (tests)
+  ProductController({ApiProductService? productService}) : _productService = productService ?? Get.find<ApiProductService>();
 
   // Observables pour l'état de l'interface
   final RxList<Product> products = <Product>[].obs;
@@ -27,6 +30,9 @@ class ProductController extends GetxController {
   // Filtre par prix
   final Rxn<double> minPrice = Rxn<double>();
   final Rxn<double> maxPrice = Rxn<double>();
+
+  /// Filtre « prix à vérifier » : seulement les produits vendus moins cher que leur prix d'achat
+  final RxBool filtrePrixAPerte = false.obs;
 
   // Pagination (gérée automatiquement - chargement de tous les produits à la fois)
   final RxInt currentPage = 1.obs;
@@ -170,7 +176,14 @@ class ProductController extends GetxController {
     selectedCategory.value = '';
     minPrice.value = null;
     maxPrice.value = null;
+    filtrePrixAPerte.value = false;
   }
+
+  /// Produits chargés dont le prix de vente est inférieur au prix d'achat
+  List<Product> get produitsAPerte => products.where((p) => p.vendAPerte).toList();
+
+  /// Affiche ou retire le filtre « prix à vérifier »
+  void basculerFiltrePrixAPerte() => filtrePrixAPerte.value = !filtrePrixAPerte.value;
 
   /// Définit le filtre par prix
   void setPriceFilter({double? min, double? max}) {
@@ -180,8 +193,11 @@ class ProductController extends GetxController {
 
   /// Retourne les produits filtrés par prix (appliqué côté client)
   List<Product> get priceFilteredProducts {
-    if (minPrice.value == null && maxPrice.value == null) return products;
+    // Le filtre « prix à vérifier » se retire de lui-même quand plus aucun produit n'est concerné
+    final filtrerPerte = filtrePrixAPerte.value && products.any((p) => p.vendAPerte);
+    if (minPrice.value == null && maxPrice.value == null && !filtrerPerte) return products;
     return products.where((p) {
+      if (filtrerPerte && !p.vendAPerte) return false;
       if (minPrice.value != null && p.prixUnitaire < minPrice.value!) return false;
       if (maxPrice.value != null && p.prixUnitaire > maxPrice.value!) return false;
       return true;

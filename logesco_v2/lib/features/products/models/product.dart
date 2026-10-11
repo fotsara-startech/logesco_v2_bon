@@ -38,6 +38,13 @@ class Product {
     required this.dateModification,
   });
 
+  /// Prix de vente inférieur au prix d'achat : chaque vente fait perdre de l'argent, c'est presque toujours une
+  /// erreur de saisie. Un service n'a pas de prix d'achat, et un prix d'achat vide ou nul n'est pas comparable.
+  bool get vendAPerte => !estService && prixAchat != null && prixAchat! > 0 && prixUnitaire < prixAchat!;
+
+  /// Perte par unité vendue (0 si le prix de vente est cohérent)
+  double get perteUnitaire => vendAPerte ? prixAchat! - prixUnitaire : 0;
+
   /// Crée un produit à partir d'un JSON
   factory Product.fromJson(Map<String, dynamic> json) {
     // Debug: Afficher les données reçues pour les catégories

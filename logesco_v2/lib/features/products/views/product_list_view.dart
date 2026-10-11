@@ -8,6 +8,7 @@ import '../models/product.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_search_bar.dart';
 import '../widgets/product_filter_bar.dart';
+import '../widgets/product_price_alert.dart';
 import '../widgets/product_sort_bar.dart';
 import '../../decisions/widgets/decisions_alert.dart';
 import '../../../core/routes/app_routes.dart';
@@ -86,6 +87,13 @@ class ProductListView extends StatelessWidget {
 
           // Décisions à prendre sur le stock (invisible s'il n'y en a pas)
           const DecisionsAlert(),
+
+          // Produits vendus moins cher que leur prix d'achat (invisible s'il n'y en a pas)
+          Obx(() => ProductPriceAlert(
+                count: controller.produitsAPerte.length,
+                filtering: controller.filtrePrixAPerte.value,
+                onToggle: controller.basculerFiltrePrixAPerte,
+              )),
 
           // Barre de recherche
           const ProductSearchBar(),

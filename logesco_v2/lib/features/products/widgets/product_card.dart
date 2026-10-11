@@ -114,6 +114,12 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
 
+              // Prix de vente inférieur au prix d'achat : signalé sur la carte, avec accès direct à la correction
+              if (product.vendAPerte) ...[
+                const SizedBox(height: 8),
+                _buildPriceWarning(),
+              ],
+
               const SizedBox(height: 8),
 
               Row(
@@ -245,6 +251,37 @@ class ProductCard extends StatelessWidget {
         }
       },
       itemBuilder: (context) => items,
+    );
+  }
+
+  /// Alerte « vendu à perte » : le prix de vente est inférieur au prix d'achat
+  Widget _buildPriceWarning() {
+    final peutModifier = onEdit != null && Get.isRegistered<PermissionService>() && Get.find<PermissionService>().hasPermission('products', 'UPDATE');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        border: Border.all(color: Colors.red.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.trending_down, size: 18, color: Colors.red.shade700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Prix de vente inférieur au prix d'achat : perte de ${CurrencyConstants.formatAmount(product.perteUnitaire)} par unité vendue",
+              style: TextStyle(fontSize: 12, color: Colors.red.shade800, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (peutModifier)
+            TextButton(
+              onPressed: onEdit,
+              style: TextButton.styleFrom(minimumSize: const Size(0, 32), padding: const EdgeInsets.symmetric(horizontal: 8)),
+              child: const Text('Corriger'),
+            ),
+        ],
+      ),
     );
   }
 
