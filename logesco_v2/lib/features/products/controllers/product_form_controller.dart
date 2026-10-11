@@ -9,8 +9,13 @@ import '../services/category_service.dart';
 
 /// Contrôleur pour le formulaire de création/édition de produit
 class ProductFormController extends GetxController {
-  final ApiProductService _productService = Get.find<ApiProductService>();
-  final CategoryService _categoryService = Get.find<CategoryService>();
+  final ApiProductService _productService;
+  final CategoryService _categoryService;
+
+  /// Les services sont ceux de l'application ; des remplaçants peuvent être fournis (tests)
+  ProductFormController({ApiProductService? productService, CategoryService? categoryService})
+      : _productService = productService ?? Get.find<ApiProductService>(),
+        _categoryService = categoryService ?? Get.find<CategoryService>();
 
   // Contrôleurs de formulaire
   late final TextEditingController referenceController;
@@ -31,6 +36,10 @@ class ProductFormController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool estActif = true.obs;
   final RxBool estService = false.obs;
+
+  /// Le type (produit / service) a-t-il été choisi ? En création, tant que ce n'est pas fait, le reste du
+  /// formulaire reste caché. Toujours vrai en modification et en duplication (le type est connu).
+  final RxBool typeDefini = false.obs;
   final RxBool gestionPeremption = false.obs;
   final RxList<Category> categories = <Category>[].obs;
   final RxList<Category> filteredCategories = <Category>[].obs;
@@ -191,6 +200,7 @@ class ProductFormController extends GetxController {
     remiseMaxController.text = product.remiseMaxAutorisee.toString();
     estActif.value = product.estActif;
     estService.value = product.estService;
+    typeDefini.value = true;
     gestionPeremption.value = product.gestionPeremption;
 
     // Gérer la catégorie
@@ -226,6 +236,7 @@ class ProductFormController extends GetxController {
     remiseMaxController.text = product.remiseMaxAutorisee.toString();
     estActif.value = product.estActif;
     estService.value = product.estService;
+    typeDefini.value = true;
     gestionPeremption.value = product.gestionPeremption;
     currentImageUrl.value = product.imageUrl ?? '';
 
@@ -339,7 +350,8 @@ class ProductFormController extends GetxController {
 
   /// Vérifie si le formulaire est valide
   bool get isFormValid {
-    return referenceError.value.isEmpty &&
+    return typeDefini.value &&
+        referenceError.value.isEmpty &&
         nomError.value.isEmpty &&
         prixError.value.isEmpty &&
         prixAchatError.value.isEmpty &&
@@ -383,16 +395,32 @@ class ProductFormController extends GetxController {
     estActif.value = !estActif.value;
   }
 
-  /// Bascule le type service
-  void toggleEstService() {
-    estService.value = !estService.value;
-    // Si c'est un service, le seuil de stock n'est pas nécessaire
-    if (estService.value) {
+  /// Applique le type choisi (produit physique ou service).
+  ///
+  /// Un service n'a ni stock, ni prix d'achat, ni seuil minimum, ni péremption : ces champs sont vidés et cachés.
+  /// En modification, revenir au type d'origine retrouve les valeurs d'origine du produit.
+  void appliquerType(bool service) {
+    estService.value = service;
+    typeDefini.value = true;
+    if (service) {
       seuilStockController.text = '0';
-      // Un service ne peut pas avoir de gestion de péremption
+      prixAchatController.clear();
       gestionPeremption.value = false;
+      return;
+    }
+    final origine = editingProduct.value;
+    if (isEditing.value && origine != null && !origine.estService) {
+      prixAchatController.text = origine.prixAchat?.toString() ?? '';
+      seuilStockController.text = origine.seuilStockMinimum.toString();
+      gestionPeremption.value = origine.gestionPeremption;
     }
   }
+
+  /// Bascule le type service (conservé pour compatibilité)
+  void toggleEstService() => appliquerType(!estService.value);
+
+  /// Le type diffère de celui du produit enregistré (modification seulement)
+  bool get typeModifie => isEditing.value && editingProduct.value != null && editingProduct.value!.estService != estService.value;
 
   /// Bascule la gestion de péremption
   void toggleGestionPeremption() {
@@ -536,14 +564,14 @@ class ProductFormController extends GetxController {
         nom: nomController.text.trim(),
         description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
         prixUnitaire: double.parse(prixUnitaireController.text.trim()),
-        prixAchat: prixAchatController.text.trim().isEmpty ? null : double.parse(prixAchatController.text.trim()),
+        prixAchat: estService.value || prixAchatController.text.trim().isEmpty ? null : double.parse(prixAchatController.text.trim()),
         codeBarre: codeBarreController.text.trim().isEmpty ? null : codeBarreController.text.trim(),
         categorie: selectedCategory.value.isEmpty ? null : selectedCategory.value,
-        seuilStockMinimum: int.parse(seuilStockController.text.trim()),
+        seuilStockMinimum: estService.value ? 0 : int.parse(seuilStockController.text.trim()),
         remiseMaxAutorisee: double.parse(remiseMaxController.text.trim().isEmpty ? '0' : remiseMaxController.text.trim()),
         estActif: estActif.value,
         estService: estService.value,
-        gestionPeremption: gestionPeremption.value,
+        gestionPeremption: estService.value ? false : gestionPeremption.value,
       );
 
       Product savedProduct;
@@ -638,6 +666,7 @@ class ProductFormController extends GetxController {
     remiseMaxController.text = '0';
     estActif.value = true;
     estService.value = false;
+    typeDefini.value = isEditing.value;
     gestionPeremption.value = false;
     selectedCategory.value = '';
     isAutoReference.value = true;

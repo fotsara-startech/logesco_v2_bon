@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/product_form_controller.dart';
 import '../widgets/product_image_picker.dart';
+import '../widgets/product_type_selector.dart';
 import '../../../shared/constants/constants.dart';
 import '../../../core/routes/app_routes.dart';
 
@@ -32,75 +33,105 @@ class ProductFormView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Informations de base
-              _buildSectionTitle('product_form_basic_info'.tr),
-              const SizedBox(height: 16),
-
-              _buildReferenceField(controller),
-              const SizedBox(height: 16),
-
-              _buildNomField(controller),
-              const SizedBox(height: 16),
-
-              _buildDescriptionField(controller),
-              const SizedBox(height: 20),
-
-              // Informations commerciales
-              _buildSectionTitle('product_form_commercial_info'.tr),
-              const SizedBox(height: 16),
-
-              _buildPrixField(controller),
-              const SizedBox(height: 16),
-
-              _buildPrixAchatField(controller),
-              const SizedBox(height: 16),
-
-              _buildRemiseMaxField(controller),
-              const SizedBox(height: 16),
-
-              _buildCodeBarreField(controller),
-              const SizedBox(height: 16),
-
-              _buildCategorieField(controller),
-              const SizedBox(height: 20),
-
-              // Gestion du stock
-              _buildSectionTitle('product_form_stock_management'.tr),
-              const SizedBox(height: 16),
-
-              _buildSeuilStockField(controller),
-              const SizedBox(height: 16),
-
-              _buildServiceSwitch(controller),
-              const SizedBox(height: 12),
-
-              _buildPeremptionSwitch(controller),
-              const SizedBox(height: 12),
-
-              _buildStatusSwitch(controller),
+              // Type de produit : toujours en premier. Tant qu'il n'est pas choisi (création), rien d'autre n'apparaît.
+              Obx(() => ProductTypeSelector(
+                    estService: controller.typeDefini.value ? controller.estService.value : null,
+                    enEdition: controller.isEditing.value,
+                    onChoisi: controller.appliquerType,
+                  )),
               const SizedBox(height: 24),
 
-              // Image du produit (mode édition uniquement)
               Obx(() {
-                if (!controller.isEditing.value) return const SizedBox.shrink();
+                if (!controller.typeDefini.value) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_upward, color: Colors.grey.shade600, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('Choisissez le type ci-dessus pour afficher le formulaire.', style: TextStyle(color: Colors.grey.shade700))),
+                      ],
+                    ),
+                  );
+                }
+                // Un service n'a ni prix d'achat, ni seuil de stock, ni péremption : ces champs disparaissent
+                final service = controller.estService.value;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildSectionTitle('Image du produit'),
+                    // Informations de base
+                    _buildSectionTitle('product_form_basic_info'.tr),
                     const SizedBox(height: 16),
-                    ProductImagePicker(
-                      imageUrl: controller.currentImageUrl.value.isEmpty ? null : controller.currentImageUrl.value,
-                      isLoading: controller.isUploadingImage.value,
-                      onImagePicked: controller.uploadImage,
-                      onImageDeleted: controller.currentImageUrl.value.isNotEmpty ? controller.deleteImage : null,
-                    ),
+
+                    _buildReferenceField(controller),
+                    const SizedBox(height: 16),
+
+                    _buildNomField(controller),
+                    const SizedBox(height: 16),
+
+                    _buildDescriptionField(controller),
+                    const SizedBox(height: 20),
+
+                    // Informations commerciales
+                    _buildSectionTitle('product_form_commercial_info'.tr),
+                    const SizedBox(height: 16),
+
+                    _buildPrixField(controller),
+                    const SizedBox(height: 16),
+
+                    if (!service) ...[
+                      _buildPrixAchatField(controller),
+                      const SizedBox(height: 16),
+                    ],
+
+                    _buildRemiseMaxField(controller),
+                    const SizedBox(height: 16),
+
+                    _buildCodeBarreField(controller),
+                    const SizedBox(height: 16),
+
+                    _buildCategorieField(controller),
+                    const SizedBox(height: 20),
+
+                    // Gestion du stock (produit physique) / simple statut (service)
+                    _buildSectionTitle(service ? 'Statut' : 'product_form_stock_management'.tr),
+                    const SizedBox(height: 16),
+
+                    if (!service) ...[
+                      _buildSeuilStockField(controller),
+                      const SizedBox(height: 16),
+                      _buildPeremptionSwitch(controller),
+                      const SizedBox(height: 12),
+                    ],
+
+                    _buildStatusSwitch(controller),
                     const SizedBox(height: 24),
+
+                    // Image du produit (mode édition uniquement)
+                    Obx(() {
+                      if (!controller.isEditing.value) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSectionTitle('Image du produit'),
+                          const SizedBox(height: 16),
+                          ProductImagePicker(
+                            imageUrl: controller.currentImageUrl.value.isEmpty ? null : controller.currentImageUrl.value,
+                            isLoading: controller.isUploadingImage.value,
+                            onImagePicked: controller.uploadImage,
+                            onImageDeleted: controller.currentImageUrl.value.isNotEmpty ? controller.deleteImage : null,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    }),
+
+                    // Boutons d'action
+                    _buildActionButtons(controller),
                   ],
                 );
               }),
-
-              // Boutons d'action
-              _buildActionButtons(controller),
             ],
           ),
         ),
@@ -513,22 +544,6 @@ class ProductFormView extends StatelessWidget {
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
-        ));
-  }
-
-  /// Switch pour le type de service
-  Widget _buildServiceSwitch(ProductFormController controller) {
-    return Obx(() => SwitchListTile(
-          title: Text('product_form_service_title'.tr),
-          subtitle: Text(
-            controller.estService.value ? 'product_form_service_enabled'.tr : 'product_form_service_disabled'.tr,
-          ),
-          value: controller.estService.value,
-          onChanged: (_) => controller.toggleEstService(),
-          secondary: Icon(
-            controller.estService.value ? Icons.design_services : Icons.inventory,
-            color: controller.estService.value ? Colors.blue : Colors.orange,
-          ),
         ));
   }
 
