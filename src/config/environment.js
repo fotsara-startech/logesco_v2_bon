@@ -163,8 +163,11 @@ class EnvironmentConfig {
         // Mode local = backend embarqué, requêtes en boucle sur 127.0.0.1 uniquement
         // (aucune exposition Internet) : un seuil bas y coûte plus qu'il ne protège,
         // le tableau de bord + les services d'init suffisent à l'atteindre en usage normal.
-        max: isTestMode ? 999999 : (this.isLocal ? 20000 : 100), // Illimité en mode test
-        message: 'Trop de requêtes, veuillez réessayer plus tard.',
+        // Cloud : 100 requêtes par 15 min et par adresse était très en dessous d'un usage normal (un seul écran en émet
+        // des dizaines) et provoquait des « Trop de requêtes » en continu sur mobile. Réglable avec RATE_LIMIT_MAX.
+        max: isTestMode ? 999999 : (this.isLocal ? 20000 : (parseInt(process.env.RATE_LIMIT_MAX, 10) || 2000)), // Illimité en mode test
+        standardHeaders: true,
+        legacyHeaders: false,
         skip: isTestMode ? () => true : () => false // Skip complètement en mode test
       },
       helmet: {

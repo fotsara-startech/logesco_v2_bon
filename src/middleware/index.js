@@ -31,8 +31,12 @@ class MiddlewareManager {
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // 4. Rate limiting pour prévenir les abus
-    const limiter = rateLimit(config.rateLimit);
-    app.use('/api/', limiter);
+    //
+    // Derrière le proxy du cloud (Render...), sans « trust proxy » toutes les requêtes semblent venir de l'adresse du
+    // proxy : tous les utilisateurs partageaient alors UN SEUL compteur et se bloquaient mutuellement. Avec lui,
+    // l'adresse prise en compte est celle du vrai client (en-tête X-Forwarded-For du proxy).
+    if (!environment.isLocal) app.set('trust proxy', 1);
+    app.use('/api/', MiddlewareManager.createRateLimiter(config.rateLimit));
 
     // 5. Logging des requêtes
     app.use(morgan(config.morgan.format));
@@ -41,6 +45,28 @@ class MiddlewareManager {
     app.use('/health', MiddlewareManager.healthCheck);
 
     console.log('🛡️  Middlewares configurés');
+  }
+
+  /**
+   * Limiteur de débit. Le refus est une réponse JSON lisible (et non du texte brut que l'application ne sait pas
+   * lire), avec le délai d'attente conseillé.
+   * @param {Object} options  options d'express-rate-limit
+   */
+  static createRateLimiter(options) {
+    return rateLimit({
+      ...options,
+      handler: (req, res) => {
+        const reset = req.rateLimit && req.rateLimit.resetTime ? new Date(req.rateLimit.resetTime).getTime() : 0;
+        const retryAfter = reset > Date.now() ? Math.ceil((reset - Date.now()) / 1000) : 60;
+        res.set('Retry-After', String(retryAfter));
+        res.status(429).json({
+          success: false,
+          message: 'Trop de requêtes en peu de temps. Patientez quelques instants puis réessayez.',
+          code: 'RATE_LIMITED',
+          retryAfterSeconds: retryAfter
+        });
+      }
+    });
   }
 
   /**
