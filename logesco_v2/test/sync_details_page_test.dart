@@ -14,6 +14,10 @@ class _FakeSync extends GetxController implements SyncController {
   final RxBool isSyncing = false.obs;
   @override
   final RxList<SyncDetailItem> details = <SyncDetailItem>[].obs;
+  @override
+  final Rx<SyncDriftReport?> drift = Rx<SyncDriftReport?>(null);
+  @override
+  final RxBool isCheckingDrift = false.obs;
 
   @override
   Future<void> refresh() async {}
