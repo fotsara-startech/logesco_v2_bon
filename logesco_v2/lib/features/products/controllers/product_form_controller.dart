@@ -6,6 +6,7 @@ import '../models/product.dart';
 import '../models/category_model.dart';
 import '../services/api_product_service.dart';
 import '../services/category_service.dart';
+import '../../../shared/constants/currency.dart';
 
 /// Contrôleur pour le formulaire de création/édition de produit
 class ProductFormController extends GetxController {
@@ -55,6 +56,9 @@ class ProductFormController extends GetxController {
   final RxString prixAchatError = ''.obs;
   final RxString seuilError = ''.obs;
   final RxString remiseMaxError = ''.obs;
+
+  /// Avertissement (non bloquant) quand le prix de vente saisi est inférieur au prix d'achat saisi
+  final RxString avertissementPrix = ''.obs;
 
   // Gestion de la référence automatique
   final RxBool isAutoReference = true.obs;
@@ -106,6 +110,8 @@ class ProductFormController extends GetxController {
     nomController.addListener(_validateNom);
     prixUnitaireController.addListener(_validatePrix);
     prixAchatController.addListener(_validatePrixAchat);
+    prixUnitaireController.addListener(_verifierCoherencePrix);
+    prixAchatController.addListener(_verifierCoherencePrix);
     seuilStockController.addListener(_validateSeuil);
     remiseMaxController.addListener(_validateRemiseMax);
   }
@@ -296,6 +302,17 @@ class ProductFormController extends GetxController {
     }
   }
 
+  /// Prévient (sans bloquer) si le prix de vente est inférieur au prix d'achat : chaque vente ferait perdre de l'argent
+  void _verifierCoherencePrix() {
+    final vente = double.tryParse(prixUnitaireController.text.trim());
+    final achat = double.tryParse(prixAchatController.text.trim());
+    final perte = Product.perteParUnite(vente: vente, achat: achat, estService: estService.value);
+    avertissementPrix.value = perte > 0
+        ? "Attention : le prix de vente (${CurrencyConstants.formatAmount(vente!)}) est inférieur au prix d'achat (${CurrencyConstants.formatAmount(achat!)}). "
+            "Chaque vente fera perdre ${CurrencyConstants.formatAmount(perte)} par unité. Vérifiez qu'il ne s'agit pas d'une erreur de saisie."
+        : '';
+  }
+
   /// Validation du prix d'achat
   void _validatePrixAchat() {
     final prixAchatText = prixAchatController.text.trim();
@@ -402,6 +419,7 @@ class ProductFormController extends GetxController {
   void appliquerType(bool service) {
     estService.value = service;
     typeDefini.value = true;
+    _verifierCoherencePrix();
     if (service) {
       seuilStockController.text = '0';
       prixAchatController.clear();

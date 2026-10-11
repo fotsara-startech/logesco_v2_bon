@@ -76,4 +76,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('INSTALLATION'), findsOneWidget);
   });
+
+  testWidgets("avertissement orange sous le prix d'achat quand la vente est inférieure à l'achat ; il suit les corrections", (tester) async {
+    await _ouvrir(tester);
+    await tester.tap(find.byKey(const ValueKey('type-produit')));
+    await tester.pumpAndSettle();
+    // champs : 0 référence, 1 nom, 2 description, 3 prix de vente, 4 prix d'achat
+    await tester.enterText(find.byType(TextFormField).at(3), '15000');
+    await tester.enterText(find.byType(TextFormField).at(4), '17000');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('avertissement-prix')), findsOneWidget);
+    expect(find.textContaining("inférieur au prix d'achat"), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(3), '20000');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('avertissement-prix')), findsNothing, reason: 'prix corrigé');
+  });
+
+  testWidgets("aucun avertissement pour un service (pas de prix d'achat)", (tester) async {
+    await _ouvrir(tester);
+    await tester.tap(find.byKey(const ValueKey('type-produit')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(3), '15000');
+    await tester.enterText(find.byType(TextFormField).at(4), '17000');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('avertissement-prix')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('type-service')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('avertissement-prix')), findsNothing);
+  });
 }

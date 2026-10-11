@@ -82,6 +82,7 @@ class ProductFormView extends StatelessWidget {
 
                     if (!service) ...[
                       _buildPrixAchatField(controller),
+                      _buildAvertissementPrix(controller),
                       const SizedBox(height: 16),
                     ],
 
@@ -320,6 +321,34 @@ class ProductFormView extends StatelessWidget {
             FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
           ],
         ));
+  }
+
+  /// Avertissement orange (non bloquant) : prix de vente inférieur au prix d'achat
+  Widget _buildAvertissementPrix(ProductFormController controller) {
+    return Obx(() {
+      final message = controller.avertissementPrix.value;
+      if (message.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Container(
+          key: const ValueKey('avertissement-prix'),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            border: Border.all(color: Colors.orange.shade400),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange.shade800, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message, style: TextStyle(fontSize: 13, color: Colors.orange.shade900))),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   /// Champ remise maximale autorisée

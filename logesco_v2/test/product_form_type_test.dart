@@ -107,4 +107,62 @@ void main() {
     expect(c.typeModifie, isTrue);
     expect(c.estService.value, isFalse);
   });
+
+  group("avertissement : prix de vente inférieur au prix d'achat", () {
+    Future<ProductFormController> produit() async {
+      final c = _controleur();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      c.appliquerType(false);
+      c.nomController.text = 'BATTERIE';
+      return c;
+    }
+
+    test("apparaît dès que le prix de vente saisi est inférieur au prix d'achat, avec la perte par unité", () async {
+      final c = await produit();
+      c.prixUnitaireController.text = '15000';
+      c.prixAchatController.text = '17000';
+      expect(c.avertissementPrix.value, contains('inférieur au prix d\'achat'));
+      expect(c.avertissementPrix.value, contains('2'), reason: 'la perte par unité (2 000) est indiquée');
+      expect(c.avertissementPrix.value, contains('erreur de saisie'));
+    });
+
+    test("ne bloque jamais l'enregistrement : le formulaire reste valide", () async {
+      final c = await produit();
+      c.prixUnitaireController.text = '15000';
+      c.prixAchatController.text = '17000';
+      expect(c.avertissementPrix.value, isNotEmpty);
+      expect(c.isFormValid, isTrue);
+    });
+
+    test('disparaît quand le prix est corrigé, dans un sens comme dans l\'autre', () async {
+      final c = await produit();
+      c.prixUnitaireController.text = '15000';
+      c.prixAchatController.text = '17000';
+      c.prixUnitaireController.text = '20000'; // on corrige le prix de vente
+      expect(c.avertissementPrix.value, isEmpty);
+      c.prixAchatController.text = '25000'; // puis l'achat redépasse la vente
+      expect(c.avertissementPrix.value, isNotEmpty);
+      c.prixAchatController.text = '19000'; // et on corrige le prix d'achat
+      expect(c.avertissementPrix.value, isEmpty);
+    });
+
+    test("pas d'avertissement quand rien n'est comparable : prix d'achat vide, nul, ou marge nulle", () async {
+      final c = await produit();
+      c.prixUnitaireController.text = '1000';
+      expect(c.avertissementPrix.value, isEmpty, reason: "prix d'achat vide");
+      c.prixAchatController.text = '0';
+      expect(c.avertissementPrix.value, isEmpty, reason: "prix d'achat nul");
+      c.prixAchatController.text = '1000';
+      expect(c.avertissementPrix.value, isEmpty, reason: 'marge nulle : pas incohérent');
+    });
+
+    test("un service n'a pas de prix d'achat : l'avertissement disparaît avec le type", () async {
+      final c = await produit();
+      c.prixUnitaireController.text = '15000';
+      c.prixAchatController.text = '17000';
+      expect(c.avertissementPrix.value, isNotEmpty);
+      c.appliquerType(true);
+      expect(c.avertissementPrix.value, isEmpty);
+    });
+  });
 }

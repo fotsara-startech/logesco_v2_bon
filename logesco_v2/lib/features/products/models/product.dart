@@ -40,10 +40,17 @@ class Product {
 
   /// Prix de vente inférieur au prix d'achat : chaque vente fait perdre de l'argent, c'est presque toujours une
   /// erreur de saisie. Un service n'a pas de prix d'achat, et un prix d'achat vide ou nul n'est pas comparable.
-  bool get vendAPerte => !estService && prixAchat != null && prixAchat! > 0 && prixUnitaire < prixAchat!;
+  bool get vendAPerte => perteParUnite(vente: prixUnitaire, achat: prixAchat, estService: estService) > 0;
 
   /// Perte par unité vendue (0 si le prix de vente est cohérent)
-  double get perteUnitaire => vendAPerte ? prixAchat! - prixUnitaire : 0;
+  double get perteUnitaire => perteParUnite(vente: prixUnitaire, achat: prixAchat, estService: estService);
+
+  /// Perte par unité quand le prix de vente est inférieur au prix d'achat, sinon 0. Règle commune à la liste des
+  /// produits et au formulaire : un service n'a pas de prix d'achat, et un prix d'achat vide ou nul n'est pas comparable.
+  static double perteParUnite({required double? vente, required double? achat, bool estService = false}) {
+    if (estService || vente == null || achat == null || achat <= 0) return 0;
+    return vente < achat ? achat - vente : 0;
+  }
 
   /// Crée un produit à partir d'un JSON
   factory Product.fromJson(Map<String, dynamic> json) {
