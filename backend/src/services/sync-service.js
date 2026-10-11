@@ -9,7 +9,10 @@ const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
 
 // Fréquence du contrôle d'écart avec le cloud
-const DRIFT_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
+const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
+// Délais réglables par l'environnement (campagne de tests : cycles rapides) ; valeurs d'exploitation par défaut
+const SYNC_CYCLE_INTERVAL_MS = parseInt(process.env.SYNC_INTERVAL_MS, 10) || 30000;
+const DRIFT_FIRST_CHECK_DELAY_MS = parseInt(process.env.SYNC_DRIFT_FIRST_DELAY_MS, 10) || 2 * 60 * 1000;
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
 const PULL_TABLES = [
@@ -191,9 +194,9 @@ class SyncServiceV2 {
       console.log('📥 [V2] Pull delta depuis Neon...');
       await this._pullDeltaFromNeon();
     }
-    this.syncInterval = setInterval(() => this._syncCycle(), 30000);
+    this.syncInterval = setInterval(() => this._syncCycle(), SYNC_CYCLE_INTERVAL_MS);
     // Contrôle d'écart avec le cloud : peu après le démarrage (le temps du premier pull), puis périodiquement
-    this.driftTimeout = setTimeout(() => this.checkDrift(), 2 * 60 * 1000);
+    this.driftTimeout = setTimeout(() => this.checkDrift(), DRIFT_FIRST_CHECK_DELAY_MS);
     this.driftInterval = setInterval(() => this.checkDrift(), DRIFT_CHECK_INTERVAL_MS);
     console.log('✅ SyncService V2 démarré (Event Sourcing + Hybrid Mode)');
   }
