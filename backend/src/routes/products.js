@@ -19,6 +19,8 @@ const {
   sanitizeInput
 } = require('../utils/transformers');
 const { enregistrerPrixAchatEtRecalculerCump } = require('../services/cump-service');
+const installation = require('../utils/installation');
+const { prochaineReferenceProduit } = require('../utils/product-reference');
 
 // Configuration multer pour les images de produits
 const productImageUpload = multer({
@@ -121,35 +123,18 @@ function createProductRouter(models) {
   router.get('/generate-reference',
     async (req, res) => {
       try {
-        // Format: PRD + année 4 chiffres + séquence 4 chiffres → PRD20260001
-        const currentYear = new Date().getFullYear();
-        const prefix = `PRD${currentYear}`;
-
-        // Trouver la dernière référence avec ce préfixe, triée numériquement
-        const lastProduct = await models.prisma.produit.findMany({
-          where: {
-            reference: {
-              startsWith: prefix
-            }
-          },
-          orderBy: {
-            reference: 'desc'
-          },
-          take: 1
+        // Format : PRD + année + séquence 4 chiffres (+ « -P<poste> » hors poste 1) → PRD20260001, PRD20260001-P15
+        // Le suffixe de poste évite que deux postes non encore synchronisés donnent la même référence à deux produits.
+        const annee = new Date().getFullYear();
+        const existants = await models.prisma.produit.findMany({
+          where: { reference: { startsWith: `PRD${annee}` } },
+          select: { reference: true }
         });
-
-        let nextNumber = 1;
-        if (lastProduct.length > 0) {
-          const lastRef = lastProduct[0].reference;
-          const match = lastRef.match(/PRD\d{4}(\d+)$/);
-          if (match) {
-            nextNumber = parseInt(match[1]) + 1;
-          }
-        }
-
-        // Formater le numéro sur 4 chiffres
-        const formattedNumber = nextNumber.toString().padStart(4, '0');
-        const newReference = `${prefix}${formattedNumber}`;
+        const newReference = prochaineReferenceProduit({
+          annee,
+          references: existants.map(p => p.reference),
+          suffixe: installation.documentSuffix()
+        });
 
         res.json(BaseResponseDTO.success({ reference: newReference }, 'Référence générée avec succès'));
 
