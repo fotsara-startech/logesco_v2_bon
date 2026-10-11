@@ -6,6 +6,10 @@
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const installation = require('../utils/installation');
+const { computeDrift } = require('./sync-health');
+
+// Fréquence du contrôle d'écart avec le cloud
+const DRIFT_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
 const PULL_TABLES = [
@@ -96,6 +100,47 @@ class SyncServiceV2 {
     this.lastSuccessfulSyncAt = null;
     this.syncStartedAt = null;
     this._modColumnCache = {};
+    this.driftReport = null;
+    this.lastDriftError = null;
+    this._driftEnCours = false;
+  }
+
+  /**
+   * Compare ce poste et le cloud (lignes présentes d'un seul côté, valeurs de stock/soldes différentes)
+   * et garde le rapport. Voir sync-health.js. Lecture seule : ne modifie ni les données ni les envois.
+   * @returns {Promise<Object|null>} le dernier rapport (celui-ci, ou le précédent si le cloud est injoignable)
+   */
+  async checkDrift() {
+    if (!this.cloudUrl || !this.cloudPool || !this.localPrisma || !this.isCloudAvailable) return this.driftReport;
+    if (this._driftEnCours) return this.driftReport;
+    this._driftEnCours = true;
+    let client = null;
+    let perdue = false;
+    try {
+      client = await this.cloudPool.connect();
+      this.driftReport = await computeDrift({
+        prisma: this.localPrisma,
+        client,
+        tables: PULL_TABLES,
+        isConnectionError: (e) => this._isConnectionError(e),
+        avecRenvoi: true,
+      });
+      this.lastDriftError = null;
+      const r = this.driftReport.resume;
+      if (r.inexpliques > 0) {
+        console.warn(`⚠️  Contrôle d'écart : ${r.inexpliques} élément(s) non expliqué(s) entre ce poste et le cloud (${r.anciens} depuis plus de ${this.driftReport.seuilAncienHeures} h)`);
+      } else {
+        console.log('✅ Contrôle d\'écart : ce poste et le cloud concordent');
+      }
+    } catch (e) {
+      perdue = this._isConnectionError(e);
+      this.lastDriftError = e.message;
+      console.warn('⚠️  Contrôle d\'écart impossible:', e.message);
+    } finally {
+      if (client) client.release(perdue ? true : undefined);
+      this._driftEnCours = false;
+    }
+    return this.driftReport;
   }
 
   async initialize(localPrisma) {
@@ -132,6 +177,9 @@ class SyncServiceV2 {
       await this._pullDeltaFromNeon();
     }
     this.syncInterval = setInterval(() => this._syncCycle(), 30000);
+    // Contrôle d'écart avec le cloud : peu après le démarrage (le temps du premier pull), puis périodiquement
+    this.driftTimeout = setTimeout(() => this.checkDrift(), 2 * 60 * 1000);
+    this.driftInterval = setInterval(() => this.checkDrift(), DRIFT_CHECK_INTERVAL_MS);
     console.log('✅ SyncService V2 démarré (Event Sourcing + Hybrid Mode)');
   }
 
@@ -1941,8 +1989,12 @@ class SyncServiceV2 {
 
   stop() {
     if (this.syncInterval) clearInterval(this.syncInterval);
+    if (this.driftInterval) clearInterval(this.driftInterval);
+    if (this.driftTimeout) clearTimeout(this.driftTimeout);
     if (this.cloudPool) this.cloudPool.end();
   }
 }
 
-module.exports = new SyncServiceV2();
+const instance = new SyncServiceV2();
+instance.PULL_TABLES = PULL_TABLES;
+module.exports = instance;
