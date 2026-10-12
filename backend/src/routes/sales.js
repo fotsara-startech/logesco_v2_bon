@@ -1139,7 +1139,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
             });
 
             // Transactions 2+: Paiements distribués
-            const createdTransactionIds = [achatTx.id];
+            // Pas de « const » : une déclaration locale masquait la liste déclarée plus haut, qui restait vide, et les
+            // écritures de compte d'une vente à crédit n'étaient jamais envoyées au cloud
+            createdTransactionIds.push(achatTx.id);
             for (const transaction of transactionsCreees) {
               console.log(`✅ Création transaction ${transaction.type.toUpperCase()}: +${transaction.montant} FCFA`);
               
