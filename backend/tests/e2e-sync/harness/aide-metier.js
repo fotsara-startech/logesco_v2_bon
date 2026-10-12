@@ -47,7 +47,7 @@ async function avecReprise(fn, essais = 5) {
     try { return await fn(); } catch (e) {
       derniere = e;
       const m = `${e && e.message} ${e && e.code} ${(e && e.errors || []).map((x) => x.code).join(',')}`;
-      if (!/ETIMEDOUT|ECONN|terminated|TLS|socket|timeout|ENOTFOUND|EAI_AGAIN|EPIPE/i.test(m)) throw e;
+      if (!/ETIMEDOUT|ECONN|terminated|TLS|socket|timeout|ENOTFOUND|EAI_AGAIN|EPIPE|unable to open|locked|fetch failed/i.test(m)) throw e;
       await new Promise((r) => setTimeout(r, 4000 * (i + 1)));
     }
   }

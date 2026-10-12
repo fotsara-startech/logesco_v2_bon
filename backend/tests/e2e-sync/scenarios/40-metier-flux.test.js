@@ -312,7 +312,7 @@ test('flux métier sur trois postes : vente, client, caisse, approvisionnement, 
       };
       const avant = await photo();
       for (let i = 0; i < 5; i++) for (const p of POSTES) await p.synchroniser();
-      for (const p of POSTES) await p.synchroniserJusquaCalme();
+      for (const p of POSTES) await M.avecReprise(() => p.synchroniserJusquaCalme());
       const apres = await photo();
       const diffs = [];
       for (const k of Object.keys(avant)) {
