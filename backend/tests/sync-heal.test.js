@@ -222,3 +222,30 @@ test('_recupererManquants : ne récupère que « jamais reçu, cause inconnue »
   assert.strictEqual(ligne(prisma, 'produits', 200), undefined, 'une ligne déjà connue du système (file de reprise) est laissée au circuit normal');
   assert.strictEqual(ligne(prisma, 'stock_boutiques', 10).quantite_disponible, 98, 'et la ligne en pause qui l\'attendait est rejouée tout de suite');
 });
+
+test("ligne locale modifiée à l'instant mais pas encore journalisée : la réception ne la remplace pas par l'ancienne valeur du cloud", { skip }, async () => {
+  const prisma = nouvelleBase();
+  preparer(prisma);
+  const maintenant = new Date().toISOString();
+  const ilYaDeuxHeures = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+  prisma.db.exec(`
+    INSERT INTO produits VALUES (1, 'PAIEMENT FRAIS', 'R1', '${maintenant}'), (2, 'ANCIEN LOCAL', 'R2', '${ilYaDeuxHeures}');
+  `);
+  const cloud = { produits: [
+    { id: 1, nom: 'ANCIENNE VALEUR CLOUD', reference: 'R1', date_modification: '2026-01-01T00:00:00Z' },
+    { id: 2, nom: 'MISE A JOUR CLOUD', reference: 'R2', date_modification: '2026-01-01T00:00:00Z' },
+  ] };
+  const ctx = await service._contexteReception('produits');
+  const st = await silencieux(() => service._appliquerLignesDistantes('produits', cloud.produits.map((r) => ({ ...r })), '', ctx));
+
+  assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'PAIEMENT FRAIS', "la modification locale d'il y a une seconde n'est pas écrasée");
+  assert.strictEqual(ligne(prisma, 'produits', 2).nom, 'MISE A JOUR CLOUD', 'une ligne locale ancienne reçoit bien la mise à jour du cloud');
+  assert.strictEqual(st.protegees, 1);
+  assert.ok(service._protegees.get('produits').has(1), 'la ligne est mémorisée pour être redemandée plus tard');
+
+  // une fois l'envoi local journalisé puis parti, et la ligne devenue « ancienne » : elle est redemandée et appliquée
+  prisma.db.exec(`UPDATE produits SET date_modification = '${ilYaDeuxHeures}' WHERE id = 1`);
+  const neon = fauxNeon({ produits: [{ id: 1, nom: 'VALEUR CLOUD FINALE', reference: 'R1', date_modification: '2026-10-13T00:00:00Z' }] });
+  assert.strictEqual(await silencieux(() => service._reprendreProtegees(neon, 'produits')), 1);
+  assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'VALEUR CLOUD FINALE');
+});

@@ -64,6 +64,14 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
 10. **Poste démarré sans cloud** : relié ensuite, il n'envoie jamais son historique local (décision de conception à prendre).
 11. Mineurs : doublons silencieux sans clé unique (boutiques, fournisseurs, clients homonymes) ; `GET /sync/drift?refresh=1` renvoie l'ancien rapport si un contrôle est en cours ; ventes lentes (~2,5 s) quand un cloud est configuré.
 
+## 6 bis. Corrections faites depuis le rapport (13/10/2026) — locales, non poussées
+* **Défaut 5 (écritures `achat_credit`)** : corrigé (`e639905`) ET démontré : le sous-test e2e « les 4 écritures de compte … présentes dans le cloud » passe.
+* **Défaut 8 (numéros de commande)** : corrigé (`e639905`), 4 cas vérifiés.
+* **Défaut 4 (paiement perdu)** : CAUSE RACINE TROUVÉE par diagnostic (`10-b`, poste unique, solde mesuré à chaque étape) : c'est une **course entre la réception et la journalisation**. Les routes journalisent (`enqueue`) APRÈS avoir répondu (`setImmediate`) : pendant quelques instants une ligne est déjà modifiée localement sans opération en attente ; si un cycle de réception tombe dans ce créneau, il remet l'ancienne valeur du cloud par-dessus (le solde local lui-même redevenait −3000). Même mécanisme probable pour le défaut 1 (stock) et une partie du défaut 2.
+  Correctif en place (non démontré de bout en bout) : `_localeModifieeRecemment` dans `sync-service.js` — une ligne locale modifiée il y a moins de 60 s n'est pas écrasée par la réception, elle est mémorisée et redemandée au cycle suivant (test unitaire ajouté, 100 tests passent). Correctif complémentaire dans `routes/sales.js` : l'envoi du compte client relit la valeur ACTUELLE au lieu d'un instantané de la transaction.
+  **Solution durable à décider** : journaliser DANS la transaction d'écriture (ou avant la réponse) route par route, au lieu de `setImmediate` après la réponse.
+* Vérification de bout en bout du défaut 4 : relancer `scenarios/10-b-fiches-homonymes.test.js` et regarder le sous-test « la somme de tous les soldes … » (devrait passer ; la course étant intermittente, relancer 2 fois).
+
 ## 7. Incident (déjà corrigé)
 Un essai « poste sans cloud » s'est relié à la base de dev `neondb` (dotenv réinjectait l'URL). Effet : 5 lignes parasites dans la table `installations` (n° 15 à 19, 11/10/2026 04:54–04:57). **Aucune donnée métier touchée** (18 produits / 48 ventes / 10 clients inchangés). Garde-fou ajouté (`fed3a98`). Nettoyage des 5 lignes : en attente de l'accord de l'utilisateur.
 

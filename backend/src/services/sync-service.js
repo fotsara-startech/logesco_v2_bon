@@ -1446,6 +1446,12 @@ class SyncServiceV2 {
       // Écriture locale pas encore poussée : elle fait foi, on ne l'écrase pas, mais on se souvient de la ligne
       if (ctx.idsEnAttente.has(Number(row.id))) { protegees.push(Number(row.id)); continue; }
 
+      // Écriture locale TOUTE RÉCENTE dont l'envoi n'est pas encore journalisé : les routes journalisent après avoir
+      // répondu, donc pendant quelques instants la ligne est déjà modifiée mais sans opération en attente. Sans cette
+      // protection, une réception qui tombe dans ce créneau remettait l'ancienne valeur du cloud par-dessus (un
+      // paiement client enregistré juste après une vente à crédit était ainsi annulé).
+      if (await this._localeModifieeRecemment(table, Number(row.id))) { protegees.push(Number(row.id)); continue; }
+
       try {
         await this._mergeRemoteRow(table, row);
         applied++;
@@ -1465,6 +1471,24 @@ class SyncServiceV2 {
       this._protegees.set(table, memo);
     }
     return { applied, deferred, conflits, protegees: protegees.length, maxSeen };
+  }
+
+  /**
+   * La ligne locale existe et a été modifiée il y a moins de `secondes` secondes (d'après sa propre date de
+   * modification). Tables sans date exploitable : jamais « récente » (comportement inchangé).
+   */
+  async _localeModifieeRecemment(table, id, secondes = 60) {
+    const colonnes = ['date_modification', 'date_derniere_maj', 'derniere_maj'];
+    for (const col of colonnes) {
+      try {
+        const r = await this.localPrisma.$queryRawUnsafe(`SELECT "${col}" AS m FROM "${table}" WHERE id = ? LIMIT 1`, id);
+        if (!r.length || r[0].m === null || r[0].m === undefined) continue;
+        const v = r[0].m;
+        const ms = typeof v === 'number' || typeof v === 'bigint' ? Number(v) : Date.parse(String(v).includes('T') ? String(v) : String(v).replace(' ', 'T') + 'Z');
+        if (Number.isFinite(ms) && ms > 0) return Date.now() - ms < secondes * 1000 && ms <= Date.now() + 5 * 60 * 1000;
+      } catch (_) { /* colonne absente : on essaie la suivante */ }
+    }
+    return false;
   }
 
   /** Redemande au cloud les lignes laissées de côté (écriture locale en attente) dont l'envoi est maintenant parti */

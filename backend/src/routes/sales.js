@@ -1281,7 +1281,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
               // Synchroniser le compte client si mis à jour
               if (result.compteClient) {
                 try {
-                  await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compteClient);
+                  // result.compteClient est un instantané pris DANS la transaction de la vente. Cet envoi a lieu après
+                  // la réponse : un paiement enregistré entre-temps serait écrasé par ce solde périmé (la fusion des
+                  // opérations en attente donne le dernier mot au dernier arrivé). On envoie donc la valeur ACTUELLE.
+                  const compteActuel = await prisma.compteClient.findUnique({ where: { id: result.compteClient.id } });
+                  await syncSvc.enqueue('comptes_clients', 'UPDATE', compteActuel || result.compteClient);
                   console.log(`✅ [Manual Sync] Compte client synchronisé: ${result.compteClient.id}`);
                 } catch (syncError) {
                   console.error('❌ Erreur sync compte client:', syncError.message);
