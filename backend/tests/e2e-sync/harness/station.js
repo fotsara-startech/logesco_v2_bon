@@ -99,8 +99,14 @@ class Station {
       LOG_LEVEL: 'error',
       ...this.extraEnv,
     };
-    delete env.CLOUD_DB_URL;
-    if (this.cloudUrl) env.CLOUD_DB_URL = this.cloudUrl;
+    // Garde-fou : un poste de test ne se relie JAMAIS qu'à une base cloud jetable « synctest_* ».
+    if (this.cloudUrl && !/\/synctest_[a-z0-9_]+(\?|$)/.test(this.cloudUrl)) {
+      throw new Error(`${this.nom} : refus de démarrer, l'URL cloud n'est pas celle d'une base de test jetable (synctest_*)`);
+    }
+    // Poste sans cloud : on met CLOUD_DB_URL à une chaîne VIDE plutôt que de la supprimer. Le serveur charge
+    // backend/.env (dotenv), qui NE remplace PAS une variable déjà définie : la supprimer laissait le .env réinjecter
+    // l'URL de la base de développement (incident : des réservations de poste ont ainsi été créées dans neondb).
+    env.CLOUD_DB_URL = this.cloudUrl || '';
     // l'URL d'administration ne doit jamais atteindre le serveur testé
     delete env.SYNC_TEST_NEON_URL;
 
