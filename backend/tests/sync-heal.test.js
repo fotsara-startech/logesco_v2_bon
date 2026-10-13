@@ -243,9 +243,14 @@ test("ligne locale modifiée à l'instant mais pas encore journalisée : la réc
   assert.strictEqual(st.protegees, 1);
   assert.ok(service._protegees.get('produits').has(1), 'la ligne est mémorisée pour être redemandée plus tard');
 
+  // reprise tentée alors que la ligne est ENCORE récente : rien n'est appliqué, mais elle ne doit pas être oubliée
+  const neon = fauxNeon({ produits: [{ id: 1, nom: 'VALEUR CLOUD FINALE', reference: 'R1', date_modification: '2026-10-13T00:00:00Z' }] });
+  assert.strictEqual(await silencieux(() => service._reprendreProtegees(neon, 'produits')), 0);
+  assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'PAIEMENT FRAIS');
+  assert.ok(service._protegees.get('produits').has(1), 'toujours mémorisée : sinon le poste resterait en retard pour toujours');
+
   // une fois l'envoi local journalisé puis parti, et la ligne devenue « ancienne » : elle est redemandée et appliquée
   prisma.db.exec(`UPDATE produits SET date_modification = '${ilYaDeuxHeures}' WHERE id = 1`);
-  const neon = fauxNeon({ produits: [{ id: 1, nom: 'VALEUR CLOUD FINALE', reference: 'R1', date_modification: '2026-10-13T00:00:00Z' }] });
   assert.strictEqual(await silencieux(() => service._reprendreProtegees(neon, 'produits')), 1);
   assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'VALEUR CLOUD FINALE');
 });

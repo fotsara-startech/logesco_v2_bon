@@ -1276,12 +1276,34 @@ class SyncServiceV2 {
       return val;
     });
 
+    // Stock : la valeur du cloud est RELATIVE à ce que le poste a déjà envoyé. Une vente faite ici et pas encore envoyée
+    // (écart entre la quantité locale et la base de référence) est conservée au lieu d'être écrasée, y compris si la
+    // vente tombe pendant la réception. Sans base connue, l'écart est nul : la valeur du cloud est reprise telle quelle.
+    const relatif = stockDifference.TABLES_STOCK.includes(table) && updateKeys.includes('quantite_disponible') && row.id !== undefined;
+    const paramsRelatif = [];
+    const affectation = (k) => {
+      if (relatif && k === 'quantite_disponible') {
+        paramsRelatif.push(table, Number(row.id));
+        return `"${k}" = excluded."${k}" + ("${table}"."${k}" - COALESCE((SELECT "quantite" FROM "sync_stock_base" WHERE "table_name" = ? AND "record_id" = ?), "${table}"."${k}"))`;
+      }
+      return `"${k}" = excluded."${k}"`;
+    };
+
     const sql = updateKeys.length > 0
       ? `INSERT INTO "${table}" (${cols}) VALUES (${placeholders})
-         ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(k => `"${k}" = excluded."${k}"`).join(', ')}`
+         ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(affectation).join(', ')}`
       : `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO NOTHING`;
 
-    await this.localPrisma.$executeRawUnsafe(sql, ...vals);
+    try {
+      await this.localPrisma.$executeRawUnsafe(sql, ...vals, ...paramsRelatif);
+    } catch (e) {
+      // Table de base absente (ancienne installation non migrée) : reprise de la valeur du cloud telle quelle
+      if (!relatif || !/sync_stock_base/.test(e.message)) throw e;
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(k => `"${k}" = excluded."${k}"`).join(', ')}`,
+        ...vals
+      );
+    }
 
     // Le poste vient de prendre la valeur du cloud pour cette ligne de stock : c'est sa nouvelle base de référence
     if (stockDifference.TABLES_STOCK.includes(table) && row.id !== undefined && row.quantite_disponible !== undefined && row.quantite_disponible !== null) {
@@ -1508,8 +1530,10 @@ class SyncServiceV2 {
     const libres = [...memo].filter((id) => !ctx.idsEnAttente.has(id));
     if (libres.length === 0) return 0;
     const res = await client.query(`SELECT * FROM "${table}" WHERE id = ANY($1::bigint[])`, [libres]);
-    const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
+    // On retire les identifiants AVANT la réapplication : si une ligne est encore « modifiée récemment », elle est
+    // remémorisée par _appliquerLignesDistantes et sera reprise au cycle suivant (l'effacer après l'oubliait pour toujours)
     for (const id of libres) memo.delete(id);
+    const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
     if (st.applied > 0) console.log(`  📥 ${table}: ${st.applied} ligne(s) laissée(s) de côté reprise(s) après l'envoi local`);
     return st.applied;
   }
@@ -1801,6 +1825,22 @@ class SyncServiceV2 {
   async _applyToCloud(client, tableName, operation, data, options = {}) {
     if (options.operationId && operation !== 'DELETE' && stockDifference.TABLES_STOCK.includes(tableName)) {
       const ligne = this._toSnakeCase(data);
+      // La quantité de l'opération journalisée peut être PÉRIMÉE : les routes journalisent après avoir répondu, dans un
+      // ordre qui n'est pas toujours celui des ventes, et la fusion des opérations en attente garde la dernière arrivée
+      // (une vente ancienne pouvait ainsi masquer la quantité de la plus récente). L'envoi se fait donc avec la quantité
+      // ACTUELLE de la ligne locale ; la base de référence garantit qu'elle n'est jamais comptée deux fois.
+      if (ligne.id !== undefined && ligne.id !== null) {
+        try {
+          const courant = await this.localPrisma.$queryRawUnsafe(`SELECT CAST("quantite_disponible" AS TEXT) AS q FROM "${tableName}" WHERE id = ?`, Number(ligne.id));
+          const q = courant.length ? Number(courant[0].q) : NaN;
+          if (Number.isFinite(q)) {
+            ligne.quantite_disponible = q;
+            data = { ...data };
+            if ('quantiteDisponible' in data) data.quantiteDisponible = q;
+            if ('quantite_disponible' in data) data.quantite_disponible = q;
+          }
+        } catch (_) { /* on garde la quantité de l'opération */ }
+      }
       const quantite = Number(typeof ligne.quantite_disponible === 'bigint' ? Number(ligne.quantite_disponible) : ligne.quantite_disponible);
       if (ligne.id !== undefined && ligne.id !== null && Number.isFinite(quantite)) {
         const r = await stockDifference.appliquerParDifference({
@@ -1812,6 +1852,19 @@ class SyncServiceV2 {
         await stockDifference.ecrireBase(this.localPrisma, tableName, ligne.id, quantite);
         return;
       }
+    }
+    // Soldes de comptes : même risque de quantité périmée que pour le stock (une vente à crédit puis un paiement
+    // journalisés dans le désordre, le plus ancien l'emportant à la fusion). On envoie le solde ACTUEL de la ligne locale.
+    if (operation === 'UPDATE' && (tableName === 'comptes_clients' || tableName === 'comptes_fournisseurs') && data && data.id !== undefined) {
+      try {
+        const courant = await this.localPrisma.$queryRawUnsafe(`SELECT CAST("solde_actuel" AS TEXT) AS s FROM "${tableName}" WHERE id = ?`, Number(data.id));
+        const s = courant.length ? Number(courant[0].s) : NaN;
+        if (Number.isFinite(s)) {
+          data = { ...data };
+          if ('soldeActuel' in data) data.soldeActuel = s;
+          if ('solde_actuel' in data) data.solde_actuel = s;
+        }
+      } catch (_) { /* on garde le solde de l'opération */ }
     }
     return this._applyToCloudBrut(client, tableName, operation, data);
   }
@@ -2000,7 +2053,7 @@ class SyncServiceV2 {
    * NOUVEAU: logOperation - Log une opération dans le journal des événements
    * C'est LA méthode que les routes doivent appeler
    */
-  async logOperation(tableName, operation, data, userId = null) {
+  async logOperation(tableName, operation, data, userId = null, tentative = 1) {
     if (!this.cloudUrl) return; // Pas de sync en mode local-only
 
     const operationId = uuidv4();
@@ -2104,7 +2157,13 @@ class SyncServiceV2 {
         setImmediate(() => this._syncCycle());
       }
     } catch (e) {
-      console.warn('⚠️  Erreur logOperation:', e.message);
+      // Base locale occupée (une vente écrit en même temps) : l'opération n'était PAS journalisée et disparaissait
+      // pour toujours, sans trace (lignes de vente jamais envoyées). On réessaie avec une attente croissante.
+      if (tentative < 8 && /locked|busy|SQLITE_BUSY|timed out/i.test(String(e.message))) {
+        await new Promise((r) => setTimeout(r, 80 * tentative + Math.floor(Math.random() * 80)));
+        return this.logOperation(tableName, operation, data, userId, tentative + 1);
+      }
+      console.warn(`⚠️  Erreur logOperation (${tableName} id=${data && data.id}, ${tentative} tentative(s)):`, e.message);
       // Don't throw - let operations continue even if sync fails
     }
   }

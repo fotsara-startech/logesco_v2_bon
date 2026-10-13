@@ -148,6 +148,61 @@ test('réception : la valeur du cloud devient la nouvelle base du poste', { skip
   assert.strictEqual(await sd.lireBase(A, 'stock', 1), 995, 'après la réception, la base = valeur du cloud');
 });
 
+test('réception : une vente locale pas encore envoyée est conservée, la valeur du cloud est relative à la base', { skip }, async () => {
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  service.localPrisma = A; service.cloudUrl = 'postgresql://fake';
+  // A avait synchronisé 300, a vendu 15 (285, pas encore envoyé) ; pendant ce temps B a vendu 20 : le cloud est à 280
+  A.db.exec('INSERT INTO stock (id, produit_id, quantite_disponible) VALUES (1, 1, 285)');
+  await sd.ecrireBase(A, 'stock', 1, 300);
+  await service._mergeRemoteRow('stock', { id: 1, produit_id: 1, quantite_disponible: 280, quantite_reservee: 0 });
+  assert.strictEqual(Number(A.db.prepare('SELECT quantite_disponible q FROM stock WHERE id = 1').get().q), 265, '280 (cloud) − 15 (vente locale non envoyée)');
+  assert.strictEqual(await sd.lireBase(A, 'stock', 1), 280, 'la base devient la valeur du cloud');
+  // l'envoi de la vente de A ajoutera exactement −15 au cloud
+  const cloud = fauxCloud({ 1: 280 });
+  await sd.appliquerParDifference({ client: cloud, prisma: A, table: 'stock', row: ligne(1, 265), operationId: 'op-A' });
+  assert.strictEqual(cloud.etat.stock.get(1).quantite, 265);
+});
+
+test("envoi : une opération journalisée avec une quantité périmée est envoyée avec la quantité ACTUELLE de la ligne", { skip }, async () => {
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  service.localPrisma = A;
+  A.db.exec('INSERT INTO stock (id, produit_id, quantite_disponible) VALUES (1, 1, 279)'); // 3 ventes faites : 300 → 279
+  await sd.ecrireBase(A, 'stock', 1, 300);
+  const cloud = fauxCloud({ 1: 300 });
+  // la fusion des opérations en attente a gardé la quantité de la PREMIÈRE vente (293)
+  await service._applyToCloud(cloud, 'stock', 'UPDATE', { id: 1, produitId: 1, quantiteDisponible: 293 }, { operationId: 'op-1' });
+  assert.strictEqual(cloud.etat.stock.get(1).quantite, 279, '−21 et non −7');
+  assert.strictEqual(await sd.lireBase(A, 'stock', 1), 279);
+});
+
+test('envoi : le solde d\'un compte client est envoyé avec la valeur ACTUELLE de la ligne, pas celle de l\'opération journalisée', { skip }, async () => {
+  const A = nouveauPoste();
+  A.db.exec('CREATE TABLE comptes_clients (id INTEGER PRIMARY KEY, solde_actuel REAL); INSERT INTO comptes_clients VALUES (1, -1300)');
+  service.localPrisma = A;
+  const envoyes = [];
+  const brutAvant = service._applyToCloudBrut;
+  service._applyToCloudBrut = async (client, table, operation, data) => { envoyes.push(data.soldeActuel); };
+  try {
+    // opération périmée : journalisée avec le solde d'après la vente (-1800), alors qu'un paiement l'a ramené à -1300
+    await service._applyToCloud({}, 'comptes_clients', 'UPDATE', { id: 1, soldeActuel: -1800 }, { operationId: 'op-1' });
+    assert.deepStrictEqual(envoyes, [-1300]);
+  } finally { service._applyToCloudBrut = brutAvant; }
+});
+
+test("journal : une écriture refusée parce que la base est occupée est réessayée, pas perdue", { skip }, async () => {
+  const A = nouveauPoste();
+  A.db.exec(`CREATE TABLE operation_log (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT, operation_type TEXT, table_name TEXT, record_id INTEGER, data TEXT, user_id INTEGER, status TEXT, timestamp TEXT)`);
+  service.localPrisma = A; service.cloudUrl = 'postgresql://fake'; service.isCloudAvailable = false;
+  let refus = 2;
+  const exec = A.$executeRawUnsafe;
+  A.$executeRawUnsafe = async (sql, ...p) => {
+    if (/^\s*INSERT INTO operation_log/.test(sql) && refus-- > 0) throw new Error('database is locked');
+    return exec(sql, ...p);
+  };
+  await service.logOperation('details_ventes', 'INSERT', { id: 7, quantite: 2 });
+  assert.strictEqual(Number(A.db.prepare("SELECT COUNT(*) n FROM operation_log WHERE table_name = 'details_ventes' AND record_id = 7").get().n), 1, 'journalisée malgré deux refus');
+});
+
 test('chemin complet du service : sans base → valeur totale puis base établie ; avec base → différence', { skip }, async () => {
   const A = nouveauPoste(); await sd.creerBaseLocale(A);
   service.localPrisma = A;
