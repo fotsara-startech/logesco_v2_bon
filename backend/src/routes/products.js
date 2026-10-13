@@ -583,6 +583,10 @@ function createProductRouter(models) {
           }
         }
 
+        // Réactivation explicite d'un produit désactivé : seule une modification de ce type peut annuler une
+        // désactivation dans le cloud (voir actifCollant dans sync-service.js)
+        const reactivation = existingProduct.estActif === false && dataToUpdate.estActif === true;
+
         // Mettre à jour le produit avec Prisma directement
         const produitUpdated = await models.prisma.produit.update({
           where: { id: parseInt(produitId) },
@@ -610,7 +614,7 @@ function createProductRouter(models) {
           // Synchronisation cloud
           const syncService = getSyncService(req);
           if (syncService) {
-            await syncService.logOperation('produits', 'UPDATE', produitAvecCump, req.user?.id);
+            await syncService.logOperation('produits', 'UPDATE', reactivation ? { ...produitAvecCump, __reactivation: true } : produitAvecCump, req.user?.id);
           }
           return res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
         }
@@ -619,7 +623,7 @@ function createProductRouter(models) {
         // Synchronisation cloud
         const syncServiceUpd = getSyncService(req);
         if (syncServiceUpd) {
-          await syncServiceUpd.logOperation('produits', 'UPDATE', produitUpdated, req.user?.id);
+          await syncServiceUpd.logOperation('produits', 'UPDATE', reactivation ? { ...produitUpdated, __reactivation: true } : produitUpdated, req.user?.id);
         }
         res.json(BaseResponseDTO.success(produitDTO, 'Produit mis à jour avec succès'));
 

@@ -191,7 +191,18 @@ test('★7 suppression sur A pendant que B modifie : état cohérent, pas de ré
   await t.test('X1 (supprimé puis modifié ailleurs) : état identique partout', () => {
     assert.strictEqual(new Set(present(e1)).size, 1, `états divergents : ${JSON.stringify(e1)}`);
   });
-  await t.test('X1 (supprimé sur A, modifié ensuite sur B) ne ressuscite pas', { todo: 'DÉFAUT CONNU n°6 (écriture de ligne entière) : B, qui ne connaît pas encore la désactivation, modifie le prix et renvoie la ligne entière avec est_actif=1 : la désactivation de A est écrasée (le produit ressuscite partout, prix 1111)' }, () => {
+  await t.test('X1 (supprimé sur A, modifié ensuite sur B) ne ressuscite pas', () => {
     assert.deepStrictEqual(present(e1), [false, false, false], `résurrection : ${JSON.stringify(e1)}`);
+  });
+
+  await t.test('réactivation EXPLICITE par un poste informé : le produit redevient actif partout', async () => {
+    // X2 est désactivé partout et B le sait : B le réactive volontairement
+    ok(await B.api('PUT', `/products/${x2.id}`, { estActif: true }));
+    await B.synchroniserJusquaCalme({ delaiMs: 60000 });
+    await A.synchroniserJusquaCalme({ delaiMs: 60000 });
+    const apres = await convergenceRobuste({ stations: [A, B], cloudUrl: c.cloudUrl, delaiMs: 150000 });
+    assert.ok(apres.ok, decrire(apres.differences));
+    const e = await etat(x2.id);
+    assert.deepStrictEqual(present(e), [true, true, true], `réactivation non propagée : ${JSON.stringify(e)}`);
   });
 });

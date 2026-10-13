@@ -1983,6 +1983,15 @@ class SyncServiceV2 {
     });
     const values = keys.map(k => row[k]);
 
+    // Produits : une modification ordinaire ne peut PAS réactiver un produit désactivé dans le cloud. Un poste qui n'a
+    // pas encore reçu la désactivation renvoie sa ligne entière avec est_actif = vrai : sans cette règle, il annulait la
+    // désactivation faite ailleurs (le produit ressuscitait partout). Seule une réactivation explicite, marquée par la
+    // route (clé __reactivation), passe. Désactiver reste toujours possible.
+    const actifCollant = tableName === 'produits' && keys.includes('est_actif') && !row.__reactivation;
+    const affecterActif = (k, cible) => (actifCollant && k === 'est_actif'
+      ? `"${k}" = COALESCE(${cible}"${k}", TRUE) AND EXCLUDED."${k}"`
+      : `"${k}" = EXCLUDED."${k}"`);
+
     if (operation === 'INSERT') {
       const cols = keys.map(k => `"${k}"`).join(', ');
       const placeholders = keys.map((_, i) => '$' + (i + 1)).join(', ');
@@ -1997,7 +2006,7 @@ class SyncServiceV2 {
           throw queryErr;
         }
       } else {
-        const updates = updateKeys.map(k => `"${k}" = EXCLUDED."${k}"`).join(', ');
+        const updates = updateKeys.map(k => affecterActif(k, `"${tableName}".`)).join(', ');
         const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`;
         try {
           await client.query(query, values);
@@ -2030,7 +2039,9 @@ class SyncServiceV2 {
         // UPDATE pur : ne crée pas l'enregistrement s'il n'existe pas
         const nonIdKeys = keys.filter(k => k !== 'id');
         if (nonIdKeys.length === 0) return;
-        const sets = nonIdKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        const sets = nonIdKeys.map((k, i) => (actifCollant && k === 'est_actif'
+          ? `"${k}" = COALESCE("${k}", TRUE) AND $${i + 1}`
+          : `"${k}" = $${i + 1}`)).join(', ');
         const vals = nonIdKeys.map(k => row[k]);
         vals.push(row.id);
         const whereId = '$' + vals.length;
