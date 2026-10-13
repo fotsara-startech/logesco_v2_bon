@@ -47,7 +47,7 @@ for (const mode of ['manuel', 'automatique']) {
     assert.strictEqual(stockDe(C, p.id), 279);
 
     const conv = await convergenceRobuste({ stations: tous, cloudUrl: c.cloudUrl, delaiMs: 300000 });
-    await t.test('convergence des trois postes et du cloud après les ventes', { todo: 'DÉFAUT CONNU (mode automatique) : lignes details_ventes / mouvements_stock d un poste jamais arrivées au cloud ; voir le rapport' }, () => {
+    await t.test('convergence des trois postes et du cloud après les ventes', () => {
       assert.ok(conv.ok, decrire(conv.differences));
     });
     const attendu = 300 - 56;

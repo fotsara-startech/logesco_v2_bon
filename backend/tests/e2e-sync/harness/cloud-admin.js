@@ -38,11 +38,38 @@ function nouveauPool(url, extra = {}) {
   return new Pool({ connectionString: url, ssl: { rejectUnauthorized: false }, max: 2, connectionTimeoutMillis: 30000, ...extra });
 }
 
+/**
+ * Coupure réseau passagère (délai dépassé, connexion réinitialisée, DNS) : on réessaie avec une attente croissante.
+ * Sans cela, une coupure de quelques secondes faisait échouer un scénario entier, sans rapport avec la synchronisation.
+ * Les opérations passées ici sont idempotentes (lecture, TRUNCATE, DROP IF EXISTS, création tolérant « existe déjà »).
+ */
+const ERREURS_RESEAU = /ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|timeout exceeded when trying to connect|Connection terminated|connection timeout/i;
+function estErreurReseau(e) {
+  if (!e) return false;
+  const morceaux = [e.code, e.message, ...(Array.isArray(e.errors) ? e.errors.flatMap((x) => [x && x.code, x && x.message]) : [])];
+  return ERREURS_RESEAU.test(morceaux.filter(Boolean).join(' '));
+}
+async function reessayerReseau(fn, { essais = 6 } = {}) {
+  let derniere;
+  for (let i = 1; i <= essais; i++) {
+    try { return await fn(); } catch (e) {
+      derniere = e;
+      if (!estErreurReseau(e) || i === essais) throw e;
+      await new Promise((r) => setTimeout(r, 1500 * i + Math.random() * 1000));
+    }
+  }
+  throw derniere;
+}
+
 async function avecAdmin(fn) {
   // On se connecte à la base « postgres » : la copie par modèle exige que la base source n'ait AUCUNE connexion,
   // y compris la nôtre.
-  const pool = nouveauPool(urlPourBase(versDirect(urlAdmin()), 'postgres'), { max: 1 });
-  try { return await fn(pool); } finally { await pool.end(); }
+  return reessayerReseau(async () => {
+    const pool = nouveauPool(urlPourBase(versDirect(urlAdmin()), 'postgres'), { max: 1 });
+    // un pool en erreur (connexion coupée) ne doit pas faire tomber le processus de test
+    pool.on('error', () => {});
+    try { return await fn(pool); } finally { await pool.end().catch(() => {}); }
+  });
 }
 
 /**
@@ -73,6 +100,8 @@ async function creerBaseDeTest({ etiquette = 'x', nom } = {}) {
         await pool.query(`CREATE DATABASE "${nom}" TEMPLATE "${baseOrigine}"`);
         return;
       } catch (e) {
+        // « existe déjà » : un essai précédent a abouti malgré une coupure avant la réponse
+        if (e.code === '42P04') return;
         derniere = e;
         if (!/being accessed by other users|source database/i.test(e.message)) break;
         await new Promise((r) => setTimeout(r, 2000 + Math.random() * 6000));
@@ -89,15 +118,18 @@ async function creerBaseDeTest({ etiquette = 'x', nom } = {}) {
 
 /** Vide toutes les tables du schéma public (le schéma est conservé) */
 async function viderDonnees(urlBase) {
-  const pool = nouveauPool(urlBase, { max: 1 });
-  try {
-    const t = await pool.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
-    if (t.rows.length) {
-      const liste = t.rows.map((r) => `"public"."${r.tablename}"`).join(', ');
-      await pool.query(`TRUNCATE ${liste} RESTART IDENTITY CASCADE`);
-    }
-    return t.rows.length;
-  } finally { await pool.end(); }
+  return reessayerReseau(async () => {
+    const pool = nouveauPool(urlBase, { max: 1 });
+    pool.on('error', () => {});
+    try {
+      const t = await pool.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+      if (t.rows.length) {
+        const liste = t.rows.map((r) => `"public"."${r.tablename}"`).join(', ');
+        await pool.query(`TRUNCATE ${liste} RESTART IDENTITY CASCADE`);
+      }
+      return t.rows.length;
+    } finally { await pool.end().catch(() => {}); }
+  });
 }
 
 /** Supprime une base de test (refuse toute base qui n'a pas le préfixe de test) */
@@ -127,8 +159,11 @@ async function nettoyerBasesOubliees(etiquette) {
 
 /** Requête directe sur une base de test (vérifications des tests) */
 async function requete(urlBase, sql, params = []) {
-  const pool = nouveauPool(urlBase, { max: 1 });
-  try { return (await pool.query(sql, params)).rows; } finally { await pool.end(); }
+  return reessayerReseau(async () => {
+    const pool = nouveauPool(urlBase, { max: 1 });
+    pool.on('error', () => {});
+    try { return (await pool.query(sql, params)).rows; } finally { await pool.end().catch(() => {}); }
+  });
 }
 
-module.exports = { PREFIXE, creerBaseDeTest, supprimerBaseDeTest, nettoyerBasesOubliees, viderDonnees, requete, versDirect, urlPourBase, nouveauPool };
+module.exports = { PREFIXE, creerBaseDeTest, supprimerBaseDeTest, nettoyerBasesOubliees, viderDonnees, requete, reessayerReseau, estErreurReseau, versDirect, urlPourBase, nouveauPool };
