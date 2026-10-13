@@ -61,9 +61,7 @@ test("7. dérive d'horloge : un poste à l'horloge AVANCÉE ne doit pas faire «
   const maj = await B.api('PUT', `/products/${base}`, { prixUnitaire: 4321 });
   assert.ok([200, 201].includes(maj.statut), JSON.stringify(maj.corps).slice(0, 200));
 
-  await t.test("la mise à jour faite après une ligne à date future est reçue par l'autre poste (≤ 3 min)", {
-    todo: "DÉFAUT CONNU : une seule ligne poussée avec une horloge avancée fait avancer le curseur de réception dans le futur (sync-service.js:1581 `maxSeen`, 1204 `_getPullWatermark`) ; les mises à jour suivantes (datées de l'heure du cloud par le déclencheur) sont alors plus anciennes que le curseur et ne sont jamais reçues, ni par le curseur ni par le rattrapage (qui ne traite que les lignes absentes)",
-  }, async () => {
+  await t.test("la mise à jour faite après une ligne à date future est reçue par l'autre poste (≤ 3 min)", async () => {
     const recu = await aide.attendre(async () => Number(A.lire('SELECT prix_unitaire v FROM produits WHERE id = ?', base)[0].v) === 4321, { delaiMs: 180000, pauseMs: 4000 });
     assert.ok(recu.ok, `A n'a jamais reçu la mise à jour (prix local ${A.lire('SELECT prix_unitaire v FROM produits WHERE id = ?', base)[0].v}, cloud 4321) ; curseur ${curseur}`);
   });

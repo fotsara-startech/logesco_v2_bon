@@ -54,7 +54,7 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
 
 1. **Stock écrasé en valeur absolue (perte de données).** Ventes simultanées sur 3 postes (stock 300, 56 vendus) : 290 ou 280 partout au lieu de 244 ; les mouvements sont corrects (−56). Même racine : stock envoyé en valeur et non en cumul (50+10+5 donne 60). *Cause probable* : `sync-service.js` envoi `INSERT … ON CONFLICT DO UPDATE` de `stock_boutiques`.
 2. **Écriture locale parfois jamais journalisée, donc jamais envoyée (perte de données).** 1 à 4 lignes sur 70–400 (surtout `mouvements_stock`). *Probable* : `logOperation` avale « database is locked » (`sync-service.js` ~l.2040) ; `sales.js` ~l.1263 journalise en `setImmediate` après la réponse. En volume, une ligne de détail dont la vente manque reste `failed` à jamais (clé étrangère).
-3. **Curseur de réception qui saute dans le futur (synchro bloquée).** Une ligne poussée avec une horloge en avance fixe le curseur de `produits` à demain ; les mises à jour suivantes ne sont plus jamais reçues, et le rattrapage ne couvre que les lignes absentes.
+3. **[CORRIGÉ le 13 octobre — voir 6 quinquies] Curseur de réception qui saute dans le futur (synchro bloquée).** Une ligne poussée avec une horloge en avance fixe le curseur de `produits` à demain ; les mises à jour suivantes ne sont plus jamais reçues, et le rattrapage ne couvre que les lignes absentes.
 4. **Paiement client perdu après une vente à crédit.** Le solde du cloud revient à la valeur d'avant paiement. *Probable* : instantané du compte envoyé après le paiement (`routes/sales.js` ~l.1283-1285).
 5. **Écritures `achat_credit` jamais envoyées au cloud.** *Confirmé* : `routes/sales.js` l.1142 `const createdTransactionIds` masque le `let` de la l.862 ; la l.1251 renvoie un tableau vide.
 6. **Dernière écriture gagne même si plus ancienne** : un poste reconnecté en dernier avec une vieille modification écrase la plus récente (`sync-service.js` ~l.1856, sans comparaison de date). Fiche synchronisée EN ENTIER : A change la description, B le prix → un seul survit.
@@ -106,3 +106,14 @@ Causes trouvées par le diagnostic à 3 postes (`10-c`) et corrigées dans `sync
 Résultats : diagnostic 3 postes 4 fois sur 4 à 244 partout ; `10-c` automatique 244 partout ; `10-b` « somme des soldes » correcte 2 fois sur 2 (avait échoué 2 fois sur 3 avant). Les annotations « défaut connu » de ces deux sous-tests sont retirées.
 
 Reste ouvert : lignes `details_ventes` d'un poste parfois absentes du cloud (défaut n°2, écritures non journalisées) ; `10-c` manuel a échoué une fois sur « fetch failed » (incident du banc, à relancer) ; défauts 3, 6, 7, 9, 10, 11.
+
+## 6 quinquies. Défauts 7 et 3 : corrigés (13 octobre)
+
+**Défaut 7 (suppression de produit)** — deux causes :
+- le middleware de synchro prenait la réponse d'une DÉSACTIVATION (`DELETE /products/:id` sur un produit déjà utilisé renvoie le produit) pour une suppression : il envoyait un DELETE au cloud (qui effaçait produit ET stock) et annulait la mise à jour. `/products` est maintenant `softDelete` (la route journalise elle-même UPDATE ou DELETE) ;
+- une modification ordinaire d'un poste qui ignorait la désactivation renvoyait `est_actif = vrai` et ressuscitait le produit. Dans le cloud, `est_actif` d'un produit ne repasse à vrai que par une réactivation explicite (marque `__reactivation` posée par `PUT /products/:id`). Reste le défaut 6 : la ligne entière est envoyée (le prix modifié par un poste peut être perdu face à l'autre).
+Scénario 7 complet : 6 réussis, 0 échec.
+
+**Défaut 3 (curseur dans le futur)** : le curseur de réception d'une table devenait la date de modification la plus récente reçue ; une ligne poussée par un poste à l'horloge avancée le fixait dans le futur et plus aucune mise à jour n'arrivait. Le curseur est maintenant plafonné à l'heure du cloud (`LOCALTIMESTAMP`), et un curseur déjà dans le futur (poste touché avant le correctif) repart de zéro pour cette table. Scénario « dérive d'horloge » : la mise à jour normale arrive, curseur dans le présent. 4 tests unitaires (3 échouent sans la correction).
+
+Reste ouvert : 6 (ligne entière, dernière écriture gagnante), 9 (lignes de base du premier poste), 10 (conception), 11 (mineurs) ; agents métier et réseau à valider.

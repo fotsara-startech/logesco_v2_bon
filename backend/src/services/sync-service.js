@@ -1201,6 +1201,12 @@ class SyncServiceV2 {
     return `${datePart}T${hms}.${micros}Z`;
   }
 
+  /** ISO + 1 minute (tolérance entre deux lectures de l'heure du cloud) */
+  _plusUneMinute(iso) {
+    const t = Date.parse(iso);
+    return Number.isFinite(t) ? new Date(t + 60000).toISOString() : iso;
+  }
+
   /**
    * Curseur de réception : date de modification la plus récente déjà reçue
    * pour cette table. '1970…' = jamais reçu → pull complet (réparateur).
@@ -1599,12 +1605,30 @@ class SyncServiceV2 {
       await this._applyRemoteDeletions(client);
 
       // ── Étape 2 : Pull delta des données nouvelles/modifiées ──────────────
+      // Heure du cloud, dans le même référentiel que les colonnes de date de modification (timestamp sans fuseau).
+      // Plafond du curseur : une ligne poussée par un poste à l'horloge AVANCÉE porte une date de modification dans le
+      // futur ; sans plafond, le curseur sautait à cette date et toutes les mises à jour suivantes (datées de l'heure
+      // du cloud) restaient en dessous : plus rien n'était reçu tant que cette date n'était pas passée.
+      let plafond = null;
+      try {
+        const h = await client.query('SELECT LOCALTIMESTAMP::text AS maintenant');
+        plafond = this._rawTimestampToIso(h.rows[0] && h.rows[0].maintenant);
+      } catch (_) { /* pas de plafond ce cycle : comportement habituel */ }
+
       for (const table of PULL_TABLES) {
         try {
           const modCol = await this._resolveModificationColumn(client, table);
           if (!modCol) continue;
 
-          const since = await this._getPullWatermark(table);
+          let since = await this._getPullWatermark(table);
+          // Curseur DÉJÀ dans le futur (poste touché avant ce correctif) : on repart de zéro pour cette table. Le pull
+          // complet est sans risque (les lignes sont appliquées avec les mêmes protections) et rattrape tout ce qui a
+          // été manqué pendant le blocage.
+          if (plafond && since > this._plusUneMinute(plafond)) {
+            console.warn(`⚠️  Curseur de ${table} dans le futur (${since}, heure du cloud ${plafond}) : réception reprise depuis le début`);
+            since = '1970-01-01T00:00:00.000Z';
+            await this._setPullWatermark(table, since);
+          }
 
           // "${modCol}"::text : le pilote pg réinterprète un timestamp SANS
           // fuseau (colonne "date_modification") selon le fuseau LOCAL du
@@ -1629,7 +1653,8 @@ class SyncServiceV2 {
           const st = await this._appliquerLignesDistantes(table, result.rows, since, ctx);
           pulled += st.applied;
 
-          if (st.maxSeen !== since) await this._setPullWatermark(table, st.maxSeen);
+          const nouveauCurseur = plafond && st.maxSeen > plafond ? plafond : st.maxSeen;
+          if (nouveauCurseur !== since) await this._setPullWatermark(table, nouveauCurseur);
 
           const details = [
             st.deferred ? `${st.deferred} différée(s)` : null,

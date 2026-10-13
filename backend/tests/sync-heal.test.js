@@ -254,3 +254,118 @@ test("ligne locale modifiée à l'instant mais pas encore journalisée : la réc
   assert.strictEqual(await silencieux(() => service._reprendreProtegees(neon, 'produits')), 1);
   assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'VALEUR CLOUD FINALE');
 });
+
+// ── Défaut 3 : curseur de réception et horloge avancée ────────────────────────
+
+/** Faux cloud pour _pullDeltaFromNeon : une table « produits », une heure réglable, filtre « date > curseur » */
+function fauxCloudHorloge({ heure, lignes }) {
+  const etat = { heure, lignes };
+  const iso = (raw) => service._rawTimestampToIso(raw);
+  const client = {
+    query: async (sql, params = []) => {
+      if (/LOCALTIMESTAMP/.test(sql)) return { rows: [{ maintenant: etat.heure }] };
+      if (/FROM "produits" WHERE "date_modification" >/.test(sql)) {
+        const rows = etat.lignes
+          .filter((r) => iso(r.date_modification) > params[0])
+          .sort((a, b) => iso(a.date_modification).localeCompare(iso(b.date_modification)))
+          .map((r) => ({ ...r, __mod_col_raw: r.date_modification }));
+        return { rows };
+      }
+      return { rows: [] };
+    },
+    release() {},
+  };
+  return { etat, pool: { connect: async () => client } };
+}
+
+async function pullAvecDoubles(prisma, cloud) {
+  const sauvegarde = {};
+  const doubles = {
+    _applyRemoteDeletions: async () => {},
+    _processPullRetryQueue: async () => {},
+    _reconcileNaturalKeyDuplicates: async () => {},
+    _reconcileCompositeKeyConflicts: async () => {},
+    _reprendreProtegees: async () => 0,
+    _resolveModificationColumn: async (c, table) => (table === 'produits' ? 'date_modification' : null),
+    _contexteReception: async () => ({ deletedIds: new Set(), idsEnAttente: new Set() }),
+  };
+  for (const [nom, fn] of Object.entries(doubles)) { sauvegarde[nom] = service[nom]; service[nom] = fn; }
+  const poolAvant = service.cloudPool;
+  service.cloudPool = cloud.pool;
+  try { await silencieux(() => service._pullDeltaFromNeon()); }
+  finally {
+    for (const [nom, fn] of Object.entries(sauvegarde)) service[nom] = fn;
+    service.cloudPool = poolAvant;
+  }
+}
+
+const curseurDe = (prisma, table = 'produits') => {
+  const r = prisma.db.prepare('SELECT last_modified_at c FROM sync_pull_state WHERE table_name = ?').get(table);
+  return r ? r.c : undefined;
+};
+
+function baseAvecCurseurs() {
+  const prisma = nouvelleBase();
+  prisma.db.exec(`CREATE TABLE sync_pull_state (table_name TEXT PRIMARY KEY, last_modified_at TEXT, last_pulled_at TEXT)`);
+  preparer(prisma);
+  return prisma;
+}
+
+test('curseur : une ligne datée du FUTUR est reçue mais le curseur ne dépasse jamais l\'heure du cloud', { skip }, async () => {
+  const prisma = baseAvecCurseurs();
+  const cloud = fauxCloudHorloge({
+    heure: '2026-10-13 12:00:00.123456',
+    lignes: [{ id: 1, nom: 'FUTUR', reference: 'R1', date_modification: '2026-10-14 12:00:00.000000' }], // horloge d'un poste avancée d'un jour
+  });
+  await pullAvecDoubles(prisma, cloud);
+  assert.strictEqual(ligne(prisma, 'produits', 1).nom, 'FUTUR', 'la ligne est bien reçue');
+  assert.strictEqual(curseurDe(prisma), '2026-10-13T12:00:00.123456Z', 'curseur plafonné à l\'heure du cloud (et non à demain)');
+});
+
+test('curseur : une mise à jour NORMALE faite après une ligne à date future est reçue (le défaut : elle ne l\'était jamais)', { skip }, async () => {
+  const prisma = baseAvecCurseurs();
+  const cloud = fauxCloudHorloge({
+    heure: '2026-10-13 12:00:00.000000',
+    lignes: [{ id: 1, nom: 'FUTUR', reference: 'R1', date_modification: '2026-10-14 12:00:00.000000' }],
+  });
+  await pullAvecDoubles(prisma, cloud);
+
+  // 10 secondes plus tard, un autre poste modifie un produit : daté de l'heure du cloud, donc APRÈS le curseur
+  cloud.etat.heure = '2026-10-13 12:00:10.000000';
+  cloud.etat.lignes.push({ id: 2, nom: 'MAJ NORMALE', reference: 'R2', date_modification: '2026-10-13 12:00:05.000000' });
+  await pullAvecDoubles(prisma, cloud);
+  assert.strictEqual(ligne(prisma, 'produits', 2).nom, 'MAJ NORMALE', 'la mise à jour normale arrive');
+  assert.ok(curseurDe(prisma) <= '2026-10-13T12:00:10.000000Z', `curseur toujours dans le présent : ${curseurDe(prisma)}`);
+});
+
+test('curseur : un curseur DÉJÀ dans le futur (poste touché avant le correctif) repart de zéro et rattrape tout', { skip }, async () => {
+  const prisma = baseAvecCurseurs();
+  prisma.db.exec(`INSERT INTO sync_pull_state (table_name, last_modified_at) VALUES ('produits', '2026-10-20T00:00:00.000000Z')`);
+  const cloud = fauxCloudHorloge({
+    heure: '2026-10-13 12:00:00.000000',
+    lignes: [
+      { id: 3, nom: 'MANQUEE', reference: 'R3', date_modification: '2026-10-13 11:00:00.000000' }, // ratée pendant le blocage
+      { id: 4, nom: 'MANQUEE 2', reference: 'R4', date_modification: '2026-10-12 08:00:00.000000' },
+    ],
+  });
+  await pullAvecDoubles(prisma, cloud);
+  assert.strictEqual(ligne(prisma, 'produits', 3).nom, 'MANQUEE');
+  assert.strictEqual(ligne(prisma, 'produits', 4).nom, 'MANQUEE 2');
+  assert.ok(curseurDe(prisma) <= '2026-10-13T12:00:00.000000Z', `curseur ramené dans le présent : ${curseurDe(prisma)}`);
+});
+
+test('curseur : un curseur normal (passé) n\'est pas touché, et avance jusqu\'à la dernière ligne reçue', { skip }, async () => {
+  const prisma = baseAvecCurseurs();
+  prisma.db.exec(`INSERT INTO sync_pull_state (table_name, last_modified_at) VALUES ('produits', '2026-10-13T11:00:00.000000Z')`);
+  const cloud = fauxCloudHorloge({
+    heure: '2026-10-13 12:00:00.000000',
+    lignes: [
+      { id: 5, nom: 'ANCIENNE', reference: 'R5', date_modification: '2026-10-13 10:00:00.000000' }, // avant le curseur : non redemandée
+      { id: 6, nom: 'RECENTE', reference: 'R6', date_modification: '2026-10-13 11:30:00.000000' },
+    ],
+  });
+  await pullAvecDoubles(prisma, cloud);
+  assert.strictEqual(ligne(prisma, 'produits', 5), undefined, 'ligne antérieure au curseur : pas de pull complet inutile');
+  assert.strictEqual(ligne(prisma, 'produits', 6).nom, 'RECENTE');
+  assert.strictEqual(curseurDe(prisma), '2026-10-13T11:30:00.000000Z');
+});
