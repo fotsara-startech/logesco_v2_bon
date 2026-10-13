@@ -219,6 +219,49 @@ test("envoi : le registre du cloud est créé au besoin (cloud injoignable au d�
   assert.strictEqual(cloud.etat.stock.get(1).quantite, 90);
 });
 
+test("stock modifié en local mais jamais journalisé (arrêt avant l'écriture différée) : retrouvé grâce à la base de référence", { skip }, async () => {
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  A.db.exec(`CREATE TABLE operation_log (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT, operation_type TEXT, table_name TEXT, record_id INTEGER, data TEXT, user_id INTEGER, status TEXT, timestamp TEXT)`);
+  service.localPrisma = A; service.cloudUrl = 'postgresql://fake'; service.isCloudAvailable = false;
+  // ligne 1 : +5 jamais journalisé ; ligne 2 : modifiée mais une opération est déjà en attente ; ligne 3 : inchangée
+  A.db.exec(`INSERT INTO stock (id, produit_id, quantite_disponible) VALUES (1, 1, 65), (2, 2, 40), (3, 3, 10)`);
+  await sd.ecrireBase(A, 'stock', 1, 60);
+  await sd.ecrireBase(A, 'stock', 2, 50);
+  await sd.ecrireBase(A, 'stock', 3, 10);
+  A.db.exec(`INSERT INTO operation_log (operation_id, operation_type, table_name, record_id, data, status) VALUES ('deja', 'UPDATE', 'stock', 2, '{}', 'pending')`);
+
+  const n = await service._rattraperStockNonJournalise();
+  assert.strictEqual(n, 1, 'une seule ligne rattrapée');
+  const ops = A.db.prepare("SELECT record_id r, operation_type o, status s FROM operation_log WHERE table_name = 'stock' ORDER BY id").all();
+  assert.deepStrictEqual(ops.map((o) => [Number(o.r), o.o, o.s]), [[2, 'UPDATE', 'pending'], [1, 'UPDATE', 'pending']], 'ligne 1 journalisée, ligne 2 non doublée, ligne 3 ignorée');
+
+  // un second passage ne recrée rien (l'opération est maintenant en attente)
+  assert.strictEqual(await service._rattraperStockNonJournalise(), 0);
+  // et une opération déjà envoyée (synced) ne compte pas comme « en attente » : un nouvel écart est retrouvé
+  A.db.exec("UPDATE operation_log SET status = 'synced' WHERE record_id = 1");
+  assert.strictEqual(await service._rattraperStockNonJournalise(), 1);
+});
+
+test("historique créé par CE poste mais jamais journalisé : retrouvé (bloc d'identifiants du poste), le reste est ignoré", { skip }, async () => {
+  const installation = require('../src/utils/installation');
+  const avant = installation.getInstallationId();
+  installation.setInstallationId(2); // bloc 20 000 000 … 29 999 999
+  try {
+    const A = nouveauPoste();
+    A.db.exec(`CREATE TABLE operation_log (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT, operation_type TEXT, table_name TEXT, record_id INTEGER, data TEXT, user_id INTEGER, status TEXT, timestamp TEXT);
+      CREATE TABLE mouvements_stock (id INTEGER PRIMARY KEY, produit_id INTEGER, changement_quantite INTEGER);`);
+    service.localPrisma = A; service.cloudUrl = 'postgresql://fake'; service.isCloudAvailable = false;
+    A.db.exec(`INSERT INTO mouvements_stock VALUES (20000001, 1, 5), (20000002, 1, 3), (20000003, 1, 7), (10000009, 1, 9), (4, 1, 1)`);
+    // 20000002 : déjà journalisé (envoyé) ; 10000009 : reçu d'un autre poste (autre bloc) ; 4 : donnée d'avant la synchro
+    A.db.exec(`INSERT INTO operation_log (operation_id, operation_type, table_name, record_id, data, status) VALUES ('o1', 'INSERT', 'mouvements_stock', 20000002, '{}', 'synced')`);
+
+    assert.strictEqual(await service._rattraperHistoriqueNonJournalise(), 2, 'les deux lignes de notre bloc sans journal');
+    const ops = A.db.prepare("SELECT record_id r, operation_type o, status s FROM operation_log WHERE table_name = 'mouvements_stock' AND operation_id <> 'o1' ORDER BY record_id").all();
+    assert.deepStrictEqual(ops.map((o) => [Number(o.r), o.o, o.s]), [[20000001, 'INSERT', 'pending'], [20000003, 'INSERT', 'pending']]);
+    assert.strictEqual(await service._rattraperHistoriqueNonJournalise(), 0, 'rien à refaire au passage suivant');
+  } finally { installation.setInstallationId(avant); }
+});
+
 test('chemin complet du service : sans base → valeur totale puis base établie ; avec base → différence', { skip }, async () => {
   const A = nouveauPoste(); await sd.creerBaseLocale(A);
   service.localPrisma = A;

@@ -17,6 +17,9 @@ const SYNC_CYCLE_INTERVAL_MS = parseInt(process.env.SYNC_INTERVAL_MS, 10) || 300
 const DRIFT_FIRST_CHECK_DELAY_MS = parseInt(process.env.SYNC_DRIFT_FIRST_DELAY_MS, 10) || 2 * 60 * 1000;
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
+/** Tables d'historique : une ligne n'est jamais modifiée après sa création (voir _rattraperHistoriqueNonJournalise) */
+const TABLES_HISTORIQUE = ['mouvements_stock', 'details_ventes', 'transactions_comptes', 'cash_movements', 'historique_prix_achat'];
+
 const PULL_TABLES = [
   'user_roles', 'utilisateurs', 'boutiques', 'user_boutique_assignments',
   'categories', 'produits', 'historique_prix_achat', 'stock', 'stock_boutiques',
@@ -375,8 +378,95 @@ class SyncServiceV2 {
    * NOUVEAU: Replay des opérations non-synchronisées
    * C'est le cœur du Event Sourcing
    */
+  /**
+   * Stock modifié en local mais jamais journalisé (le poste s'est arrêté entre la réponse HTTP et l'écriture différée
+   * dans le journal : les routes journalisent APRÈS avoir répondu). Grâce à la base de référence, c'est détectable :
+   * (quantité locale − base) est exactement ce qui n'a pas encore été envoyé. Écart non nul et aucune opération en
+   * attente pour la ligne => écriture perdue : on la journalise maintenant.
+   *
+   * Sans risque de doublon : si l'écriture différée arrive après coup, logOperation fusionne dans l'opération en attente.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperStockNonJournalise() {
+    let total = 0;
+    for (const table of stockDifference.TABLES_STOCK) {
+      let lignes;
+      try {
+        lignes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT s.id AS id FROM "${table}" s
+             JOIN "sync_stock_base" b ON b."table_name" = ? AND b."record_id" = s.id
+            WHERE s."quantite_disponible" <> b."quantite"
+              AND NOT EXISTS (SELECT 1 FROM operation_log o
+                               WHERE o.table_name = ? AND o.record_id = s.id AND o.status IN ('pending', 'failed'))`,
+          table, table
+        );
+      } catch (_) {
+        continue; // table de base ou table de stock absente : rien à rattraper
+      }
+      for (const l of lignes) {
+        const id = Number(typeof l.id === 'bigint' ? Number(l.id) : l.id);
+        const lignesStock = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignesStock.length) continue;
+        await this.logOperation(table, 'UPDATE', lignesStock[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Stock : ${total} modification(s) locale(s) non journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
+  /**
+   * Lignes d'HISTORIQUE créées par CE poste mais jamais journalisées (mouvement de stock, ligne de vente, écriture de
+   * compte...). Même cause que le stock : arrêt du poste entre la réponse HTTP et l'écriture différée dans le journal.
+   *
+   * Détection sûre : le journal n'est jamais purgé, et les identifiants d'un poste viennent de SON bloc réservé
+   * (les lignes reçues d'un autre poste ont des identifiants d'un autre bloc). Une ligne de notre bloc sans aucune
+   * entrée de journal n'a donc jamais été envoyée. Seules les tables d'historique (jamais modifiées après création) sont
+   * traitées : renvoyer une ligne identique au cloud est sans effet, alors qu'une table modifiable pourrait écraser une
+   * version plus récente.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperHistoriqueNonJournalise() {
+    const idPoste = installation.getInstallationId();
+    if (!idPoste) return 0;
+    const debut = installation.blockStartFor(idPoste);
+    const fin = debut + installation.ID_BLOCK_SIZE;
+    let total = 0;
+    for (const table of TABLES_HISTORIQUE) {
+      let manquantes;
+      try {
+        manquantes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT t.id AS id FROM "${table}" t
+            WHERE t.id >= ? AND t.id < ?
+              AND NOT EXISTS (SELECT 1 FROM operation_log o WHERE o.table_name = ? AND o.record_id = t.id)
+            ORDER BY t.id LIMIT 500`,
+          debut, fin, table
+        );
+      } catch (_) {
+        continue; // table absente sur ce poste
+      }
+      for (const m of manquantes) {
+        const id = Number(typeof m.id === 'bigint' ? Number(m.id) : m.id);
+        const lignes = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignes.length) continue;
+        await this.logOperation(table, 'INSERT', lignes[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Historique : ${total} ligne(s) locale(s) jamais journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
   async _replayPendingOperations() {
     try {
+      // Avant d'envoyer : récupérer les écritures locales que le journal n'a jamais reçues (stock, historique)
+      try {
+        await this._rattraperStockNonJournalise();
+        await this._rattraperHistoriqueNonJournalise();
+      } catch (e) {
+        console.warn('⚠️  Rattrapage des écritures non journalisées:', e.message);
+      }
+
       // Avant d'envoyer : une fiche déjà présente sur Neon sous un autre identifiant est
       // alignée tout de suite, au lieu d'être refusée puis réparée plus tard.
       try {
