@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
 const stockDifference = require('./stock-difference');
+const syncGraine = require('./sync-graine');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -1775,6 +1776,31 @@ class SyncServiceV2 {
     }
   }
 
+  /**
+   * Données de base du premier poste (rôle, boutique, caisse...) : envoyées une fois si le cloud n'en a aucune
+   * (voir sync-graine.js). Sans effet sur un cloud qui contient déjà des données.
+   */
+  async _envoyerGraineSiCloudNeuf() {
+    if (!this.cloudPool) return;
+    let client;
+    try {
+      // Vérification locale d'abord : une fois la graine traitée, aucune connexion au cloud n'est ouverte pour ça
+      if (!(await syncGraine.resteAFaire(this.localPrisma))) return;
+      client = await this.cloudPool.connect();
+      await syncGraine.pousserGraineSiCloudVide({
+        prisma: this.localPrisma,
+        client,
+        enqueue: (table, operation, data) => this.logOperation(table, operation, data),
+        log: (m) => console.log(m),
+      });
+    } catch (e) {
+      if (this._isConnectionError(e)) { this.isCloudAvailable = false; return; }
+      console.warn('⚠️  Données de base (graine) :', e.message);
+    } finally {
+      if (client) client.release();
+    }
+  }
+
   async _syncCycle() {
     // Garde-fou : un cycle resté bloqué (liaison gelée) ne doit pas empêcher
     // toutes les synchros suivantes. Au-delà de 5 min on le déclare mort.
@@ -1793,6 +1819,8 @@ class SyncServiceV2 {
     try {
       const available = await this._checkCloudConnection();
       if (!available) return;
+      await this._envoyerGraineSiCloudNeuf();
+      if (!this.isCloudAvailable) return;
       await this._replayPendingOperations();
       // Liaison perdue pendant l'envoi : on laisse le reste en attente
       if (!this.isCloudAvailable) return;
