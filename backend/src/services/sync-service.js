@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
+const stockDifference = require('./stock-difference');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -449,7 +450,7 @@ class SyncServiceV2 {
           
           const data = typeof op.data === 'string' ? JSON.parse(op.data) : op.data;
           // Retracer l'opération (INSERT/UPDATE/DELETE)
-          await this._applyToCloud(client, op.table_name, op.operation_type, data);
+          await this._applyToCloud(client, op.table_name, op.operation_type, data, { operationId: op.operation_id });
 
           // Marquer comme synced
           await this.localPrisma.$executeRawUnsafe(
@@ -648,6 +649,8 @@ class SyncServiceV2 {
 
     const client = await this.cloudPool.connect();
     try {
+      // Registre des opérations de stock déjà appliquées par différence (voir stock-difference.js)
+      await stockDifference.creerRegistreCloud(client);
       await client.query(`
         CREATE OR REPLACE FUNCTION update_date_modification()
         RETURNS TRIGGER AS $f$
@@ -1166,6 +1169,7 @@ class SyncServiceV2 {
         `CREATE UNIQUE INDEX IF NOT EXISTS "idx_sync_pull_retry_unique"
          ON "sync_pull_retry"("table_name", "record_id")`
       );
+      await stockDifference.creerBaseLocale(this.localPrisma);
       console.log('✅ Tables de suivi du pull prêtes (sync_pull_state, sync_pull_retry)');
     } catch (e) {
       console.warn('⚠️  Erreur création tables de suivi du pull:', e.message);
@@ -1278,6 +1282,11 @@ class SyncServiceV2 {
       : `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO NOTHING`;
 
     await this.localPrisma.$executeRawUnsafe(sql, ...vals);
+
+    // Le poste vient de prendre la valeur du cloud pour cette ligne de stock : c'est sa nouvelle base de référence
+    if (stockDifference.TABLES_STOCK.includes(table) && row.id !== undefined && row.quantite_disponible !== undefined && row.quantite_disponible !== null) {
+      await stockDifference.ecrireBase(this.localPrisma, table, row.id, row.quantite_disponible);
+    }
   }
 
   /**
@@ -1785,7 +1794,29 @@ class SyncServiceV2 {
     return result;
   }
 
-  async _applyToCloud(client, tableName, operation, data) {
+  /**
+   * Envoi d'une opération vers le cloud. Les lignes de STOCK sont envoyées par différence (voir stock-difference.js) ;
+   * tout le reste suit le chemin habituel.
+   */
+  async _applyToCloud(client, tableName, operation, data, options = {}) {
+    if (options.operationId && operation !== 'DELETE' && stockDifference.TABLES_STOCK.includes(tableName)) {
+      const ligne = this._toSnakeCase(data);
+      const quantite = Number(typeof ligne.quantite_disponible === 'bigint' ? Number(ligne.quantite_disponible) : ligne.quantite_disponible);
+      if (ligne.id !== undefined && ligne.id !== null && Number.isFinite(quantite)) {
+        const r = await stockDifference.appliquerParDifference({
+          client, prisma: this.localPrisma, table: tableName, row: ligne, operationId: options.operationId,
+        });
+        if (r.traite) return;
+        // Pas de base connue ou ligne absente du cloud : envoi de la valeur totale, puis la base est établie
+        await this._applyToCloudBrut(client, tableName, operation, data);
+        await stockDifference.ecrireBase(this.localPrisma, tableName, ligne.id, quantite);
+        return;
+      }
+    }
+    return this._applyToCloudBrut(client, tableName, operation, data);
+  }
+
+  async _applyToCloudBrut(client, tableName, operation, data) {
     const row = this._toSnakeCase(data);
 
     // Ensure timestamp fields are proper ISO strings for PostgreSQL
