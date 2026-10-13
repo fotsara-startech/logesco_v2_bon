@@ -72,6 +72,11 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
   **Solution durable à décider** : journaliser DANS la transaction d'écriture (ou avant la réponse) route par route, au lieu de `setImmediate` après la réponse.
 * Vérification de bout en bout du défaut 4 : relancer `scenarios/10-b-fiches-homonymes.test.js` et regarder le sous-test « la somme de tous les soldes … » (devrait passer ; la course étant intermittente, relancer 2 fois).
 
+## 6 ter. Diagnostic du stock (défaut 1) — 13/10/2026
+Deux postes, produit à 1000 : A vend 3, B vend 2. Observé : A=997, B=998, cloud=998 (attendu 995 partout). Les mouvements sont corrects (`vente-3`, `vente-2` présents partout). Après 65 s de calme, A reçoit bien la valeur du cloud (la protection des lignes récentes fonctionne) et tout converge… vers 998 : la valeur est fausse.
+**Cause** : chaque vente envoie au cloud le stock TOTAL du poste (`stock UPDATE quantite=997`) ; le dernier envoi écrase les autres (dernière écriture gagne sur une valeur absolue).
+**Solution proposée (non implémentée)** : envoi par DIFFÉRENCE avec reprise sûre. Pour `stock` et `stock_boutiques` : le poste retient en local la dernière valeur synchronisée (« base ») de chaque ligne ; à l'envoi, le cloud applique `quantite = quantite + (nouvelle − base)` dans une transaction qui inscrit l'identifiant de l'opération dans une table `sync_applied_ops` (clé unique) : une opération rejouée après un accusé perdu n'est jamais appliquée deux fois. Après l'envoi, la base = valeur renvoyée par le cloud ; la réception rapporte le total du cloud sur les postes. Sans base connue (anciennes données) : comportement actuel (valeur absolue), puis base établie. Fichiers : `sync-service.js` (`_applyToCloud`, `_ensureTablesCloud`, réception), tests unitaires + `diag-stock` e2e (attendu 995 partout). À valider avant de coder : risque élevé (cœur de la synchro).
+
 ## 7. Incident (déjà corrigé)
 Un essai « poste sans cloud » s'est relié à la base de dev `neondb` (dotenv réinjectait l'URL). Effet : 5 lignes parasites dans la table `installations` (n° 15 à 19, 11/10/2026 04:54–04:57). **Aucune donnée métier touchée** (18 produits / 48 ventes / 10 clients inchangés). Garde-fou ajouté (`fed3a98`). Nettoyage des 5 lignes : en attente de l'accord de l'utilisateur.
 
