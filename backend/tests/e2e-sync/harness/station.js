@@ -100,7 +100,10 @@ class Station {
       ...this.extraEnv,
     };
     // Garde-fou : un poste de test ne se relie JAMAIS qu'à une base cloud jetable « synctest_* ».
-    if (this.cloudUrl && !/\/synctest_[a-z0-9_]+(\?|$)/.test(this.cloudUrl)) {
+    // Seule exception : l'URL volontairement INJOIGNABLE des scénarios « hors ligne » (127.0.0.1, port 9 : rien n'y
+    // écoute), qui ne peut atteindre aucune base.
+    const injoignable = /^postgres(ql)?:\/\/[^@]*@127\.0\.0\.1:9\//.test(this.cloudUrl || '');
+    if (this.cloudUrl && !injoignable && !/\/synctest_[a-z0-9_]+(\?|$)/.test(this.cloudUrl)) {
       throw new Error(`${this.nom} : refus de démarrer, l'URL cloud n'est pas celle d'une base de test jetable (synctest_*)`);
     }
     // Poste sans cloud : on met CLOUD_DB_URL à une chaîne VIDE plutôt que de la supprimer. Le serveur charge
@@ -156,6 +159,13 @@ class Station {
       body: corps === undefined ? undefined : JSON.stringify(corps),
       signal: AbortSignal.timeout(delaiMs),
     });
+    // Une erreur réseau locale doit dire QUEL poste, QUEL appel, quel code, et si le processus tourne encore
+    const expliquer = (e) => {
+      const code = e && e.cause && (e.cause.code || e.cause.message);
+      const err = new Error(`${this.nom} ${methode} ${chemin} : ${e.message} (${code}) ; processus ${this.proc ? 'vivant' : 'ARRÊTÉ'}`);
+      err.cause = e;
+      return err;
+    };
     let r;
     try {
       r = await appel();
@@ -163,8 +173,8 @@ class Station {
       // Connexion réutilisée que le serveur a déjà fermée (inactivité > 5 s) : « fetch failed » avant tout envoi.
       // On réessaie une fois, sauf pour un POST (une vente ne doit jamais être rejouée par le banc).
       const code = e && e.cause && e.cause.code;
-      if (methode === 'POST' || !['UND_ERR_SOCKET', 'ECONNRESET', 'EPIPE'].includes(code)) throw e;
-      r = await appel();
+      if (methode === 'POST' || !['UND_ERR_SOCKET', 'ECONNRESET', 'EPIPE'].includes(code)) throw expliquer(e);
+      try { r = await appel(); } catch (e2) { throw expliquer(e2); }
     }
     let json = null;
     const texte = await r.text();

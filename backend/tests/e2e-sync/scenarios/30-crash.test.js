@@ -117,11 +117,7 @@ test("3b. coupure de courant PENDANT la réception d'un gros lot (x3) : rien de 
   if (coupures < 2) console.log(`   (limite du test : seulement ${coupures} coupure(s) en pleine réception)`);
 });
 
-test('3c. écritures simultanées sur un poste en ligne : aucune écriture perdue, aucune erreur', {
-  skip,
-  timeout: 900000,
-  todo: 'DÉFAUT CONNU : 4 écritures simultanées sur un poste relié au cloud provoquent « database is locked » / « Socket timeout » (HTTP 500) et des erreurs de journalisation avalées (sync-service.js logOperation, catch sans relance) : une ligne peut exister en local sans jamais être envoyée',
-}, async (t) => {
+test('3c. écritures simultanées sur un poste en ligne : aucune écriture perdue, aucune erreur', async (t) => {
   // DÉFAUT CONNU : voir `todo`. Reproduction : 4 POST /products simultanés sur un poste en ligne (cycles de synchro de 3 s
   // dans le harnais ; 30 s en exploitation, donc moins fréquent mais possible avec plusieurs caisses).
   const c = await nouvelleCampagne({ etiquette: 'horsligne', postes: ['A', 'B'] });

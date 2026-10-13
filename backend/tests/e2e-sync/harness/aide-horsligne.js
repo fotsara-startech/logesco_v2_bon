@@ -198,6 +198,21 @@ async function signalerPerdus(t, r) {
 }
 
 
+/**
+ * État du STOCK d'un poste, pour comprendre un écart : quantité, base de référence (sync_stock_base), opérations de
+ * stock par statut et dernières lignes de journal utiles.
+ */
+function decrireStock(st) {
+  const SEP = String.fromCharCode(10);
+  const j = (sql) => { try { return JSON.stringify(st.lire(sql)); } catch (e) { return 'ERR ' + e.message; } };
+  const lignes = st.journal(12000).split(SEP).filter((x) => /stock|laissée|protég|Rattrapage|pull|Pull/i.test(x) && !/AUDIT|Request completed|AUTH|mouvements_stock/.test(x));
+  return [
+    `   [${st.nom}] stock=${j('SELECT id, quantite_disponible q FROM stock')} base=${j("SELECT record_id id, quantite q FROM sync_stock_base WHERE table_name = 'stock'")}`,
+    `   [${st.nom}] ops stock=${j("SELECT operation_type o, status s, substr(error_message,1,80) e FROM operation_log WHERE table_name = 'stock' ORDER BY id")}`,
+    `   [${st.nom}] journal :` + SEP + lignes.slice(-12).map((x) => '      ' + x.slice(0, 160)).join(SEP),
+  ].join(SEP);
+}
+
 /** Écarts non expliqués du contrôle d'écart d'un poste (rafraîchi) */
 async function ecartsInexpliques(station) {
   const r = await station.api('GET', '/sync/drift?refresh=1', undefined, { delaiMs: 120000 });
@@ -209,4 +224,4 @@ function resumeEcarts(ecarts) {
   return ecarts.map((e) => `${e.table}/${e.sens}/${e.cause}×${e.nombre}`).join(', ') || 'aucun';
 }
 
-module.exports = { signalerPerdus, convergenceTolerante, erreursApi, avecReprises, ecrireLocal, boutiqueCloud, insererProduitCloud, ligneCloud, PRELOAD_SANS_CLOUD, URL_INJOIGNABLE, enParallele, exiger, creerProduits, creerVentes, ajusterStocks, nombreCloud, doublonsCloud, idsLocaux, idsCloudDe, attendre, ecartsInexpliques, resumeEcarts };
+module.exports = { decrireStock, signalerPerdus, convergenceTolerante, erreursApi, avecReprises, ecrireLocal, boutiqueCloud, insererProduitCloud, ligneCloud, PRELOAD_SANS_CLOUD, URL_INJOIGNABLE, enParallele, exiger, creerProduits, creerVentes, ajusterStocks, nombreCloud, doublonsCloud, idsLocaux, idsCloudDe, attendre, ecartsInexpliques, resumeEcarts };

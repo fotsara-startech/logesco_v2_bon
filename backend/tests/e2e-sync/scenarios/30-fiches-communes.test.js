@@ -119,6 +119,7 @@ test("2b. mêmes fiches, reliés dans l'ORDRE INVERSE de la chronologie (le plus
 
   await reliersUnApresLautre([B, A], c);
   const r = await aide.convergenceTolerante({ stations: [A, B], cloudUrl: c.cloudUrl, delaiMs: 400000 });
+  if (!r.ok) console.log('   ÉTAT DES POSTES (stock) :' + String.fromCharCode(10) + [A, B].map((p) => aide.decrireStock(p)).join(String.fromCharCode(10)));
   assert.ok(r.ok, `pas de convergence : ${decrire(r.autres)}`);
   await aide.signalerPerdus(t, r);
   const v = await valeursFinales(c, fiches);
@@ -142,9 +143,7 @@ test("2b. mêmes fiches, reliés dans l'ORDRE INVERSE de la chronologie (le plus
     assert.strictEqual(v.cloud.description, 'Description posée par A');
     assert.strictEqual(v.cloud.prix, 3000);
   });
-  await t.test('le stock cumule les mouvements des deux postes (50 + 10 + 5 = 65)', {
-    todo: 'DÉFAUT CONNU : le stock est synchronisé comme une valeur (dernier envoi gagne), pas comme une somme de mouvements : deux postes qui vendent/ajustent le même produit hors ligne se perdent des mouvements',
-  }, () => {
+  await t.test('le stock cumule les mouvements des deux postes (50 + 10 + 5 = 65)', () => {
     assert.strictEqual(v.cloud.stock, 65);
   });
 });
