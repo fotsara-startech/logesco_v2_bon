@@ -55,7 +55,7 @@ for (const mode of ['manuel', 'automatique']) {
     const vus = { cloud: cloud[0].q, A: stockDe(A, p.id), B: stockDe(B, p.id), C: stockDe(C, p.id) };
     t.diagnostic(`stock final ${JSON.stringify(vus)} (attendu ${attendu})`);
 
-    await t.test('stock final partout = stock initial - total vendu (aucune mise à jour perdue)', { todo: 'DÉFAUT CONNU : le stock converge vers une valeur fausse (290 au lieu de 244) : des ventes de postes différents s ecrasent (perte de mise à jour)' }, () => {
+    await t.test('stock final partout = stock initial - total vendu (aucune mise à jour perdue)', () => {
       assert.deepStrictEqual(vus, { cloud: attendu, A: attendu, B: attendu, C: attendu });
     });
 

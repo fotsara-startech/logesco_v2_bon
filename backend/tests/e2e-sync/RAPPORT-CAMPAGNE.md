@@ -94,3 +94,15 @@ Un essai « poste sans cloud » s'est relié à la base de dev `neondb` (dotenv 
 * Nettoyer avant de relancer : processus `node` dont la ligne de commande contient `logesco_app\backend\src\server.js` (ne jamais tuer tous les `node.exe` : le serveur réel du PC en fait partie), et bases `synctest_*` oubliées.
 * Lancer les agents UN À LA FOIS (quatre ensemble épuisent la limite d'usage en quelques minutes).
 * L'URL de la base Neon de dev n'est écrite nulle part ; elle se passe en variable d'environnement. **Renouveler son mot de passe** à la fin de la campagne (il est apparu dans le chat et dans les consignes des agents). Idem le mot de passe Neon du client, apparu plus tôt.
+
+## 6 quater. Stock et soldes : corrections du 13 octobre (confirmées par les scénarios)
+
+Causes trouvées par le diagnostic à 3 postes (`10-c`) et corrigées dans `sync-service.js` :
+
+1. **Reprise des lignes mises de côté** : `_reprendreProtegees` effaçait la mémoire APRÈS réapplication ; une ligne encore « récente » était donc oubliée et le poste restait en retard (ex. 285 au lieu de 249). Les identifiants sont retirés AVANT.
+2. **Réception relative du stock** (`_mergeRemoteRow`) : valeur du cloud + (quantité locale − base). Une vente locale pas encore envoyée n'est plus écrasée, même si elle tombe pendant la réception.
+3. **Quantité périmée à l'envoi** : les routes journalisent après la réponse, dans le désordre, et la fusion des opérations en attente garde la dernière arrivée (une vente ancienne masquait la plus récente : −7 au lieu de −21). Le stock (`stock`, `stock_boutiques`) et les soldes (`comptes_clients`, `comptes_fournisseurs`) sont maintenant envoyés avec la valeur ACTUELLE de la ligne locale.
+
+Résultats : diagnostic 3 postes 4 fois sur 4 à 244 partout ; `10-c` automatique 244 partout ; `10-b` « somme des soldes » correcte 2 fois sur 2 (avait échoué 2 fois sur 3 avant). Les annotations « défaut connu » de ces deux sous-tests sont retirées.
+
+Reste ouvert : lignes `details_ventes` d'un poste parfois absentes du cloud (défaut n°2, écritures non journalisées) ; `10-c` manuel a échoué une fois sur « fetch failed » (incident du banc, à relancer) ; défauts 3, 6, 7, 9, 10, 11.

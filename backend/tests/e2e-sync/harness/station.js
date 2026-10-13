@@ -150,12 +150,22 @@ class Station {
 
   /** Appel d'API du poste (JSON). Renvoie { statut, corps } sans jamais lever sur un statut HTTP d'erreur. */
   async api(methode, chemin, corps, { delaiMs = 60000 } = {}) {
-    const r = await fetch(`${this.url}/api/v1${chemin}`, {
+    const appel = () => fetch(`${this.url}/api/v1${chemin}`, {
       method: methode,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token}` },
       body: corps === undefined ? undefined : JSON.stringify(corps),
       signal: AbortSignal.timeout(delaiMs),
     });
+    let r;
+    try {
+      r = await appel();
+    } catch (e) {
+      // Connexion réutilisée que le serveur a déjà fermée (inactivité > 5 s) : « fetch failed » avant tout envoi.
+      // On réessaie une fois, sauf pour un POST (une vente ne doit jamais être rejouée par le banc).
+      const code = e && e.cause && e.cause.code;
+      if (methode === 'POST' || !['UND_ERR_SOCKET', 'ECONNRESET', 'EPIPE'].includes(code)) throw e;
+      r = await appel();
+    }
     let json = null;
     const texte = await r.text();
     try { json = JSON.parse(texte); } catch (_) { json = { texte }; }

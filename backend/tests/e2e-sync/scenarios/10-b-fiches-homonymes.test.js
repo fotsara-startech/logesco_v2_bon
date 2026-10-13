@@ -107,7 +107,7 @@ test('★3 même client sur A et B, puis dette et paiement depuis chaque poste :
   r = await convergenceRobuste({ stations: [A, B], cloudUrl: c.cloudUrl, specs: SPECS_SANS_ECRITURES, delaiMs: 240000 });
   assert.ok(r.ok, `pas de convergence : ${decrire(r.differences)}`);
 
-  await t.test('la somme de tous les soldes (cloud et postes) = somme des opérations', { todo: 'DÉFAUT CONNU (perte de données) : un paiement fait juste après une vente à crédit est perdu : le cloud et les postes convergent vers le solde de la vente (instantané figé de routes/sales.js ~l.1283, envoyé après la réponse) et non vers le solde après paiement ; -500 ou -700 manquants selon l exécution' }, async () => {
+  await t.test('la somme de tous les soldes (cloud et postes) = somme des opérations', async () => {
     const cloud = await cloudSql(c, 'SELECT COALESCE(SUM(solde_actuel),0)::float s, COUNT(*)::int n FROM comptes_clients');
     t.diagnostic(`comptes dans le cloud : ${cloud[0].n}, somme ${cloud[0].s} ; détail ${JSON.stringify(await cloudSql(c, 'SELECT id, client_id, solde_actuel::float s FROM comptes_clients ORDER BY id'))} ; A=${JSON.stringify(A.lire('SELECT id, solde_actuel s FROM comptes_clients'))} ; ecritures A=${JSON.stringify(A.lire('SELECT id, compte_id, type_transaction t, montant m, solde_apres sa FROM transactions_comptes'))}`);
     assert.strictEqual(cloud[0].s, attendu, `somme cloud ${cloud[0].s} au lieu de ${attendu}`);
