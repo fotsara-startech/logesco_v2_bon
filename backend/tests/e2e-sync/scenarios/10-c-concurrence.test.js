@@ -170,7 +170,7 @@ test('★7 suppression sur A pendant que B modifie : état cohérent, pas de ré
   await A.synchroniserJusquaCalme({ delaiMs: 60000 });
   await B.synchroniserJusquaCalme({ delaiMs: 60000 });
   const conv = await convergenceRobuste({ stations: [A, B], cloudUrl: c.cloudUrl, delaiMs: 150000 });
-  await t.test('convergence postes / cloud après suppression + modification', { todo: 'DÉFAUT CONNU : le cloud supprime le produit mais A et B le gardent (désactivé ou non) : postes et cloud divergent durablement' }, () => {
+  await t.test('convergence postes / cloud après suppression + modification', () => {
     assert.ok(conv.ok, decrire(conv.differences));
   });
 
@@ -185,13 +185,13 @@ test('★7 suppression sur A pendant que B modifie : état cohérent, pas de ré
   t.diagnostic(`X2 (modif. puis suppr.) : ${JSON.stringify(e2)}`);
   const present = (e) => [e.cloud, e.A, e.B].map((l) => !!l && !!Number(l.est_actif));
 
-  await t.test('X2 (modifié puis supprimé) : absent / désactivé partout', { todo: 'DÉFAUT CONNU : suppression d un produit déjà mouvementé = désactivation locale (est_actif=0) sur A ; le cloud n a plus la ligne et B garde le produit ACTIF : la suppression ne se propage pas, B peut le revendre' }, () => {
+  await t.test('X2 (modifié puis supprimé) : absent / désactivé partout', () => {
     assert.deepStrictEqual(present(e2), [false, false, false], JSON.stringify(e2));
   });
-  await t.test('X1 (supprimé puis modifié ailleurs) : état identique partout', { todo: 'DÉFAUT CONNU : suppression d un produit déjà mouvementé = désactivation locale (est_actif=0) sur A ; le cloud n a plus la ligne et B garde le produit ACTIF : la suppression ne se propage pas, B peut le revendre' }, () => {
+  await t.test('X1 (supprimé puis modifié ailleurs) : état identique partout', () => {
     assert.strictEqual(new Set(present(e1)).size, 1, `états divergents : ${JSON.stringify(e1)}`);
   });
-  await t.test('X1 (supprimé sur A, modifié ensuite sur B) ne ressuscite pas', { todo: 'DÉFAUT CONNU : suppression d un produit déjà mouvementé = désactivation locale (est_actif=0) sur A ; le cloud n a plus la ligne et B garde le produit ACTIF : la suppression ne se propage pas, B peut le revendre' }, () => {
+  await t.test('X1 (supprimé sur A, modifié ensuite sur B) ne ressuscite pas', { todo: 'DÉFAUT CONNU n°6 (écriture de ligne entière) : B, qui ne connaît pas encore la désactivation, modifie le prix et renvoie la ligne entière avec est_actif=1 : la désactivation de A est écrasée (le produit ressuscite partout, prix 1111)' }, () => {
     assert.deepStrictEqual(present(e1), [false, false, false], `résurrection : ${JSON.stringify(e1)}`);
   });
 });

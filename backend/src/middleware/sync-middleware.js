@@ -20,8 +20,12 @@ const ROUTE_MODEL_MAP = {
       'montantTotal','statut','modePaiement','montantPaye','montantRestant'
     ]
   },
-  '/products':            { 
+  '/products':            {
     table: 'produits', model: 'produit',
+    // DELETE /products/:id journalise lui-même : UPDATE (est_actif=false) pour un produit déjà utilisé, DELETE pour un
+    // produit sans historique. La réponse d'une désactivation contient le produit : sans ceci, le middleware y voyait
+    // une suppression, l'envoyait au cloud (qui effaçait le produit ET son stock) et annulait la désactivation.
+    softDelete: true,
     allowedColumns: [
       'id','reference','nom','description','prixUnitaire','prixAchat','codeBarre',
       'categorieId','seuilStockMinimum','remiseMaxAutorisee','estActif','estService',
