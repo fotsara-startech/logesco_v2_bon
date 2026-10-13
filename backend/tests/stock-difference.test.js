@@ -41,6 +41,7 @@ function fauxCloud(lignes = { 1: 1000 }) {
       if (/^BEGIN/.test(sql)) { sauvegarde = copie(); return { rows: [] }; }
       if (/^COMMIT/.test(sql)) { sauvegarde = null; return { rows: [] }; }
       if (/^ROLLBACK/.test(sql)) { if (sauvegarde) { etat.stock = sauvegarde.stock; etat.registre = sauvegarde.registre; } sauvegarde = null; return { rows: [] }; }
+      if (/CREATE TABLE IF NOT EXISTS "sync_applied_ops"/.test(sql)) { client.registreCree = (client.registreCree || 0) + 1; return { rows: [] }; }
       if (/information_schema/.test(sql)) return { rows: [] };
       if (/INSERT INTO "sync_applied_ops"/.test(sql)) {
         if (etat.registre.has(params[0])) return { rows: [] };
@@ -201,6 +202,21 @@ test("journal : une écriture refusée parce que la base est occupée est réess
   };
   await service.logOperation('details_ventes', 'INSERT', { id: 7, quantite: 2 });
   assert.strictEqual(Number(A.db.prepare("SELECT COUNT(*) n FROM operation_log WHERE table_name = 'details_ventes' AND record_id = 7").get().n), 1, 'journalisée malgré deux refus');
+});
+
+test("envoi : le registre du cloud est créé au besoin (cloud injoignable au démarrage), une seule fois", { skip }, async () => {
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  service.localPrisma = A;
+  service._registreCloudPret = false;
+  A.db.exec('INSERT INTO stock (id, produit_id, quantite_disponible) VALUES (1, 1, 95)');
+  await sd.ecrireBase(A, 'stock', 1, 100);
+  const cloud = fauxCloud({ 1: 100 });
+  await service._applyToCloud(cloud, 'stock', 'UPDATE', { id: 1, produitId: 1, quantiteDisponible: 95 }, { operationId: 'op-1' });
+  assert.strictEqual(cloud.registreCree, 1, 'registre créé avant le premier envoi par différence');
+  A.db.exec('UPDATE stock SET quantite_disponible = 90 WHERE id = 1');
+  await service._applyToCloud(cloud, 'stock', 'UPDATE', { id: 1, produitId: 1, quantiteDisponible: 90 }, { operationId: 'op-2' });
+  assert.strictEqual(cloud.registreCree, 1, 'pas recréé à chaque envoi');
+  assert.strictEqual(cloud.etat.stock.get(1).quantite, 90);
 });
 
 test('chemin complet du service : sans base → valeur totale puis base établie ; avec base → différence', { skip }, async () => {

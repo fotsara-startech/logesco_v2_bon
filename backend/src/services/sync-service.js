@@ -1868,6 +1868,13 @@ class SyncServiceV2 {
       }
       const quantite = Number(typeof ligne.quantite_disponible === 'bigint' ? Number(ligne.quantite_disponible) : ligne.quantite_disponible);
       if (ligne.id !== undefined && ligne.id !== null && Number.isFinite(quantite)) {
+        // Registre des opérations déjà appliquées : créé ici AU BESOIN (une fois par exécution), et pas seulement au
+        // démarrage. Si le cloud ne répondait pas à ce moment-là, la table n'existait jamais et chaque envoi de stock
+        // échouait ensuite sans fin (« relation sync_applied_ops does not exist »).
+        if (!this._registreCloudPret) {
+          await stockDifference.creerRegistreCloud(client);
+          this._registreCloudPret = true;
+        }
         const r = await stockDifference.appliquerParDifference({
           client, prisma: this.localPrisma, table: tableName, row: ligne, operationId: options.operationId,
         });
