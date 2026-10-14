@@ -79,3 +79,11 @@ docker/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Fichiers d'environnement : ils contiennent des mots de passe de base de donnees, ne jamais les suivre.
+# Seuls les modeles .env.example restent suivis.
+.env
+.env.*
+!.env.example
+backend/.env.*
+!backend/.env.example
