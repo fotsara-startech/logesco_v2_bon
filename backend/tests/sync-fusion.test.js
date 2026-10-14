@@ -49,13 +49,14 @@ test('avec base : seules les colonnes modifiées partent, chacune gardée par «
     base,
   });
   assert.deepStrictEqual(m.colonnes, ['prix']);
-  assert.match(m.sql, /^UPDATE "produits" SET "prix" = CASE WHEN "produits"\."prix" IS NOT DISTINCT FROM \$3 OR e\.ed <= \$1::timestamp THEN \$2 ELSE "produits"\."prix" END/);
+  assert.match(m.sql, /UPDATE "produits" SET "prix" = CASE WHEN "produits"\."prix" IS NOT DISTINCT FROM \$3 OR e\.ed <= \$1::timestamp THEN \$2 ELSE "produits"\."prix" END/);
   assert.ok(!/"nom"|"description"/.test(m.sql), 'les colonnes non modifiées ne partent pas');
   assert.match(m.sql, /FROM "sync_edition" WHERE "table_name" = 'produits' AND "record_id" = \$4/, "la dernière édition est lue dans la table à part");
-  assert.ok(!/derniere_edition"\s*=/.test(m.sql), "aucune colonne ajoutée aux tables de fiches");
+  assert.ok(!/derniere_edition"\s*=/.test(m.sql.split('RETURNING 1')[0]), "aucune colonne ajoutée aux tables de fiches (la mise à jour de la fiche ne touche pas derniere_edition)");
   assert.deepStrictEqual(m.params, [EDITION, 3000, 1000, 7]);
-  assert.deepStrictEqual(m.upsertEdition.params, ['produits', 7, EDITION], 'la date d\'édition est enregistrée à part');
-  assert.match(m.upsertEdition.sql, /INSERT INTO "sync_edition".*GREATEST/s, 'et ne recule jamais');
+  assert.match(m.sql, /^WITH ecrit AS \(UPDATE/, 'une seule requête : la mise à jour est enveloppée');
+  assert.match(m.sql, /INSERT INTO "sync_edition".*SELECT 'produits', \$4::bigint, \$1::timestamp WHERE EXISTS \(SELECT 1 FROM ecrit\).*GREATEST/s, "la date d'édition est enregistrée dans la même requête, et ne recule jamais");
+  assert.ok(!/BEGIN|COMMIT/.test(m.sql), 'aucune transaction explicite');
 });
 
 test('avec base et rien de modifié : rien à envoyer', () => {
@@ -70,7 +71,7 @@ test("sans base : fiche entière, mais jamais par-dessus une édition plus réce
     base: null,
   });
   assert.deepStrictEqual(m.colonnes, ['nom', 'adresse']);
-  assert.match(m.sql, /WHERE "clients"\.id = \$\d+ AND e\.ed <= \$\d+::timestamp$/, 'jamais par-dessus une édition plus récente');
+  assert.match(m.sql, /WHERE "clients"\.id = \$\d+ AND e\.ed <= \$\d+::timestamp RETURNING 1\)/, 'jamais par-dessus une édition plus récente');
   assert.match(m.sql, /COALESCE\(\(SELECT "derniere_edition" FROM "sync_edition"/, 'édition inconnue = -infini : la mise à jour passe');
 });
 
@@ -122,20 +123,22 @@ test('envoi : avec la base retenue à la réception, seule la colonne modifiée 
   await service._applyToCloudBrut(cloud, 'produits', 'UPDATE', {
     id: 1, nom: 'Commun', prixUnitaire: 1000, description: 'Posée par A', estActif: true, dateModification: EDITION,
   });
-  const maj = cloud.requetes.find((r) => /^\s*UPDATE "produits"/.test(r.sql));
+  const maj = cloud.requetes.find((r) => /UPDATE "produits" SET/.test(r.sql));
   assert.ok(maj, 'une mise à jour est envoyée');
   assert.match(maj.sql, /"description" = CASE/);
   assert.ok(!/"nom"|"prix_unitaire"|"est_actif"/.test(maj.sql), 'seule la description part');
   assert.ok(cloud.requetes.some((r) => /CREATE TABLE IF NOT EXISTS "sync_edition"/.test(r.sql)), "table des éditions créée au besoin");
   assert.ok(!cloud.requetes.some((r) => /ALTER TABLE/.test(r.sql)), 'aucune colonne ajoutée aux tables de fiches');
-  assert.deepStrictEqual(cloud.requetes.filter((r) => /^(BEGIN|COMMIT|ROLLBACK)/.test(r.sql)).map((r) => r.sql), ['BEGIN', 'COMMIT'], 'mise à jour et date d\'édition dans une transaction');
-  assert.ok(cloud.requetes.some((r) => /INSERT INTO "sync_edition"/.test(r.sql)), "la date d'édition est enregistrée");
+  assert.ok(!cloud.requetes.some((r) => /^(BEGIN|COMMIT|ROLLBACK)/.test(r.sql)), 'aucune transaction explicite');
+  assert.match(maj.sql, /INSERT INTO "sync_edition"/, "la date d'édition est enregistrée dans la même requête");
+  const ecritures = cloud.requetes.filter((r) => /UPDATE "produits" SET/.test(r.sql));
+  assert.strictEqual(ecritures.length, 1, 'un seul aller-retour pour la mise à jour');
   assert.strictEqual((await fusion.lireBase(A, 'produits', 1)).description, 'Posée par A', 'la base reflète ce qui vient d\'être envoyé');
 
   // même opération rejouée : plus rien à envoyer
   const cloud2 = fauxCloud();
   await service._applyToCloudBrut(cloud2, 'produits', 'UPDATE', { id: 1, nom: 'Commun', prixUnitaire: 1000, description: 'Posée par A', estActif: true, dateModification: EDITION });
-  assert.ok(!cloud2.requetes.some((r) => /^\s*UPDATE "produits"/.test(r.sql)), 'aucune mise à jour : rien n\'a changé');
+  assert.ok(!cloud2.requetes.some((r) => /UPDATE "produits" SET/.test(r.sql)), "aucune mise à jour : rien n'a changé");
 });
 
 test('envoi d\'un INSERT : la date d\'édition part avec la ligne et la base est retenue', { skip }, async () => {
@@ -143,10 +146,11 @@ test('envoi d\'un INSERT : la date d\'édition part avec la ligne et la base est
   service.localPrisma = A; service.cloudUrl = 'postgresql://fake'; service._colonneEditionPrete = true;
   const cloud = fauxCloud();
   await service._applyToCloudBrut(cloud, 'produits', 'INSERT', { id: 5, nom: 'Neuf', prixUnitaire: 10, dateModification: EDITION });
-  const ins = cloud.requetes.find((r) => /^\s*INSERT INTO "produits"/.test(r.sql));
-  assert.ok(!/derniere_edition/.test(ins.sql), "aucune colonne ajoutée à la table de fiches");
-  const ed = cloud.requetes.find((r) => /INSERT INTO "sync_edition"/.test(r.sql));
-  assert.ok(ed && ed.params.includes(EDITION), "la date d'édition est enregistrée dans la table à part");
+  const ins = cloud.requetes.find((r) => /INSERT INTO "produits"/.test(r.sql));
+  assert.ok(!/"produits" \([^)]*derniere_edition/.test(ins.sql), "aucune colonne ajoutée à la table de fiches");
+  assert.match(ins.sql, /INSERT INTO "sync_edition"/, "la date d'édition est enregistrée dans la même requête");
+  assert.ok(ins.params.includes(EDITION), "avec la date d'édition en paramètre");
+  assert.strictEqual(cloud.requetes.filter((r) => /INSERT INTO "produits"/.test(r.sql)).length, 1, 'un seul aller-retour');
   assert.strictEqual((await fusion.lireBase(A, 'produits', 5)).nom, 'Neuf');
 });
 
@@ -179,7 +183,7 @@ test("envoi : une colonne locale que le cloud n'a pas (image_url) ne part jamais
     },
   };
   await service._applyToCloudBrut(cloud, 'produits', 'UPDATE', { id: 1, nom: 'Commun', prixUnitaire: 1500, imageUrl: 'photo.png', estActif: true, dateModification: EDITION });
-  const maj = requetes.find((r) => /^\s*UPDATE "produits"/.test(r.sql));
+  const maj = requetes.find((r) => /UPDATE "produits" SET/.test(r.sql));
   assert.match(maj.sql, /"prix_unitaire" = CASE/);
   assert.ok(!/image_url/.test(maj.sql), 'la colonne propre au poste ne part pas');
 });

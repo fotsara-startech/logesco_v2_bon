@@ -105,49 +105,50 @@ async function appliquerParDifference({ client, prisma, table, row, operationId 
   if (base === null) return { traite: false };
   const difference = quantite - base;
 
-  await client.query('BEGIN');
-  try {
-    const registre = await client.query(
-      'INSERT INTO "sync_applied_ops" ("operation_id") VALUES ($1) ON CONFLICT DO NOTHING RETURNING "operation_id"',
-      [operationId]
-    );
-    if (registre.rows.length === 0) {
-      // Opération déjà appliquée (accusé de réception perdu puis rejeu) : on ne la compte pas deux fois
-      await client.query('COMMIT');
-      await ecrireBase(prisma, table, id, quantite);
-      return { traite: true, doublon: true, difference: 0 };
-    }
-
-    const sets = ['"quantite_disponible" = "quantite_disponible" + $1'];
-    const params = [difference];
-    if (row.quantite_reservee !== undefined && row.quantite_reservee !== null) {
-      params.push(Number(num(row.quantite_reservee)));
-      sets.push(`"quantite_reservee" = $${params.length}`);
-    }
-    const derniereMaj = enIso(row.derniere_maj);
-    if (derniereMaj) {
-      params.push(derniereMaj);
-      sets.push(`"derniere_maj" = $${params.length}`);
-    }
-    // Les autres postes reçoivent le changement grâce à la date de modification : on la fait avancer elle-même, sans
-    // compter sur un déclencheur côté cloud
-    if (await dateModificationExiste(client, table)) sets.push('"date_modification" = CURRENT_TIMESTAMP');
-    params.push(id);
-
-    const maj = await client.query(`UPDATE "${table}" SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING "quantite_disponible"`, params);
-    if (maj.rowCount === 0 || (maj.rows && maj.rows.length === 0)) {
-      // La ligne n'existe pas (encore) dans le cloud : l'envoi de la valeur totale la créera. On annule aussi
-      // l'inscription au registre, pour que cette opération soit rejouée par le chemin normal.
-      await client.query('ROLLBACK');
-      return { traite: false };
-    }
-    await client.query('COMMIT');
-    await ecrireBase(prisma, table, id, quantite);
-    return { traite: true, difference };
-  } catch (e) {
-    try { await client.query('ROLLBACK'); } catch (_) { /* connexion perdue : rien à annuler */ }
-    throw e;
+  // UNE SEULE requête (donc un seul aller-retour vers le cloud, et atomique sans transaction explicite) :
+  //  - inscrire l'opération au registre (clé unique : un rejeu après accusé perdu n'est jamais compté deux fois) ;
+  //  - ajouter la DIFFÉRENCE au stock, seulement si l'inscription vient d'avoir lieu.
+  // Avant : BEGIN + registre + mise à jour + COMMIT = 4 allers-retours, soit 4 fois plus lent sur une connexion lente.
+  const params = [operationId, difference];
+  const sets = ['"quantite_disponible" = "quantite_disponible" + $2'];
+  if (row.quantite_reservee !== undefined && row.quantite_reservee !== null) {
+    params.push(Number(num(row.quantite_reservee)));
+    sets.push(`"quantite_reservee" = $${params.length}`);
   }
+  const derniereMaj = enIso(row.derniere_maj);
+  if (derniereMaj) {
+    params.push(derniereMaj);
+    sets.push(`"derniere_maj" = $${params.length}`);
+  }
+  // Les autres postes reçoivent le changement grâce à la date de modification : on la fait avancer elle-même, sans
+  // compter sur un déclencheur côté cloud
+  if (await dateModificationExiste(client, table)) sets.push('"date_modification" = CURRENT_TIMESTAMP');
+  params.push(id);
+
+  const r = await client.query(
+    `WITH reg AS (
+       INSERT INTO "sync_applied_ops" ("operation_id") VALUES ($1) ON CONFLICT DO NOTHING RETURNING "operation_id"
+     ), maj AS (
+       UPDATE "${table}" SET ${sets.join(', ')} WHERE id = $${params.length} AND EXISTS (SELECT 1 FROM reg) RETURNING 1
+     )
+     SELECT (SELECT COUNT(*) FROM reg)::int AS enregistre, (SELECT COUNT(*) FROM maj)::int AS mis_a_jour`,
+    params
+  );
+  const { enregistre, mis_a_jour: misAJour } = r.rows[0] || { enregistre: 0, mis_a_jour: 0 };
+
+  if (Number(enregistre) === 0) {
+    // Opération déjà appliquée (accusé de réception perdu puis rejeu) : on ne la compte pas deux fois
+    await ecrireBase(prisma, table, id, quantite);
+    return { traite: true, doublon: true, difference: 0 };
+  }
+  if (Number(misAJour) === 0) {
+    // La ligne n'existe pas (encore) dans le cloud : l'envoi de la valeur totale la créera. On retire aussi l'inscription
+    // au registre, pour que cette opération soit rejouée par le chemin normal (cas rare : un aller-retour de plus).
+    await client.query('DELETE FROM "sync_applied_ops" WHERE "operation_id" = $1', [operationId]);
+    return { traite: false };
+  }
+  await ecrireBase(prisma, table, id, quantite);
+  return { traite: true, difference };
 }
 
 module.exports = { TABLES_STOCK, creerBaseLocale, creerRegistreCloud, lireBase, ecrireBase, appliquerParDifference };

@@ -21,7 +21,7 @@ function fauxClient() {
 const sqlDe = async (table, operation, data) => {
   const c = fauxClient();
   await service._applyToCloudBrut(c, table, operation, data);
-  return c.requetes.find((r) => /^\s*(UPDATE|INSERT)/.test(r.sql));
+  return c.requetes.find((r) => /^\s*(WITH ecrit|UPDATE|INSERT)/.test(r.sql));
 };
 
 test("UPDATE produit ordinaire : est_actif n'est PAS envoyé (un produit désactivé ailleurs reste désactivé)", async () => {

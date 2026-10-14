@@ -2186,29 +2186,30 @@ class SyncServiceV2 {
       const placeholders = keys.map((_, i) => '$' + (i + 1)).join(', ');
       const updateKeys = keys.filter(k => k !== 'id');
 
-      if (updateKeys.length === 0) {
-        const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`;
+      // Fiche fusionnable : la date d'édition est enregistrée dans la MÊME requête (un seul aller-retour)
+      const envoyerInsertion = async (query) => {
+        let sql = query;
+        let params = values;
+        const idPos = keys.indexOf('id') + 1;
+        if (fusion && idPos > 0) {
+          params = [...values, syncFusion.dateEdition(row)];
+          sql = syncFusion.envelopperEcriture({ sql: query, table: tableName, pId: `$${idPos}`, pEdition: `$${params.length}` });
+        }
         try {
-          await client.query(query, values);
+          await client.query(sql, params);
         } catch (queryErr) {
           console.error(`❌ Erreur SQL INSERT ${tableName}:`, queryErr.message);
           throw queryErr;
         }
+      };
+
+      if (updateKeys.length === 0) {
+        await envoyerInsertion(`INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`);
       } else {
         const updates = updateKeys.map(k => affecterActif(k, `"${tableName}".`)).join(', ');
-        const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`;
-        try {
-          await client.query(query, values);
-        } catch (queryErr) {
-          console.error(`❌ Erreur SQL INSERT ${tableName}:`, queryErr.message);
-          throw queryErr;
-        }
+        await envoyerInsertion(`INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`);
       }
-      if (fusion) {
-        const ed = syncFusion.requeteEdition({ table: tableName, id: Number(row.id), edition: syncFusion.dateEdition(row) });
-        await client.query(ed.sql, ed.params);
-        await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, row);
-      }
+      if (fusion) await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, row);
     } else if (operation === 'UPDATE' && fusion) {
       // Fiche : seules les colonnes modifiées partent, et une colonne n'est écrasée que si elle n'a pas changé depuis la
       // base du poste ou si cette modification est plus récente (voir sync-fusion.js)
@@ -2216,15 +2217,11 @@ class SyncServiceV2 {
       const colonnes = await this._colonnesCloud(client, tableName);
       const m = syncFusion.construireMiseAJour({ table: tableName, ligne: syncFusion.limiterAuxColonnes(row, colonnes), base, reactivation: !!row.__reactivation });
       if (!m) return; // rien n'a changé par rapport à la base
-      // Mise à jour + date d'édition dans UNE transaction : la date ne doit pas avancer sans la mise à jour
+      // Mise à jour + date d'édition dans UNE requête (un seul aller-retour, atomique : la date n'avance pas sans la mise à jour)
       try {
-        await client.query('BEGIN');
         const result = await client.query(m.sql, m.params);
-        if (result.rowCount === 0) console.log(`  Info: ${tableName} (id=${row.id}) pas encore dans Neon, ou édition plus récente déjà présente`);
-        else await client.query(m.upsertEdition.sql, m.upsertEdition.params);
-        await client.query('COMMIT');
+        if (result.rowCount === 0) console.log(`  Info: ${tableName} (id=${row.id}) pas encore dans Neon`);
       } catch (queryErr) {
-        try { await client.query('ROLLBACK'); } catch (_) { /* connexion perdue */ }
         console.error(`❌ Erreur SQL UPDATE ${tableName}:`, queryErr.message);
         throw queryErr;
       }

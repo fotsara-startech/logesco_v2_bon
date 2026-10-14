@@ -117,13 +117,21 @@ function dateEdition(ligne) {
   return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
-/** Enregistre la date d'édition d'une fiche (ne recule jamais) */
-function requeteEdition({ table, id, edition }) {
-  return {
-    sql: `INSERT INTO "sync_edition" ("table_name", "record_id", "derniere_edition") VALUES ($1, $2, $3::timestamp)
-          ON CONFLICT ("table_name", "record_id") DO UPDATE SET "derniere_edition" = GREATEST("sync_edition"."derniere_edition", EXCLUDED."derniere_edition")`,
-    params: [table, id, edition],
-  };
+/**
+ * Enveloppe une écriture (UPDATE ou INSERT sans RETURNING) pour qu'elle enregistre AUSSI la date d'édition de la fiche
+ * dans la même requête : un seul aller-retour vers le cloud, atomique sans transaction explicite. (Avant : BEGIN +
+ * écriture + date d'édition + COMMIT = 4 allers-retours, soit 4 fois plus lent sur une connexion lente.)
+ * La date d'édition ne recule jamais ; elle n'est enregistrée que si la fiche existe.
+ *
+ * @param {{sql:string, table:string, pId:string, pEdition:string}} p  pId / pEdition : paramètres déjà numérotés ($n)
+ * @returns {string} requête dont rowCount vaut 1 si la fiche a été écrite, 0 sinon
+ */
+function envelopperEcriture({ sql, table, pId, pEdition }) {
+  const edition = String(pEdition).includes('::') ? pEdition : `${pEdition}::timestamp`;
+  return `WITH ecrit AS (${sql} RETURNING 1)
+          INSERT INTO "sync_edition" ("table_name", "record_id", "derniere_edition")
+          SELECT '${table}', ${pId}::bigint, ${edition} WHERE EXISTS (SELECT 1 FROM ecrit)
+          ON CONFLICT ("table_name", "record_id") DO UPDATE SET "derniere_edition" = GREATEST("sync_edition"."derniere_edition", EXCLUDED."derniere_edition")`;
 }
 
 /**
@@ -134,7 +142,7 @@ function requeteEdition({ table, id, edition }) {
  * @param {{table:string, ligne:Object, base:(Object|null), reactivation?:boolean}} p
  *   ligne : la ligne locale en snake_case ; base : instantané connu du cloud (ou null) ;
  *   reactivation : l'opération est une réactivation explicite d'un produit
- * @returns {{sql:string, params:Array, colonnes:string[], edition:string, id:number, upsertEdition:{sql:string, params:Array}}|null}
+ * @returns {{sql:string, params:Array, colonnes:string[], edition:string, id:number}|null}
  *   null : rien à envoyer
  */
 function construireMiseAJour({ table, ligne, base, reactivation = false }) {
@@ -143,7 +151,6 @@ function construireMiseAJour({ table, ligne, base, reactivation = false }) {
   if (table === 'produits' && courant.est_actif === 1 && !reactivation) delete courant.est_actif;
   const edition = dateEdition(ligne);
   const id = Number(ligne.id);
-  const upsertEdition = requeteEdition({ table, id, edition });
   const jointure = (pId) => `FROM (SELECT COALESCE((SELECT "derniere_edition" FROM "sync_edition" WHERE "table_name" = '${table}' AND "record_id" = ${pId}), '-infinity'::timestamp) AS ed) e`;
 
   if (!base) {
@@ -156,10 +163,8 @@ function construireMiseAJour({ table, ligne, base, reactivation = false }) {
     const pId = `$${params.length}`;
     params.push(edition);
     const pEdition = `$${params.length}::timestamp`;
-    return {
-      sql: `UPDATE "${table}" SET ${sets.join(', ')} ${jointure(pId)} WHERE "${table}".id = ${pId} AND e.ed <= ${pEdition}`,
-      params, colonnes, edition, id, upsertEdition,
-    };
+    const maj = `UPDATE "${table}" SET ${sets.join(', ')} ${jointure(pId)} WHERE "${table}".id = ${pId} AND e.ed <= ${pEdition}`;
+    return { sql: envelopperEcriture({ sql: maj, table, pId, pEdition }), params, colonnes, edition, id };
   }
 
   const colonnes = colonnesModifiees(courant, base);
@@ -179,13 +184,11 @@ function construireMiseAJour({ table, ligne, base, reactivation = false }) {
     sets.push(`"${k}" = CASE WHEN "${table}"."${k}" IS NOT DISTINCT FROM ${pBase} OR e.ed <= ${pEdition} THEN ${pNouveau} ELSE "${table}"."${k}" END`);
   }
   params.push(id);
-  return {
-    sql: `UPDATE "${table}" SET ${sets.join(', ')} ${jointure(pId)} WHERE "${table}".id = ${pId}`,
-    params, colonnes, edition, id, upsertEdition,
-  };
+  const maj = `UPDATE "${table}" SET ${sets.join(', ')} ${jointure(pId)} WHERE "${table}".id = ${pId}`;
+  return { sql: envelopperEcriture({ sql: maj, table, pId, pEdition }), params, colonnes, edition, id };
 }
 
 module.exports = {
-  creerEditionCloud, requeteEdition, TABLES_FUSION, COLONNES_IGNOREES, creerBaseLocale, lireBase, ecrireBase,
+  creerEditionCloud, envelopperEcriture, TABLES_FUSION, COLONNES_IGNOREES, creerBaseLocale, lireBase, ecrireBase,
   normaliser, instantane, colonnesModifiees, limiterAuxColonnes, dateEdition, construireMiseAJour,
 };

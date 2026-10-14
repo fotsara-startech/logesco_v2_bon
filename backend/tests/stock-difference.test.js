@@ -43,6 +43,17 @@ function fauxCloud(lignes = { 1: 1000 }) {
       if (/^ROLLBACK/.test(sql)) { if (sauvegarde) { etat.stock = sauvegarde.stock; etat.registre = sauvegarde.registre; } sauvegarde = null; return { rows: [] }; }
       if (/CREATE TABLE IF NOT EXISTS "sync_applied_ops"/.test(sql)) { client.registreCree = (client.registreCree || 0) + 1; return { rows: [] }; }
       if (/information_schema/.test(sql)) return { rows: [] };
+      // Requête unique : inscription au registre + ajout de la différence, atomique (rien n'est modifié si elle échoue)
+      if (/^WITH reg AS/.test(sql.trim())) {
+        const operationId = params[0];
+        if (etat.registre.has(operationId)) return { rows: [{ enregistre: 0, mis_a_jour: 0 }] };
+        const ligne = etat.stock.get(params[params.length - 1]);
+        etat.registre.add(operationId);
+        if (!ligne) return { rows: [{ enregistre: 1, mis_a_jour: 0 }] };
+        ligne.quantite += params[1];
+        return { rows: [{ enregistre: 1, mis_a_jour: 1 }] };
+      }
+      if (/^DELETE FROM "sync_applied_ops"/.test(sql)) { etat.registre.delete(params[0]); return { rows: [] }; }
       if (/INSERT INTO "sync_applied_ops"/.test(sql)) {
         if (etat.registre.has(params[0])) return { rows: [] };
         etat.registre.add(params[0]);
@@ -135,7 +146,7 @@ test('une erreur pendant l\'envoi annule tout (pas de moitié d\'opération) et 
   const A = nouveauPoste(); await sd.creerBaseLocale(A);
   await sd.ecrireBase(A, 'stock', 1, 1000);
   const origine = cloud.query;
-  cloud.query = async (sql, p) => { if (/^UPDATE "stock"/.test(sql.trim())) throw new Error('connect ETIMEDOUT'); return origine(sql, p); };
+  cloud.query = async (sql, p) => { if (/^WITH reg AS/.test(sql.trim())) throw new Error('connect ETIMEDOUT'); return origine(sql, p); };
   await assert.rejects(() => envoyer(cloud, A, 997, 'op-1'), /ETIMEDOUT/);
   assert.strictEqual(cloud.etat.registre.size, 0, 'l\'inscription au registre est annulée avec la transaction');
   assert.strictEqual(await sd.lireBase(A, 'stock', 1), 1000, 'la base n\'a pas bougé : l\'opération sera rejouée entière');
@@ -260,6 +271,27 @@ test("historique créé par CE poste mais jamais journalisé : retrouvé (bloc d
     assert.deepStrictEqual(ops.map((o) => [Number(o.r), o.o, o.s]), [[20000001, 'INSERT', 'pending'], [20000003, 'INSERT', 'pending']]);
     assert.strictEqual(await service._rattraperHistoriqueNonJournalise(), 0, 'rien à refaire au passage suivant');
   } finally { installation.setInstallationId(avant); }
+});
+
+test('un envoi par différence = UN SEUL aller-retour vers le cloud (avant : 4, soit 4 fois plus lent sur une connexion lente)', { skip }, async () => {
+  const cloud = fauxCloud({ 1: 1000 });
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  await sd.ecrireBase(A, 'stock', 1, 1000);
+  await envoyer(cloud, A, 997, 'op-1'); // premier envoi : lit aussi les colonnes de la table (une seule fois)
+  const avant = cloud.requetes.length;
+  await envoyer(cloud, A, 990, 'op-2');
+  assert.strictEqual(cloud.requetes.length - avant, 1, "une seule requête pour l'envoi suivant");
+  assert.ok(!cloud.requetes.some((r) => /^(BEGIN|COMMIT|ROLLBACK)/.test(r)), 'plus de transaction explicite');
+  assert.strictEqual(cloud.etat.stock.get(1).quantite, 990);
+});
+
+test("ligne absente du cloud : le registre est retiré (un aller-retour de plus, cas rare) pour que l'opération soit rejouée", { skip }, async () => {
+  const cloud = fauxCloud({}); // aucune ligne
+  const A = nouveauPoste(); await sd.creerBaseLocale(A);
+  await sd.ecrireBase(A, 'stock', 1, 50);
+  const r = await envoyer(cloud, A, 45, 'op-1');
+  assert.strictEqual(r.traite, false);
+  assert.strictEqual(cloud.etat.registre.size, 0, "l'inscription au registre est retirée");
 });
 
 test('chemin complet du service : sans base → valeur totale puis base établie ; avec base → différence', { skip }, async () => {
