@@ -47,6 +47,46 @@ void main() {
     });
   });
 
+  group('réponses du serveur en erreur : des messages clairs', () {
+    test('route absente (404) : le serveur installé est une ancienne version, et on dit quoi faire', () {
+      for (final corps in ['', '<html>Not Found</html>', '{"success":false,"message":"Route non trouvée"}']) {
+        expect(
+          () => lireReponseCloud(404, corps, 'Impossible de lire la connexion au cloud'),
+          throwsA(predicate((e) => e.toString().contains('ancienne version') && e.toString().contains('Mettez LOGESCO à jour'))),
+          reason: 'corps : $corps',
+        );
+      }
+    });
+
+    test('session expirée (401)', () {
+      expect(() => lireReponseCloud(401, '{"success":false}', 'x'), throwsA(predicate((e) => e.toString().contains('session a expiré'))));
+    });
+
+    test('accès refusé (403) : le message du serveur est conservé', () {
+      expect(
+        () => lireReponseCloud(403, '{"success":false,"message":"Seul un administrateur peut changer la connexion au cloud."}', 'x'),
+        throwsA(predicate((e) => e.toString().contains('Seul un administrateur'))),
+      );
+    });
+
+    test('lien refusé (400) : le message du serveur est conservé tel quel', () {
+      expect(
+        () => lireReponseCloud(400, '{"success":false,"message":"La base Neon ne contient pas encore les tables de LOGESCO (ventes). Installez d abord le schéma."}', 'x'),
+        throwsA(predicate((e) => e.toString().contains('ne contient pas encore les tables'))),
+      );
+    });
+
+    test('erreur du serveur (500) sans message, ou réponse illisible', () {
+      expect(() => lireReponseCloud(500, '<html>oops</html>', 'x'), throwsA(predicate((e) => e.toString().contains('rencontré une erreur'))));
+      expect(() => lireReponseCloud(200, 'pas du json', 'Le test de connexion a échoué'), throwsA(predicate((e) => e.toString().contains('Le test de connexion a échoué'))));
+    });
+
+    test('réponse correcte : rendue telle quelle', () {
+      final r = lireReponseCloud(200, '{"success":true,"data":{"active":false}}', 'x');
+      expect(r['data']['active'], isFalse);
+    });
+  });
+
   group('lecture des réponses du serveur', () {
     test('état de la connexion : active, enregistrée, redémarrage nécessaire ; jamais de mot de passe', () {
       final c = CloudConfig.fromJson({

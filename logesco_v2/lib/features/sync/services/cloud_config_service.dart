@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
@@ -103,37 +105,39 @@ class CloudConfigService {
     };
   }
 
-  Map<String, dynamic> _lire(http.Response r, String repli) {
-    Map<String, dynamic> json;
+  Map<String, dynamic> _lire(http.Response r, String repli) => lireReponseCloud(r.statusCode, r.body, repli);
+
+  /// Appel au serveur : une coupure ou un délai dépassé donne un message clair, pas un texte technique
+  Future<http.Response> _appeler(Future<http.Response> Function() requete) async {
     try {
-      json = jsonDecode(r.body) as Map<String, dynamic>;
-    } catch (_) {
-      throw Exception(repli);
+      return await requete();
+    } on TimeoutException {
+      throw Exception('Le serveur LOGESCO met trop de temps à répondre. Réessayez dans un instant.');
+    } on SocketException {
+      throw Exception('Impossible de joindre le serveur LOGESCO de cet ordinateur. Vérifiez que LOGESCO est bien démarré.');
+    } on http.ClientException {
+      throw Exception('Impossible de joindre le serveur LOGESCO de cet ordinateur. Vérifiez que LOGESCO est bien démarré.');
     }
-    if (r.statusCode != 200 || json['success'] != true) {
-      throw Exception((json['message'] as String?) ?? repli);
-    }
-    return json;
   }
 
   Future<CloudConfig> lire() async {
-    final r = await http.get(Uri.parse('$_baseUrl/sync/cloud-config'), headers: _headers()).timeout(const Duration(seconds: 10));
+    final r = await _appeler(() => http.get(Uri.parse('$_baseUrl/sync/cloud-config'), headers: _headers()).timeout(const Duration(seconds: 10)));
     return CloudConfig.fromJson((_lire(r, 'Impossible de lire la connexion au cloud')['data'] as Map).cast<String, dynamic>());
   }
 
   /// Teste le lien sans rien enregistrer
   Future<CloudTestResult> tester(String url) async {
-    final r = await http
+    final r = await _appeler(() => http
         .post(Uri.parse('$_baseUrl/sync/cloud-config/test'), headers: _headers(), body: jsonEncode({'url': url}))
-        .timeout(const Duration(seconds: 40));
+        .timeout(const Duration(seconds: 40)));
     return CloudTestResult.fromJson((_lire(r, 'Le test de connexion a échoué')['data'] as Map).cast<String, dynamic>());
   }
 
   /// Teste puis enregistre le lien. Le serveur doit ensuite redémarrer pour l'utiliser.
   Future<CloudConfig> enregistrer(String url) async {
-    final r = await http
+    final r = await _appeler(() => http
         .post(Uri.parse('$_baseUrl/sync/cloud-config'), headers: _headers(), body: jsonEncode({'url': url}))
-        .timeout(const Duration(seconds: 40));
+        .timeout(const Duration(seconds: 40)));
     return CloudConfig.fromJson((_lire(r, "Le lien n'a pas pu être enregistré")['data'] as Map).cast<String, dynamic>());
   }
 }
@@ -157,4 +161,30 @@ String? verifierLienNeon(String saisie) {
   }
   if (uri.path.length <= 1) return "Le lien ne contient pas le nom de la base de données (à la fin, après l'adresse).";
   return null;
+}
+
+/// Message affiché quand le serveur installé sur cet ordinateur est une ancienne version (la route n'existe pas)
+const String messageServeurTropAncien =
+    "Le serveur LOGESCO installé sur cet ordinateur est une ancienne version : il ne gère pas encore la connexion au cloud depuis l'application. "
+    "Mettez LOGESCO à jour (installez la dernière version), puis réessayez.";
+
+/// Lit la réponse d'une route de connexion au cloud. Lève une exception avec un message clair, jamais un code technique.
+Map<String, dynamic> lireReponseCloud(int statut, String corps, String repli) {
+  // Route absente : serveur trop ancien (le serveur à jour répond 401/403/200, jamais 404, pour ces routes)
+  if (statut == 404) throw Exception(messageServeurTropAncien);
+  Map<String, dynamic>? json;
+  try {
+    final decode = jsonDecode(corps);
+    if (decode is Map<String, dynamic>) json = decode;
+  } catch (_) {
+    json = null;
+  }
+  if (statut == 401) throw Exception('Votre session a expiré : reconnectez-vous, puis réessayez.');
+  if (json == null) {
+    throw Exception(statut >= 500 ? 'Le serveur LOGESCO a rencontré une erreur. Réessayez dans un instant.' : repli);
+  }
+  if (statut != 200 || json['success'] != true) {
+    throw Exception((json['message'] as String?) ?? repli);
+  }
+  return json;
 }
