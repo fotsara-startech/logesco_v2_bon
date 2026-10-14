@@ -5,6 +5,7 @@ import '../../../core/utils/snackbar_helper.dart';
 import '../controllers/sync_controller.dart';
 import '../services/sync_status_service.dart';
 import '../widgets/sync_drift_card.dart';
+import '../widgets/sync_doublons_card.dart';
 
 class SyncStatusPage extends StatelessWidget {
   const SyncStatusPage({super.key});
@@ -61,6 +62,16 @@ class SyncStatusPage extends StatelessWidget {
                 onRestore: controller.reafficherEcartsIgnores,
               ),
               const SizedBox(height: 16),
+              // Doublons de fiches (même client saisi sur deux postes) : seulement pour les clients qui ont une base cloud,
+              // et seulement s'il y en a. Un client 100 % local n'a pas à voir ce bloc.
+              if ((controller.drift.value?.doublons ?? const []).isNotEmpty) ...[
+                SyncDoublonsCard(
+                  groupes: controller.drift.value!.doublons,
+                  verification: controller.isCheckingDrift.value,
+                  onActualiser: controller.verifierEcart,
+                ),
+                const SizedBox(height: 16),
+              ],
             ],
             _buildSyncButton(controller, s),
           ],

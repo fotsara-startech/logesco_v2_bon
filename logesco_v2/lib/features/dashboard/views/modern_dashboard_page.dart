@@ -19,6 +19,7 @@ import '../../boutiques/widgets/boutique_selector_widget.dart';
 import '../../boutiques/widgets/boutique_context_indicator.dart';
 import '../../boutiques/views/boutiques_management_page.dart';
 import '../../sync/widgets/sync_indicator_widget.dart';
+import '../../sync/views/cloud_config_page.dart';
 import '../../cash_registers/widgets/cash_balance_widget.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -242,6 +243,10 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('commercials', 'READ')) _buildMenuItem(Icons.badge_outlined, 'Commerciaux', Colors.brown, () => Get.toNamed(AppRoutes.commercials)),
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'Dashboard consolidé', Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
                     // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
+                    // Connexion au cloud (lien Neon) : administrateur, sur le poste qui héberge le serveur. Visible aussi pour un
+                    // client 100 % local : c'est ce qui lui permet d'activer le cloud sans modifier le .env à la main.
+                    if (CloudConfigPage.disponible)
+                      _buildMenuItem(Icons.cloud_sync_outlined, 'Connexion au cloud (Neon)', Colors.cyan, () => Get.to(() => const CloudConfigPage())),
                     _buildMenuItem(Icons.card_membership, 'menu_subscription'.tr, Colors.deepOrange, () {
                       Get.to(() => const SubscriptionStatusPage());
                     }),

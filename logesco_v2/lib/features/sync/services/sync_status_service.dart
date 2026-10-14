@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:get/get.dart';
+import '../models/sync_doublons.dart';
 
 class SyncStatus {
   final String mode;
@@ -265,7 +266,14 @@ class SyncDriftReport {
   final int ignores;
   final List<SyncDriftGroup> ecarts;
 
-  const SyncDriftReport({this.verifieLe, required this.inexpliques, required this.anciens, required this.connus, required this.ecarts, this.ignores = 0});
+  /// Doublons probables de fiches (clients, fournisseurs, boutiques) saisis sur deux postes : signalés, jamais fusionnés seuls
+  final List<SyncDoublonGroup> doublons;
+
+  const SyncDriftReport({this.verifieLe, required this.inexpliques, required this.anciens, required this.connus, required this.ecarts, this.ignores = 0, this.doublons = const []});
+
+  /// Même rapport avec la liste des doublons (renvoyée à côté du rapport par le serveur)
+  SyncDriftReport avecDoublons(List<SyncDoublonGroup> d) =>
+      SyncDriftReport(verifieLe: verifieLe, inexpliques: inexpliques, anciens: anciens, connus: connus, ecarts: ecarts, ignores: ignores, doublons: d);
 
   factory SyncDriftReport.fromJson(Map<String, dynamic> json) {
     final resume = (json['resume'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
@@ -276,6 +284,7 @@ class SyncDriftReport {
       connus: (resume['connus'] as num?)?.toInt() ?? 0,
       ignores: (resume['ignores'] as num?)?.toInt() ?? 0,
       ecarts: (json['ecarts'] as List<dynamic>? ?? const []).map((e) => SyncDriftGroup.fromJson((e as Map).cast<String, dynamic>())).toList(),
+      doublons: SyncDoublonGroup.listeDepuis(json['doublons']),
     );
   }
 }
@@ -381,7 +390,8 @@ class SyncStatusService {
       if (json['success'] != true) return null;
       final rapport = json['data']?['rapport'];
       if (rapport is! Map) return null;
-      return SyncDriftReport.fromJson(rapport.cast<String, dynamic>());
+      // Les doublons sont renvoyés à côté du rapport, pas dedans
+      return SyncDriftReport.fromJson(rapport.cast<String, dynamic>()).avecDoublons(SyncDoublonGroup.listeDepuis(json['data']?['doublons']));
     } catch (_) {
       return null;
     }
