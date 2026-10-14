@@ -1878,21 +1878,23 @@ class SyncServiceV2 {
   }
 
   /**
-   * Données de base du premier poste (rôle, boutique, caisse...) : envoyées une fois si le cloud n'en a aucune
-   * (voir sync-graine.js). Sans effet sur un cloud qui contient déjà des données.
+   * Données locales jamais envoyées (données de base du premier poste, historique d'un poste resté sans cloud) :
+   * envoyées par table, une seule fois, si le cloud n'a aucune ligne dans cette table (voir sync-graine.js). Sans effet
+   * sur une table du cloud qui contient déjà des données.
    */
   async _envoyerGraineSiCloudNeuf() {
     if (!this.cloudPool) return;
     let client;
     try {
       // Vérification locale d'abord : une fois la graine traitée, aucune connexion au cloud n'est ouverte pour ça
-      if (!(await syncGraine.resteAFaire(this.localPrisma))) return;
+      if (!(await syncGraine.resteAFaire(this.localPrisma, PULL_TABLES))) return;
       client = await this.cloudPool.connect();
       await syncGraine.pousserGraineSiCloudVide({
         prisma: this.localPrisma,
         client,
         enqueue: (table, operation, data) => this.logOperation(table, operation, data),
         log: (m) => console.log(m),
+        tables: PULL_TABLES, // toutes les tables métier, parents avant enfants : base de départ ET historique d'un poste resté sans cloud
       });
     } catch (e) {
       if (this._isConnectionError(e)) { this.isCloudAvailable = false; return; }
