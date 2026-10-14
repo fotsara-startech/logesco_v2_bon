@@ -130,16 +130,12 @@ test("2b. mêmes fiches, reliés dans l'ORDRE INVERSE de la chronologie (le plus
   assert.deepStrictEqual(v.B, v.cloud, 'B = cloud');
   assert.deepStrictEqual(await aide.doublonsCloud(c.cloudUrl), [], 'aucun doublon');
 
-  await t.test("la modification la plus RÉCENTE (B) l'emporte même si elle est poussée avant l'autre", {
-    todo: "DÉFAUT CONNU : le dernier envoi gagne (INSERT … ON CONFLICT DO UPDATE sans comparaison de date_modification, sync-service.js:1856) : un poste relié tard avec une ancienne modification écrase la plus récente",
-  }, () => {
+  await t.test("la modification la plus RÉCENTE (B) l'emporte même si elle est poussée avant l'autre", () => {
     assert.strictEqual(v.cloud.nom, 'Commun-par-B');
     assert.strictEqual(v.cloud.prix, 3000);
     assert.strictEqual(v.cloud.adresse, 'Adresse B');
   });
-  await t.test('les champs modifiés par des postes différents sont tous conservés (description posée par A, prix par B)', {
-    todo: "DÉFAUT CONNU : la synchronisation travaille à la ligne entière, pas au champ : la modification de A sur un champ que B n'a pas touché est perdue si B pousse après",
-  }, () => {
+  await t.test('les champs modifiés par des postes différents sont tous conservés (description posée par A, prix par B)', () => {
     assert.strictEqual(v.cloud.description, 'Description posée par A');
     assert.strictEqual(v.cloud.prix, 3000);
   });

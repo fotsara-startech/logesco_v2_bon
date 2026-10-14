@@ -57,7 +57,7 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
 3. **[CORRIGÉ le 13 octobre — voir 6 quinquies] Curseur de réception qui saute dans le futur (synchro bloquée).** Une ligne poussée avec une horloge en avance fixe le curseur de `produits` à demain ; les mises à jour suivantes ne sont plus jamais reçues, et le rattrapage ne couvre que les lignes absentes.
 4. **Paiement client perdu après une vente à crédit.** Le solde du cloud revient à la valeur d'avant paiement. *Probable* : instantané du compte envoyé après le paiement (`routes/sales.js` ~l.1283-1285).
 5. **Écritures `achat_credit` jamais envoyées au cloud.** *Confirmé* : `routes/sales.js` l.1142 `const createdTransactionIds` masque le `let` de la l.862 ; la l.1251 renvoie un tableau vide.
-6. **Dernière écriture gagne même si plus ancienne** : un poste reconnecté en dernier avec une vieille modification écrase la plus récente (`sync-service.js` ~l.1856, sans comparaison de date). Fiche synchronisée EN ENTIER : A change la description, B le prix → un seul survit.
+6. **[CORRIGÉ le 14 octobre — voir 6 septies] Dernière écriture gagne même si plus ancienne** : un poste reconnecté en dernier avec une vieille modification écrase la plus récente (`sync-service.js` ~l.1856, sans comparaison de date). Fiche synchronisée EN ENTIER : A change la description, B le prix → un seul survit.
 7. **Suppression contre modification** : produit « supprimé » (en fait désactivé) sur A pendant que B le modifie → reste actif sur B et peut être revendu.
 8. **Numéros de commande d'approvisionnement sans suffixe de poste.** *Confirmé* : `routes/procurement.js` `generateNumeroCommande` n'appelle pas `documentSuffix()` (le conflit est ensuite tranché par « renommer »).
 9. **[CORRIGÉ le 13 octobre — voir 6 sexies] Données de base du tout premier poste jamais envoyées** (rôle, boutique, caisse, utilisateur créés au premier démarrage, non journalisés) : sur un cloud vide, les lignes qui en dépendent (stock) sont refusées par clé étrangère. Concerne l'installation d'un client neuf.
@@ -129,3 +129,18 @@ Reste ouvert : 6 (ligne entière, dernière écriture gagnante), 9 (lignes de ba
 Autres corrections : registre `sync_applied_ops` créé au besoin (et non plus seulement au démarrage : un cloud injoignable à ce moment-là bloquait tous les envois de stock) ; garde-fou du banc de test ouvert à l'URL volontairement injoignable `127.0.0.1:9` ; les scénarios hors ligne `30-*` n'avaient jamais pu démarrer depuis l'ajout du garde-fou.
 
 Scénarios : `30-crash` 3/3, `30-fiches-communes` 2b : stock 65 partout, plus aucune écriture perdue. Reste dans 2b le défaut 6 (modification ancienne qui écrase la récente ; champs de postes différents) : le cloud n'a pas de date d'édition fiable (la colonne `date_modification` est réécrite par un déclencheur à chaque envoi), la comparaison de dates exige une nouvelle colonne côté cloud.
+
+## 6 septies. Défaut 6 : fusion champ par champ des fiches (14 octobre)
+
+Les fiches (produits, clients, fournisseurs, catégories) partaient EN ENTIER et le dernier envoi gagnait : un poste relié tard avec une ancienne modification écrasait la plus récente, et deux postes qui modifiaient des champs différents se perdaient mutuellement une modification.
+
+Nouveau module `sync-fusion.js` (fusion à trois, comme le stock par différence) :
+- chaque poste retient la **base** de chaque fiche (la version qu'il a vue la dernière fois : table locale `sync_row_base`, mise à jour à la réception et à l'envoi) ;
+- à l'envoi, **seules les colonnes réellement modifiées** partent ;
+- dans le cloud, une colonne n'est écrasée que si personne ne l'a changée depuis la base du poste, OU si la modification est **plus récente** que la dernière édition de la fiche. Cette date d'édition vit dans une **table à part** du cloud, `sync_edition` : la colonne `date_modification` est réécrite par un déclencheur à chaque envoi et ne peut pas servir. Aucune colonne n'est ajoutée aux tables de fiches : les postes pas encore mis à jour continuent de les lire sans différence (une colonne ajoutée aurait fait échouer leurs insertions locales) ;
+- mise à jour et date d'édition dans une transaction ; sans base connue, la fiche part en entier mais jamais par-dessus une édition plus récente ;
+- les colonnes que le cloud ne connaît pas (ex. `image_url`, propre au poste) ne partent jamais ; une colonne vide absente de la base n'est pas une modification ; la règle « une modification ordinaire ne réactive pas un produit désactivé » est conservée.
+
+Résultats : `30-fiches-communes` 4/4 (2 et 2b : B plus récent l'emporte sur le nom, le prix, l'adresse ; la description posée par A est conservée ; stock 65) ; `10-c` : ★4 stock 244 partout (manuel et automatique), ★5 prix 3/3, ★6, ★7 5/5. 147 tests unitaires.
+
+Reste ouvert : 10 (poste démarré sans cloud, décision), 11 (mineurs), tables modifiables exposées à la fenêtre de quelques millisecondes entre la réponse et le journal, agents métier et réseau à valider. Quand deux postes modifient la MÊME colonne, la plus récente gagne d'après l'horloge du poste (une horloge très en avance gagnerait toujours).

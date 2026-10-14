@@ -89,7 +89,7 @@ async function creerBaseDeTest({ etiquette = 'x', nom } = {}) {
     let derniere;
     // Plusieurs créations simultanées (agents en parallèle) se bloquent mutuellement sur la base modèle : on réessaie
     // avec une pause aléatoire.
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       // Les connexions du pooler restent ouvertes un moment après usage. On ferme UNIQUEMENT celles qui sont inactives
       // (jamais une session active, par exemple celle d'une application de développement en cours d'utilisation).
       await pool.query(
@@ -104,7 +104,7 @@ async function creerBaseDeTest({ etiquette = 'x', nom } = {}) {
         if (e.code === '42P04') return;
         derniere = e;
         if (!/being accessed by other users|source database/i.test(e.message)) break;
-        await new Promise((r) => setTimeout(r, 2000 + Math.random() * 6000));
+        await new Promise((r) => setTimeout(r, 3000 + Math.random() * 7000));
       }
     }
     throw derniere;
