@@ -90,3 +90,39 @@ Pendant la première journée :
   réponse du serveur et l'écriture au journal en cas d'arrêt brutal du poste (le stock et l'historique, eux, sont réparés).
 * Quand deux postes modifient la **même colonne** de la même fiche hors ligne, la modification la plus récente gagne
   (d'après l'horloge du poste : une horloge très en avance gagnerait toujours).
+
+## 8. Connexion au cloud depuis l'application (nouveau)
+
+Jusqu'ici, activer le cloud sur un poste obligeait à modifier le fichier `.env` à la main (`CLOUD_DB_URL`). Une page
+**« Connexion au cloud (Neon) »** existe maintenant dans le menu **Administration**.
+
+* **Qui la voit** : un **administrateur**, sur l'ordinateur qui **héberge** le serveur LOGESCO. Elle n'apparaît ni en mode
+  client réseau, ni sur le web. Un client 100 % local la voit aussi : c'est ce qui lui permet d'activer le cloud.
+* **Comment** : coller le lien « Connection string » de la console Neon (masqué à la saisie) → *Tester la connexion* →
+  *Enregistrer et redémarrer*. L'enregistrement n'est possible que si le test réussit **et** que la base contient déjà les
+  tables de LOGESCO (le schéma doit être installé dans la base Neon au préalable).
+* **Ce que le test dit** : si le cloud est **vide** (le poste lui enverra ses données), ou **déjà rempli** (les données
+  du poste ne sont pas envoyées par-dessus : celles du cloud sont conservées).
+* **Redémarrage** : le lien est écrit dans le `.env`, puis le serveur redémarre (environ une minute ; les autres postes du
+  réseau perdent la connexion un instant : à faire hors des heures de vente). Il n'est volontairement **pas** appliqué à
+  chaud : les hooks de journalisation des écritures locales ne s'installent qu'au démarrage.
+* **Sécurité** : le mot de passe n'est jamais renvoyé par le serveur ni écrit dans un journal (seuls l'hôte, la base et
+  l'utilisateur sont montrés) ; le lien est validé strictement (un retour à la ligne ou un guillemet permettrait d'injecter
+  d'autres variables dans le `.env`) ; une copie `.env.avant-cloud` de l'ancien fichier est gardée.
+* **Limites** : pas de bouton pour *revenir en 100 % local* (à faire à la main : retirer `CLOUD_DB_URL` du `.env`) ; l'écran
+  n'a pas été exercé sur un poste Windows réel (voir « Vérifié / non vérifié » ci-dessous).
+
+### Écran des doublons
+
+La page **Synchronisation** affiche, pour les clients qui ont une base cloud **seulement**, une carte « doublons probables »
+(clients, fournisseurs, boutiques saisis sur deux postes) avec le poste d'origine et le **solde** de chaque fiche. Aucune
+fusion n'est proposée : fusionner deux comptes est une décision humaine. Un client 100 % local ne voit jamais cette carte.
+
+### Vérifié / non vérifié
+
+Vérifié : 174 tests serveur, 44 tests Flutter de synchronisation (dont l'absence de bouton de fusion et le refus des liens
+piégés), le scénario de bout en bout `50-cloud-config` (lien testé puis enregistré sur un vrai poste 100 % local ; le mot de
+passe n'apparaît ni dans les réponses ni dans le journal du poste).
+**Non vérifié** : l'application Windows complète (parcours à l'écran, redémarrage réel par `BackendService`, reprise du
+lien au démarrage suivant). À faire sur un poste de test avant de livrer : saisir un lien, laisser redémarrer, vérifier
+que la synchronisation démarre.
