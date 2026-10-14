@@ -9,6 +9,7 @@ const { getSyncDetails } = require('../services/sync-detail');
 const { renvoyerVersCloud } = require('../services/sync-resend');
 const { ignorerEcarts, restaurerEcarts } = require('../services/sync-health');
 const { DecisionCenter } = require('../services/decision-center');
+const cloudConfig = require('../services/cloud-config');
 
 /** Résumé du dernier contrôle d'écart (null tant qu'aucun contrôle n'a abouti) */
 function driftSummary() {
@@ -249,6 +250,73 @@ function createSyncRouter({ authService }) {
     } catch (e) {
       console.error('⚠️  Erreur POST /sync/drift/ignore:', e.message);
       res.status(500).json({ success: false, message: "Erreur lors de la prise en compte de l'écart: " + e.message });
+    }
+  });
+
+  // ── Connexion au cloud (lien Neon saisi dans l'application, au lieu de modifier le .env à la main) ─────────────
+  // Réservé aux administrateurs. Le mot de passe n'est jamais renvoyé ni tracé. L'URL n'est pas appliquée à chaud :
+  // elle est enregistrée, puis le serveur doit redémarrer (les hooks de journalisation ne s'installent qu'au démarrage).
+
+  /**
+   * GET /sync/cloud-config
+   * Où en est la connexion : active (le serveur tourne avec un cloud), enregistrée (dans le .env), redémarrage nécessaire.
+   */
+  router.get('/cloud-config', authenticateToken(authService), async (req, res) => {
+    try {
+      if (!(await estAdmin(req.user.id))) {
+        return res.status(403).json({ success: false, message: 'Seul un administrateur peut voir la connexion au cloud.' });
+      }
+      res.json({ success: true, data: cloudConfig.lireConfiguration() });
+    } catch (e) {
+      console.error('⚠️  Erreur GET /sync/cloud-config:', e.message);
+      res.status(500).json({ success: false, message: 'Erreur de lecture de la configuration du cloud.' });
+    }
+  });
+
+  /**
+   * POST /sync/cloud-config/test   { url }
+   * Teste la connexion SANS rien enregistrer.
+   */
+  router.post('/cloud-config/test', authenticateToken(authService), async (req, res) => {
+    try {
+      if (!(await estAdmin(req.user.id))) {
+        return res.status(403).json({ success: false, message: 'Seul un administrateur peut tester la connexion au cloud.' });
+      }
+      const resultat = await cloudConfig.tester((req.body || {}).url);
+      res.json({ success: true, data: resultat });
+    } catch (e) {
+      console.error('⚠️  Erreur POST /sync/cloud-config/test:', e.message);
+      res.status(500).json({ success: false, message: 'Erreur du test de connexion.' });
+    }
+  });
+
+  /**
+   * POST /sync/cloud-config   { url }
+   * Teste puis enregistre le lien dans le .env. Refuse un lien invalide, une connexion qui échoue, ou une base sans
+   * les tables de LOGESCO. Le serveur doit ensuite redémarrer pour utiliser le cloud.
+   */
+  router.post('/cloud-config', authenticateToken(authService), async (req, res) => {
+    try {
+      if (!(await estAdmin(req.user.id))) {
+        return res.status(403).json({ success: false, message: 'Seul un administrateur peut changer la connexion au cloud.' });
+      }
+      const url = (req.body || {}).url;
+      const test = await cloudConfig.tester(url);
+      if (!test.ok) return res.status(400).json({ success: false, message: test.message });
+      if (!test.schemaPret) {
+        return res.status(400).json({
+          success: false,
+          message: "La base Neon ne contient pas encore les tables de LOGESCO (" + test.tablesManquantes.join(', ') + "). Faites d'abord installer le schéma dans cette base, puis réessayez.",
+        });
+      }
+      const info = cloudConfig.enregistrer(url);
+      // Traçage : l'hôte et la base seulement, JAMAIS le mot de passe
+      await tracer('sync_cloud:configurer', 'enregistrer', req.user.id, { hote: info.hote, base: info.base });
+      console.log(`☁️  Lien du cloud enregistré (hôte ${info.hote}, base ${info.base}) — redémarrage du serveur nécessaire`);
+      res.json({ success: true, message: 'Lien enregistré. Le serveur doit redémarrer pour utiliser le cloud.', data: { ...cloudConfig.lireConfiguration(), test } });
+    } catch (e) {
+      console.error('⚠️  Erreur POST /sync/cloud-config:', e.message);
+      res.status(500).json({ success: false, message: "Le lien n'a pas pu être enregistré." });
     }
   });
 
