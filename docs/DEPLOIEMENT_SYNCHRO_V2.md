@@ -16,6 +16,7 @@ l'ordre des étapes, ce qu'on vérifie chez le premier client et comment revenir
 | Désactivation d'un produit | Elle n'est plus transformée en suppression dans le cloud (le produit et son stock étaient effacés). Un produit désactivé n'est pas réactivé par une simple modification d'un autre poste. |
 | Curseur de réception plafonné à l'heure du cloud | Un poste dont l'horloge avance ne bloque plus la réception des mises à jour. Un curseur déjà bloqué se répare seul (pull complet de la table). |
 | Données de base envoyées à un cloud **neuf** | L'installation d'un nouveau client fonctionne : boutique, caisse, rôle et utilisateur arrivent dans le cloud. |
+| Poste resté sans cloud puis relié (défaut n°10) | Son historique (produits, ventes, stock...) est envoyé au cloud, par lots, si le cloud n'a pas encore ces données. |
 | Fusion champ par champ des fiches (défaut n°6) | La description posée par un poste et le prix posé par un autre se combinent ; la modification la plus récente gagne. |
 
 ### Objets créés automatiquement (aucune migration manuelle)
@@ -79,7 +80,9 @@ Pendant la première journée :
 
 ## 7. Limites connues après cette livraison
 
-* Défaut n°10 : un poste démarré **sans** cloud puis relié n'envoie pas son historique local (décision de conception).
+* Défaut n°10 (corrigé) : un poste démarré **sans** cloud puis relié envoie son historique local, table par table, quand le
+  cloud n'a encore aucune ligne dans la table. Limite : si **deux** postes ont travaillé hors cloud puis sont reliés au
+  même cloud, seul le premier envoie son historique ; le second est signalé par le contrôle d'écart et demande une décision.
 * Défaut n°11 : doublons silencieux possibles de boutiques, fournisseurs ou clients homonymes saisis sur deux postes
   (aucune clé unique) ; contrôle d'écart rafraîchi parfois périmé ; ventes plus lentes (~2,5 s) avec un cloud configuré.
 * Les ventes, produits et clients (tables modifiables) restent exposés à la fenêtre de quelques millisecondes entre la

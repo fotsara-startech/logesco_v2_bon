@@ -61,7 +61,7 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
 7. **Suppression contre modification** : produit « supprimé » (en fait désactivé) sur A pendant que B le modifie → reste actif sur B et peut être revendu.
 8. **Numéros de commande d'approvisionnement sans suffixe de poste.** *Confirmé* : `routes/procurement.js` `generateNumeroCommande` n'appelle pas `documentSuffix()` (le conflit est ensuite tranché par « renommer »).
 9. **[CORRIGÉ le 13 octobre — voir 6 sexies] Données de base du tout premier poste jamais envoyées** (rôle, boutique, caisse, utilisateur créés au premier démarrage, non journalisés) : sur un cloud vide, les lignes qui en dépendent (stock) sont refusées par clé étrangère. Concerne l'installation d'un client neuf.
-10. **Poste démarré sans cloud** : relié ensuite, il n'envoie jamais son historique local (décision de conception à prendre).
+10. **[CORRIGÉ le 14 octobre — voir 6 octies] Poste démarré sans cloud** : relié ensuite, il n'envoie jamais son historique local (décision de conception à prendre).
 11. Mineurs : doublons silencieux sans clé unique (boutiques, fournisseurs, clients homonymes) ; `GET /sync/drift?refresh=1` renvoie l'ancien rapport si un contrôle est en cours ; ventes lentes (~2,5 s) quand un cloud est configuré.
 
 ## 6 bis. Corrections faites depuis le rapport (13/10/2026) — locales, non poussées
@@ -144,3 +144,13 @@ Nouveau module `sync-fusion.js` (fusion à trois, comme le stock par différence
 Résultats : `30-fiches-communes` 4/4 (2 et 2b : B plus récent l'emporte sur le nom, le prix, l'adresse ; la description posée par A est conservée ; stock 65) ; `10-c` : ★4 stock 244 partout (manuel et automatique), ★5 prix 3/3, ★6, ★7 5/5. 147 tests unitaires.
 
 Reste ouvert : 10 (poste démarré sans cloud, décision), 11 (mineurs), tables modifiables exposées à la fenêtre de quelques millisecondes entre la réponse et le journal, agents métier et réseau à valider. Quand deux postes modifient la MÊME colonne, la plus récente gagne d'après l'horloge du poste (une horloge très en avance gagnerait toujours).
+
+## 6 octies. Défaut 10 : poste démarré sans cloud (14 octobre)
+
+Un poste démarré sans `CLOUD_DB_URL` ne journalise rien (mode 100 % local) ; relié ensuite à un cloud, il n'envoyait jamais son historique (produits, ventes, stock...).
+
+Correction : `sync-graine.js` (déjà utilisé pour la graine du défaut 9) est étendu à TOUTES les tables métier (ordre de `PULL_TABLES`, parents d'abord). Règle table par table : si le cloud n'a AUCUNE ligne dans la table et que le poste en a, un INSERT est journalisé pour chaque ligne locale sans entrée de journal, par lots de 1000, jusqu'à épuisement. La décision est mémorisée (`sync_graine`, état `en_cours`) : l'envoi continue quand la table du cloud commence à se remplir. Une table déjà alimentée dans le cloud n'est jamais touchée. Un index `operation_log(table_name, record_id)` est créé (sans lui, la sélection « lignes sans journal » parcourait tout le journal pour chaque ligne ; il accélère aussi les réparations du défaut 2).
+
+Vérifié : `30-hors-ligne` cas 1b (10 produits et 4 ventes saisis sans cloud puis envoyés, écarts : aucun, identité réservée) ; 154 tests unitaires, dont 11 pour ce module.
+
+**Non couvert, volontairement** : deux postes qui ont travaillé hors cloud puis sont reliés au MÊME cloud. Le premier envoie tout ; le second trouve des tables non vides et n'envoie pas (ses identifiants, tous inférieurs au premier bloc réservé, peuvent chevaucher ceux du premier). C'est une décision humaine ; le contrôle d'écart la signale (« présent ici, jamais arrivé dans le cloud »).

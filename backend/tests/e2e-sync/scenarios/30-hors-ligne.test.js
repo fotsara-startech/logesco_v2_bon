@@ -84,12 +84,10 @@ test('1. poste établi hors ligne : 50 produits + 20 ventes + mouvements, puis r
   assert.strictEqual(ecarts.inexpliques, r.perdus.length, `écart inexpliqué (hors lignes jamais journalisées) sur B : ${aide.resumeEcarts(ecarts.ecarts)}`);
 });
 
-test('1b. premier démarrage SANS cloud (CLOUD_DB_URL absent) puis reliaison : les données saisies en local sont envoyées', { skip, timeout: 1500000, todo: 'DÉFAUT CONNU (ou décision produit à trancher) : un poste démarré sans CLOUD_DB_URL ne journalise rien (sync-service.js:1949) et ne réserve aucune plage ; relié ensuite, il n envoie jamais ses produits et ventes (seul le contrôle d écart les signale)' }, async (t) => {
-  // DÉFAUT CONNU (à confirmer par le chef de projet) : en mode « 100 % local », logOperation() ne journalise RIEN
-  // (sync-service.js:1949 `if (!this.cloudUrl) return;`) et ensureInstallationIdentity() ne réserve aucune plage
-  // (sync-service.js:521). Un poste qui a travaillé sans cloud puis reçoit un CLOUD_DB_URL n'envoie donc jamais ses
-  // produits / ventes ; seul le contrôle d'écart les signale (« présent ici, jamais arrivé dans le cloud »), et le
-  // renvoi n'est prévu que pour les tables de stock (sync-resend.js:19).
+test('1b. premier démarrage SANS cloud (CLOUD_DB_URL absent) puis reliaison : les données saisies en local sont envoyées', { skip, timeout: 1500000 }, async (t) => {
+  // Défaut n°10, corrigé : en mode « 100 % local », logOperation() ne journalise rien et le poste n'a pas d'identité.
+  // Relié ensuite à un cloud, sync-graine.js envoie ses lignes locales sans journal, table par table, quand le cloud
+  // n'a aucune ligne dans la table (jamais par-dessus des données d'un autre poste).
   const c = await nouvelleCampagne({ etiquette: 'horsligne', postes: ['A', { nom: 'L', cloud: false, preload: [aide.PRELOAD_SANS_CLOUD] }], demarrer: false });
   t.after(() => c.terminer());
   const { A, L } = c.postes;

@@ -162,7 +162,9 @@ class Station {
     // Une erreur réseau locale doit dire QUEL poste, QUEL appel, quel code, et si le processus tourne encore
     const expliquer = (e) => {
       const code = e && e.cause && (e.cause.code || e.cause.message);
-      const err = new Error(`${this.nom} ${methode} ${chemin} : ${e.message} (${code}) ; processus ${this.proc ? 'vivant' : 'ARRÊTÉ'}`);
+      // Processus arrêté : les dernières lignes de son journal disent pourquoi (plantage, arrêt volontaire...)
+      const fin = this.proc ? '' : ' ; dernières lignes du journal :' + String.fromCharCode(10) + this.journal(14).split(String.fromCharCode(10)).map((l) => '    ' + l.slice(0, 200)).join(String.fromCharCode(10));
+      const err = new Error(`${this.nom} ${methode} ${chemin} : ${e.message} (${code}) ; processus ${this.proc ? 'vivant' : 'ARRÊTÉ'}${fin}`);
       err.cause = e;
       return err;
     };
