@@ -2,8 +2,12 @@
  * Debug de la connexion sync vers Neon
  */
 const { Pool } = require('pg');
+if (!process.env.CLOUD_DB_URL) {
+  console.error("CLOUD_DB_URL est requis : l'URL de la base Neon doit etre passee en variable d'environnement (jamais ecrite dans le code).");
+  process.exit(1);
+}
 
-const cloudUrl = process.env.CLOUD_DB_URL || 'postgresql://neondb_owner:npg_2gLKZJUC5RSa@ep-sweet-voice-alhik3h7.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const cloudUrl = process.env.CLOUD_DB_URL;
 
 console.log('URL utilisée:', cloudUrl.replace(/:([^@]+)@/, ':***@'));
 

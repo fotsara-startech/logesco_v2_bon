@@ -11,7 +11,7 @@ services:
       - key: DATABASE_PROVIDER
         value: postgresql
       - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_2AqZ4TJDMzSu@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+        sync: false  # secret : a saisir dans le tableau de bord Render, jamais dans ce fichier
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

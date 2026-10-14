@@ -58,7 +58,7 @@ Remove-Item -Recurse -Force "prisma\migrations\migrations" -ErrorAction Silently
 $env:DATABASE_URL="[COLLE ICI LA CONNECTION STRING NEON]"
 
 # Exemple :
-# $env:DATABASE_URL="postgresql://neondb_owner:npg_2AqZ4TJDMzSu@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# $env:DATABASE_URL="postgresql://neondb_owner:<MOT_DE_PASSE>@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # Déployer
 npx prisma migrate deploy --schema=prisma/schema.postgresql.prisma
@@ -208,7 +208,7 @@ DATABASE_URL="file:./database/logesco.db"
 
 # Base de données cloud (Neon — sync en ligne)
 # ⚠️ REMPLACE PAR LA CONNECTION STRING NEON DU CLIENT
-CLOUD_DB_URL="postgresql://neondb_owner:npg_2AqZ4TJDMzSu@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+CLOUD_DB_URL="postgresql://neondb_owner:<MOT_DE_PASSE>@ep-flat-term-alategot-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # JWT — CHANGE cette valeur pour chaque client
 # Format : logesco-[nom-client]-secret-[année]-[random]

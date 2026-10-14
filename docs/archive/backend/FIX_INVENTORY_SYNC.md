@@ -26,7 +26,7 @@ Exécuter le script SQL suivant sur votre base de données Neon pour ajouter la 
 
 ```bash
 # Depuis le dossier backend
-psql "postgresql://neondb_owner:npg_yIX5v0stjMlq@ep-still-snow-a41z9iyh.us-east-1.aws.neon.tech/neondb?sslmode=require" -f prisma/migrations_pg/fix_inventory_date_modification.sql
+psql "postgresql://neondb_owner:<MOT_DE_PASSE>@ep-still-snow-a41z9iyh.us-east-1.aws.neon.tech/neondb?sslmode=require" -f prisma/migrations_pg/fix_inventory_date_modification.sql
 ```
 
 ### Méthode 3 : Via Node.js (script automatique)
