@@ -142,11 +142,12 @@ function createSyncRouter({ authService }) {
       }
       let rapport = syncService.driftReport;
       if (req.query.refresh === '1' || !rapport) {
-        rapport = await syncService.checkDrift();
+        // refresh=1 : demande explicite, on attend un contrôle FRAIS (pas le résultat d'un contrôle commencé avant)
+        rapport = await syncService.checkDrift({ attendre: req.query.refresh === '1' });
       }
       res.json({
         success: true,
-        data: { actif: true, rapport, erreur: syncService.lastDriftError || null },
+        data: { actif: true, rapport, erreur: syncService.lastDriftError || null, doublons: syncService.doublons || [] },
       });
     } catch (e) {
       console.error('⚠️  Erreur GET /sync/drift:', e.message);

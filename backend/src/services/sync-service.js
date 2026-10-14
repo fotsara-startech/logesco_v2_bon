@@ -10,6 +10,7 @@ const { computeDrift } = require('./sync-health');
 const stockDifference = require('./stock-difference');
 const syncGraine = require('./sync-graine');
 const syncFusion = require('./sync-fusion');
+const { trouverDoublons } = require('./sync-doublons');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -110,8 +111,10 @@ class SyncServiceV2 {
     this.syncStartedAt = null;
     this._modColumnCache = {};
     this.driftReport = null;
+    this.doublons = [];
     this.lastDriftError = null;
     this._driftEnCours = false;
+    this._calculerEcart = computeDrift; // remplaçable dans les tests
     // Lignes reçues du cloud mais laissées de côté parce qu'une écriture locale était en attente (table → ids)
     this._protegees = new Map();
   }
@@ -121,15 +124,23 @@ class SyncServiceV2 {
    * et garde le rapport. Voir sync-health.js. Lecture seule : ne modifie ni les données ni les envois.
    * @returns {Promise<Object|null>} le dernier rapport (celui-ci, ou le précédent si le cloud est injoignable)
    */
-  async checkDrift() {
+  async checkDrift({ attendre = false } = {}) {
     if (!this.cloudUrl || !this.cloudPool || !this.localPrisma || !this.isCloudAvailable) return this.driftReport;
-    if (this._driftEnCours) return this.driftReport;
+    if (this._driftEnCours) {
+      // Appel périodique : on ne s'empile pas, on garde le dernier rapport. Demande EXPLICITE de rafraîchissement
+      // (écran, ?refresh=1) : on attend la fin du contrôle en cours puis on en relance un NOUVEAU. Le contrôle en cours a
+      // peut-être commencé avant ce que l'utilisateur vient de corriger : lui renvoyer son résultat serait un rapport périmé.
+      if (!attendre) return this.driftReport;
+      const attenteMax = Date.now() + 120000;
+      while (this._driftEnCours && Date.now() < attenteMax) await new Promise((r) => setTimeout(r, 250));
+      if (this._driftEnCours) return this.driftReport; // toujours en cours après 2 minutes : on ne bloque pas davantage
+    }
     this._driftEnCours = true;
     let client = null;
     let perdue = false;
     try {
       client = await this.cloudPool.connect();
-      this.driftReport = await computeDrift({
+      this.driftReport = await this._calculerEcart({
         prisma: this.localPrisma,
         client,
         tables: PULL_TABLES,
@@ -141,7 +152,7 @@ class SyncServiceV2 {
       // Rattrapage : des lignes du cloud jamais reçues ici sont récupérées, puis le rapport est refait
       const recuperes = await this._recupererManquants(client, this.driftReport);
       if (recuperes > 0) {
-        this.driftReport = await computeDrift({
+        this.driftReport = await this._calculerEcart({
           prisma: this.localPrisma,
           client,
           tables: PULL_TABLES,
@@ -149,6 +160,15 @@ class SyncServiceV2 {
           avecRenvoi: true,
         });
         this.driftReport.recuperes = recuperes;
+      }
+      // Doublons probables (même client / fournisseur / boutique saisi sur deux postes) : rendus VISIBLES, jamais fusionnés seuls
+      try {
+        this.doublons = await trouverDoublons(this.localPrisma);
+        if (this.doublons.length > 0) {
+          console.warn(`⚠️  ${this.doublons.length} doublon(s) probable(s) de fiches : ${this.doublons.map((d) => `${d.libelle} « ${d.fiches[0].libelle} » ×${d.nombre}`).join(' ; ')}`);
+        }
+      } catch (e) {
+        console.warn('⚠️  Détection des doublons impossible:', e.message);
       }
       const r = this.driftReport.resume;
       if (r.inexpliques > 0) {
