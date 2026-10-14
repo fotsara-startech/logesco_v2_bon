@@ -9,6 +9,7 @@ const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
 const stockDifference = require('./stock-difference');
 const syncGraine = require('./sync-graine');
+const syncFusion = require('./sync-fusion');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -872,6 +873,9 @@ class SyncServiceV2 {
           console.warn(`⚠️  Ajout colonne ${table}.${colonne}: ${e.message}`);
         }
       }
+      // Dates d'édition des fiches (table à part : aucune colonne ajoutée aux tables de fiches, les postes pas encore
+      // mis à jour continuent de les lire sans différence)
+      try { await syncFusion.creerEditionCloud(client); } catch (e) { console.warn(`⚠️  Table sync_edition: ${e.message}`); }
     } finally {
       client.release();
     }
@@ -1261,6 +1265,7 @@ class SyncServiceV2 {
          ON "sync_pull_retry"("table_name", "record_id")`
       );
       await stockDifference.creerBaseLocale(this.localPrisma);
+      await syncFusion.creerBaseLocale(this.localPrisma);
       console.log('✅ Tables de suivi du pull prêtes (sync_pull_state, sync_pull_retry)');
     } catch (e) {
       console.warn('⚠️  Erreur création tables de suivi du pull:', e.message);
@@ -1360,6 +1365,9 @@ class SyncServiceV2 {
    * Applique une ligne distante dans la base locale (insert ou update).
    */
   async _mergeRemoteRow(table, row) {
+    const fusion = syncFusion.TABLES_FUSION.includes(table);
+    // La date d'édition est une colonne du cloud seulement : les tables locales ne l'ont pas
+    if (fusion && 'derniere_edition' in row) { row = { ...row }; delete row.derniere_edition; }
     const keys = Object.keys(row).filter(k => row[k] !== null && row[k] !== undefined);
     if (keys.length === 0) return;
 
@@ -1401,6 +1409,9 @@ class SyncServiceV2 {
         ...vals
       );
     }
+
+    // Fiche fusionnable : la version reçue devient la base de référence du poste (voir sync-fusion.js)
+    if (fusion && row.id !== undefined) await syncFusion.ecrireBase(this.localPrisma, table, row.id, row);
 
     // Le poste vient de prendre la valeur du cloud pour cette ligne de stock : c'est sa nouvelle base de référence
     if (stockDifference.TABLES_STOCK.includes(table) && row.id !== undefined && row.quantite_disponible !== undefined && row.quantite_disponible !== null) {
@@ -2019,6 +2030,32 @@ class SyncServiceV2 {
     return this._applyToCloudBrut(client, tableName, operation, data);
   }
 
+  /**
+   * Table des dates d'édition des fiches fusionnables, créée AU BESOIN (une fois par exécution) et pas seulement au
+   * démarrage : un cloud injoignable à ce moment-là la laissait absente et chaque envoi de fiche échouait ensuite.
+   */
+  async _assurerColonneEdition(client) {
+    if (this._colonneEditionPrete) return;
+    await syncFusion.creerEditionCloud(client);
+    this._colonneEditionPrete = true;
+  }
+
+  /** Colonnes réelles d'une table du cloud (mises en cache : le schéma ne change pas en cours d'exécution) ; null si inconnues */
+  async _colonnesCloud(client, table) {
+    this._cacheColonnesCloud = this._cacheColonnesCloud || new Map();
+    if (this._cacheColonnesCloud.has(table)) return this._cacheColonnesCloud.get(table);
+    try {
+      const r = await client.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1", [table]
+      );
+      const ensemble = r.rows.length ? new Set(r.rows.map((x) => x.column_name)) : null;
+      if (ensemble) this._cacheColonnesCloud.set(table, ensemble);
+      return ensemble;
+    } catch (_) {
+      return null; // pas de filtre ce coup-ci
+    }
+  }
+
   async _applyToCloudBrut(client, tableName, operation, data) {
     const row = this._toSnakeCase(data);
 
@@ -2137,6 +2174,8 @@ class SyncServiceV2 {
     // pas encore reçu la désactivation renvoie sa ligne entière avec est_actif = vrai : sans cette règle, il annulait la
     // désactivation faite ailleurs (le produit ressuscitait partout). Seule une réactivation explicite, marquée par la
     // route (clé __reactivation), passe. Désactiver reste toujours possible.
+    const fusion = syncFusion.TABLES_FUSION.includes(tableName);
+    if (fusion && operation !== 'DELETE') await this._assurerColonneEdition(client);
     const actifCollant = tableName === 'produits' && keys.includes('est_actif') && !row.__reactivation;
     const affecterActif = (k, cible) => (actifCollant && k === 'est_actif'
       ? `"${k}" = COALESCE(${cible}"${k}", TRUE) AND EXCLUDED."${k}"`
@@ -2165,6 +2204,32 @@ class SyncServiceV2 {
           throw queryErr;
         }
       }
+      if (fusion) {
+        const ed = syncFusion.requeteEdition({ table: tableName, id: Number(row.id), edition: syncFusion.dateEdition(row) });
+        await client.query(ed.sql, ed.params);
+        await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, row);
+      }
+    } else if (operation === 'UPDATE' && fusion) {
+      // Fiche : seules les colonnes modifiées partent, et une colonne n'est écrasée que si elle n'a pas changé depuis la
+      // base du poste ou si cette modification est plus récente (voir sync-fusion.js)
+      const base = await syncFusion.lireBase(this.localPrisma, tableName, row.id);
+      const colonnes = await this._colonnesCloud(client, tableName);
+      const m = syncFusion.construireMiseAJour({ table: tableName, ligne: syncFusion.limiterAuxColonnes(row, colonnes), base, reactivation: !!row.__reactivation });
+      if (!m) return; // rien n'a changé par rapport à la base
+      // Mise à jour + date d'édition dans UNE transaction : la date ne doit pas avancer sans la mise à jour
+      try {
+        await client.query('BEGIN');
+        const result = await client.query(m.sql, m.params);
+        if (result.rowCount === 0) console.log(`  Info: ${tableName} (id=${row.id}) pas encore dans Neon, ou édition plus récente déjà présente`);
+        else await client.query(m.upsertEdition.sql, m.upsertEdition.params);
+        await client.query('COMMIT');
+      } catch (queryErr) {
+        try { await client.query('ROLLBACK'); } catch (_) { /* connexion perdue */ }
+        console.error(`❌ Erreur SQL UPDATE ${tableName}:`, queryErr.message);
+        throw queryErr;
+      }
+      await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, { ...(base || {}), ...syncFusion.instantane(row) });
+      return;
     } else if (operation === 'UPDATE') {
       // Tables qui utilisent des upserts localement → doivent faire UPSERT dans Neon
       const UPSERT_TABLES = ['stock_boutiques', 'mouvements_stock'];
