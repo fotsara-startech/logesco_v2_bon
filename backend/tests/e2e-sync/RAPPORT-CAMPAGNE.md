@@ -62,7 +62,7 @@ Gravité décroissante. « Confirmé » = lu dans le code ; « probable » = hyp
 8. **Numéros de commande d'approvisionnement sans suffixe de poste.** *Confirmé* : `routes/procurement.js` `generateNumeroCommande` n'appelle pas `documentSuffix()` (le conflit est ensuite tranché par « renommer »).
 9. **[CORRIGÉ le 13 octobre — voir 6 sexies] Données de base du tout premier poste jamais envoyées** (rôle, boutique, caisse, utilisateur créés au premier démarrage, non journalisés) : sur un cloud vide, les lignes qui en dépendent (stock) sont refusées par clé étrangère. Concerne l'installation d'un client neuf.
 10. **[CORRIGÉ le 14 octobre — voir 6 octies] Poste démarré sans cloud** : relié ensuite, il n'envoie jamais son historique local (décision de conception à prendre).
-11. Mineurs : doublons silencieux sans clé unique (boutiques, fournisseurs, clients homonymes) ; `GET /sync/drift?refresh=1` renvoie l'ancien rapport si un contrôle est en cours ; ventes lentes (~2,5 s) quand un cloud est configuré.
+11. **[TRAITÉ le 14 octobre — voir 6 nonies]** Mineurs : doublons silencieux sans clé unique (boutiques, fournisseurs, clients homonymes) ; `GET /sync/drift?refresh=1` renvoie l'ancien rapport si un contrôle est en cours ; ventes lentes (~2,5 s) quand un cloud est configuré.
 
 ## 6 bis. Corrections faites depuis le rapport (13/10/2026) — locales, non poussées
 * **Défaut 5 (écritures `achat_credit`)** : corrigé (`e639905`) ET démontré : le sous-test e2e « les 4 écritures de compte … présentes dans le cloud » passe.
@@ -154,3 +154,9 @@ Correction : `sync-graine.js` (déjà utilisé pour la graine du défaut 9) est 
 Vérifié : `30-hors-ligne` cas 1b (10 produits et 4 ventes saisis sans cloud puis envoyés, écarts : aucun, identité réservée) ; 154 tests unitaires, dont 11 pour ce module.
 
 **Non couvert, volontairement** : deux postes qui ont travaillé hors cloud puis sont reliés au MÊME cloud. Le premier envoie tout ; le second trouve des tables non vides et n'envoie pas (ses identifiants, tous inférieurs au premier bloc réservé, peuvent chevaucher ceux du premier). C'est une décision humaine ; le contrôle d'écart la signale (« présent ici, jamais arrivé dans le cloud »).
+
+## 6 nonies. Défaut 11 : points mineurs (14 octobre)
+
+1. **Contrôle d'écart périmé** : `GET /sync/drift?refresh=1` renvoyait l'ancien rapport quand un contrôle était déjà en cours. Une demande explicite de rafraîchissement attend maintenant la fin du contrôle en cours puis en relance un NOUVEAU ; les appels périodiques gardent leur comportement (pas d'empilement). 4 tests.
+2. **Ventes lentes (~2,5 s) : non reproduit, clos.** Mesure sur 12 ventes : poste 100 % local 27 ms (médiane), poste avec cloud 134 ms. Le chiffre du rapport datait d'un moment où le réseau était mauvais ou chargé. L'écart restant (~100 ms) vient de l'écriture au journal après la réponse, qui chevauche la vente suivante quand elles s'enchaînent sans pause.
+3. **Doublons silencieux (clients, fournisseurs, boutiques) : rendus VISIBLES, jamais fusionnés.** Ces tables n'ont pas de clé unique : le cloud ne refuse rien, donc aucun conflit n'apparaît. Fusionner deux clients touche à des comptes et à des soldes : décision humaine. `sync-doublons.js` repère les groupes probables (clients et fournisseurs : même nom et même téléphone non vide ; boutiques : même nom ; insensible aux majuscules, espaces, forme du numéro ; deux fiches sans téléphone ne sont jamais rapprochées). Le résultat est dans `GET /sync/drift` (champ `doublons`, avec le solde de chaque fiche) et dans un avertissement du journal. 5 tests unitaires ; `10-b` : les 3 doublons sont signalés sur les deux postes. **Reste à faire : l'écran de l'application qui les affiche** (Flutter, non vérifiable ici).

@@ -83,8 +83,9 @@ Pendant la première journée :
 * Défaut n°10 (corrigé) : un poste démarré **sans** cloud puis relié envoie son historique local, table par table, quand le
   cloud n'a encore aucune ligne dans la table. Limite : si **deux** postes ont travaillé hors cloud puis sont reliés au
   même cloud, seul le premier envoie son historique ; le second est signalé par le contrôle d'écart et demande une décision.
-* Défaut n°11 : doublons silencieux possibles de boutiques, fournisseurs ou clients homonymes saisis sur deux postes
-  (aucune clé unique) ; contrôle d'écart rafraîchi parfois périmé ; ventes plus lentes (~2,5 s) avec un cloud configuré.
+* Défaut n°11 : les doublons de clients, fournisseurs et boutiques saisis sur deux postes (aucune clé unique) ne sont **pas**
+  fusionnés : ils sont signalés dans `GET /sync/drift` (champ `doublons`) et dans le journal des postes. L'écran de
+  l'application qui les affiche reste à faire : en attendant, surveiller le journal (`⚠️ … doublon(s) probable(s)`).
 * Les ventes, produits et clients (tables modifiables) restent exposés à la fenêtre de quelques millisecondes entre la
   réponse du serveur et l'écriture au journal en cas d'arrêt brutal du poste (le stock et l'historique, eux, sont réparés).
 * Quand deux postes modifient la **même colonne** de la même fiche hors ligne, la modification la plus récente gagne

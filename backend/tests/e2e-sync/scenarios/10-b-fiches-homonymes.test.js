@@ -10,7 +10,7 @@ const assert = require('node:assert');
 const { nouvelleCampagne, peutLancer } = require('../harness/campagne');
 const { attendreConvergence, decrire, SPECS_PAR_DEFAUT } = require('../harness/oracle');
 
-// L'historique des écritures de compte est vérifié à part (défaut connu, voir plus bas)
+// L'historique des écritures de compte est vérifié à part (voir plus bas)
 const { transactions_comptes: _tc, ...SPECS_SANS_ECRITURES } = SPECS_PAR_DEFAUT;
 const { convergenceRobuste, manuels, creerProduit, ajusterStock, vendre, ok, resoudreTout, cloudSql, decisions } = require('../harness/aide-multi');
 
@@ -50,13 +50,13 @@ test('★2 même catégorie / fournisseur / boutique saisis sur A et B', { skip,
     }
   });
 
-  await t.test('boutique : une seule « Annexe » après synchronisation (pas de doublon silencieux)', { todo: 'DÉFAUT CONNU : deux boutiques « Annexe » coexistent partout, sans conflit ni alerte (Boutique.nom non unique : aucun refus du cloud ; la fusion par clé naturelle de sync-service.js ~l.802 ne s applique pas)' }, async () => {
+  await t.test('boutique : une seule « Annexe » après synchronisation (pas de doublon silencieux)', { todo: 'FUSION AUTOMATIQUE NON FAITE (volontaire : décision humaine ; le doublon est SIGNALÉ, voir le sous-test suivant) : deux boutiques « Annexe » coexistent partout (Boutique.nom non unique : aucun refus du cloud ; la fusion par clé naturelle de sync-service.js ~l.802 ne s applique pas)' }, async () => {
     const b = await cloudSql(c, "SELECT id, nom FROM boutiques WHERE nom LIKE 'Annexe%'");
     t.diagnostic(`boutiques « Annexe » dans le cloud : ${JSON.stringify(b)}`);
     assert.strictEqual(b.length, 1, `${b.length} boutiques « Annexe » (doublon non signalé)`);
   });
 
-  await t.test('fournisseur : même nom + même téléphone sur A et B -> une seule fiche (pas de doublon silencieux)', { todo: 'DÉFAUT CONNU : les fournisseurs n\'ont aucune clé naturelle : deux fiches « Sodiba » coexistent sans alerte (voir le rapport)' }, async () => {
+  await t.test('fournisseur : même nom + même téléphone sur A et B -> une seule fiche (pas de doublon silencieux)', { todo: 'FUSION AUTOMATIQUE NON FAITE (volontaire : décision humaine ; le doublon est SIGNALÉ) : deux fiches « Sodiba » coexistent' }, async () => {
     const f = await cloudSql(c, "SELECT id, nom, telephone FROM fournisseurs WHERE nom = 'Sodiba'");
     t.diagnostic(`fournisseurs « Sodiba » : ${f.length}`);
     assert.strictEqual(f.length, 1, `${f.length} fiches « Sodiba » (doublon non signalé)`);
@@ -68,6 +68,18 @@ test('★2 même catégorie / fournisseur / boutique saisis sur A et B', { skip,
     }
     const d = await decisions(A);
     t.diagnostic(`décisions restantes : ${d.totalConflits} conflits, ${d.total} cas`);
+  });
+
+  // Fusionner seul deux fiches touche à des comptes : l'application ne le fait pas, mais le doublon doit être VISIBLE
+  await t.test('les doublons (boutique « Annexe », fournisseur « Sodiba ») sont SIGNALÉS par le contrôle des écarts', async () => {
+    const vus = [];
+    for (const st of [A, B]) {
+      const r = await st.api('GET', '/sync/drift?refresh=1', undefined, { delaiMs: 120000 });
+      const groupes = (r.corps && r.corps.data && r.corps.data.doublons) || [];
+      vus.push(`${st.nom}: ${groupes.map((g) => `${g.table}×${g.nombre}`).join(',') || 'rien'}`);
+      assert.ok(groupes.some((g) => g.table === 'boutiques' && g.nombre >= 2), `boutiques en double non signalées sur ${st.nom} (${vus.join(' ; ')})`);
+      assert.ok(groupes.some((g) => g.table === 'fournisseurs' && g.nombre >= 2), `fournisseurs en double non signalés sur ${st.nom} (${vus.join(' ; ')})`);
+    }
   });
 });
 
@@ -114,12 +126,22 @@ test('★3 même client sur A et B, puis dette et paiement depuis chaque poste :
     for (const st of [A, B]) assert.strictEqual(Number(solde(st).s), attendu, `somme sur ${st.nom}`);
   });
 
-  await t.test('un seul client « Dupont Jean » 699000111 après synchronisation', { todo: 'DÉFAUT CONNU : les clients n\'ont aucune clé naturelle : le même client saisi sur deux postes devient deux clients (deux comptes) sans alerte' }, async () => {
+  await t.test('un seul client « Dupont Jean » 699000111 après synchronisation', { todo: 'FUSION AUTOMATIQUE NON FAITE (volontaire : fusionner deux comptes est une décision humaine ; le doublon est SIGNALÉ avec le solde de chaque fiche) : le même client saisi sur deux postes reste deux fiches' }, async () => {
     const n = await cloudSql(c, "SELECT COUNT(*)::int n FROM clients WHERE nom = 'Dupont' AND telephone = '699000111'");
     assert.strictEqual(n[0].n, 1, `${n[0].n} fiches client identiques`);
   });
 
-  await t.test('les 4 écritures de compte (2 dettes + 2 paiements) sont présentes dans le cloud', { todo: 'DÉFAUT CONNU : routes/sales.js l.1142 `const createdTransactionIds` masque le `let` de la l.862 ; la l.1251 renvoie donc [] et les écritures « achat_credit » d une vente ne sont jamais mises en file denvoi (le solde, lui, remonte)' }, async () => {
+  await t.test('le client « Dupont Jean » en double est SIGNALÉ par le contrôle des écarts, avec le solde de chaque fiche', async () => {
+    for (const st of [A, B]) {
+      const r = await st.api('GET', '/sync/drift?refresh=1', undefined, { delaiMs: 120000 });
+      const groupes = (r.corps && r.corps.data && r.corps.data.doublons) || [];
+      const g = groupes.find((x) => x.table === 'clients');
+      assert.ok(g && g.nombre >= 2, `client en double non signalé sur ${st.nom} : ${JSON.stringify(groupes)}`);
+      assert.ok(g.fiches.every((f) => f.solde !== null), 'le solde de chaque fiche est affiché pour aider à décider');
+    }
+  });
+
+  await t.test('les 4 écritures de compte (2 dettes + 2 paiements) sont présentes dans le cloud', async () => {
     const n = await cloudSql(c, 'SELECT type_transaction, COUNT(*)::int n FROM transactions_comptes GROUP BY 1');
     const total = n.reduce((s, x) => s + x.n, 0);
     t.diagnostic(`écritures dans le cloud : ${JSON.stringify(n)} ; locales A=${A.lire('SELECT COUNT(*) n FROM transactions_comptes')[0].n} B=${B.lire('SELECT COUNT(*) n FROM transactions_comptes')[0].n}`);
