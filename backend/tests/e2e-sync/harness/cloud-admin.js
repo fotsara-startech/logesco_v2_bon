@@ -65,10 +65,25 @@ async function avecAdmin(fn) {
   // On se connecte à la base « postgres » : la copie par modèle exige que la base source n'ait AUCUNE connexion,
   // y compris la nôtre.
   return reessayerReseau(async () => {
-    const pool = nouveauPool(urlPourBase(versDirect(urlAdmin()), 'postgres'), { max: 1 });
-    // un pool en erreur (connexion coupée) ne doit pas faire tomber le processus de test
-    pool.on('error', () => {});
-    try { return await fn(pool); } finally { await pool.end().catch(() => {}); }
+    // Le point d'accès DIRECT de Neon expire parfois alors que le pooler répond : on essaie le direct (préféré : les
+    // ordres d'administration passent mieux sans PgBouncer), puis le pooler si la connexion directe est impossible.
+    const candidates = [urlPourBase(versDirect(urlAdmin()), 'postgres'), urlPourBase(urlAdmin(), 'postgres')];
+    let derniereErreur;
+    for (const url of candidates) {
+      const pool = nouveauPool(url, { max: 1 });
+      // un pool en erreur (connexion coupée) ne doit pas faire tomber le processus de test
+      pool.on('error', () => {});
+      try {
+        await pool.query('SELECT 1'); // sonde : cette voie répond-elle ?
+      } catch (e) {
+        await pool.end().catch(() => {});
+        derniereErreur = e;
+        if (!estErreurReseau(e)) throw e;
+        continue;
+      }
+      try { return await fn(pool); } finally { await pool.end().catch(() => {}); }
+    }
+    throw derniereErreur;
   });
 }
 
