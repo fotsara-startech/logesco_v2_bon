@@ -116,4 +116,20 @@ void main() {
     h.decalage = const Duration(minutes: -30);
     expect((await s.getSecureTime()).isSystemTimeReliable, isTrue);
   });
+
+  test('DÉFAUT : une erreur INTERNE du service de temps ne doit pas être prise pour une manipulation de date', () async {
+    var panne = false;
+    final s = SecureTimeService(
+      secureStorage: FauxCoffre(),
+      clock: () => panne ? throw StateError('horloge illisible') : DateTime.now(),
+      ntpLookup: _heureReelle,
+    );
+    await s.recordFirstActivation(DateTime.now().subtract(const Duration(days: 30)));
+    await s.initialize();
+    panne = true;
+    final r = await s.getSecureTime();
+    expect(r.isSystemTimeReliable, isTrue, reason: 'une erreur interne a été traitée comme une fraude');
+    expect(r.isManipulationDetected, isFalse);
+    expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
+  });
 }

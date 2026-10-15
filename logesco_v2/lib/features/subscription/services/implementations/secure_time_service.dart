@@ -252,10 +252,13 @@ class SecureTimeService {
         isFresh: isFresh,
       );
     } catch (e) {
-      // Les erreurs en getSecureTime ne bloquent jamais
+      // Une erreur INTERNE du service de temps n'est pas une preuve de fraude : on retombe sur l'horloge du PC et on
+      // trace l'incident. Avant, isSystemTimeReliable était à false ici, ce qui était lu comme "manipulation de date"
+      // et bloquait l'application.
+      LicenseLog.error('horloge', 'erreur interne du service de temps — horloge du PC utilisée, sans blocage', e);
       return TimeValidationResult(
-        trustedTime: _now(),
-        isSystemTimeReliable: false,
+        trustedTime: DateTime.now(),
+        isSystemTimeReliable: true,
         ntpAvailable: false,
         warnings: ['Erreur validation temps: ${e.toString()}'],
         isFresh: false,

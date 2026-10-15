@@ -1,9 +1,9 @@
+import '../models/blocking_reason.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/subscription_controller.dart';
-import '../models/license_data.dart';
 import '../services/implementations/device_service.dart';
 import 'license_activation_page.dart';
 import 'subscription_status_page.dart';
@@ -153,13 +153,7 @@ class _SubscriptionBlockedPageState extends State<SubscriptionBlockedPage> {
                     // Message d'explication
                     Obx(() {
                       final status = _subscriptionController.currentStatus;
-                      String message = 'subscription_expired_message'.tr;
-
-                      if (status?.isInGracePeriod == true) {
-                        message = 'subscription_grace_expired_message'.tr;
-                      } else if (status?.type == SubscriptionType.trial) {
-                        message = 'subscription_trial_expired_message'.tr;
-                      }
+                      final message = blockingMessage(blockingReasonOf(status));
 
                       return Text(
                         '$message\n${'subscription_activate_to_continue'.tr}',
