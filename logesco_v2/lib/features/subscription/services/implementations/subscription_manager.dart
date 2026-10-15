@@ -9,6 +9,7 @@ import '../../models/license_data.dart';
 import '../../../../../core/config/app_config.dart';
 import 'secure_time_service.dart';
 import '../license_log.dart';
+import '../license_key_backup.dart';
 
 /// Modes de dégradation de l'application
 enum DegradationMode {
@@ -71,17 +72,23 @@ class SubscriptionManager implements ISubscriptionManager {
   static const int _cacheValidityMinutes = 5;
   static const int _fastCacheValiditySeconds = 30;
 
+  /// Copie durable de la clé de licence (hors du coffre de Windows) : permet de restaurer la licence seule
+  final LicenseKeyBackup _keyBackup;
+  DateTime? _derniereRestauration;
+
   SubscriptionManager({
     required ILicenseService licenseService,
     required IDeviceService deviceService,
     required ICryptoService cryptoService,
     FlutterSecureStorage? secureStorage,
     SecureTimeService? secureTimeService,
+    LicenseKeyBackup? keyBackup,
   })  : _licenseService = licenseService,
         _deviceService = deviceService,
         _cryptoService = cryptoService,
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _secureTimeService = secureTimeService ?? SecureTimeService();
+        _secureTimeService = secureTimeService ?? SecureTimeService(),
+        _keyBackup = keyBackup ?? LicenseKeyBackup();
 
   @override
   Stream<SubscriptionStatus> get statusStream => _statusController.stream;
@@ -141,7 +148,12 @@ class SubscriptionManager implements ISubscriptionManager {
 
     try {
       // Vérifier d'abord s'il y a une licence active
-      final storedLicense = await _licenseService.getStoredLicense();
+      var storedLicense = await _licenseService.getStoredLicense();
+
+      // Aucune licence lue : avant de conclure « pas de licence » (et d'afficher l'écran de blocage), on tente de la
+      // RESTAURER depuis la copie durable de la clé, en la revalidant complètement. Le coffre de Windows peut avoir
+      // répondu mal ou avoir été vidé : la personne ne doit pas avoir à ressaisir sa clé pour ça.
+      storedLicense ??= await _restaurerDepuisCopieDeCle();
 
       if (storedLicense != null) {
         return await _getSubscriptionStatus(storedLicense);
@@ -203,6 +215,11 @@ class SubscriptionManager implements ISubscriptionManager {
 
       // Stocker la nouvelle licence (remplace toute licence existante)
       await _licenseService.storeLicense(validationResult.licenseData!);
+
+      // Copie durable de la clé, hors du coffre de Windows : si la licence disparaît un jour du coffre, elle sera
+      // restaurée seule (voir _restaurerDepuisCopieDeCle) au lieu de redemander la clé à la personne.
+      final copie = await _keyBackup.save(licenseKey);
+      LicenseLog.log('copie-cle', copie ? 'copie durable de la clé enregistrée' : 'copie durable de la clé NON enregistrée (dossier inaccessible)');
 
       // Enregistrer la date de première activation (pour la fenêtre de grâce NTP 7 jours)
       final existingActivation = await _secureTimeService.getFirstActivation();
@@ -708,20 +725,77 @@ class SubscriptionManager implements ISubscriptionManager {
     }
   }
 
-  /// Valide l'intégrité des licences stockées
+  /// Vérifie l'intégrité de la licence stockée — SANS JAMAIS LA SUPPRIMER.
+  ///
+  /// Défaut corrigé : cette vérification (toutes les 30 minutes) EFFAÇAIT la licence et ses clés dès qu'une lecture
+  /// ou la vérification échouait, même une seule fois et pour une panne passagère du stockage sécurisé de Windows
+  /// (reproduit : un seul échec de lecture de la copie de sauvegarde suffisait). L'écran de blocage réapparaissait alors
+  /// en plein travail, et la personne devait ressaisir sa clé.
+  ///
+  /// Maintenant :
+  ///  - la vérification est retentée (3 essais) : une panne passagère ne compte pas ;
+  ///  - si elle échoue toujours, la licence LISIBLE est réécrite (réparation de la copie de sauvegarde, de l'intégrité et de
+  ///    l'empreinte d'appareil enregistrée) ; rien n'est supprimé ;
+  ///  - si aucune licence n'est lisible, on tente de la restaurer depuis la copie durable de la clé ;
+  ///  - chaque étape est journalisée : plus aucun effacement silencieux.
   Future<void> _validateStoredLicenseIntegrity() async {
+    LicenseData? storedLicense;
     try {
-      final storedLicense = await _licenseService.getStoredLicense();
-      if (storedLicense != null) {
-        final isIntegrityValid = await _licenseService.verifyLicenseIntegrity();
-        if (!isIntegrityValid) {
-          // Licence corrompue, la nettoyer
-          await _licenseService.cleanupCorruptedLicense();
-        }
-      }
+      storedLicense = await _licenseService.getStoredLicense();
     } catch (e) {
-      // En cas d'erreur, nettoyer les données corrompues
-      await _licenseService.cleanupCorruptedLicense();
+      LicenseLog.error('intégrité', 'lecture de la licence en échec pendant la vérification périodique (rien n\'est supprimé)', e);
+    }
+
+    if (storedLicense == null) {
+      await _restaurerDepuisCopieDeCle();
+      return;
+    }
+
+    var valide = false;
+    for (var essai = 1; essai <= 3 && !valide; essai++) {
+      try {
+        valide = await _licenseService.verifyLicenseIntegrity();
+      } catch (e) {
+        LicenseLog.error('intégrité', 'vérification d\'intégrité en exception (essai $essai/3)', e);
+      }
+      if (!valide && essai < 3) await Future.delayed(Duration(milliseconds: 300 * essai));
+    }
+    if (valide) return;
+
+    LicenseLog.log('intégrité', 'vérification d\'intégrité en échec après 3 essais → AUCUNE suppression : réécriture de la licence lisible');
+    try {
+      await _licenseService.storeLicense(storedLicense);
+      LicenseLog.log('intégrité', 'licence réécrite (sauvegarde, intégrité et empreinte remises à jour)');
+    } catch (e) {
+      LicenseLog.error('intégrité', 'réécriture de la licence impossible (la licence existante est conservée)', e);
+    }
+  }
+
+  /// Restaure la licence depuis la copie durable de la clé, en la REVALIDANT complètement (signature, appareil,
+  /// expiration : les mêmes contrôles qu'une activation). Une clé expirée ou liée à un autre appareil est refusée.
+  /// Au plus une tentative par minute. Renvoie la licence restaurée, ou null.
+  Future<LicenseData?> _restaurerDepuisCopieDeCle() async {
+    final maintenant = DateTime.now();
+    if (_derniereRestauration != null && maintenant.difference(_derniereRestauration!).inSeconds < 60) return null;
+    _derniereRestauration = maintenant;
+
+    try {
+      final cle = await _keyBackup.load();
+      if (cle == null) return null;
+
+      final resultat = await _licenseService.validateLicense(cle);
+      if (!resultat.isValid || resultat.licenseData == null) {
+        LicenseLog.log('copie-cle', 'copie de la clé présente mais refusée à la revalidation : ${resultat.error?.error.name} — la licence n\'est pas restaurée');
+        return null;
+      }
+
+      await _licenseService.storeLicense(resultat.licenseData!);
+      _invalidateCache();
+      LicenseLog.log('copie-cle', 'licence RESTAURÉE depuis la copie durable de la clé (type=${resultat.licenseData!.subscriptionType.name})');
+      return resultat.licenseData;
+    } catch (e) {
+      LicenseLog.error('copie-cle', 'restauration depuis la copie de la clé en échec', e);
+      return null;
     }
   }
 
@@ -1074,6 +1148,10 @@ class SubscriptionManager implements ISubscriptionManager {
 
       // Supprimer la licence stockée
       await _licenseService.revokeLicense();
+
+      // ... et sa copie durable : une réinitialisation VOULUE ne doit pas être annulée par la restauration automatique
+      await _keyBackup.clear();
+      LicenseLog.log('copie-cle', 'réinitialisation explicite : copie durable de la clé supprimée');
 
       // Supprimer les données de période d'essai
       await _secureStorage.delete(key: _trialStartKey);

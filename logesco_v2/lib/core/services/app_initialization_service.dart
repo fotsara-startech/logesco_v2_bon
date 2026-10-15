@@ -116,7 +116,14 @@ class AppInitializationService extends GetxService {
     Timer.periodic(const Duration(minutes: 30), (timer) async {
       try {
         await controller.forceValidation();
-        final shouldBlock = await controller.shouldBlockApplication();
+        var shouldBlock = await controller.shouldBlockApplication();
+        if (shouldBlock) {
+          // Double confirmation : on ne bloque l'utilisateur qu'après une seconde vérification, un peu plus tard,
+          // pour qu'une lecture ratée du coffre Windows ne l'envoie pas sur l'écran de blocage.
+          await Future.delayed(const Duration(seconds: 20));
+          await controller.forceValidation();
+          shouldBlock = await controller.shouldBlockApplication();
+        }
         if (shouldBlock) {
           Get.offAllNamed('/subscription/blocked');
         }
