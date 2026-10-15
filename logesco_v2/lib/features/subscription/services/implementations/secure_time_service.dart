@@ -86,17 +86,27 @@ class SecureTimeService {
 
   // Cache
   DateTime? _cachedNtpTime;
-  DateTime? _cachedNtpTimestamp;
+  /// Chronomètre MONOTONE démarré quand l'heure réseau mémorisée a été obtenue ou rechargée. Le temps écoulé depuis ne
+  /// dépend pas de l'horloge du PC : si Windows la recale (resynchronisation, pile CMOS usée), l'heure de référence ne saute pas.
+  Stopwatch? _cacheChrono;
   DateTime? _lastCheckTime;
   int? _sessionCounter;
   int _ntpFailureCount = 0;
   bool _isOfflineMode = false;
 
+  /// Horloge système et requête NTP injectables (tests : on simule un PC dont l'horloge saute, un réseau absent...)
+  final DateTime Function() _now;
+  final Future<DateTime> Function(String server, Duration timeout) _ntpLookup;
+
   SecureTimeService({
     FlutterSecureStorage? secureStorage,
     SharedPreferences? prefs,
+    DateTime Function()? clock,
+    Future<DateTime> Function(String server, Duration timeout)? ntpLookup,
   })  : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _prefs = prefs;
+        _prefs = prefs,
+        _now = clock ?? DateTime.now,
+        _ntpLookup = ntpLookup ?? ((server, timeout) => NTP.now(lookUpAddress: server, timeout: timeout));
 
   /// Initialise le service
   Future<void> initialize() async {
@@ -119,9 +129,9 @@ class SecureTimeService {
       );
 
       if (ntpTime != null) {
-        LicenseLog.log('horloge', 'NTP OK: heure réseau=${ntpTime.toIso8601String()} | écart avec l\'horloge système=${ntpTime.difference(DateTime.now()).inSeconds} s');
+        LicenseLog.log('horloge', 'NTP OK: heure réseau=${ntpTime.toIso8601String()} | écart avec l\'horloge système=${ntpTime.difference(_now()).inSeconds} s');
         _cachedNtpTime = ntpTime;
-        _cachedNtpTimestamp = DateTime.now();
+        _cacheChrono = Stopwatch()..start();
         await _storeNtpTime(ntpTime);
         _ntpFailureCount = 0;
         _isOfflineMode = false;
@@ -192,7 +202,7 @@ class SecureTimeService {
         isFresh = true;
 
         // Calculer l'offset avec l'heure système
-        final systemTime = DateTime.now();
+        final systemTime = _now();
         systemTimeOffset = ntpTime.difference(systemTime);
 
         // Offset > 5 minutes = manipulation de date système confirmée
@@ -215,31 +225,20 @@ class SecureTimeService {
         warnings.add('Serveur NTP indisponible (cache utilisé)');
 
         // Utiliser le cache NTP s'il existe
-        if (_cachedNtpTime != null && _cachedNtpTimestamp != null) {
-          final elapsedSinceNtp = DateTime.now().difference(_cachedNtpTimestamp!);
-
-          if (elapsedSinceNtp.isNegative) {
-            // Date système reculée par rapport au timestamp du cache NTP
-            // Uniquement suspect si le recul est hors fenêtre de grâce
-            if (!isInNtpGracePeriod) {
-              isSystemTimeReliable = false;
-            }
-            trustedTime = _cachedNtpTime!;
-            warnings.add('Temps restauré depuis cache NTP');
-          } else {
-            trustedTime = _cachedNtpTime!.add(elapsedSinceNtp);
-            warnings.add('Temps calculé depuis cache');
-          }
+        if (_cachedNtpTime != null && _cacheChrono != null) {
+          // Temps écoulé mesuré au chronomètre (jamais négatif, insensible aux sauts d'horloge du PC)
+          trustedTime = _cachedNtpTime!.add(_cacheChrono!.elapsed);
+          warnings.add('Temps calculé depuis cache');
         } else if (_lastCheckTime != null && !clockRollback) {
           // Pas de cache NTP → utiliser lastCheckTime avec élapsed
-          final elapsedSinceCheck = DateTime.now().difference(_lastCheckTime!);
+          final elapsedSinceCheck = _now().difference(_lastCheckTime!);
           trustedTime = _lastCheckTime!.add(elapsedSinceCheck);
           warnings.add('Temps calculé depuis dernière vérification');
         } else {
           // Aucun cache disponible → utiliser l'heure système
           // Ne PAS marquer comme non fiable : absence de NTP ≠ manipulation
           // On ne peut simplement pas vérifier, ce qui est différent d'une preuve de fraude
-          trustedTime = DateTime.now();
+          trustedTime = _now();
           warnings.add('NTP indisponible: utilisation de l\'horloge système');
         }
       }
@@ -255,7 +254,7 @@ class SecureTimeService {
     } catch (e) {
       // Les erreurs en getSecureTime ne bloquent jamais
       return TimeValidationResult(
-        trustedTime: DateTime.now(),
+        trustedTime: _now(),
         isSystemTimeReliable: false,
         ntpAvailable: false,
         warnings: ['Erreur validation temps: ${e.toString()}'],
@@ -270,8 +269,8 @@ class SecureTimeService {
     required Duration timeout,
   }) async {
     // Utiliser le cache si disponible et récent
-    if (!forceRefresh && _cachedNtpTime != null && _cachedNtpTimestamp != null) {
-      final cacheAge = DateTime.now().difference(_cachedNtpTimestamp!);
+    if (!forceRefresh && _cachedNtpTime != null && _cacheChrono != null) {
+      final cacheAge = _cacheChrono!.elapsed;
       if (cacheAge < _ntpCacheDuration) {
         return _cachedNtpTime;
       }
@@ -293,16 +292,11 @@ class SecureTimeService {
     for (final server in _ntpServers) {
       for (int retry = 0; retry < _maxNtpRetries; retry++) {
         try {
-          final ntpTime = await NTP
-              .now(
-                lookUpAddress: server,
-                timeout: timeout,
-              )
-              .timeout(timeout);
+          final ntpTime = await _ntpLookup(server, timeout).timeout(timeout);
 
           // Succès
           _cachedNtpTime = ntpTime;
-          _cachedNtpTimestamp = DateTime.now();
+          _cacheChrono = Stopwatch()..start();
           await _storeNtpTime(ntpTime);
           return ntpTime;
         } catch (e) {
@@ -323,7 +317,7 @@ class SecureTimeService {
       return false; // Première exécution
     }
 
-    final currentTime = DateTime.now();
+    final currentTime = _now();
 
     // Vérifier si l'heure actuelle est antérieure à la dernière vérification
     if (currentTime.isBefore(_lastCheckTime!)) {
@@ -393,7 +387,7 @@ class SecureTimeService {
       if (lastNtpStr != null) {
         _cachedNtpTime = DateTime.parse(lastNtpStr);
         // Utiliser lastCheckTime si disponible, sinon now() comme timestamp du cache
-        _cachedNtpTimestamp = _lastCheckTime ?? DateTime.now();
+        _cacheChrono = Stopwatch()..start();
       }
 
       final sessionCounterStr = await _secureStorage.read(key: _keySessionCounter);
@@ -465,7 +459,7 @@ class SecureTimeService {
     try {
       final firstActivation = await getFirstActivation();
       if (firstActivation == null) return true; // Pas encore activé = grâce totale
-      final daysSinceActivation = DateTime.now().difference(firstActivation).inDays;
+      final daysSinceActivation = _now().difference(firstActivation).inDays;
       return daysSinceActivation < 7;
     } catch (_) {
       return true; // En cas d'erreur, appliquer la grâce
@@ -497,7 +491,7 @@ class SecureTimeService {
       }
 
       _cachedNtpTime = null;
-      _cachedNtpTimestamp = null;
+      _cacheChrono = null;
       _lastCheckTime = null;
       _sessionCounter = null;
       _ntpFailureCount = 0;
@@ -509,7 +503,7 @@ class SecureTimeService {
 
   /// Obtient des statistiques de diagnostic
   Future<Map<String, dynamic>> getDiagnostics() async {
-    final systemTime = DateTime.now();
+    final systemTime = _now();
     final ntpTime = await _getNetworkTimeWithTimeout(
       forceRefresh: false,
       timeout: _ntpTimeout,
