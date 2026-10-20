@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { messageProduitService } = require('../utils/service-guard');
 const installation = require('../utils/installation');
 const { validate } = require('../middleware/validation');
@@ -45,11 +46,11 @@ function createProcurementRouter(services) {
         const where = {};
         if (fournisseurId) where.fournisseurId = parseInt(fournisseurId);
         if (statut) where.statut = statut;
-        if (dateDebut || dateFin) {
-          where.dateCommande = {};
-          if (dateDebut) where.dateCommande.gte = new Date(dateDebut);
-          if (dateFin) where.dateCommande.lte = new Date(dateFin);
-        }
+        // (filtre fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+        await appliquerFiltreDate(prisma, where, { table: 'commandes_approvisionnement', colonne: 'date_commande', champ: 'dateCommande' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         // Recherche par numéro de commande ou nom de fournisseur
         if (search && search.trim()) {

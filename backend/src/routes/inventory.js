@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { messageProduitService } = require('../utils/service-guard');
 const Joi = require('joi');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
@@ -707,15 +708,11 @@ function createInventoryRouter(models) {
           where.typeMouvement = typeMouvement;
         }
 
-        if (dateDebut || dateFin) {
-          where.dateMouvement = {};
-          if (dateDebut) {
-            where.dateMouvement.gte = new Date(dateDebut);
-          }
-          if (dateFin) {
-            where.dateMouvement.lte = new Date(dateFin);
-          }
-        }
+        // Filtre de période fiable (dates stockées en texte dans SQLite : voir utils/filtre-date.js)
+        await appliquerFiltreDate(models.prisma, where, { table: 'mouvements_stock', colonne: 'date_mouvement', champ: 'dateMouvement' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         options.where = where;
         options.include = { 
@@ -1470,15 +1467,11 @@ function createInventoryRouter(models) {
           where.typeMouvement = typeMouvement;
         }
 
-        if (dateDebut || dateFin) {
-          where.dateMouvement = {};
-          if (dateDebut) {
-            where.dateMouvement.gte = new Date(dateDebut);
-          }
-          if (dateFin) {
-            where.dateMouvement.lte = new Date(dateFin);
-          }
-        }
+        // Filtre de période fiable (dates stockées en texte dans SQLite : voir utils/filtre-date.js)
+        await appliquerFiltreDate(models.prisma, where, { table: 'mouvements_stock', colonne: 'date_mouvement', champ: 'dateMouvement' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         const mouvements = await models.prisma.mouvementStock.findMany({
           where,

@@ -4,6 +4,7 @@
  */
 
 const installation = require('./installation');
+const { appliquerFiltreDate } = require('./filtre-date');
 
 /**
  * Garantit l'unicité d'un numéro de document.
@@ -336,14 +337,10 @@ async function generateReceiptNumber(prisma) {
   const startOfDay = new Date(year, now.getMonth(), now.getDate());
   const endOfDay = new Date(year, now.getMonth(), now.getDate() + 1);
   
-  const count = await prisma.historiqueRecu.count({
-    where: {
-      dateGeneration: {
-        gte: startOfDay,
-        lt: endOfDay
-      }
-    }
-  });
+  // Filtre fiable : dates stockées en texte dans SQLite, voir filtre-date.js
+  const where = {};
+  await appliquerFiltreDate(prisma, where, { table: 'historique_recus', colonne: 'date_generation', champ: 'dateGeneration' }, { gte: startOfDay, lt: endOfDay });
+  const count = await prisma.historiqueRecu.count({ where });
   
   // Le compteur est local au poste : le suffixe évite que deux postes
   // émettent le même numéro de reçu le même jour. ensureUniqueNumber couvre

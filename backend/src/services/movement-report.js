@@ -4,6 +4,7 @@
  */
 
 const PDFDocument = require('pdfkit');
+const { appliquerFiltreDate } = require('../utils/filtre-date');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
@@ -409,12 +410,13 @@ class MovementReportService {
   async getDetailedMovements(startDate, endDate, categoryIds = null) {
     try {
       const where = {
-        statut: { not: 'annule' }, // exclure les mouvements annulés d'un export comptable
-        date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        }
+        statut: { not: 'annule' } // exclure les mouvements annulés d'un export comptable
       };
+      // Période fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js
+      await appliquerFiltreDate(this.prisma, where, { table: 'financial_movements', colonne: 'date', champ: 'date' }, {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      });
 
       if (categoryIds && categoryIds.length > 0) {
         where.categorieId = { in: categoryIds };

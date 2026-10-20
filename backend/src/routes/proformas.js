@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { authenticateToken } = require('../middleware/auth');
 const installation = require('../utils/installation');
 
@@ -60,11 +61,11 @@ function createProformaRouter({ prisma, authService, syncService }) {
       // Filtre par période — même convention que /sales (dateDebut/dateFin en
       // heure locale, sans suffixe 'Z') ; filtré sur dateCreation, la date
       // affichée/triée dans le listing des proformas.
-      if (dateDebut || dateFin) {
-        where.dateCreation = {};
-        if (dateDebut) where.dateCreation.gte = new Date(dateDebut);
-        if (dateFin) where.dateCreation.lte = new Date(dateFin);
-      }
+      // (filtre fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+      await appliquerFiltreDate(prisma, where, { table: 'ventes_proforma', colonne: 'date_creation', champ: 'dateCreation' }, {
+        gte: dateDebut ? new Date(dateDebut) : undefined,
+        lte: dateFin ? new Date(dateFin) : undefined,
+      });
 
       const [total, proformas] = await Promise.all([
         prisma.venteProforma.count({ where }),

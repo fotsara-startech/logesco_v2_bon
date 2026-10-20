@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { computeSaleSettlement } = require('../services/sale-settlement');
 const { venteSchemas } = require('../validation/schemas');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
@@ -359,15 +360,11 @@ function createSalesRouter({ prisma, authService, syncService }) {
         };
 
         // Filtrage par période
-        if (dateDebut || dateFin) {
-          whereConditions.dateVente = {};
-          if (dateDebut) {
-            whereConditions.dateVente.gte = new Date(dateDebut);
-          }
-          if (dateFin) {
-            whereConditions.dateVente.lte = new Date(dateFin);
-          }
-        }
+        // (filtre fiable : les dates peuvent être stockées en texte dans SQLite, voir utils/filtre-date.js)
+        await appliquerFiltreDate(prisma, whereConditions, { table: 'ventes', colonne: 'date_vente', champ: 'dateVente' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         // Construire les conditions pour les produits
         const produitConditions = {};

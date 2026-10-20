@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { printingSchemas } = require('../validation/schemas');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
@@ -55,15 +56,11 @@ function createPrintingRouter({ prisma, authService }) {
           conditions.formatImpression = formatImpression;
         }
 
-        if (dateDebut || dateFin) {
-          conditions.dateGeneration = {};
-          if (dateDebut) {
-            conditions.dateGeneration.gte = new Date(dateDebut);
-          }
-          if (dateFin) {
-            conditions.dateGeneration.lte = new Date(dateFin);
-          }
-        }
+        // Filtre de période fiable (dates stockées en texte dans SQLite : voir utils/filtre-date.js)
+        await appliquerFiltreDate(prisma, conditions, { table: 'historique_recus', colonne: 'date_generation', champ: 'dateGeneration' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         // Conditions pour la vente associée
         const venteConditions = {};
@@ -440,15 +437,11 @@ function createPrintingRouter({ prisma, authService }) {
         const { dateDebut, dateFin } = req.query;
 
         const conditions = {};
-        if (dateDebut || dateFin) {
-          conditions.dateGeneration = {};
-          if (dateDebut) {
-            conditions.dateGeneration.gte = new Date(dateDebut);
-          }
-          if (dateFin) {
-            conditions.dateGeneration.lte = new Date(dateFin);
-          }
-        }
+        // Filtre de période fiable (dates stockées en texte dans SQLite : voir utils/filtre-date.js)
+        await appliquerFiltreDate(prisma, conditions, { table: 'historique_recus', colonne: 'date_generation', champ: 'dateGeneration' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         const [
           totalRecus,

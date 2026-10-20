@@ -4,6 +4,7 @@
  */
 
 const installation = require('../utils/installation');
+const { appliquerFiltreDate } = require('../utils/filtre-date');
 
 class FinancialMovementService {
   constructor(prisma, syncService = null) {
@@ -343,16 +344,11 @@ class FinancialMovementService {
         where.utilisateurId = parseInt(utilisateurId);
       }
 
-      // Filtre par date
-      if (startDate || endDate) {
-        where.date = {};
-        if (startDate) {
-          where.date.gte = new Date(startDate);
-        }
-        if (endDate) {
-          where.date.lte = new Date(endDate);
-        }
-      }
+      // Filtre par date (fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+      await appliquerFiltreDate(this.prisma, where, { table: 'financial_movements', colonne: 'date', champ: 'date' }, {
+        gte: startDate ? new Date(startDate) : undefined,
+        lte: endDate ? new Date(endDate) : undefined,
+      });
 
       // Filtre par montant
       if (minAmount || maxAmount) {
@@ -671,15 +667,10 @@ class FinancialMovementService {
         where.categorieId = parseInt(categorieId);
       }
 
-      if (startDate || endDate) {
-        where.date = {};
-        if (startDate) {
-          where.date.gte = new Date(startDate);
-        }
-        if (endDate) {
-          where.date.lte = new Date(endDate);
-        }
-      }
+      await appliquerFiltreDate(this.prisma, where, { table: 'financial_movements', colonne: 'date', champ: 'date' }, {
+        gte: startDate ? new Date(startDate) : undefined,
+        lte: endDate ? new Date(endDate) : undefined,
+      });
 
       // Statistiques générales
       const [totalMovements, totalAmount, avgAmount] = await Promise.all([
