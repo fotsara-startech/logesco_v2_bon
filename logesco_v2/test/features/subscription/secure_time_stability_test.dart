@@ -132,4 +132,75 @@ void main() {
     expect(r.isManipulationDetected, isFalse);
     expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
   });
+
+  group('fraude volontaire sur l horloge : ce que le service de temps fait réellement', () {
+    test('horloge reculée d un mois pendant l utilisation (réseau OK au démarrage) : sans effet sur l heure de référence', () async {
+      final h = Horloge();
+      final s = await demarrer(FauxCoffre(), h, _heureReelle);
+      h.decalage = const Duration(days: -30);
+      final r = await s.getSecureTime();
+      expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
+    });
+
+    test('horloge reculée d un mois puis redémarrage AVEC réseau : l heure réseau reprend le dessus', () async {
+      final coffre = FauxCoffre();
+      final h = Horloge();
+      await demarrer(coffre, h, _heureReelle);
+      h.decalage = const Duration(days: -30);
+      final s2 = SecureTimeService(secureStorage: coffre, clock: h.now, ntpLookup: _heureReelle);
+      await s2.initialize();
+      final r = await s2.getSecureTime();
+      expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
+    });
+
+    test('horloge reculée d un mois puis redémarrage SANS réseau : l heure de référence ne suit pas l horloge truquée', () async {
+      final coffre = FauxCoffre();
+      final h = Horloge();
+      await demarrer(coffre, h, _heureReelle);
+      h.decalage = const Duration(days: -30);
+      final s2 = SecureTimeService(secureStorage: coffre, clock: h.now, ntpLookup: _reseauAbsent);
+      await s2.initialize();
+      final r = await s2.getSecureTime();
+      expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)), reason: 'la référence suit l horloge truquée');
+      expect(r.isSystemTimeReliable, isTrue, reason: 'aucun blocage : la fraude est simplement sans effet');
+    });
+
+    test('PC sans réseau pendant 60 jours : l heure de référence suit le temps qui passe, la licence vieillit', () async {
+      final coffre = FauxCoffre();
+      final h = Horloge();
+      await demarrer(coffre, h, _heureReelle);
+      h.decalage = const Duration(days: 60); // 60 jours plus tard, toujours sans réseau
+      final s2 = SecureTimeService(secureStorage: coffre, clock: h.now, ntpLookup: _reseauAbsent);
+      await s2.initialize();
+      final r = await s2.getSecureTime();
+      expect(h.now().difference(r.trustedTime).abs(), lessThan(const Duration(seconds: 5)), reason: 'la licence ne vieillit pas hors ligne');
+      expect(r.isSystemTimeReliable, isTrue);
+    });
+
+    test('hors ligne : horloge du PC reculée de 30 jours -> la dernière heure réseau est retenue (reculer ne sert à rien)', () async {
+      final coffre = FauxCoffre();
+      final h = Horloge();
+      await demarrer(coffre, h, _heureReelle);
+      h.decalage = const Duration(days: -30);
+      final s2 = SecureTimeService(secureStorage: coffre, clock: h.now, ntpLookup: _reseauAbsent);
+      await s2.initialize();
+      final r = await s2.getSecureTime();
+      expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
+    });
+
+    test('hors ligne et sans aucun historique : horloge du PC', () async {
+      final h = Horloge()..decalage = const Duration(days: 3);
+      final s = await demarrer(FauxCoffre(), h, _reseauAbsent);
+      final r = await s.getSecureTime();
+      expect(r.trustedTime.difference(h.now()).abs(), lessThan(const Duration(seconds: 5)));
+    });
+
+    test('avec réseau au démarrage, les sauts d horloge pendant la session restent sans effet (heure réseau + chronomètre)', () async {
+      final h = Horloge();
+      final s = await demarrer(FauxCoffre(), h, _heureReelle);
+      h.decalage = const Duration(days: 400);
+      final r = await s.getSecureTime();
+      expect(r.trustedTime.difference(DateTime.now()).abs(), lessThan(const Duration(seconds: 5)));
+    });
+  });
 }

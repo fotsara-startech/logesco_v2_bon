@@ -89,6 +89,10 @@ class SecureTimeService {
   /// Chronomètre MONOTONE démarré quand l'heure réseau mémorisée a été obtenue ou rechargée. Le temps écoulé depuis ne
   /// dépend pas de l'horloge du PC : si Windows la recale (resynchronisation, pile CMOS usée), l'heure de référence ne saute pas.
   Stopwatch? _cacheChrono;
+
+  /// L'heure réseau mémorisée vient-elle d'une vérification réussie pendant CETTE session ? (sinon elle date d'un
+  /// démarrage précédent et peut avoir plusieurs jours ou semaines de retard)
+  bool _ntpDeCetteSession = false;
   DateTime? _lastCheckTime;
   int? _sessionCounter;
   int _ntpFailureCount = 0;
@@ -132,6 +136,7 @@ class SecureTimeService {
         LicenseLog.log('horloge', 'NTP OK: heure réseau=${ntpTime.toIso8601String()} | écart avec l\'horloge système=${ntpTime.difference(_now()).inSeconds} s');
         _cachedNtpTime = ntpTime;
         _cacheChrono = Stopwatch()..start();
+        _ntpDeCetteSession = true;
         await _storeNtpTime(ntpTime);
         _ntpFailureCount = 0;
         _isOfflineMode = false;
@@ -227,8 +232,19 @@ class SecureTimeService {
         // Utiliser le cache NTP s'il existe
         if (_cachedNtpTime != null && _cacheChrono != null) {
           // Temps écoulé mesuré au chronomètre (jamais négatif, insensible aux sauts d'horloge du PC)
-          trustedTime = _cachedNtpTime!.add(_cacheChrono!.elapsed);
-          warnings.add('Temps calculé depuis cache');
+          final depuisCache = _cachedNtpTime!.add(_cacheChrono!.elapsed);
+          if (_ntpDeCetteSession) {
+            // Heure réseau obtenue pendant cette session : on s'y fie, quoi que fasse l'horloge du PC
+            trustedTime = depuisCache;
+            warnings.add('Temps calculé depuis cache');
+          } else {
+            // Réseau absent depuis le démarrage : l'heure mémorisée date d'une session précédente. Sans correctif, elle
+            // restait figée et une licence ne vieillissait jamais hors ligne. On retient le PLUS GRAND des deux :
+            // reculer l'horloge du PC ne sert à rien, et le temps passé hors ligne compte.
+            final horlogePc = _now();
+            trustedTime = horlogePc.isAfter(depuisCache) ? horlogePc : depuisCache;
+            warnings.add(horlogePc.isAfter(depuisCache) ? 'Réseau absent: horloge du PC retenue (plus récente que la dernière heure réseau)' : 'Réseau absent: dernière heure réseau retenue (horloge du PC en retard)');
+          }
         } else if (_lastCheckTime != null && !clockRollback) {
           // Pas de cache NTP → utiliser lastCheckTime avec élapsed
           final elapsedSinceCheck = _now().difference(_lastCheckTime!);
@@ -300,6 +316,7 @@ class SecureTimeService {
           // Succès
           _cachedNtpTime = ntpTime;
           _cacheChrono = Stopwatch()..start();
+          _ntpDeCetteSession = true;
           await _storeNtpTime(ntpTime);
           return ntpTime;
         } catch (e) {
@@ -495,6 +512,7 @@ class SecureTimeService {
 
       _cachedNtpTime = null;
       _cacheChrono = null;
+      _ntpDeCetteSession = false;
       _lastCheckTime = null;
       _sessionCounter = null;
       _ntpFailureCount = 0;
