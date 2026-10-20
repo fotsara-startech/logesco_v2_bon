@@ -1,5 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('../config/prisma-client.js');
+const { statistiquesVentes, ventesParJour } = require('../services/dashboard-ventes');
 
 const prisma = new PrismaClient();
 
@@ -86,62 +87,16 @@ function createDashboardRouter(dependencies) {
       const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
       const baseWhere = { statut: { not: 'annulee' }, ...(boutiqueId ? { boutiqueId } : {}) };
 
-      // Créer les dates en utilisant le fuseau horaire local
-      const now = new Date();
-      // Aujourd'hui à 00:00:00
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      
-      // Début de la semaine (dimanche = 0, lundi = 1, etc.)
-      const weekStart = new Date(today);
-      const dayOfWeek = today.getDay(); // 0 = dimanche, 1 = lundi, ...
-      weekStart.setDate(today.getDate() - dayOfWeek); // Revenir au dimanche
-      weekStart.setHours(0, 0, 0, 0);
-      
-      // Début du mois
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-
-      console.log('📅 [DashboardRouter] Plages de dates:', {
-        today: today.toISOString(),
-        weekStart: weekStart.toISOString(),
-        monthStart: monthStart.toISOString(),
-      });
-
-      let salesStats = { 
-        todaySales: 0, todayRevenue: 0.0, 
-        weekSales: 0, weekRevenue: 0.0, 
-        monthSales: 0, monthRevenue: 0.0, 
-        topProducts: [] 
+      let salesStats = {
+        todaySales: 0, todayRevenue: 0.0,
+        weekSales: 0, weekRevenue: 0.0,
+        monthSales: 0, monthRevenue: 0.0,
+        topProducts: []
       };
 
       try {
-        const [todayStats, weekStats, monthStats] = await Promise.all([
-          prisma.vente.aggregate({ 
-            where: { ...baseWhere, dateVente: { gte: today } }, 
-            _count: { id: true }, 
-            _sum: { montantTotal: true } 
-          }),
-          prisma.vente.aggregate({ 
-            where: { ...baseWhere, dateVente: { gte: weekStart } }, 
-            _count: { id: true }, 
-            _sum: { montantTotal: true } 
-          }),
-          prisma.vente.aggregate({ 
-            where: { ...baseWhere, dateVente: { gte: monthStart } }, 
-            _count: { id: true }, 
-            _sum: { montantTotal: true } 
-          }),
-        ]);
-        
-        salesStats = {
-          todaySales: todayStats._count.id || 0, 
-          todayRevenue: todayStats._sum.montantTotal || 0.0,
-          weekSales: weekStats._count.id || 0, 
-          weekRevenue: weekStats._sum.montantTotal || 0.0,
-          monthSales: monthStats._count.id || 0, 
-          monthRevenue: monthStats._sum.montantTotal || 0.0,
-          topProducts: []
-        };
-
+        // Comparaison de dates faite en JS : voir services/dashboard-ventes.js (dates stockées en texte dans SQLite)
+        salesStats = { ...(await statistiquesVentes(prisma, baseWhere)), topProducts: [] };
         console.log('✅ [DashboardRouter] Stats calculées:', salesStats);
       } catch (e) {
         console.log('⚠️ [DashboardRouter] Erreur calcul stats ventes:', e.message);
@@ -238,44 +193,11 @@ function createDashboardRouter(dependencies) {
       const boutiqueId = req.query.boutiqueId ? parseInt(req.query.boutiqueId) : null;
       const baseWhere = { statut: { not: 'annulee' }, ...(boutiqueId ? { boutiqueId } : {}) };
 
-      const chartData = [];
-      const now = new Date();
-
-      // Générer les 7 derniers jours
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(now.getDate() - i);
-        // Début du jour à 00:00:00
-        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-        // Fin du jour à 23:59:59.999
-        const dayEnd = new Date(dayStart);
-        dayEnd.setDate(dayStart.getDate() + 1);
-        dayEnd.setMilliseconds(dayEnd.getMilliseconds() - 1);
-
-        let sales = 0, revenue = 0.0;
-        try {
-          const dayStats = await prisma.vente.aggregate({
-            where: { 
-              ...baseWhere, 
-              dateVente: { 
-                gte: dayStart, 
-                lt: dayEnd 
-              } 
-            },
-            _count: { id: true }, 
-            _sum: { montantTotal: true }
-          });
-          sales = dayStats._count.id || 0;
-          revenue = dayStats._sum.montantTotal || 0.0;
-        } catch (e) {
-          console.log(`⚠️ [DashboardRouter] Erreur calcul jour ${dayStart.toISOString().split('T')[0]}:`, e.message);
-        }
-
-        chartData.push({ 
-          date: dayStart.toISOString().split('T')[0], 
-          sales, 
-          revenue 
-        });
+      let chartData = [];
+      try {
+        chartData = await ventesParJour(prisma, baseWhere, new Date(), 7);
+      } catch (e) {
+        console.log('⚠️ [DashboardRouter] Erreur calcul graphique:', e.message);
       }
 
       console.log(`✅ [DashboardRouter] Données graphique générées pour ${chartData.length} jours`);
