@@ -42,6 +42,9 @@ const MIGRATION_ORDER = [
 
 const TRACKING_TABLE = '_app_migrations';
 
+// Migration "code" (pas un fichier SQL) : conversion unique des dates stockées en texte vers des millisecondes.
+const MIGRATION_DATES = 'normaliser_dates_en_millisecondes_v1';
+
 // Erreurs sans danger : l'effet visé existe déjà (colonne/table/index déjà
 // présent, souvent via un des anciens correctifs ad-hoc). On les avale pour
 // que la migration soit quand même marquée comme appliquée.
@@ -98,6 +101,7 @@ async function run(prisma, { freshInstall = false } = {}) {
     for (const name of MIGRATION_ORDER) {
       await markApplied(prisma, name);
     }
+    await markApplied(prisma, MIGRATION_DATES); // base neuve : rien à convertir
     console.log(`✅ ${MIGRATION_ORDER.length} migration(s) marquée(s) comme appliquées (installation neuve)`);
     return;
   }
@@ -106,6 +110,7 @@ async function run(prisma, { freshInstall = false } = {}) {
   const pending = MIGRATION_ORDER.filter((name) => !applied.has(name));
 
   if (pending.length === 0) {
+    await normaliserDatesUneFois(prisma, applied);
     return; // fast path : une seule requête, aucun fichier lu
   }
 
@@ -143,6 +148,21 @@ async function run(prisma, { freshInstall = false } = {}) {
 
     await markApplied(prisma, name);
     console.log(`✅ Migration appliquée: ${name}`);
+  }
+
+  await normaliserDatesUneFois(prisma, applied);
+}
+
+/** Convertit une seule fois les dates en texte en millisecondes (voir dates-sqlite.js). Ne bloque jamais le démarrage. */
+async function normaliserDatesUneFois(prisma, applied) {
+  if (applied.has(MIGRATION_DATES)) return;
+  try {
+    const { normaliserDates } = require('./dates-sqlite');
+    const r = await normaliserDates(prisma);
+    await markApplied(prisma, MIGRATION_DATES);
+    console.log(`✅ Dates normalisées en millisecondes : ${r.lignes} valeur(s) dans ${r.colonnes} colonne(s)`);
+  } catch (err) {
+    console.warn(`⚠️  Normalisation des dates non effectuée (sera retentée au prochain démarrage) : ${err.message}`);
   }
 }
 

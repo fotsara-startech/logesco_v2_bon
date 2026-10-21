@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
+const { appliquerFiltreDate, clauseDate, enMillisecondes } = require('../utils/filtre-date');
 const { computeSaleSettlement } = require('../services/sale-settlement');
 const { venteSchemas } = require('../validation/schemas');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
@@ -141,15 +141,15 @@ function createSalesRouter({ prisma, authService, syncService }) {
               const d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]), 
                                 parseInt(isoMatch[4]), parseInt(isoMatch[5]), parseInt(isoMatch[6]));
               const dateISO = d.toISOString();
-              dateWhereClause += ' AND date_vente >= ?';
-              params.push(dateISO);
+              dateWhereClause += ` AND ${enMillisecondes('date_vente')} >= ?`;
+              params.push(new Date(dateISO).getTime());
               console.log('📅 [SQL] dateDebut (ISO):', dateISO);
             } else {
               // Sinon, essayer de parser comme Date et formater en ISO
               const d = new Date(dateDebut);
               const dateISO = d.toISOString();
-              dateWhereClause += ' AND date_vente >= ?';
-              params.push(dateISO);
+              dateWhereClause += ` AND ${enMillisecondes('date_vente')} >= ?`;
+              params.push(new Date(dateISO).getTime());
               console.log('📅 [SQL] dateDebut (parsed ISO):', dateISO);
             }
           }
@@ -162,14 +162,14 @@ function createSalesRouter({ prisma, authService, syncService }) {
               const d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]), 
                                 parseInt(isoMatch[4]), parseInt(isoMatch[5]), parseInt(isoMatch[6]));
               const dateISO = d.toISOString();
-              dateWhereClause += ' AND date_vente <= ?';
-              params.push(dateISO);
+              dateWhereClause += ` AND ${enMillisecondes('date_vente')} <= ?`;
+              params.push(new Date(dateISO).getTime());
               console.log('📅 [SQL] dateFin (ISO):', dateISO);
             } else {
               const d = new Date(dateFin);
               const dateISO = d.toISOString();
-              dateWhereClause += ' AND date_vente <= ?';
-              params.push(dateISO);
+              dateWhereClause += ` AND ${enMillisecondes('date_vente')} <= ?`;
+              params.push(new Date(dateISO).getTime());
               console.log('📅 [SQL] dateFin (parsed ISO):', dateISO);
             }
           }

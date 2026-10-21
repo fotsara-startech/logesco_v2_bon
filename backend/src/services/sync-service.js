@@ -11,6 +11,7 @@ const stockDifference = require('./stock-difference');
 const syncGraine = require('./sync-graine');
 const syncFusion = require('./sync-fusion');
 const { trouverDoublons } = require('./sync-doublons');
+const { versMillisecondes } = require('./dates-sqlite');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -110,6 +111,7 @@ class SyncServiceV2 {
     this.lastSuccessfulSyncAt = null;
     this.syncStartedAt = null;
     this._modColumnCache = {};
+    this._dateColumnCache = {};
     this.driftReport = null;
     this.doublons = [];
     this.lastDriftError = null;
@@ -1381,6 +1383,20 @@ class SyncServiceV2 {
     return found;
   }
 
+  /** Colonnes de type date de la table locale (mises en cache) */
+  async _colonnesDateLocales(table) {
+    if (this._dateColumnCache[table]) return this._dateColumnCache[table];
+    let colonnes = new Set();
+    try {
+      const rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT name FROM pragma_table_info('${String(table).replace(/[^a-zA-Z0-9_]/g, '')}') WHERE upper(type) LIKE 'DATETIME%' OR upper(type) LIKE 'TIMESTAMP%'`,
+      );
+      colonnes = new Set(rows.map(r => r.name));
+    } catch (_) { /* table inconnue : aucune conversion */ }
+    this._dateColumnCache[table] = colonnes;
+    return colonnes;
+  }
+
   /**
    * Applique une ligne distante dans la base locale (insert ou update).
    */
@@ -1394,8 +1410,15 @@ class SyncServiceV2 {
     const cols = keys.map(k => `"${k}"`).join(', ');
     const placeholders = keys.map(() => '?').join(', ');
     const updateKeys = keys.filter(k => k !== 'id');
+    // Dates : stockées en NOMBRE (millisecondes), comme l'application les écrit. Écrites en texte, elles mélangeaient
+    // deux formats dans la même colonne et faussaient filtres et tris par date (voir services/dates-sqlite.js).
+    const colonnesDate = await this._colonnesDateLocales(table);
     const vals = keys.map(k => {
       const val = row[k];
+      if (colonnesDate.has(k)) {
+        const ms = versMillisecondes(val);
+        if (ms !== null) return ms;
+      }
       if (val instanceof Date) return val.toISOString();
       if (typeof val === 'bigint') return Number(val);
       return val;
