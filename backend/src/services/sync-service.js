@@ -12,6 +12,7 @@ const syncGraine = require('./sync-graine');
 const syncFusion = require('./sync-fusion');
 const { trouverDoublons } = require('./sync-doublons');
 const { versMillisecondes } = require('./dates-sqlite');
+const { protegerConnexions } = require('./cloud-pool-garde');
 
 // Fréquence du contrôle d'écart avec le cloud
 const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
@@ -248,6 +249,8 @@ class SyncServiceV2 {
     });
     // Sans ce handler, une coupure sur une connexion inactive fait tomber le processus
     pool.on('error', (e) => console.warn('⚠️  Neon: connexion inactive perdue —', e.message));
+    // Idem pour une connexion EN COURS d'utilisation : sans écouteur, une coupure en pleine synchro arrêtait le serveur
+    protegerConnexions(pool);
     return pool;
   }
 
