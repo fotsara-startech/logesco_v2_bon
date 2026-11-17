@@ -56,7 +56,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Nouvelle transaction ${widget.isClient ? 'client' : 'fournisseur'}'),
+      title: Text(widget.isClient ? 'accounts_new_client_transaction_title'.tr : 'accounts_new_supplier_transaction_title'.tr),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -65,9 +65,9 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Type de transaction
-              const Text(
-                'Type de transaction',
-                style: TextStyle(
+              Text(
+                'accounts_transaction_type'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -87,7 +87,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez sélectionner un type de transaction';
+                    return 'accounts_transaction_type_required'.tr;
                   }
                   return null;
                 },
@@ -112,8 +112,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                           }
                         });
                       },
-                      title: const Text('Payer une vente spécifique'),
-                      subtitle: const Text('Sélectionner une vente impayée'),
+                      title: Text('accounts_pay_specific_sale'.tr),
+                      subtitle: Text('accounts_select_unpaid_sale'.tr),
                       contentPadding: EdgeInsets.zero,
                     ),
                     if (_isPayingSpecificSale) ...[
@@ -121,7 +121,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                       ElevatedButton.icon(
                         onPressed: _showUnpaidSalesSelector,
                         icon: const Icon(Icons.receipt_long),
-                        label: Text(_selectedSale == null ? 'Sélectionner une vente' : 'Vente #${_selectedSale!.reference}'),
+                        label: Text(_selectedSale == null ? 'customers_select_sale_button'.tr : 'accounts_sale_reference'.trParams({'reference': _selectedSale!.reference})),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                         ),
@@ -139,15 +139,15 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Vente #${_selectedSale!.reference}',
+                                'accounts_sale_reference'.trParams({'reference': _selectedSale!.reference}),
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
-                              Text('Date: ${_selectedSale!.dateVenteFormatted}'),
-                              Text('Total: ${_selectedSale!.montantTotalFormatted}'),
-                              Text('Déjà payé: ${_selectedSale!.montantPayeFormatted}'),
+                              Text('customers_sale_date'.trParams({'date': _selectedSale!.dateVenteFormatted})),
+                              Text('customers_sale_total'.trParams({'amount': _selectedSale!.montantTotalFormatted})),
+                              Text('customers_sale_paid'.trParams({'amount': _selectedSale!.montantPayeFormatted})),
                               Text(
-                                'Reste: ${_selectedSale!.montantRestantFormatted}',
+                                'customers_sale_remaining'.trParams({'amount': _selectedSale!.montantRestantFormatted}),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
@@ -166,19 +166,19 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               TextFormField(
                 controller: _montantController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Montant (${CurrencyConstants.defaultCurrency})',
-                  hintText: 'Ex: 150.50',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                decoration: InputDecoration(
+                  labelText: 'accounts_amount_label'.trParams({'currency': CurrencyConstants.defaultCurrency}),
+                  hintText: 'accounts_amount_hint'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.attach_money),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez saisir un montant';
+                    return 'accounts_amount_required'.tr;
                   }
                   final montant = double.tryParse(value);
                   if (montant == null || montant <= 0) {
-                    return 'Veuillez saisir un montant valide';
+                    return 'accounts_amount_invalid'.tr;
                   }
                   return null;
                 },
@@ -190,11 +190,11 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optionnel)',
-                  hintText: 'Détails de la transaction...',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                decoration: InputDecoration(
+                  labelText: 'customers_description_optional'.tr,
+                  hintText: 'accounts_transaction_details_hint'.tr,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.description),
                 ),
               ),
 
@@ -209,7 +209,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('common_cancel'.tr),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _createTransaction,
@@ -219,7 +219,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Créer'),
+              : Text('suppliers_form_create'.tr),
         ),
       ],
     );
@@ -229,36 +229,36 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   List<DropdownMenuItem<String>> _getTransactionTypes() {
     if (widget.isClient) {
       return [
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'paiement',
-          child: Text('Paiement (diminue la dette)'),
+          child: Text('accounts_type_payment'.tr),
         ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'credit',
-          child: Text('Crédit (diminue la dette)'),
+          child: Text('accounts_type_credit'.tr),
         ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'debit',
-          child: Text('Débit (augmente la dette)'),
+          child: Text('accounts_type_debit'.tr),
         ),
       ];
     } else {
       return [
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'paiement',
-          child: Text('Paiement (diminue la dette)'),
+          child: Text('accounts_type_payment'.tr),
         ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'credit',
-          child: Text('Crédit (diminue la dette)'),
+          child: Text('accounts_type_credit'.tr),
         ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'achat',
-          child: Text('Achat (augmente la dette)'),
+          child: Text('accounts_type_purchase'.tr),
         ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: 'debit',
-          child: Text('Débit (augmente la dette)'),
+          child: Text('accounts_type_debit'.tr),
         ),
       ];
     }
@@ -273,17 +273,17 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     switch (_typeTransaction) {
       case 'paiement':
       case 'credit':
-        explanation = widget.isClient ? 'Cette transaction diminuera la dette du client' : 'Cette transaction diminuera la dette envers le fournisseur';
+        explanation = widget.isClient ? 'accounts_impact_decrease_client'.tr : 'accounts_impact_decrease_supplier'.tr;
         color = Colors.green;
         icon = Icons.trending_down;
         break;
       case 'debit':
-        explanation = widget.isClient ? 'Cette transaction augmentera la dette du client' : 'Cette transaction augmentera la dette envers le fournisseur';
+        explanation = widget.isClient ? 'accounts_impact_increase_client'.tr : 'accounts_impact_increase_supplier'.tr;
         color = Colors.orange;
         icon = Icons.trending_up;
         break;
       case 'achat':
-        explanation = 'Cette transaction augmentera la dette envers le fournisseur';
+        explanation = 'accounts_impact_increase_supplier'.tr;
         color = Colors.orange;
         icon = Icons.trending_up;
         break;
@@ -328,8 +328,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     // Validation supplémentaire pour les ventes spécifiques
     if (_isPayingSpecificSale && _selectedSale == null) {
       Get.snackbar(
-        'Erreur',
-        'Veuillez sélectionner une vente à payer',
+        'error'.tr,
+        'accounts_select_sale_to_pay'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -358,7 +358,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           typeTransaction: 'paiement',
           typeTransactionDetail: 'paiement_dette',
           venteId: _selectedSale!.id,
-          description: description.isEmpty ? 'Paiement Dette (Vente #${_selectedSale!.reference})' : description,
+          description: description.isEmpty ? 'accounts_debt_payment_description'.trParams({'reference': _selectedSale!.reference}) : description,
         );
       } else {
         // Transaction normale
@@ -384,16 +384,16 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       widget.onTransactionCreated?.call();
 
       Get.snackbar(
-        'Succès',
-        'Transaction créée avec succès',
+        'success'.tr,
+        'accounts_transaction_created'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
     } catch (e) {
       Get.snackbar(
-        'Erreur',
-        'Erreur lors de la création de la transaction: $e',
+        'error'.tr,
+        'accounts_transaction_create_error'.trParams({'error': '$e'}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -417,7 +417,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           setState(() {
             _selectedSale = sale;
             _montantController.text = montant.toStringAsFixed(0);
-            _descriptionController.text = 'Paiement Dette (Vente #${sale.reference})';
+            _descriptionController.text = 'accounts_debt_payment_description'.trParams({'reference': sale.reference});
           });
         },
       ),

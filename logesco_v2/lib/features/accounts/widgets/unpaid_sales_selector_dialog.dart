@@ -66,7 +66,7 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Sélectionner une vente à payer'),
+      title: Text('customers_select_sale'.tr),
       content: _isLoading
           ? const SizedBox(
               height: 100,
@@ -91,10 +91,10 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
                   ),
                 )
               : _unpaidSales.isEmpty
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 100,
                       child: Center(
-                        child: Text('Aucune vente impayée pour ce client'),
+                        child: Text('accounts_no_unpaid_sales'.tr),
                       ),
                     )
                   : SizedBox(
@@ -110,9 +110,9 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
                                 controller: _montantController,
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
-                                  labelText: 'Montant à payer',
+                                  labelText: 'sales_amount_to_pay'.tr,
                                   suffixText: 'FCFA',
-                                  helperText: 'Max: ${_selectedSale!.montantRestantFormatted}',
+                                  helperText: 'accounts_max_amount'.trParams({'amount': _selectedSale!.montantRestantFormatted}),
                                   border: const OutlineInputBorder(),
                                 ),
                               ),
@@ -124,12 +124,12 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annuler'),
+          child: Text('common_cancel'.tr),
         ),
         if (_selectedSale != null)
           ElevatedButton(
             onPressed: _validateAndPay,
-            child: const Text('Payer'),
+            child: Text('quick_billing_step_pay'.tr),
           ),
       ],
     );
@@ -152,20 +152,20 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
           });
         },
         title: Text(
-          'Vente #${sale.reference}',
+          'accounts_sale_reference'.trParams({'reference': sale.reference}),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('Date: ${sale.dateVenteFormatted}'),
-            Text('Articles: ${sale.nombreArticles}'),
+            Text('customers_sale_date'.trParams({'date': sale.dateVenteFormatted})),
+            Text('accounts_articles_label'.trParams({'count': '${sale.nombreArticles}'})),
             const Divider(),
-            Text('Total: ${sale.montantTotalFormatted}'),
-            Text('Déjà payé: ${sale.montantPayeFormatted}'),
+            Text('customers_sale_total'.trParams({'amount': sale.montantTotalFormatted})),
+            Text('customers_sale_paid'.trParams({'amount': sale.montantPayeFormatted})),
             Text(
-              'Reste: ${sale.montantRestantFormatted}',
+              'customers_sale_remaining'.trParams({'amount': sale.montantRestantFormatted}),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.red,
@@ -187,8 +187,8 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
     if (montant == null || montant <= 0) {
       print(' [UnpaidSalesSelectorDialog] Montant invalide');
       Get.snackbar(
-        'Erreur',
-        'Veuillez saisir un montant valide',
+        'error'.tr,
+        'accounts_amount_invalid'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -199,8 +199,8 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
     if (montant > _selectedSale!.montantRestant) {
       print(' [UnpaidSalesSelectorDialog] Montant dépasse le reste à payer');
       Get.snackbar(
-        'Erreur',
-        'Le montant dépasse le reste à payer (${_selectedSale!.montantRestantFormatted})',
+        'error'.tr,
+        'accounts_amount_exceeds_remaining'.trParams({'amount': _selectedSale!.montantRestantFormatted}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,

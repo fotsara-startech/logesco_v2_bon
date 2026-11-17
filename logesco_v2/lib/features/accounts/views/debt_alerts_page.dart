@@ -15,13 +15,13 @@ extension DebtIntervalX on DebtInterval {
   String get label {
     switch (this) {
       case DebtInterval.recent:
-        return '< 10 jours';
+        return 'accounts_interval_recent'.tr;
       case DebtInterval.warning:
-        return '10 – 20 jours';
+        return 'accounts_interval_warning'.tr;
       case DebtInterval.urgent:
-        return '20 – 30 jours';
+        return 'accounts_interval_urgent'.tr;
       case DebtInterval.critical:
-        return '> 30 jours';
+        return 'accounts_interval_critical'.tr;
     }
   }
 
@@ -216,12 +216,12 @@ class _DebtAlertsPageState extends State<DebtAlertsPage> with SingleTickerProvid
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Alertes dettes clients'),
+        title: Text('menu_debt_alerts'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _load,
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -256,7 +256,7 @@ class _DebtAlertsPageState extends State<DebtAlertsPage> with SingleTickerProvid
             final isActive = _filter == iv;
             final count = _count(iv);
             final color = iv?.color ?? const Color(0xFF1565C0);
-            final label = iv == null ? 'Tous' : iv.label;
+            final label = iv == null ? 'all'.tr : iv.label;
             return GestureDetector(
               onTap: () {
                 _tabs.animateTo(i);
@@ -328,13 +328,13 @@ class _DebtAlertsPageState extends State<DebtAlertsPage> with SingleTickerProvid
         children: [
           Icon(Icons.receipt_long, size: 15, color: Colors.blue.shade600),
           const SizedBox(width: 4),
-          Text('${data.length} vente${data.length > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text('accounts_sales_count'.trParams({'count': '${data.length}'}), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(width: 16),
           Icon(Icons.people, size: 15, color: Colors.purple.shade600),
           const SizedBox(width: 4),
-          Text('$clients client${clients > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text('accounts_clients_count'.trParams({'count': '$clients'}), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const Spacer(),
-          Text('Total dû : ', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Text('${'accounts_total_due'.tr} ', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
           Text(
             '${totalDu.toStringAsFixed(0)} FCFA',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red),
@@ -395,7 +395,7 @@ class _DebtAlertsPageState extends State<DebtAlertsPage> with SingleTickerProvid
               child: Text(_error!, textAlign: TextAlign.center),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+            ElevatedButton(onPressed: _load, child: Text('common_retry'.tr)),
           ],
         ),
       );
@@ -479,7 +479,7 @@ class _ClientCardState extends State<_ClientCard> {
               children: [
                 Icon(Icons.receipt_long, size: 13, color: Colors.grey.shade500),
                 const SizedBox(width: 4),
-                Text('${widget.debts.length} vente${widget.debts.length > 1 ? 's' : ''}', style: const TextStyle(fontSize: 12)),
+                Text('accounts_sales_count'.trParams({'count': '${widget.debts.length}'}), style: const TextStyle(fontSize: 12)),
                 const SizedBox(width: 12),
                 Icon(Icons.payments_outlined, size: 13, color: Colors.red.shade400),
                 const SizedBox(width: 4),
@@ -491,7 +491,7 @@ class _ClientCardState extends State<_ClientCard> {
                 ElevatedButton.icon(
                   onPressed: widget.onGoToAccount,
                   icon: const Icon(Icons.payment, size: 15),
-                  label: const Text('Paiement', style: TextStyle(fontSize: 13)),
+                  label: Text('customers_payment'.tr, style: const TextStyle(fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: iv.color,
                     foregroundColor: Colors.white,
@@ -546,7 +546,7 @@ class _SaleRow extends StatelessWidget {
             children: [
               Icon(Icons.receipt, size: 14, color: iv.color),
               const SizedBox(width: 6),
-              Text('Vente #${debt.sale.reference}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('accounts_sale_reference'.trParams({'reference': debt.sale.reference}), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const Spacer(),
               _Badge(iv: iv, compact: true),
             ],
@@ -555,24 +555,24 @@ class _SaleRow extends StatelessWidget {
           // Infos en grille 2 colonnes
           Row(
             children: [
-              _Cell(label: 'Date', value: debt.sale.dateVenteFormatted),
+              _Cell(label: 'date'.tr, value: debt.sale.dateVenteFormatted),
               const SizedBox(width: 16),
-              _Cell(label: 'Ancienneté', value: '${debt.anciennete} jour${debt.anciennete > 1 ? 's' : ''}', valueColor: iv.color),
+              _Cell(label: 'accounts_age'.tr, value: 'accounts_age_days'.trParams({'count': '${debt.anciennete}'}), valueColor: iv.color),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _Cell(label: 'Total', value: debt.sale.montantTotalFormatted),
+              _Cell(label: 'total'.tr, value: debt.sale.montantTotalFormatted),
               const SizedBox(width: 16),
-              _Cell(label: 'Payé', value: debt.sale.montantPayeFormatted, valueColor: Colors.green.shade700),
+              _Cell(label: 'sales_paid'.tr, value: debt.sale.montantPayeFormatted, valueColor: Colors.green.shade700),
               const SizedBox(width: 16),
-              _Cell(label: 'Reste dû', value: debt.sale.montantRestantFormatted, valueColor: Colors.red, bold: true),
+              _Cell(label: 'accounts_remaining_due'.tr, value: debt.sale.montantRestantFormatted, valueColor: Colors.red, bold: true),
             ],
           ),
           const SizedBox(height: 6),
           Text(
-            '${debt.sale.nombreArticles} article${debt.sale.nombreArticles > 1 ? 's' : ''}',
+            'accounts_articles_count'.trParams({'count': '${debt.sale.nombreArticles}'}),
             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
           ),
         ],

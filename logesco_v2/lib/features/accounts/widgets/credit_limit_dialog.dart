@@ -44,7 +44,7 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Modifier la limite de crédit'),
+      title: Text('accounts_edit_credit_limit_title'.tr),
       content: Form(
         key: _formKey,
         child: Column(
@@ -53,7 +53,9 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
           children: [
             // Nom du compte
             Text(
-              widget.isClient ? 'Client: ${widget.accountName}' : 'Fournisseur: ${widget.accountName}',
+              widget.isClient
+                  ? 'accounts_account_name_client'.trParams({'name': widget.accountName})
+                  : 'accounts_account_name_supplier'.trParams({'name': widget.accountName}),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -74,7 +76,7 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
                   const Icon(Icons.info_outline, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Limite actuelle: ${CurrencyConstants.formatAmount(widget.currentLimit)}',
+                    'accounts_current_limit'.trParams({'amount': CurrencyConstants.formatAmount(widget.currentLimit)}),
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],
@@ -87,19 +89,19 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
             TextFormField(
               controller: _limitController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nouvelle limite de crédit (${CurrencyConstants.defaultCurrency})',
-                hintText: 'Ex: 5000.00',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.credit_card),
+              decoration: InputDecoration(
+                labelText: 'accounts_new_credit_limit_label'.trParams({'currency': CurrencyConstants.defaultCurrency}),
+                hintText: 'accounts_credit_limit_hint'.tr,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.credit_card),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Veuillez saisir une limite de crédit';
+                  return 'accounts_credit_limit_required'.tr;
                 }
                 final limit = double.tryParse(value);
                 if (limit == null || limit < 0) {
-                  return 'Veuillez saisir une limite valide (À 0)';
+                  return 'accounts_credit_limit_invalid'.tr;
                 }
                 return null;
               },
@@ -115,14 +117,14 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.orange.withOpacity(0.3)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.warning, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.warning, color: Colors.orange, size: 20),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'La modification de la limite de crédit prendra effet immédiatement.',
-                      style: TextStyle(
+                      'accounts_credit_limit_warning'.tr,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.orange,
                       ),
@@ -137,7 +139,7 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('common_cancel'.tr),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _updateCreditLimit,
@@ -147,7 +149,7 @@ class _CreditLimitDialogState extends State<CreditLimitDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Modifier'),
+              : Text('edit'.tr),
         ),
       ],
     );

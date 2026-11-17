@@ -66,7 +66,7 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Ventes à crédit — ${widget.clientName}'),
+      title: Text('accounts_credit_sales_title'.trParams({'name': widget.clientName})),
       content: SizedBox(
         width: double.maxFinite,
         child: _isLoading
@@ -79,9 +79,9 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
                     ),
                   )
                 : _creditSales.isEmpty
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 100,
-                        child: Center(child: Text('Aucune vente à crédit pour ce client')),
+                        child: Center(child: Text('accounts_no_credit_sales'.tr)),
                       )
                     : SingleChildScrollView(
                         child: Column(
@@ -98,7 +98,7 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('${_creditSales.length} vente(s) à crédit', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                  Text('accounts_credit_sales_count'.trParams({'count': '${_creditSales.length}'}), style: const TextStyle(fontWeight: FontWeight.w500)),
                                   Text(
                                     '${_totalRestant.toStringAsFixed(0)} FCFA',
                                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700),
@@ -115,7 +115,7 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Fermer'),
+          child: Text('close'.tr),
         ),
       ],
     );
@@ -132,25 +132,25 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Vente #${sale.reference}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('accounts_sale_reference'.trParams({'reference': sale.reference}), style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(sale.dateVenteFormatted, style: const TextStyle(color: Colors.grey)),
               ],
             ),
             const SizedBox(height: 4),
-            Text('${sale.nombreArticles} article(s)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text('accounts_articles_count'.trParams({'count': '${sale.nombreArticles}'}), style: const TextStyle(fontSize: 12, color: Colors.grey)),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total: ${sale.montantTotalFormatted}'),
-                Text('Payé: ${sale.montantPayeFormatted}'),
+                Text('customers_sale_total'.trParams({'amount': sale.montantTotalFormatted})),
+                Text('customers_sale_paid'.trParams({'amount': sale.montantPayeFormatted})),
               ],
             ),
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerRight,
               child: Text(
-                'Reste à payer: ${sale.montantRestantFormatted}',
+                'accounts_remaining_to_pay'.trParams({'amount': sale.montantRestantFormatted}),
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
               ),
             ),

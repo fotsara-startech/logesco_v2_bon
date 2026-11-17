@@ -20,17 +20,19 @@ class AccountDetailView extends GetView<AccountController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isClient ? 'Compte client - ${(compte as CompteClient).client.nomComplet}' : 'Compte Fournisseur - ${(compte as CompteFournisseur).fournisseur.nom}'),
+        title: Text(isClient
+            ? 'customers_account'.trParams({'name': (compte as CompteClient).client.nomComplet})
+            : 'accounts_supplier_account_title'.trParams({'name': (compte as CompteFournisseur).fournisseur.nom})),
         actions: [
           IconButton(
             icon: const Icon(Icons.credit_card),
             onPressed: () => _showCreditLimitDialog(compte, isClient),
-            tooltip: 'Modifier limite de crédit',
+            tooltip: 'accounts_edit_credit_limit_tooltip'.tr,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => _refreshTransactions(compte, isClient),
-            tooltip: 'Actualiser',
+            tooltip: 'refresh'.tr,
           ),
         ],
       ),
@@ -48,7 +50,7 @@ class AccountDetailView extends GetView<AccountController> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showTransactionDialog(compte, isClient),
         child: const Icon(Icons.add),
-        tooltip: 'Nouvelle transaction',
+        tooltip: 'accounts_new_transaction'.tr,
       ),
     );
   }
@@ -97,14 +99,14 @@ class AccountDetailView extends GetView<AccountController> {
             children: [
               Expanded(
                 child: _buildSummaryItem(
-                  label: isClient ? 'Dette actuelle' : 'Dette envers fournisseur',
+                  label: isClient ? 'sales_current_debt'.tr : 'accounts_supplier_debt'.tr,
                   value: '${compte.soldeActuel.toStringAsFixed(0)} FCFA',
                   icon: Icons.account_balance,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
-                  label: 'Limite de crédit',
+                  label: 'accounts_credit_limit'.tr,
                   value: '${compte.limiteCredit.toStringAsFixed(0)} FCFA',
                   icon: Icons.credit_card,
                 ),
@@ -118,15 +120,15 @@ class AccountDetailView extends GetView<AccountController> {
             children: [
               Expanded(
                 child: _buildSummaryItem(
-                  label: 'Crédit disponible',
+                  label: 'customers_available_credit'.tr,
                   value: '${compte.creditDisponible.toStringAsFixed(0)} FCFA',
                   icon: Icons.account_balance_wallet,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
-                  label: 'Statut',
-                  value: compte.estEnDepassement ? 'DPASSEMENT' : 'OK',
+                  label: 'status'.tr,
+                  value: compte.estEnDepassement ? 'accounts_overlimit_badge'.tr : 'ok'.tr,
                   icon: compte.estEnDepassement ? Icons.warning : Icons.check_circle,
                 ),
               ),
@@ -193,9 +195,9 @@ class AccountDetailView extends GetView<AccountController> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Utilisation du crédit',
-              style: TextStyle(
+            Text(
+              'accounts_credit_usage'.tr,
+              style: const TextStyle(
                 fontSize: 12,
                 color: Colors.white70,
               ),
@@ -232,7 +234,7 @@ class AccountDetailView extends GetView<AccountController> {
             child: ElevatedButton.icon(
               onPressed: () => _showTransactionDialog(compte, isClient, 'paiement'),
               icon: const Icon(Icons.payment),
-              label: const Text('Paiement'),
+              label: Text('customers_payment'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
@@ -244,7 +246,7 @@ class AccountDetailView extends GetView<AccountController> {
             child: ElevatedButton.icon(
               onPressed: () => _showTransactionDialog(compte, isClient, 'debit'),
               icon: const Icon(Icons.add_circle),
-              label: Text(isClient ? 'Vente' : 'Achat'),
+              label: Text(isClient ? 'stock_filter_sale'.tr : 'stock_filter_purchase'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
@@ -264,16 +266,16 @@ class AccountDetailView extends GetView<AccountController> {
         children: [
           const Icon(Icons.history),
           const SizedBox(width: 8),
-          const Text(
-            'Historique des transactions',
-            style: TextStyle(
+          Text(
+            'accounts_transactions_history'.tr,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const Spacer(),
           Obx(() => Text(
-                '${controller.transactions.length} transaction(s)',
+                'accounts_transactions_count'.trParams({'count': '${controller.transactions.length}'}),
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -288,14 +290,14 @@ class AccountDetailView extends GetView<AccountController> {
   Widget _buildTransactionsList(Account compte, bool isClient) {
     return Obx(() {
       if (controller.isLoadingTransactions.value && controller.transactions.isEmpty) {
-        return const LoadingWidget(message: 'Chargement des transactions...');
+        return LoadingWidget(message: 'accounts_loading_transactions'.tr);
       }
 
       if (controller.transactions.isEmpty) {
-        return const EmptyStateWidget(
+        return EmptyStateWidget(
           icon: Icons.receipt_long,
-          title: 'Aucune transaction',
-          message: 'L\'historique des transactions apparaîtra ici.',
+          title: 'customers_no_transactions'.tr,
+          message: 'accounts_empty_transactions_message'.tr,
         );
       }
 

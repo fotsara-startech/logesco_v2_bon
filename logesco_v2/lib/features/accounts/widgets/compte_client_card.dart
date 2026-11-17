@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/account.dart';
 import '../../../shared/constants/constants.dart';
 
@@ -65,14 +66,14 @@ class CompteClientCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildFinancialInfo(
-                      label: 'Solde actuel',
+                      label: 'cash_session_current_balance'.tr,
                       value: CurrencyConstants.formatAmount(compte.soldeActuel),
                       color: compte.soldeActuel > 0 ? Colors.red : Colors.green,
                     ),
                   ),
                   Expanded(
                     child: _buildFinancialInfo(
-                      label: 'Limite crédit',
+                      label: 'accounts_credit_limit'.tr,
                       value: CurrencyConstants.formatAmount(compte.limiteCredit),
                       color: Colors.blue,
                     ),
@@ -87,14 +88,14 @@ class CompteClientCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildFinancialInfo(
-                      label: 'Crédit disponible',
+                      label: 'customers_available_credit'.tr,
                       value: CurrencyConstants.formatAmount(compte.creditDisponible),
                       color: compte.creditDisponible > 0 ? Colors.green : Colors.red,
                     ),
                   ),
                   Expanded(
                     child: _buildFinancialInfo(
-                      label: 'Dernière MAJ',
+                      label: 'accounts_last_update'.tr,
                       value: _formatDate(compte.dateDerniereMaj),
                       color: Colors.grey[600]!,
                     ),
@@ -118,9 +119,9 @@ class CompteClientCard extends StatelessWidget {
   Widget _buildStatusChip() {
     if (compte.estEnDepassement) {
       return Chip(
-        label: const Text(
-          'DPASSEMENT',
-          style: TextStyle(
+        label: Text(
+          'accounts_overlimit_badge'.tr,
+          style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -131,9 +132,9 @@ class CompteClientCard extends StatelessWidget {
       );
     } else if (compte.soldeActuel > 0) {
       return Chip(
-        label: const Text(
-          'DETTE',
-          style: TextStyle(
+        label: Text(
+          'accounts_debt_badge'.tr,
+          style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -144,9 +145,9 @@ class CompteClientCard extends StatelessWidget {
       );
     } else {
       return Chip(
-        label: const Text(
-          'OK',
-          style: TextStyle(
+        label: Text(
+          'ok'.tr,
+          style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -206,7 +207,7 @@ class CompteClientCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Utilisation du crédit',
+              'accounts_credit_usage'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],

@@ -17,19 +17,19 @@ class AccountsListView extends GetView<AccountController> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Gestion des Comptes'),
+          title: Text('accounts_title'.tr),
           bottom: TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white.withOpacity(0.7),
-            tabs: const [
+            tabs: [
               Tab(
-                icon: Icon(Icons.people),
-                text: 'Clients',
+                icon: const Icon(Icons.people),
+                text: 'customers_title'.tr,
               ),
               Tab(
-                icon: Icon(Icons.business),
-                text: 'Fournisseurs',
+                icon: const Icon(Icons.business),
+                text: 'suppliers_title'.tr,
               ),
             ],
           ),
@@ -37,12 +37,12 @@ class AccountsListView extends GetView<AccountController> {
             IconButton(
               icon: const Icon(Icons.filter_list),
               onPressed: _showFilterDialog,
-              tooltip: 'Filtrer',
+              tooltip: 'filter'.tr,
             ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: controller.refreshAll,
-              tooltip: 'Actualiser',
+              tooltip: 'refresh'.tr,
             ),
           ],
         ),
@@ -61,7 +61,7 @@ class AccountsListView extends GetView<AccountController> {
     return Column(
       children: [
         _buildSearchBar(
-          hintText: 'Rechercher un client...',
+          hintText: 'sales_search_customer'.tr,
           onChanged: controller.updateSearchQueryClients,
           searchQuery: controller.searchQueryClients,
         ),
@@ -69,7 +69,7 @@ class AccountsListView extends GetView<AccountController> {
         Expanded(
           child: Obx(() {
             if (controller.isLoadingClients.value && controller.comptesClients.isEmpty) {
-              return const LoadingWidget(message: 'Chargement des comptes clients...');
+              return LoadingWidget(message: 'accounts_loading_clients'.tr);
             }
 
             if (controller.hasErrorClients.value && controller.comptesClients.isEmpty) {
@@ -80,10 +80,10 @@ class AccountsListView extends GetView<AccountController> {
             }
 
             if (controller.comptesClients.isEmpty) {
-              return const EmptyStateWidget(
+              return EmptyStateWidget(
                 icon: Icons.account_balance_wallet,
-                title: 'Aucun compte client',
-                message: 'Les comptes clients apparaîtront ici une fois créés.',
+                title: 'accounts_empty_clients_title'.tr,
+                message: 'accounts_empty_clients_message'.tr,
               );
             }
 
@@ -126,7 +126,7 @@ class AccountsListView extends GetView<AccountController> {
     return Column(
       children: [
         _buildSearchBar(
-          hintText: 'Rechercher un fournisseur...',
+          hintText: 'suppliers_search_placeholder'.tr,
           onChanged: controller.updateSearchQueryFournisseurs,
           searchQuery: controller.searchQueryFournisseurs,
         ),
@@ -134,7 +134,7 @@ class AccountsListView extends GetView<AccountController> {
         Expanded(
           child: Obx(() {
             if (controller.isLoadingFournisseurs.value && controller.comptesFournisseurs.isEmpty) {
-              return const LoadingWidget(message: 'Chargement des comptes fournisseurs...');
+              return LoadingWidget(message: 'accounts_loading_suppliers'.tr);
             }
 
             if (controller.hasErrorFournisseurs.value && controller.comptesFournisseurs.isEmpty) {
@@ -145,10 +145,10 @@ class AccountsListView extends GetView<AccountController> {
             }
 
             if (controller.comptesFournisseurs.isEmpty) {
-              return const EmptyStateWidget(
+              return EmptyStateWidget(
                 icon: Icons.business_center,
-                title: 'Aucun compte fournisseur',
-                message: 'Les comptes fournisseurs apparaîtront ici une fois créés.',
+                title: 'accounts_empty_suppliers_title'.tr,
+                message: 'accounts_empty_suppliers_message'.tr,
               );
             }
 
@@ -242,19 +242,19 @@ class AccountsListView extends GetView<AccountController> {
           children: [
             _buildStatItem(
               icon: Icons.account_balance_wallet,
-              label: 'Total',
+              label: 'total'.tr,
               value: nombreComptes.toString(),
               color: Colors.blue,
             ),
             _buildStatItem(
               icon: Icons.warning,
-              label: 'Dépassement',
+              label: 'accounts_overlimit'.tr,
               value: nombreEnDepassement.toString(),
               color: Colors.orange,
             ),
             _buildStatItem(
               icon: Icons.attach_money,
-              label: 'Dettes',
+              label: 'accounts_debts'.tr,
               value: '${totalDettes.toStringAsFixed(0)} FCFA',
               color: Colors.red,
             ),

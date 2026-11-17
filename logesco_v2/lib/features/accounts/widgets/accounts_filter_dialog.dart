@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../shared/constants/constants.dart';
 
 /// Dialogue pour filtrer les comptes
@@ -53,7 +54,7 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Filtrer les comptes'),
+      title: Text('accounts_filter_title'.tr),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -63,10 +64,10 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
             TextField(
               controller: _soldeMinController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Solde minimum (${CurrencyConstants.defaultCurrency})',
-                hintText: 'Ex: 100',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'accounts_balance_min_label'.trParams({'currency': CurrencyConstants.defaultCurrency}),
+                hintText: 'accounts_balance_min_hint'.tr,
+                border: const OutlineInputBorder(),
               ),
             ),
 
@@ -76,19 +77,19 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
             TextField(
               controller: _soldeMaxController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Solde maximum (${CurrencyConstants.defaultCurrency})',
-                hintText: 'Ex: 1000',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'accounts_balance_max_label'.trParams({'currency': CurrencyConstants.defaultCurrency}),
+                hintText: 'accounts_balance_max_hint'.tr,
+                border: const OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 16),
 
             // Filtre par dépassement de crédit
-            const Text(
-              'Statut du crédit',
-              style: TextStyle(
+            Text(
+              'accounts_credit_status'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -99,7 +100,7 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
             Column(
               children: [
                 RadioListTile<bool?>(
-                  title: const Text('Tous les comptes'),
+                  title: Text('accounts_filter_all'.tr),
                   value: null,
                   groupValue: _enDepassement,
                   onChanged: (value) {
@@ -110,7 +111,7 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
                   contentPadding: EdgeInsets.zero,
                 ),
                 RadioListTile<bool?>(
-                  title: const Text('En dépassement uniquement'),
+                  title: Text('accounts_filter_overlimit_only'.tr),
                   value: true,
                   groupValue: _enDepassement,
                   onChanged: (value) {
@@ -121,7 +122,7 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
                   contentPadding: EdgeInsets.zero,
                 ),
                 RadioListTile<bool?>(
-                  title: const Text('Dans les limites uniquement'),
+                  title: Text('accounts_filter_within_limits_only'.tr),
                   value: false,
                   groupValue: _enDepassement,
                   onChanged: (value) {
@@ -142,15 +143,15 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
             widget.onClearFilters();
             Navigator.of(context).pop();
           },
-          child: const Text('Effacer'),
+          child: Text('stock_clear'.tr),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('common_cancel'.tr),
         ),
         ElevatedButton(
           onPressed: _applyFilters,
-          child: const Text('Appliquer'),
+          child: Text('common_apply'.tr),
         ),
       ],
     );
@@ -164,7 +165,7 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
     if (_soldeMinController.text.isNotEmpty) {
       soldeMin = double.tryParse(_soldeMinController.text);
       if (soldeMin == null) {
-        _showErrorSnackBar('Le solde minimum doit être un nombre valide');
+        _showErrorSnackBar('accounts_balance_min_invalid'.tr);
         return;
       }
     }
@@ -173,14 +174,14 @@ class _AccountsFilterDialogState extends State<AccountsFilterDialog> {
     if (_soldeMaxController.text.isNotEmpty) {
       soldeMax = double.tryParse(_soldeMaxController.text);
       if (soldeMax == null) {
-        _showErrorSnackBar('Le solde maximum doit être un nombre valide');
+        _showErrorSnackBar('accounts_balance_max_invalid'.tr);
         return;
       }
     }
 
     // Vérifier que le solde minimum n'est pas supérieur au solde maximum
     if (soldeMin != null && soldeMax != null && soldeMin > soldeMax) {
-      _showErrorSnackBar('Le solde minimum ne peut pas être supérieur au solde maximum');
+      _showErrorSnackBar('accounts_balance_min_exceeds_max'.tr);
       return;
     }
 
