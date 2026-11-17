@@ -33,27 +33,27 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paramètres des ventes'),
+        title: Text('sales_prefs_title'.tr),
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
-            title: 'Mode d\'impression',
-            description: 'Comportement après validation d\'une facture',
+            title: 'sales_prefs_print_mode_title'.tr,
+            description: 'sales_prefs_print_mode_desc'.tr,
             child: _buildPrintModeSelection(),
           ),
           const SizedBox(height: 24),
           _buildSection(
-            title: 'Format d\'impression',
-            description: 'Sélectionner le format par défaut pour tous les reçus',
+            title: 'sales_prefs_format_title'.tr,
+            description: 'sales_prefs_format_desc'.tr,
             child: _buildFormatSelection(),
           ),
           const SizedBox(height: 24),
           _buildSection(
-            title: 'À propos',
-            description: 'Ces paramètres s\'appliquent à toutes les ventes',
+            title: 'sales_prefs_about_title'.tr,
+            description: 'sales_prefs_about_desc'.tr,
             child: _buildInfoBox(),
           ),
         ],
@@ -102,8 +102,8 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
       _salesController.setPrintMode(mode);
 
       SnackbarHelper.success(
-        'Mode d\'impression changé en ${mode.displayName}',
-        title: 'Paramètre sauvegardé',
+        'sales_prefs_print_mode_changed'.trParams({'mode': mode.displayName}),
+        title: 'sales_prefs_setting_saved'.tr,
         duration: const Duration(seconds: 2),
       );
     }
@@ -143,29 +143,29 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
         child: Column(
           children: [
             RadioListTile<PrintFormat>(
-              title: const Text('Imprimante thermique 80mm'),
-              subtitle: const Text('Recommandé pour les reçus rapides'),
+              title: Text('sales_prefs_thermal_title'.tr),
+              subtitle: Text('sales_prefs_thermal_desc'.tr),
               value: PrintFormat.thermal,
               groupValue: _selectedFormat,
               onChanged: _updateFormat,
             ),
             RadioListTile<PrintFormat>(
-              title: const Text('Format A5'),
-              subtitle: const Text('14.8 x 21 cm'),
+              title: Text('sales_prefs_a5_title'.tr),
+              subtitle: Text('sales_prefs_a5_desc'.tr),
               value: PrintFormat.a5,
               groupValue: _selectedFormat,
               onChanged: _updateFormat,
             ),
             RadioListTile<PrintFormat>(
-              title: const Text('Format A4'),
-              subtitle: const Text('21 x 29.7 cm'),
+              title: Text('sales_prefs_a4_title'.tr),
+              subtitle: Text('sales_prefs_a4_desc'.tr),
               value: PrintFormat.a4,
               groupValue: _selectedFormat,
               onChanged: _updateFormat,
             ),
             RadioListTile<PrintFormat>(
-              title: const Text('Imprimante matricielle'),
-              subtitle: const Text('Papier continu à picots, texte pur (pas de logo/couleurs)'),
+              title: Text('sales_prefs_matrix_title'.tr),
+              subtitle: Text('sales_prefs_matrix_desc'.tr),
               value: PrintFormat.matriciel,
               groupValue: _selectedFormat,
               onChanged: _updateFormat,
@@ -185,7 +185,7 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Format sélectionné: ${_selectedFormat.displayName}',
+                      'sales_prefs_format_selected'.trParams({'format': _selectedFormat.displayName}),
                       style: TextStyle(
                         color: Colors.blue.shade700,
                         fontWeight: FontWeight.w500,
@@ -218,7 +218,7 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Les paramètres sont appliqués automatiquement',
+                  'sales_prefs_auto_applied'.tr,
                   style: TextStyle(
                     color: Colors.green.shade700,
                     fontWeight: FontWeight.w500,
@@ -229,7 +229,7 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Le format d\'impression sélectionné sera utilisé pour tous les reçus jusqu\'à ce que vous le changiez à nouveau.',
+            'sales_prefs_format_note'.tr,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey.shade600,
                 ),
@@ -248,8 +248,8 @@ class _SalesPreferencesPageState extends State<SalesPreferencesPage> {
       _salesController.setSelectedReceiptFormat(format);
 
       SnackbarHelper.success(
-        'Format d\'impression changé en ${format.displayName}',
-        title: 'Paramètre sauvegardé',
+        'sales_prefs_format_changed'.trParams({'format': format.displayName}),
+        title: 'sales_prefs_setting_saved'.tr,
         duration: const Duration(seconds: 2),
       );
     }

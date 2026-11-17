@@ -145,13 +145,13 @@ class CustomerFormController extends GetxController {
           customerForm,
         );
 
-        SnackbarHelper.success('Client modifié avec succès');
+        SnackbarHelper.success('customers_edit_success'.tr);
       } else {
         // Création
         print('➕ Création d\'un nouveau client');
         savedCustomer = await _customerService.createCustomer(customerForm);
 
-        SnackbarHelper.success('Client créé avec succès');
+        SnackbarHelper.success('customers_create_success'.tr);
       }
 
       print('✅ Sauvegarde réussie - ID: ${savedCustomer.id}');

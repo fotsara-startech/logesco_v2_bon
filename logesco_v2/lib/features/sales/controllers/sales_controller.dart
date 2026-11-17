@@ -283,7 +283,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       return true;
     } catch (e) {
       print('❌ Erreur lors de la génération manuelle du reçu: $e');
-      SnackbarUtils.showError('Erreur lors de la génération du reçu: $e');
+      SnackbarUtils.showError('sales_receipt_generation_error'.trParams({'error': '$e'}));
       return false;
     }
   }
@@ -381,10 +381,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         final realStock = response.data!;
 
         if (realStock.quantiteDisponible < requestedQuantity) {
-          SnackbarUtils.showError('Stock insuffisant pour ce produit.\n'
-              'Affiché: ${getRawStockQuantity(productId)}, '
-              'Réel: ${realStock.quantiteDisponible}, '
-              'Demandé: $requestedQuantity');
+          SnackbarUtils.showError('sales_stock_check_mismatch'.trParams({
+            'displayed': '${getRawStockQuantity(productId)}',
+            'real': '${realStock.quantiteDisponible}',
+            'requested': '$requestedQuantity',
+          }));
           return false;
         }
         return true;
@@ -477,11 +478,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         print('   - Total ventes en mémoire après chargement: ${_sales.length}');
       } else {
         print('❌ [DIAGNOSTIC] Erreur API: ${response.message}');
-        SnackbarUtils.showError(response.message ?? 'Erreur lors du chargement des ventes');
+        SnackbarUtils.showError(response.message ?? 'sales_load_error'.tr);
       }
     } catch (e) {
       print('❌ [DIAGNOSTIC] Exception lors du chargement: $e');
-      SnackbarUtils.showError('Erreur lors du chargement des ventes: $e');
+      SnackbarUtils.showError('sales_load_error_detail'.trParams({'error': '$e'}));
     } finally {
       _isLoading.value = false;
     }
@@ -501,7 +502,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _isExporting.value = true;
 
     try {
-      SnackbarHelper.info('Récupération des ventes...', title: 'Export en cours');
+      SnackbarHelper.info('sales_export_fetching'.tr, title: 'customers_export_in_progress'.tr);
 
       final effectiveVendeurId = _resolveEffectiveVendeurId();
       final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
@@ -525,7 +526,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         );
 
         if (!response.success || response.data == null) {
-          SnackbarUtils.showError(response.message ?? 'Erreur lors de la récupération des ventes');
+          SnackbarUtils.showError(response.message ?? 'sales_fetch_error'.tr);
           return;
         }
 
@@ -537,21 +538,21 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
 
       if (allSales.isEmpty) {
-        SnackbarHelper.info('Aucune vente à exporter');
+        SnackbarHelper.info('sales_export_no_data'.tr);
         return;
       }
 
-      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
+      SnackbarHelper.info('customers_export_generating'.tr, title: 'customers_export_in_progress'.tr);
       final filePath = await _excelService.exportSalesToExcel(allSales);
 
       if (filePath != null) {
-        SnackbarHelper.success('${allSales.length} vente(s) exportée(s)', title: 'Export réussi', duration: const Duration(seconds: 4));
+        SnackbarHelper.success('sales_export_count_success'.trParams({'count': '${allSales.length}'}), title: 'customers_export_success'.tr, duration: const Duration(seconds: 4));
       } else {
-        SnackbarHelper.error('Erreur lors de la génération du fichier Excel');
+        SnackbarHelper.error('sales_export_excel_generation_error'.tr);
       }
     } catch (e) {
       print('❌ Erreur export ventes Excel: $e');
-      SnackbarHelper.error('Erreur lors de l\'export Excel: $e');
+      SnackbarHelper.error('sales_export_excel_error_detail'.trParams({'error': '$e'}));
     } finally {
       _isExporting.value = false;
     }
@@ -565,10 +566,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       if (response.success && response.data != null) {
         _currentSale.value = response.data;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors du chargement de la vente');
+        SnackbarUtils.showError(response.message ?? 'sales_load_sale_error'.tr);
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors du chargement de la vente');
+      SnackbarUtils.showError('sales_load_sale_error'.tr);
     } finally {
       _isLoading.value = false;
     }
@@ -650,7 +651,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
     } catch (e) {
       print('❌ Erreur lors du chargement des stocks: $e');
-      SnackbarUtils.showError('Erreur de connexion lors du chargement des stocks');
+      SnackbarUtils.showError('sales_load_stocks_connection_error'.tr);
     }
   }
 
@@ -674,7 +675,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       print('✅ ${_productsForSale.length} produits chargés pour la vente');
     } catch (e) {
       print('❌ Erreur lors du chargement des produits: $e');
-      SnackbarUtils.showError('Erreur lors du chargement des produits');
+      SnackbarUtils.showError('sales_load_products_error'.tr);
     }
   }
 
@@ -813,7 +814,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       // Vérifier d'abord avec les données locales
       if (!isQuantityAvailable(product.id, totalRequestedQuantity)) {
         final availableQuantity = getAvailableQuantity(product.id);
-        SnackbarUtils.showError('Stock insuffisant (local). Disponible: $availableQuantity, Demandé: $totalRequestedQuantity');
+        SnackbarUtils.showError('sales_stock_insufficient_local'.trParams({'available': '$availableQuantity', 'requested': '$totalRequestedQuantity'}));
         return;
       }
 
@@ -853,7 +854,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         final stock = getProductStock(productId);
         if (stock != null && !isQuantityAvailable(productId, quantity)) {
           final availableQuantity = getAvailableQuantity(productId);
-          SnackbarUtils.showError('Stock insuffisant. Disponible: $availableQuantity, Demandé: $quantity');
+          SnackbarUtils.showError('sales_stock_insufficient_detail'.trParams({'available': '$availableQuantity', 'requested': '$quantity'}));
           return;
         }
 
@@ -1098,7 +1099,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     try {
       final cashSessionController = Get.find<CashSessionController>();
       if (!cashSessionController.canMakeSales) {
-        SnackbarUtils.showError('Vous devez vous connecter à une caisse pour effectuer des ventes');
+        SnackbarUtils.showError('sales_no_active_cash_session'.tr);
         Get.toNamed('/cash-session');
         return false;
       }
@@ -1108,7 +1109,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
 
     if (_cartItems.isEmpty) {
-      SnackbarUtils.showError('Le panier est vide');
+      SnackbarUtils.showError('sales_cart_empty'.tr);
       return false;
     }
 
@@ -1221,12 +1222,12 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la création de la vente');
+        SnackbarUtils.showError(response.message ?? 'sales_create_error'.tr);
         return false;
       }
     } catch (e) {
       print('Erreur création vente: $e');
-      SnackbarUtils.showError('Erreur de connexion: Vérifiez que le serveur est démarré');
+      SnackbarUtils.showError('sales_connection_error'.tr);
       return false;
     } finally {
       _isCreating.value = false;
@@ -1244,7 +1245,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     if (!canCreateSale) return false;
 
     if (_cartItems.isEmpty) {
-      SnackbarUtils.showError('Le panier est vide');
+      SnackbarUtils.showError('sales_cart_empty'.tr);
       return false;
     }
 
@@ -1291,18 +1292,18 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         clearCart();
         _searchQuery.value = '';
         SnackbarHelper.success(
-          'Commande enregistrée. Elle pourra être encaissée depuis "Commandes en attente".',
-          title: 'Commande créée',
+          'sales_order_saved_success'.tr,
+          title: 'sales_order_created_title'.tr,
           duration: const Duration(seconds: 3),
         );
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la création de la commande');
+        SnackbarUtils.showError(response.message ?? 'sales_order_create_error'.tr);
         return false;
       }
     } catch (e) {
       print('Erreur création commande en attente: $e');
-      SnackbarUtils.showError('Erreur de connexion: Vérifiez que le serveur est démarré');
+      SnackbarUtils.showError('sales_connection_error'.tr);
       return false;
     } finally {
       _isCreating.value = false;
@@ -1335,7 +1336,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         print('✅ Reçu généré automatiquement pour la vente ${sale.numeroVente}');
 
         // Afficher une notification de succès
-        SnackbarHelper.success('Le reçu de la vente ${sale.numeroVente} a été créé avec succès', title: 'Reçu généré', duration: const Duration(seconds: 3));
+        SnackbarHelper.success('sales_receipt_created_success'.trParams({'number': sale.numeroVente}), title: 'sales_receipt_created_title'.tr, duration: const Duration(seconds: 3));
 
         // Vérifier si le client a utilisé son avance pour cette vente
         await _generateAccountUsageReceiptIfNeeded(sale, format);
@@ -1343,7 +1344,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         print('⚠️ Échec de génération du reçu: ${receiptResponse.message}');
 
         // Afficher une notification d'erreur
-        SnackbarHelper.warning('Impossible de générer le reçu: ${receiptResponse.message}', title: 'Erreur de génération', duration: const Duration(seconds: 4));
+        SnackbarHelper.warning('sales_receipt_generation_failed'.trParams({'message': '${receiptResponse.message}'}), title: 'sales_receipt_generation_failed_title'.tr, duration: const Duration(seconds: 4));
       }
     } catch (e) {
       print('❌ Erreur lors de la génération automatique du reçu: $e');
@@ -1423,19 +1424,19 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   Future<void> printAccountUsageReceipt(Sale sale, {PrintFormat? format}) async {
     try {
       if (sale.client == null) {
-        SnackbarUtils.showInfo('Cette vente n\'a pas de client associé');
+        SnackbarUtils.showInfo('sales_no_client_for_sale'.tr);
         return;
       }
 
       if (sale.avanceUtilisee <= 0) {
-        SnackbarUtils.showInfo('Cette vente n\'a pas utilisé l\'avance du client');
+        SnackbarUtils.showInfo('sales_no_advance_used'.tr);
         return;
       }
 
       // Récupérer le compte client pour obtenir le solde actuel
       final accountData = await getCustomerAccount(sale.client!.id);
       if (accountData == null) {
-        SnackbarUtils.showError('Impossible de récupérer le compte client');
+        SnackbarUtils.showError('sales_fetch_client_account_error'.tr);
         return;
       }
 
@@ -1450,7 +1451,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
 
       if (_companyProfile.value == null) {
-        SnackbarUtils.showError('Profil d\'entreprise non configuré');
+        SnackbarUtils.showError('company_settings_not_configured'.tr);
         return;
       }
 
@@ -1468,10 +1469,10 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         format: printFormat,
       );
 
-      SnackbarUtils.showSuccess('Reçu de suivi de compte généré');
+      SnackbarUtils.showSuccess('sales_followup_receipt_generated'.tr);
     } catch (e) {
       print('❌ Erreur lors de l\'impression du reçu de suivi: $e');
-      SnackbarUtils.showError('Erreur lors de l\'impression du reçu de suivi');
+      SnackbarUtils.showError('sales_followup_receipt_print_error'.tr);
     }
   }
 
@@ -1528,7 +1529,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       final response = await _salesService.cancelSale(saleId);
 
       if (response.success) {
-        SnackbarUtils.showSuccess(response.message ?? 'Vente annulée avec succès');
+        SnackbarUtils.showSuccess(response.message ?? 'sales_cancel_success'.tr);
         await loadSales(refresh: true);
 
         // L'annulation rembourse le client depuis la caisse : le solde de la
@@ -1538,11 +1539,11 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         await _rafraichirApresAnnulation();
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de l\'annulation de la vente');
+        SnackbarUtils.showError(response.message ?? 'sales_cancel_error'.tr);
         return false;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de l\'annulation de la vente');
+      SnackbarUtils.showError('sales_cancel_error'.tr);
       return false;
     } finally {
       _isLoading.value = false;

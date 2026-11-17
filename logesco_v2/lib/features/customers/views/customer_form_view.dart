@@ -111,10 +111,10 @@ class CustomerFormView extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Informations entreprise (optionnel)
-                _buildSectionTitle('Informations entreprise (optionnel)'),
+                _buildSectionTitle('customers_company_info_section'.tr),
                 const SizedBox(height: 8),
                 Text(
-                  'Ces informations sont nécessaires si le client est une entreprise',
+                  'customers_company_info_hint'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[600],
@@ -125,8 +125,8 @@ class CustomerFormView extends StatelessWidget {
 
                 _buildTextField(
                   controller: controller.nuiController,
-                  label: 'NUI (Numéro d\'Identification Unique)',
-                  hint: 'Ex: A1234567890',
+                  label: 'customers_nui_label'.tr,
+                  hint: 'customers_nui_hint'.tr,
                   icon: Icons.business,
                   textCapitalization: TextCapitalization.characters,
                 ),
@@ -135,8 +135,8 @@ class CustomerFormView extends StatelessWidget {
 
                 _buildTextField(
                   controller: controller.rccmController,
-                  label: 'RCCM (Registre du Commerce)',
-                  hint: 'Ex: CD/KNG/RCCM/12-A-12345',
+                  label: 'customers_rccm_label'.tr,
+                  hint: 'customers_rccm_hint'.tr,
                   icon: Icons.business_center,
                   textCapitalization: TextCapitalization.characters,
                 ),

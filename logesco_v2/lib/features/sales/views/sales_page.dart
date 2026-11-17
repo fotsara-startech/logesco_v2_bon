@@ -112,7 +112,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                           value: 'filter',
                           child: ListTile(
                               leading: Icon(controller.filtersVisible ? Icons.filter_list_off : Icons.filter_list),
-                              title: Text(controller.filtersVisible ? 'Masquer filtres' : 'Afficher filtres'),
+                              title: Text(controller.filtersVisible ? 'sales_hide_filters'.tr : 'sales_show_filters'.tr),
                               contentPadding: EdgeInsets.zero)),
                       PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.view_list), title: Text('sales_table_view'.tr), contentPadding: EdgeInsets.zero)),
                       PopupMenuItem(value: 'refresh', child: ListTile(leading: const Icon(Icons.refresh), title: Text('sales_refresh_stocks'.tr), contentPadding: EdgeInsets.zero)),
@@ -318,7 +318,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                   children: [
                     const Icon(Icons.person_outline, size: 14, color: Colors.blueGrey),
                     const SizedBox(width: 4),
-                    Text('Vendeur: ${sale.vendeur!.nomUtilisateur}', style: const TextStyle(color: Colors.blueGrey)),
+                    Text('sales_seller_label'.trParams({'name': sale.vendeur!.nomUtilisateur}), style: const TextStyle(color: Colors.blueGrey)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -369,7 +369,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                 ...sale.details.map((detail) => Padding(
                       padding: const EdgeInsets.only(left: 16, top: 4),
                       child: Text('sales_product_line'
-                          .trParams({'product': detail.produit?.nom ?? 'Produit ${detail.produitId}', 'quantity': detail.quantite.toString(), 'amount': detail.montantLigne.toStringAsFixed(0)})),
+                          .trParams({'product': detail.produit?.nom ?? 'sales_product_fallback'.trParams({'id': '${detail.produitId}'}), 'quantity': detail.quantite.toString(), 'amount': detail.montantLigne.toStringAsFixed(0)})),
                     )),
               ] else ...[
                 Padding(

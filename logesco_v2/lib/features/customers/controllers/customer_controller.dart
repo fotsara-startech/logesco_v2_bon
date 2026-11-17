@@ -186,7 +186,7 @@ class CustomerController extends GetxController {
       onCustomerSaved(customer);
       return customer;
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la création du client: $e');
+      SnackbarHelper.error('customers_create_error'.trParams({'error': '$e'}));
       return null;
     }
   }
@@ -215,16 +215,16 @@ class CustomerController extends GetxController {
       // Vérifier si un nouveau client a été ajouté
       if (finalCount > initialCount) {
         print('✅ Nouveau client détecté dans la liste');
-        SnackbarHelper.success('Client ajouté avec succès');
+        SnackbarHelper.success('customers_added_success'.tr);
       } else if (result != null && result is Customer) {
         print('✅ Client créé selon le résultat: ${result.nomComplet}');
         // Forcer l'ajout si pas détecté dans le rafraîchissement
         customers.insert(0, result);
-        SnackbarHelper.success('Client "${result.nomComplet}" ajouté à la liste');
+        SnackbarHelper.success('customers_added_to_list'.trParams({'name': result.nomComplet}));
       }
     } catch (e) {
       print('❌ Erreur navigation: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de création');
+      SnackbarHelper.error('customers_create_form_error'.tr);
     }
   }
 
@@ -251,7 +251,7 @@ class CustomerController extends GetxController {
       }
     } catch (e) {
       print('❌ Erreur navigation édition: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le formulaire d\'édition');
+      SnackbarHelper.error('customers_edit_form_error'.tr);
     }
   }
 
@@ -264,15 +264,15 @@ class CustomerController extends GetxController {
   Future<void> deleteCustomer(Customer customer) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('users_delete_confirm_title'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Êtestes-vous sûr de vouloir supprimer le client "${customer.nomComplet}" ?'),
+            Text('customers_delete_confirm_message'.trParams({'name': customer.nomComplet})),
             const SizedBox(height: 8),
             Text(
-              'Note: La suppression échouera si le client a des ventes associées.',
+              'customers_delete_warning_note'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -284,7 +284,7 @@ class CustomerController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('common_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -292,7 +292,7 @@ class CustomerController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('common_delete'.tr),
           ),
         ],
       ),
@@ -305,7 +305,7 @@ class CustomerController extends GetxController {
 
         if (success) {
           customers.remove(customer);
-          SnackbarHelper.success('Client supprimé avec succès');
+          SnackbarHelper.success('customers_delete_success'.tr);
         } else {
           throw Exception('Échec de la suppression');
         }
@@ -327,7 +327,7 @@ class CustomerController extends GetxController {
     try {
       return await _customerService.getCustomerById(id);
     } catch (e) {
-      SnackbarHelper.error('Impossible de récupérer les détails du client');
+      SnackbarHelper.error('customers_fetch_details_error'.tr);
       return null;
     }
   }
@@ -419,14 +419,14 @@ class CustomerController extends GetxController {
 
       if (success) {
         print('✅ Paiement enregistré avec succès');
-        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
+        SnackbarHelper.success('customers_payment_registered'.trParams({'amount': montant.toStringAsFixed(0)}));
         return true;
       } else {
         throw Exception('Échec de l\'enregistrement du paiement');
       }
     } catch (e) {
       print('❌ Erreur paiement dette: $e');
-      SnackbarHelper.error('Erreur lors de l\'enregistrement du paiement: $e');
+      SnackbarHelper.error('customers_payment_error'.trParams({'error': '$e'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -459,7 +459,7 @@ class CustomerController extends GetxController {
 
       if (success) {
         print('✅ [Controller] Paiement pour vente enregistré avec succès');
-        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
+        SnackbarHelper.success('customers_payment_registered'.trParams({'amount': montant.toStringAsFixed(0)}));
         return true;
       } else {
         print('❌ [Controller] Service a retourné false');
@@ -468,7 +468,7 @@ class CustomerController extends GetxController {
     } catch (e) {
       print('❌ [Controller] Erreur paiement dette pour vente: $e');
       print('  - Stack trace: ${StackTrace.current}');
-      SnackbarHelper.error('Erreur lors de l\'enregistrement du paiement: $e');
+      SnackbarHelper.error('customers_payment_error'.trParams({'error': '$e'}));
       return false;
     } finally {
       print('🔄 [Controller] isLoading = false');
@@ -494,7 +494,7 @@ class CustomerController extends GetxController {
         customers[index] = customers[index].copyWith(solde: nouveauSolde);
       }
 
-      SnackbarHelper.success('Dépôt de ${montant.toStringAsFixed(0)} FCFA enregistré');
+      SnackbarHelper.success('customers_deposit_registered'.trParams({'amount': montant.toStringAsFixed(0)}));
       return result;
     } catch (e) {
       final message = e is ApiException ? e.message : e.toString().replaceFirst('Exception: ', '');
@@ -533,7 +533,7 @@ class CustomerController extends GetxController {
   /// Exporte tous les clients vers Excel
   Future<void> exportToExcel() async {
     try {
-      SnackbarHelper.info('Récupération des clients...', title: 'Export en cours');
+      SnackbarHelper.info('customers_export_fetching'.tr, title: 'customers_export_in_progress'.tr);
 
       // Récupérer tous les clients par pagination
       List<Customer> allCustomers = [];
@@ -563,7 +563,7 @@ class CustomerController extends GetxController {
         return;
       }
 
-      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
+      SnackbarHelper.info('customers_export_generating'.tr, title: 'customers_export_in_progress'.tr);
       final filePath = await _excelService.exportCustomersToExcel(allCustomers);
 
       if (filePath != null) {
@@ -628,7 +628,7 @@ class CustomerController extends GetxController {
                 final data = importData[index];
                 return ListTile(
                   title: Text('${data.nom} ${data.prenom ?? ''}'),
-                  subtitle: Text(data.telephone ?? 'Pas de téléphone'),
+                  subtitle: Text(data.telephone ?? 'customers_no_phone'.tr),
                 );
               },
             ),

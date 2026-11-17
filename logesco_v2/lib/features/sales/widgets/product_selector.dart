@@ -97,14 +97,14 @@ class _ProductSelectorState extends State<ProductSelector> {
             _searchController.clear();
             salesController.updateProductSearchQuery('');
 
-            SnackbarHelper.success('${exactBarcodeMatch.nom} ajouté au panier', duration: const Duration(seconds: 1));
+            SnackbarHelper.success('sales_added_to_cart'.trParams({'name': exactBarcodeMatch.nom}), duration: const Duration(seconds: 1));
 
             // Remettre le focus sur le champ de recherche pour scanner le produit suivant
             WidgetsBinding.instance.addPostFrameCallback((_) {
               widget.searchFocusNode?.requestFocus();
             });
           } else {
-            SnackbarHelper.warning('Stock épuisé pour ${exactBarcodeMatch.nom}', duration: const Duration(seconds: 2));
+            SnackbarHelper.warning('sales_stock_depleted_for'.trParams({'name': exactBarcodeMatch.nom}), duration: const Duration(seconds: 2));
           }
           return true;
         }
@@ -116,7 +116,7 @@ class _ProductSelectorState extends State<ProductSelector> {
 
       final canAddToCart = product.estActif && (product.estService || salesController.getAvailableQuantity(product.id) > 0);
       if (!canAddToCart) {
-        SnackbarHelper.warning('Stock épuisé pour ${product.nom}', duration: const Duration(seconds: 2));
+        SnackbarHelper.warning('sales_stock_depleted_for'.trParams({'name': product.nom}), duration: const Duration(seconds: 2));
         return true;
       }
 
@@ -159,7 +159,7 @@ class _ProductSelectorState extends State<ProductSelector> {
                     suffixIcon: IconButton(
                       onPressed: () => _showBarcodeSearch(salesController),
                       icon: const Icon(Icons.qr_code_scanner),
-                      tooltip: 'Recherche par code-barre',
+                      tooltip: 'sales_barcode_search'.tr,
                     ),
                     border: const OutlineInputBorder(),
                   ),
@@ -188,14 +188,14 @@ class _ProductSelectorState extends State<ProductSelector> {
                             _searchController.clear();
                             salesController.updateProductSearchQuery('');
 
-                            SnackbarHelper.success('${exactBarcodeMatch.nom} ajouté au panier', duration: const Duration(seconds: 1));
+                            SnackbarHelper.success('sales_added_to_cart'.trParams({'name': exactBarcodeMatch.nom}), duration: const Duration(seconds: 1));
 
                             // Remettre le focus sur le champ de recherche pour scanner le produit suivant
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               widget.searchFocusNode?.requestFocus();
                             });
                           } else {
-                            SnackbarHelper.warning('Stock épuisé pour ${exactBarcodeMatch.nom}', duration: const Duration(seconds: 2));
+                            SnackbarHelper.warning('sales_stock_depleted_for'.trParams({'name': exactBarcodeMatch.nom}), duration: const Duration(seconds: 2));
                           }
                         }
                       }
@@ -220,7 +220,7 @@ class _ProductSelectorState extends State<ProductSelector> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.refresh),
-                    tooltip: 'Actualiser produits et stocks',
+                    tooltip: 'sales_refresh_products'.tr,
                   )),
             ],
           ),
@@ -273,7 +273,7 @@ class _ProductSelectorState extends State<ProductSelector> {
                       salesController.productSortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                     ),
                     onPressed: salesController.toggleProductSort,
-                    tooltip: salesController.productSortAscending ? 'Croissant' : 'Décroissant',
+                    tooltip: salesController.productSortAscending ? 'sales_sort_ascending'.tr : 'sales_sort_descending'.tr,
                   )),
             ],
           ),
@@ -627,12 +627,12 @@ class _ProductItem extends StatelessWidget {
                   IconButton(
                     onPressed: canAddToCart ? () => showAddToCartQuantityDialog(context, product, onSelected) : null,
                     icon: const Icon(Icons.add_shopping_cart),
-                    tooltip: canAddToCart ? 'Ajouter au panier' : 'Stock épuisé',
+                    tooltip: canAddToCart ? 'sales_add_to_cart'.tr : 'sales_stock_depleted'.tr,
                   ),
                   IconButton(
                     onPressed: canAddToCart ? () async => await onSelected(product, 1) : null,
                     icon: const Icon(Icons.add),
-                    tooltip: canAddToCart ? 'Ajouter 1' : 'Stock épuisé',
+                    tooltip: canAddToCart ? 'sales_add_one'.tr : 'sales_stock_depleted'.tr,
                   ),
                 ],
               );
@@ -691,7 +691,7 @@ void showAddToCartQuantityDialog(
           if (!product.estService) ...[
             const SizedBox(height: 8),
             Text(
-              'Stock disponible: $availableQuantity',
+              'sales_available_stock_count'.trParams({'count': '$availableQuantity'}),
               style: TextStyle(
                 color: availableQuantity > 0 ? Colors.green : Colors.red,
                 fontWeight: FontWeight.bold,

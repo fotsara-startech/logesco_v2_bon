@@ -393,7 +393,7 @@ class _CartItemState extends State<_CartItem> {
                       labelText: 'sales_cart_unit_price'.tr,
                       suffixText: 'FCFA',
                       isDense: true,
-                      helperText: widget.item.maxDiscountAllowed > 0 ? 'Min: ${_minPrice.toStringAsFixed(0)} FCFA' : null,
+                      helperText: widget.item.maxDiscountAllowed > 0 ? 'quick_billing_min_price'.trParams({'min': _minPrice.toStringAsFixed(0)}) : null,
                       helperStyle: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       errorText: _priceError,
                     ),

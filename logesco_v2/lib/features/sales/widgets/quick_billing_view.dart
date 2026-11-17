@@ -365,7 +365,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
         _productFocusNode?.requestFocus();
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la création du client: $e');
+      SnackbarHelper.error('customers_create_error'.trParams({'error': '$e'}));
     }
   }
 
@@ -480,7 +480,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
   void _onProductChosen(Product product) {
     final canAdd = product.estActif && (product.estService || _salesController.getAvailableQuantity(product.id) > 0);
     if (!canAdd) {
-      SnackbarHelper.warning('Stock épuisé pour ${product.nom}', duration: const Duration(seconds: 2));
+      SnackbarHelper.warning('sales_stock_depleted_for'.trParams({'name': product.nom}), duration: const Duration(seconds: 2));
       return;
     }
 
@@ -493,7 +493,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
       _salesController.addToCart(product, quantity: 1).then((_) {
         _productTextController?.clear();
         setState(() {});
-        SnackbarHelper.success('${product.nom} ajouté au panier', duration: const Duration(seconds: 1));
+        SnackbarHelper.success('sales_added_to_cart'.trParams({'name': product.nom}), duration: const Duration(seconds: 1));
         // Retour du focus sur le champ produit pour scanner le suivant
         WidgetsBinding.instance.addPostFrameCallback((_) => _productFocusNode?.requestFocus());
       });
@@ -764,7 +764,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
                 _totalRow('quick_billing_discount'.tr, '${discount.toStringAsFixed(0)} FCFA'),
                 const SizedBox(height: 4),
                 _totalRow('quick_billing_net_due'.tr, '${netAPayer.toStringAsFixed(0)} FCFA', bold: true, big: true),
-                if (widget.includePayment && settlement.avanceUtilisee > 0) _totalRow('Avance utilisée', '-${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
+                if (widget.includePayment && settlement.avanceUtilisee > 0) _totalRow('sales_advance_used_label'.tr, '-${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
               ],
             ),
           ),
@@ -809,7 +809,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Flexible(child: Text('Pas de monnaie : ajouter au solde du client', style: TextStyle(fontSize: 11))),
+                          Flexible(child: Text('sales_no_change_add_to_balance'.tr, style: const TextStyle(fontSize: 11))),
                         ],
                       ),
                     ),

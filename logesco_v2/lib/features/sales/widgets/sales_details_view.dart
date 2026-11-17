@@ -71,7 +71,7 @@ class SalesDetailsView extends StatelessWidget {
                           Expanded(child: Text(sale.client?.nom ?? 'sales_no_client'.tr, style: TextStyle(fontSize: 12, color: Colors.grey[600]), overflow: TextOverflow.ellipsis)),
                         ]),
                         const SizedBox(height: 6),
-                        Text(detail.produit?.nom ?? 'Produit ${detail.produitId}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        Text(detail.produit?.nom ?? 'sales_product_fallback'.trParams({'id': '${detail.produitId}'}), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                         if (detail.produit?.reference != null) Text(detail.produit!.reference, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                         const SizedBox(height: 6),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

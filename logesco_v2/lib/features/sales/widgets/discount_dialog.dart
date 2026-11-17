@@ -159,13 +159,13 @@ class _DiscountDialogState extends State<DiscountDialog> {
             Obx(() => TextFormField(
                   controller: _discountController,
                   decoration: InputDecoration(
-                    labelText: 'Montant de la remise',
+                    labelText: 'sales_discount_amount'.tr,
                     hintText: '0',
                     prefixIcon: const Icon(Icons.remove_circle_outline),
                     suffixText: CurrencyConstants.defaultCurrency,
                     border: const OutlineInputBorder(),
                     errorText: errorMessage.value.isEmpty ? null : errorMessage.value,
-                    helperText: 'Maximum autorisé: ${widget.cartItem.maxDiscountAllowed.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}',
+                    helperText: 'sales_max_discount_allowed'.trParams({'amount': widget.cartItem.maxDiscountAllowed.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
@@ -177,11 +177,11 @@ class _DiscountDialogState extends State<DiscountDialog> {
             // Champ de justification
             TextFormField(
               controller: _justificationController,
-              decoration: const InputDecoration(
-                labelText: 'Justification (optionnel)',
-                hintText: 'Ex: Client fidèle, promotion, négociation...',
-                prefixIcon: Icon(Icons.comment_outlined),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'sales_discount_justification'.tr,
+                hintText: 'sales_discount_justification_hint'.tr,
+                prefixIcon: const Icon(Icons.comment_outlined),
+                border: const OutlineInputBorder(),
               ),
               maxLines: 2,
               inputFormatters: [

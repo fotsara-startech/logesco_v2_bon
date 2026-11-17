@@ -225,7 +225,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
             children: [
               Icon(Icons.person_outline, color: Colors.grey[600], size: 22),
               const SizedBox(width: 10),
-              Expanded(child: Text('Aucun client sélectionné', style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
+              Expanded(child: Text('sales_no_customer_selected'.tr, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
             ],
           ),
         );
@@ -566,13 +566,13 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 children: [
                   ChoiceChip(
                     avatar: const Icon(Icons.payments_outlined, size: 18),
-                    label: const Text('Rendre la monnaie'),
+                    label: Text('sales_make_change'.tr),
                     selected: !_addExcessToBalance,
                     onSelected: (_) => setState(() => _addExcessToBalance = false),
                   ),
                   ChoiceChip(
                     avatar: const Icon(Icons.savings_outlined, size: 18),
-                    label: const Text('Ajouter au solde du client'),
+                    label: Text('sales_add_to_customer_balance'.tr),
                     selected: _addExcessToBalance,
                     onSelected: (_) => setState(() => _addExcessToBalance = true),
                   ),
@@ -581,8 +581,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               if (_addExcessToBalance) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Nouveau solde du client : ${s.soldeApres.toStringAsFixed(0)} FCFA'
-                  '${s.soldeApres > 0 ? ' (avance)' : s.soldeApres < 0 ? ' (dette)' : ''}',
+                  'sales_new_customer_balance'.trParams({'amount': s.soldeApres.toStringAsFixed(0)}) +
+                      (s.soldeApres > 0 ? 'sales_balance_advance_suffix'.tr : s.soldeApres < 0 ? 'sales_balance_debt_suffix'.tr : ''),
                   style: TextStyle(fontSize: 12, color: Colors.blue[900]),
                 ),
               ],
@@ -785,7 +785,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                         const SizedBox(height: 8),
                         if (customerDebt > 0) Text('• ${'sales_current_debt'.tr}: ${customerDebt.toStringAsFixed(0)} FCFA'),
                         Text('• ${'sales_new_order'.tr}: ${total.toStringAsFixed(0)} FCFA'),
-                        if (settlement.avanceUtilisee > 0) Text('• Avance utilisée: ${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
+                        if (settlement.avanceUtilisee > 0) Text('sales_advance_used_line'.trParams({'amount': settlement.avanceUtilisee.toStringAsFixed(0)})),
                         Text('• ${'sales_amount_paid'.tr}: ${_amountPaid.toStringAsFixed(0)} FCFA'),
                         const Divider(height: 16),
                         Text(

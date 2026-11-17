@@ -228,7 +228,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                     ),
                   ),
                   icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
-                  label: const Text('Ventes à crédit', style: TextStyle(color: Colors.white)),
+                  label: Text('customers_credit_sales_button'.tr, style: const TextStyle(color: Colors.white)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -238,7 +238,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               ElevatedButton.icon(
                 onPressed: _showDepositDialog,
                 icon: const Icon(Icons.savings_outlined, size: 18),
-                label: const Text('Approvisionner'),
+                label: Text('customers_deposit_button'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: aDette ? Colors.red.shade700 : Colors.green.shade700,
@@ -417,7 +417,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
               children: [
                 Icon(Icons.savings_outlined, color: Colors.green.shade700),
                 const SizedBox(width: 8),
-                const Expanded(child: Text('Approvisionner le compte')),
+                Expanded(child: Text('customers_deposit_dialog_title'.tr)),
               ],
             ),
             content: SizedBox(
@@ -431,10 +431,10 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                     const SizedBox(height: 4),
                     Text(
                       soldeActuel < 0
-                          ? 'Dette actuelle : ${(-soldeActuel).toStringAsFixed(0)} FCFA'
+                          ? 'customers_current_debt_amount'.trParams({'amount': (-soldeActuel).toStringAsFixed(0)})
                           : soldeActuel > 0
-                              ? 'Avance actuelle : ${soldeActuel.toStringAsFixed(0)} FCFA'
-                              : 'Solde actuel : 0 FCFA',
+                              ? 'customers_current_advance_amount'.trParams({'amount': soldeActuel.toStringAsFixed(0)})
+                              : 'customers_zero_balance'.tr,
                       style: TextStyle(color: soldeActuel < 0 ? Colors.red.shade700 : Colors.grey.shade700),
                     ),
                     const SizedBox(height: 16),
@@ -442,10 +442,10 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                       controller: amountController,
                       autofocus: true,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Montant déposé (espèces)',
+                      decoration: InputDecoration(
+                        labelText: 'customers_deposit_amount_label'.tr,
                         suffixText: 'FCFA',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                       onChanged: (_) => setState(() {}),
@@ -453,9 +453,9 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Note (facultatif)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'customers_note_optional'.tr,
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                     if (montant > 0) ...[
@@ -470,11 +470,13 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (detteReglee > 0) Text('Dette réglée : ${detteReglee.toStringAsFixed(0)} FCFA'),
+                            if (detteReglee > 0) Text('customers_debt_settled'.trParams({'amount': detteReglee.toStringAsFixed(0)})),
                             if (nouveauSolde > 0)
-                              Text('Avance disponible après dépôt : ${nouveauSolde.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
-                            if (nouveauSolde < 0) Text('Dette restante : ${(-nouveauSolde).toStringAsFixed(0)} FCFA', style: TextStyle(color: Colors.red.shade700)),
-                            if (nouveauSolde == 0) const Text('Le compte sera soldé (solde = 0)'),
+                              Text('customers_advance_available_after'.trParams({'amount': nouveauSolde.toStringAsFixed(0)}),
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
+                            if (nouveauSolde < 0)
+                              Text('customers_remaining_debt'.trParams({'amount': (-nouveauSolde).toStringAsFixed(0)}), style: TextStyle(color: Colors.red.shade700)),
+                            if (nouveauSolde == 0) Text('customers_account_will_be_settled'.tr),
                           ],
                         ),
                       ),
@@ -493,7 +495,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                       }
                     : null,
                 icon: const Icon(Icons.check_circle),
-                label: const Text('Enregistrer le dépôt'),
+                label: Text('customers_save_deposit'.tr),
               ),
             ],
           );
@@ -545,14 +547,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
             children: [
               Icon(Icons.receipt, color: Colors.blue.shade700),
               const SizedBox(width: 8),
-              const Text('Imprimer le reçu'),
+              Text('sales_print_receipt'.tr),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Souhaitez-vous imprimer un reçu d\'approvisionnement ?',
+                'customers_print_receipt_question'.tr,
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
@@ -565,14 +567,14 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                 child: Column(
                   children: [
                     Text(
-                      'Client: ${_customer?.nomComplet}',
+                      'accounts_account_name_client'.trParams({'name': _customer?.nomComplet ?? ''}),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
-                    Text('Montant: ${montant.toStringAsFixed(0)} FCFA'),
+                    Text('customers_receipt_amount'.trParams({'amount': montant.toStringAsFixed(0)})),
                     if (note.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text('Note: $note'),
+                      Text('customers_receipt_note'.trParams({'note': note})),
                     ],
                   ],
                 ),
@@ -588,9 +590,9 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Format d\'impression:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    Text(
+                      'customers_print_format_label'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<PrintFormat>(
@@ -599,11 +601,11 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: PrintFormat.thermal, child: Text('Thermique (80mm)')),
-                        DropdownMenuItem(value: PrintFormat.a4, child: Text('A4')),
-                        DropdownMenuItem(value: PrintFormat.a5, child: Text('A5')),
-                        DropdownMenuItem(value: PrintFormat.matriciel, child: Text('Matricielle')),
+                      items: [
+                        DropdownMenuItem(value: PrintFormat.thermal, child: Text('customers_format_thermal'.tr)),
+                        const DropdownMenuItem(value: PrintFormat.a4, child: Text('A4')),
+                        const DropdownMenuItem(value: PrintFormat.a5, child: Text('A5')),
+                        DropdownMenuItem(value: PrintFormat.matriciel, child: Text('customers_format_matrix'.tr)),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -658,11 +660,11 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       );
 
       if (success) {
-        SnackbarHelper.success('Reçu imprimé avec succès');
+        SnackbarHelper.success('customers_receipt_print_success'.tr);
       }
     } catch (e) {
       print('❌ Erreur lors de l\'impression du reçu: $e');
-      SnackbarHelper.error('Erreur lors de l\'impression du reçu: $e');
+      SnackbarHelper.error('customers_receipt_print_error'.trParams({'error': '$e'}));
     }
   }
 

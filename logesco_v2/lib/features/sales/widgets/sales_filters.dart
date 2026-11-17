@@ -212,8 +212,8 @@ class _SalesFiltersState extends State<SalesFilters> {
                               controller: textEditingController,
                               focusNode: focusNode,
                               decoration: InputDecoration(
-                                labelText: 'Filtrer par commercial',
-                                hintText: 'Tous les commerciaux',
+                                labelText: 'sales_filter_by_commercial'.tr,
+                                hintText: 'sales_all_commercials'.tr,
                                 border: const OutlineInputBorder(),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 isDense: true,
@@ -246,7 +246,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                                       if (index == 0) {
                                         return ListTile(
                                           dense: true,
-                                          title: const Text('Tous les commerciaux', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          title: Text('sales_all_commercials'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
                                           onTap: () {
                                             controller.setCommercialFilter(0);
                                             onSelected(Commercial(id: 0, nom: '', zoneId: 0, dateCreation: DateTime.now(), dateModification: DateTime.now()));
@@ -366,7 +366,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                         controller.setDateFilter(null, null);
                       },
                       icon: const Icon(Icons.close),
-                      tooltip: 'Effacer les dates',
+                      tooltip: 'sales_clear_dates'.tr,
                     ),
                 ],
               ),

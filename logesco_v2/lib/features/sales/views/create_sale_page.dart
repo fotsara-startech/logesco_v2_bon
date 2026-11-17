@@ -587,7 +587,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                       children: [
                                         Icon(Icons.person_add, size: 18, color: Colors.blue[700]),
                                         const SizedBox(width: 10),
-                                        Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.blue[700], fontWeight: FontWeight.w500))),
+                                        Expanded(child: Text('sales_create_customer_quick'.trParams({'query': query}), style: TextStyle(fontSize: 14, color: Colors.blue[700], fontWeight: FontWeight.w500))),
                                       ],
                                     ),
                                   ),
@@ -629,7 +629,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 value: _salesController.selectedCommercial,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  hintText: 'Commercial (optionnel)',
+                  hintText: 'sales_commercial_optional'.tr,
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -637,7 +637,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 ),
                 style: TextStyle(fontSize: 14, color: Colors.grey[800]),
                 items: [
-                  const DropdownMenuItem<Commercial?>(value: null, child: Text('Aucun commercial')),
+                  DropdownMenuItem<Commercial?>(value: null, child: Text('sales_no_commercial'.tr)),
                   ...commerciaux.map(
                     (c) => DropdownMenuItem<Commercial?>(value: c, child: Text(c.libelleAvecZone, overflow: TextOverflow.ellipsis)),
                   ),
@@ -667,7 +667,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la création du client: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('customers_create_error'.trParams({'error': '$e'})), backgroundColor: Colors.red),
         );
       }
     }
@@ -1118,7 +1118,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
         barrierDismissible: false,
       );
     } catch (e) {
-      SnackbarHelper.error('Erreur: $e');
+      SnackbarHelper.error('stock_error_message'.trParams({'error': '$e'}));
     }
   }
 }
