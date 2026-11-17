@@ -175,7 +175,7 @@ class SubscriptionNotificationService {
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -201,7 +201,7 @@ class SubscriptionNotificationService {
         ),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 6),
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

@@ -38,6 +38,7 @@ const MIGRATION_ORDER = [
   '20260810185100_add_commerciaux',
   '20260811093000_snapshot_zone_ville_sur_ventes',
   'add_separation_commande_visibilite_ventes',
+  'add_avance_utilisee',
 ];
 
 const TRACKING_TABLE = '_app_migrations';

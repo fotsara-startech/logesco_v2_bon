@@ -202,7 +202,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                           const Icon(Icons.account_balance_wallet, color: Colors.blue),
                           const SizedBox(width: 8),
                           Text(
-                            'customers_account'.tr,
+                            'customers_account'.trParams({'name': customer.nomComplet}),
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,

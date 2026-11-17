@@ -381,6 +381,16 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
               icon: const Icon(Icons.print),
               label: Text('sales_reprint'.tr),
             ),
+            // Bouton pour imprimer le reçu de suivi de compte si le client a utilisé son avance
+            if (controller.saleUsedAccountBalance(sale))
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  controller.printAccountUsageReceipt(sale);
+                },
+                icon: const Icon(Icons.receipt_long),
+                label: Text('sales_print_account_followup'.tr),
+              ),
           ],
           // SOLUTION 2: Suppression du bouton "Ajouter paiement"
           // Les paiements se font via de nouvelles ventes, la dette est gérée au compte client

@@ -11,6 +11,7 @@ import '../services/receipt_preview_service.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../../core/services/auth_service.dart';
+import '../../customers/models/customer.dart';
 
 /// Contrôleur pour la gestion des impressions et réimpressions
 class PrintingController extends GetxController {
@@ -444,7 +445,7 @@ class PrintingController extends GetxController {
         margin: _selectedFormat.value == PrintFormat.matriciel ? const pw.EdgeInsets.all(20) : const pw.EdgeInsets.all(8),
         build: (pw.Context context) {
           return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // En-tête
               pw.Text(
@@ -453,32 +454,45 @@ class PrintingController extends GetxController {
                   fontSize: 12,
                   fontWeight: pw.FontWeight.bold,
                 ),
-                textAlign: pw.TextAlign.center,
               ),
+              if (_companyProfile.value?.address.isNotEmpty == true) pw.Text(_companyProfile.value!.address, style: pw.TextStyle(fontSize: 8)),
+              if (_companyProfile.value?.location?.isNotEmpty == true) pw.Text(_companyProfile.value!.location!, style: pw.TextStyle(fontSize: 8)),
+              if (_companyProfile.value?.phone?.isNotEmpty == true) pw.Text('Tel: ${_companyProfile.value!.phone}', style: pw.TextStyle(fontSize: 8)),
+              if (_companyProfile.value?.nuiRccm?.isNotEmpty == true) pw.Text('NUI/RCCM: ${_companyProfile.value!.nuiRccm}', style: pw.TextStyle(fontSize: 8)),
               pw.SizedBox(height: 6),
 
               // Titre reçu
               pw.Text(
-                'Recu de vente',
+                receipt.saleNumber.startsWith('DEP-')
+                    ? 'Recu d\'approvisionnement'
+                    : receipt.saleNumber.startsWith('SUI-')
+                        ? 'Recu de suivi de compte'
+                        : receipt.isProforma
+                            ? 'Facture proforma'
+                            : 'Recu de vente',
                 style: pw.TextStyle(
                   fontSize: 11,
                   fontWeight: pw.FontWeight.bold,
                 ),
-                textAlign: pw.TextAlign.center,
               ),
               pw.SizedBox(height: 8),
 
               // Informations du reçu
-              pw.Align(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('N° Vente: ${receipt.saleNumber}', style: pw.TextStyle(fontSize: 9)),
-                    pw.Text('Date: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: pw.TextStyle(fontSize: 9)),
-                    pw.Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: pw.TextStyle(fontSize: 9)),
-                  ],
-                ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    receipt.saleNumber.startsWith('DEP-')
+                        ? 'N° Dépôt: ${receipt.saleNumber}'
+                        : receipt.saleNumber.startsWith('SUI-')
+                            ? 'N° Suivi: ${receipt.saleNumber}'
+                            : 'N° Vente: ${receipt.saleNumber}',
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                  pw.Text('Date: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: pw.TextStyle(fontSize: 9)),
+                  if (receipt.customer != null) pw.Text('Client: ${receipt.customer!.nomComplet}', style: pw.TextStyle(fontSize: 9)),
+                ],
               ),
               pw.SizedBox(height: 8),
 
@@ -486,7 +500,26 @@ class PrintingController extends GetxController {
               pw.Divider(),
               pw.SizedBox(height: 4),
 
-              // Articles
+              // Articles ou Détails d'approvisionnement/suivi
+              if (receipt.saleNumber.startsWith('DEP-') || receipt.saleNumber.startsWith('SUI-'))
+                // Pour les approvisionnements et suivis de compte
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('DETAILS:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 8),
+                    pw.Text('Solde initial: ${receipt.items.first.displayPrice.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: 9)),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Solde final: ${receipt.items.first.discountAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: 9)),
+                    if (receipt.saleNumber.startsWith('SUI-') && receipt.items.first.productReference.isNotEmpty) ...[
+                      pw.SizedBox(height: 4),
+                      pw.Text(receipt.items.first.productReference, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                    pw.SizedBox(height: 8),
+                  ],
+                )
+              else
+              // Articles pour ventes normales
               if (receipt.items.isNotEmpty)
                 pw.Column(
                   children: [
@@ -546,50 +579,64 @@ class PrintingController extends GetxController {
               pw.SizedBox(height: 4),
 
               // Totaux
-              pw.Column(
-                children: [
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('Total:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                    ],
-                  ),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('Payé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                    ],
-                  ),
-                  if (receipt.remainingAmount > 0)
+              if (receipt.saleNumber.startsWith('DEP-'))
+                // Pour les approvisionnements
+                pw.Row(
+                  children: [
+                    pw.Text('Montant versé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.Spacer(),
+                    pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                  ],
+                )
+              else if (receipt.saleNumber.startsWith('SUI-'))
+                // Pour les suivis de compte
+                pw.Row(
+                  children: [
+                    pw.Text('Montant utilisé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.SizedBox(width: 5),
+                    pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                  ],
+                )
+              else
+                // Pour les ventes normales
+                pw.Column(
+                  children: [
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Reste:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        pw.Text('${receipt.remainingAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ],
-                    )
-                  else if (receipt.paidAmount > receipt.totalAmount)
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('Monnaie:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        pw.Text('${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Total:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
-                ],
-              ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Payé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                    if (receipt.remainingAmount > 0)
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('Reste:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('${receipt.remainingAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ],
+                      )
+                    else if (receipt.paidAmount > receipt.totalAmount)
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('Monnaie:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('${(receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ],
+                      ),
+                  ],
+                ),
               pw.SizedBox(height: 8),
 
               // Pied de page
               pw.Divider(),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'Merci pour votre achat!',
-                style: pw.TextStyle(fontSize: 9),
-                textAlign: pw.TextAlign.center,
-              ),
               pw.SizedBox(height: 20),
             ],
           );
@@ -598,6 +645,114 @@ class PrintingController extends GetxController {
     );
 
     return Uint8List.fromList(await pdf.save());
+  }
+
+  /// Génère et imprime un reçu d'approvisionnement de compte client
+  Future<bool> generateDepositReceipt({
+    required int clientId,
+    required Customer customer,
+    required double depositAmount,
+    required double initialBalance,
+    required double finalBalance,
+    String? note,
+    PrintFormat format = PrintFormat.thermal,
+  }) async {
+    _isGenerating.value = true;
+
+    try {
+      // Vérifier le profil d'entreprise
+      if (_companyProfile.value == null) {
+        await _loadCompanyProfile();
+        if (_companyProfile.value == null) {
+          SnackbarUtils.showError('Profil d\'entreprise non configuré');
+          return false;
+        }
+      }
+
+      // Créer le reçu d'approvisionnement
+      final receipt = Receipt.fromDeposit(
+        clientId: clientId,
+        customer: customer,
+        depositAmount: depositAmount,
+        initialBalance: initialBalance,
+        finalBalance: finalBalance,
+        companyInfo: _companyProfile.value!,
+        note: note,
+        format: format,
+      );
+
+      // Générer et afficher le reçu
+      _currentReceipt.value = receipt;
+
+      // Définir le format sélectionné
+      _selectedFormat.value = format;
+
+      // Imprimer selon le format
+      await printReceiptDirect(receipt);
+
+      SnackbarUtils.showSuccess('Reçu d\'approvisionnement généré avec succès');
+      return true;
+    } catch (e) {
+      SnackbarUtils.showError('Erreur lors de la génération du reçu: $e');
+      print('❌ Erreur génération reçu d\'approvisionnement: $e');
+      return false;
+    } finally {
+      _isGenerating.value = false;
+    }
+  }
+
+  /// Génère et imprime un reçu de suivi de compte après utilisation de l'avance
+  Future<bool> generateAccountUsageReceipt({
+    required int clientId,
+    required Customer customer,
+    required double usedAmount,
+    required double initialBalance,
+    required double finalBalance,
+    required String saleReference,
+    PrintFormat format = PrintFormat.thermal,
+  }) async {
+    _isGenerating.value = true;
+
+    try {
+      // Vérifier le profil d'entreprise
+      if (_companyProfile.value == null) {
+        await _loadCompanyProfile();
+        if (_companyProfile.value == null) {
+          SnackbarUtils.showError('Profil d\'entreprise non configuré');
+          return false;
+        }
+      }
+
+      // Créer le reçu de suivi de compte
+      final receipt = Receipt.fromAccountUsage(
+        clientId: clientId,
+        customer: customer,
+        usedAmount: usedAmount,
+        initialBalance: initialBalance,
+        finalBalance: finalBalance,
+        companyInfo: _companyProfile.value!,
+        saleReference: saleReference,
+        format: format,
+      );
+
+      // Générer et afficher le reçu
+      _currentReceipt.value = receipt;
+
+      // Définir le format sélectionné
+      _selectedFormat.value = format;
+
+      // Imprimer selon le format
+      await printReceiptDirect(receipt);
+
+      SnackbarUtils.showSuccess('Reçu de suivi de compte généré avec succès');
+      return true;
+    } catch (e) {
+      SnackbarUtils.showError('Erreur lors de la génération du reçu: $e');
+      print('❌ Erreur génération reçu de suivi de compte: $e');
+      return false;
+    } finally {
+      _isGenerating.value = false;
+    }
   }
 
   @override

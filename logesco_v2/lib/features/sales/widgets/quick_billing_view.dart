@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -34,6 +35,7 @@ import 'product_selector.dart' show showAddToCartQuantityDialog;
 class QuickBillingView extends StatefulWidget {
   final String title;
   final Color accentColor;
+
   /// true pour une vente normale (montant/paiement inline) ; false pour une
   /// simple saisie de commande/proforma (pas de paiement, juste enregistrer).
   final bool includePayment;
@@ -86,6 +88,9 @@ class _QuickBillingViewState extends State<QuickBillingView> {
 
   bool _isSubmitting = false;
 
+  // Timer pour la détection automatique de code-barre
+  Timer? _barcodeDetectionTimer;
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +127,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
     _montantFocusNode.dispose();
     _primaryFocusNode.dispose();
     _montantController.dispose();
+    _barcodeDetectionTimer?.cancel();
     super.dispose();
   }
 
@@ -406,7 +412,44 @@ class _QuickBillingViewState extends State<QuickBillingView> {
           controller: controller,
           focusNode: focusNode,
           decoration: _fieldDecoration(hint: 'sales_search_product_hint'.tr, color: widget.accentColor),
-          onSubmitted: (_) => onSubmit(),
+          onChanged: (value) {
+            // Annuler le timer précédent s'il existe
+            _barcodeDetectionTimer?.cancel();
+
+            // Démarrer un nouveau timer pour détecter les codes-barres
+            // Si l'utilisateur arrête de taper pendant 300ms, on vérifie si c'est un code-barre
+            _barcodeDetectionTimer = Timer(const Duration(milliseconds: 300), () {
+              final searchText = value.trim();
+              if (searchText.isNotEmpty && searchText.length >= 8) {
+                // Chercher un produit avec code-barre exact
+                final exactBarcodeMatch = _productController.products.firstWhereOrNull((p) => p.codeBarre != null && p.codeBarre!.isNotEmpty && p.codeBarre == searchText);
+
+                if (exactBarcodeMatch != null) {
+                  // Code-barre exact trouvé, ajouter directement au panier
+                  _onProductChosen(exactBarcodeMatch);
+                }
+              }
+            });
+          },
+          onSubmitted: (value) {
+            // Annuler le timer si l'utilisateur appuie sur Entrée
+            _barcodeDetectionTimer?.cancel();
+
+            // Vérifier si c'est un code-barre exact
+            final searchText = value.trim();
+            if (searchText.isNotEmpty) {
+              // Chercher un produit avec code-barre exact
+              final exactBarcodeMatch = _productController.products.firstWhereOrNull((p) => p.codeBarre != null && p.codeBarre!.isNotEmpty && p.codeBarre == searchText);
+
+              if (exactBarcodeMatch != null) {
+                // Code-barre exact trouvé, ajouter directement au panier
+                _onProductChosen(exactBarcodeMatch);
+                return;
+              }
+            }
+            // Sinon, comportement par défaut (sélectionner l'option surlignée)
+            onSubmit();
+          },
         );
       },
       optionsViewBuilder: (context, onSelected, options) {
@@ -441,13 +484,29 @@ class _QuickBillingViewState extends State<QuickBillingView> {
       return;
     }
 
-    showAddToCartQuantityDialog(context, product, (p, qty) async {
-      await _salesController.addToCart(p, quantity: qty);
-      _productTextController?.clear();
-      setState(() {});
-      // Boucle : le focus revient sur Produit pour l'article suivant.
-      WidgetsBinding.instance.addPostFrameCallback((_) => _productFocusNode?.requestFocus());
-    });
+    // Si le texte correspond exactement au code-barre, ajouter directement avec qté 1 (scan de code-barre)
+    final searchText = _productTextController?.text.trim() ?? '';
+    final isExactBarcodeMatch = product.codeBarre != null && product.codeBarre!.isNotEmpty && searchText == product.codeBarre;
+
+    if (isExactBarcodeMatch) {
+      // Ajout automatique avec quantité 1 pour les codes-barres scannés
+      _salesController.addToCart(product, quantity: 1).then((_) {
+        _productTextController?.clear();
+        setState(() {});
+        SnackbarHelper.success('${product.nom} ajouté au panier', duration: const Duration(seconds: 1));
+        // Retour du focus sur le champ produit pour scanner le suivant
+        WidgetsBinding.instance.addPostFrameCallback((_) => _productFocusNode?.requestFocus());
+      });
+    } else {
+      // Saisie manuelle ou recherche par nom/référence : demander la quantité
+      showAddToCartQuantityDialog(context, product, (p, qty) async {
+        await _salesController.addToCart(p, quantity: qty);
+        _productTextController?.clear();
+        setState(() {});
+        // Boucle : le focus revient sur Produit pour l'article suivant.
+        WidgetsBinding.instance.addPostFrameCallback((_) => _productFocusNode?.requestFocus());
+      });
+    }
   }
 
   // ── Aides communes pour les deux champs Autocomplete ──────────────────
@@ -705,8 +764,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
                 _totalRow('quick_billing_discount'.tr, '${discount.toStringAsFixed(0)} FCFA'),
                 const SizedBox(height: 4),
                 _totalRow('quick_billing_net_due'.tr, '${netAPayer.toStringAsFixed(0)} FCFA', bold: true, big: true),
-                if (widget.includePayment && settlement.avanceUtilisee > 0)
-                  _totalRow('Avance utilisée', '-${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
+                if (widget.includePayment && settlement.avanceUtilisee > 0) _totalRow('Avance utilisée', '-${settlement.avanceUtilisee.toStringAsFixed(0)} FCFA'),
               ],
             ),
           ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -30,6 +31,12 @@ class _ProductSelectorState extends State<ProductSelector> {
   // (Scrollable.ensureVisible) quand la sélection au clavier change.
   final Map<int, GlobalKey> _itemKeys = {};
 
+  // Timer pour la détection automatique de code-barre
+  Timer? _barcodeDetectionTimer;
+
+  // Contrôleur pour le champ de recherche
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +46,8 @@ class _ProductSelectorState extends State<ProductSelector> {
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    _barcodeDetectionTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -72,6 +81,36 @@ class _ProductSelectorState extends State<ProductSelector> {
     }
 
     if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      // Vérifier d'abord si c'est un code-barre exact
+      final searchQuery = salesController.productSearchQuery.trim();
+      if (searchQuery.isNotEmpty) {
+        final exactBarcodeMatch = salesController.productsForSale.firstWhereOrNull((p) => p.codeBarre != null && p.codeBarre!.isNotEmpty && p.codeBarre == searchQuery);
+
+        if (exactBarcodeMatch != null) {
+          // Code-barre exact trouvé, ajouter directement au panier avec quantité 1
+          final canAddToCart = exactBarcodeMatch.estActif && (exactBarcodeMatch.estService || salesController.getAvailableQuantity(exactBarcodeMatch.id) > 0);
+
+          if (canAddToCart) {
+            widget.onProductSelected(exactBarcodeMatch, 1);
+
+            // Effacer le champ de recherche
+            _searchController.clear();
+            salesController.updateProductSearchQuery('');
+
+            SnackbarHelper.success('${exactBarcodeMatch.nom} ajouté au panier', duration: const Duration(seconds: 1));
+
+            // Remettre le focus sur le champ de recherche pour scanner le produit suivant
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              widget.searchFocusNode?.requestFocus();
+            });
+          } else {
+            SnackbarHelper.warning('Stock épuisé pour ${exactBarcodeMatch.nom}', duration: const Duration(seconds: 2));
+          }
+          return true;
+        }
+      }
+
+      // Sinon, comportement par défaut : ouvrir le dialogue pour le produit surligné
       final product = salesController.highlightedProduct;
       if (product == null) return true;
 
@@ -111,6 +150,7 @@ class _ProductSelectorState extends State<ProductSelector> {
             children: [
               Expanded(
                 child: TextField(
+                  controller: _searchController,
                   focusNode: widget.searchFocusNode,
                   decoration: InputDecoration(
                     labelText: 'sales_search_product'.tr,
@@ -125,6 +165,41 @@ class _ProductSelectorState extends State<ProductSelector> {
                   ),
                   onChanged: (value) {
                     salesController.updateProductSearchQuery(value);
+
+                    // Annuler le timer précédent s'il existe
+                    _barcodeDetectionTimer?.cancel();
+
+                    // Démarrer un nouveau timer pour détecter les codes-barres
+                    // Si l'utilisateur arrête de taper pendant 300ms, on vérifie si c'est un code-barre
+                    _barcodeDetectionTimer = Timer(const Duration(milliseconds: 300), () {
+                      final searchText = value.trim();
+                      if (searchText.isNotEmpty && searchText.length >= 8) {
+                        // Chercher un produit avec code-barre exact
+                        final exactBarcodeMatch = salesController.productsForSale.firstWhereOrNull((p) => p.codeBarre != null && p.codeBarre!.isNotEmpty && p.codeBarre == searchText);
+
+                        if (exactBarcodeMatch != null) {
+                          // Code-barre exact trouvé, vérifier disponibilité et ajouter
+                          final canAddToCart = exactBarcodeMatch.estActif && (exactBarcodeMatch.estService || salesController.getAvailableQuantity(exactBarcodeMatch.id) > 0);
+
+                          if (canAddToCart) {
+                            widget.onProductSelected(exactBarcodeMatch, 1);
+
+                            // Effacer le champ de recherche
+                            _searchController.clear();
+                            salesController.updateProductSearchQuery('');
+
+                            SnackbarHelper.success('${exactBarcodeMatch.nom} ajouté au panier', duration: const Duration(seconds: 1));
+
+                            // Remettre le focus sur le champ de recherche pour scanner le produit suivant
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              widget.searchFocusNode?.requestFocus();
+                            });
+                          } else {
+                            SnackbarHelper.warning('Stock épuisé pour ${exactBarcodeMatch.nom}', duration: const Duration(seconds: 2));
+                          }
+                        }
+                      }
+                    });
                   },
                   // La sélection au clavier (flèches + Entrée) est gérée par
                   // _handleKeyEvent ci-dessus, pas par onSubmitted, pour
@@ -369,52 +444,12 @@ class _ProductSelectorState extends State<ProductSelector> {
       final product = await productController.searchByBarcode(barcode);
 
       if (product != null) {
-        // Produit trouvé, mettre à jour la recherche dans le sales controller
-        salesController.updateProductSearchQuery(product.nom);
+        // Produit trouvé, l'ajouter directement au panier avec quantité 1
+        await widget.onProductSelected(product, 1);
 
-        // Proposer d'ajouter directement au panier
-        final shouldAdd = await Get.dialog<bool>(
-              AlertDialog(
-                title: Text('sales_product_found'.tr),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${'sales_product_label'.tr}: ${product.nom}'),
-                    Text('${'sales_product_reference'.tr}: ${product.reference}'),
-                    Text('${'sales_product_price'.tr}: ${product.prixUnitaire.toStringAsFixed(0)} FCFA'),
-                    if (product.codeBarre != null) Text('${'sales_barcode_label'.tr}: ${product.codeBarre}'),
-                    const SizedBox(height: 8),
-                    Text('${'sales_stock_available'.tr}: ${salesController.getRawStockQuantity(product.id)}',
-                        style: TextStyle(
-                          color: salesController.getRawStockQuantity(product.id) > 0 ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        )),
-                    const SizedBox(height: 16),
-                    Text('sales_add_to_cart_question'.tr),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(result: false),
-                    child: Text('no'.tr),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Get.back(result: true),
-                    child: Text('sales_add_to_cart'.tr),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
-
-        if (shouldAdd) {
-          await widget.onProductSelected(product, 1);
-        }
-
-        SnackbarHelper.info(
-          'sales_product_found_detail'.trParams({'product': product.nom, 'barcode': barcode}),
-          title: 'sales_product_found'.tr,
+        SnackbarHelper.success(
+          'Produit ajouté: ${product.nom} (${product.reference})',
+          title: 'Ajouté au panier',
         );
       } else {
         // Aucun produit trouvé

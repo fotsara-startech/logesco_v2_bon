@@ -20,7 +20,7 @@ class AccountDetailView extends GetView<AccountController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isClient ? 'Compte Client' : 'Compte Fournisseur'),
+        title: Text(isClient ? 'Compte client - ${(compte as CompteClient).client.nomComplet}' : 'Compte Fournisseur - ${(compte as CompteFournisseur).fournisseur.nom}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.credit_card),

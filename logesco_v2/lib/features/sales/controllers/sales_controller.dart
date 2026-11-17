@@ -25,6 +25,7 @@ import '../../inventory/controllers/inventory_controller.dart';
 import '../../company_settings/services/company_settings_service.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../printing/services/printing_service.dart';
+import '../../printing/controllers/printing_controller.dart';
 import '../../printing/models/models.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
@@ -46,6 +47,9 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final RxBool _isCreating = false.obs;
   // Trigger de rafraîchissement — s'incrémente à chaque vente créée
   final RxInt saleCreatedTrigger = 0.obs;
+
+  // Reçu de suivi de compte en attente d'impression
+  final Rx<Receipt?> _pendingAccountUsageReceipt = Rx<Receipt?>(null);
 
   // État des informations d'entreprise
   final Rx<CompanyProfile?> _companyProfile = Rx<CompanyProfile?>(null);
@@ -127,6 +131,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   bool get isLoading => _isLoading.value;
   bool get isCreating => _isCreating.value;
   CompanyProfile? get companyProfile => _companyProfile.value;
+  Receipt? get pendingAccountUsageReceipt => _pendingAccountUsageReceipt.value;
 
   List<CartItem> get cartItems => _cartItems;
   Customer? get selectedCustomer => _selectedCustomer.value;
@@ -544,7 +549,6 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
       int page = 1;
       bool hasMore = true;
-      int totalLoaded = 0;
 
       // Charger toutes les pages de stocks
       while (hasMore) {
@@ -555,8 +559,6 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
             _productStocks[stock.produitId] = stock;
             print('Stock chargé - Produit ${stock.produitId}: ${stock.quantiteDisponible}');
           }
-
-          totalLoaded += response.data!.length;
 
           // Vérifier s'il y a plus de données
           if (response.pagination != null) {
@@ -850,6 +852,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     _customSaleDate.value = null;
     _tvaEnabled.value = false;
     _productsWithLineError.clear();
+    _pendingAccountUsageReceipt.value = null; // Effacer le reçu de suivi en attente
   }
 
   // Validation des lignes du panier (prix/quantité) — alimenté par les
@@ -1265,6 +1268,9 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
         // Afficher une notification de succès
         SnackbarHelper.success('Le reçu de la vente ${sale.numeroVente} a été créé avec succès', title: 'Reçu généré', duration: const Duration(seconds: 3));
+
+        // Vérifier si le client a utilisé son avance pour cette vente
+        await _generateAccountUsageReceiptIfNeeded(sale, format);
       } else {
         print('⚠️ Échec de génération du reçu: ${receiptResponse.message}');
 
@@ -1274,6 +1280,130 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     } catch (e) {
       print('❌ Erreur lors de la génération automatique du reçu: $e');
       // Ne pas faire échouer la vente si la génération du reçu échoue
+    }
+  }
+
+  /// Génère un reçu de suivi de compte si le client a utilisé son avance
+  /// Cette méthode prépare le reçu mais ne l'imprime pas automatiquement
+  Future<void> _generateAccountUsageReceiptIfNeeded(Sale sale, PrintFormat format) async {
+    try {
+      // Vérifier si le client existe et a utilisé son avance
+      if (sale.client == null) return;
+
+      // Le client a utilisé son avance si avanceUtilisee > 0 (calculé et stocké
+      // par le backend lors de la création de la vente). montantTotal - montantPaye
+      // est la DETTE restante, pas l'avance utilisée : une vente à crédit pur sans
+      // avance a aussi montantPaye < montantTotal, ce qui déclenchait ce reçu à tort.
+      final usedAccountBalance = sale.avanceUtilisee;
+
+      if (usedAccountBalance <= 0) {
+        print('ℹ️ Pas d\'utilisation d\'avance pour cette vente');
+        return;
+      }
+
+      print('💰 Le client a utilisé ${usedAccountBalance.toStringAsFixed(0)} FCFA de son avance');
+
+      // Récupérer le compte client pour obtenir les soldes avant/après
+      final accountData = await getCustomerAccount(sale.client!.id);
+      if (accountData == null) {
+        print('⚠️ Impossible de récupérer le compte client pour le reçu de suivi');
+        return;
+      }
+
+      // Le solde final est dans le compte (après la vente)
+      final compteData = accountData['compte'] as Map<String, dynamic>?;
+      final finalBalance = (compteData?['soldeActuel'] as num?)?.toDouble() ?? 0.0;
+      // Le solde initial était le solde final + le montant utilisé
+      final initialBalance = finalBalance + usedAccountBalance;
+
+      // Créer le reçu de suivi de compte sans l'imprimer
+      // L'utilisateur pourra l'imprimer manuellement depuis le détail de la vente
+      if (_companyProfile.value == null) {
+        await _loadCompanyProfile();
+      }
+
+      if (_companyProfile.value != null) {
+        final accountUsageReceipt = Receipt.fromAccountUsage(
+          clientId: sale.client!.id,
+          customer: sale.client!,
+          usedAmount: usedAccountBalance,
+          initialBalance: initialBalance,
+          finalBalance: finalBalance,
+          companyInfo: _companyProfile.value!,
+          saleReference: sale.numeroVente,
+          format: format,
+        );
+
+        // Stocker le reçu de suivi pour impression manuelle ultérieure
+        _pendingAccountUsageReceipt.value = accountUsageReceipt;
+
+        print('✅ Reçu de suivi de compte préparé pour la vente ${sale.numeroVente}');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la génération du reçu de suivi de compte: $e');
+      // Ne pas faire échouer la vente si la génération du reçu échoue
+    }
+  }
+
+  /// Vérifie si une vente a utilisé l'avance du client
+  /// Vérifie si une vente a utilisé l'avance du client
+  bool saleUsedAccountBalance(Sale sale) {
+    return sale.avanceUtilisee > 0;
+  }
+
+  /// Génère et imprime un reçu de suivi de compte pour une vente donnée
+  Future<void> printAccountUsageReceipt(Sale sale, {PrintFormat? format}) async {
+    try {
+      if (sale.client == null) {
+        SnackbarUtils.showInfo('Cette vente n\'a pas de client associé');
+        return;
+      }
+
+      if (sale.avanceUtilisee <= 0) {
+        SnackbarUtils.showInfo('Cette vente n\'a pas utilisé l\'avance du client');
+        return;
+      }
+
+      // Récupérer le compte client pour obtenir le solde actuel
+      final accountData = await getCustomerAccount(sale.client!.id);
+      if (accountData == null) {
+        SnackbarUtils.showError('Impossible de récupérer le compte client');
+        return;
+      }
+
+      // Calculer les soldes avant et après la vente
+      final compteData = accountData['compte'] as Map<String, dynamic>?;
+      final currentBalance = (compteData?['soldeActuel'] as num?)?.toDouble() ?? 0.0;
+      // Le solde avant = solde actuel + avance utilisée (car l'avance a été déduite)
+      final balanceBeforeSale = currentBalance + sale.avanceUtilisee;
+
+      if (_companyProfile.value == null) {
+        await _loadCompanyProfile();
+      }
+
+      if (_companyProfile.value == null) {
+        SnackbarUtils.showError('Profil d\'entreprise non configuré');
+        return;
+      }
+
+      final printFormat = format ?? _selectedReceiptFormat.value;
+
+      // Générer le reçu de suivi
+      final printingController = Get.find<PrintingController>();
+      await printingController.generateAccountUsageReceipt(
+        clientId: sale.client!.id,
+        customer: sale.client!,
+        usedAmount: sale.avanceUtilisee,
+        initialBalance: balanceBeforeSale,
+        finalBalance: currentBalance,
+        saleReference: sale.numeroVente,
+        format: printFormat,
+      );
+
+      SnackbarUtils.showSuccess('Reçu de suivi de compte généré');
+    } catch (e) {
+      print('❌ Erreur lors de l\'impression du reçu de suivi: $e');
+      SnackbarUtils.showError('Erreur lors de l\'impression du reçu de suivi');
     }
   }
 

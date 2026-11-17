@@ -101,6 +101,8 @@ class Sale {
   final double montantPaye;
   @JsonKey(defaultValue: 0.0)
   final double montantRestant;
+  @JsonKey(defaultValue: 0.0)
+  final double avanceUtilisee;
   final String statut;
   @JsonKey(name: 'dateVente', toJson: _dateToJsonLocal, fromJson: _dateFromJsonLocal)
   final DateTime dateCreation;
@@ -125,6 +127,7 @@ class Sale {
     this.tauxTva,
     required this.montantPaye,
     required this.montantRestant,
+    this.avanceUtilisee = 0.0,
     required this.statut,
     required this.dateCreation,
     this.dateModification,
@@ -211,6 +214,7 @@ class CreateSaleRequest {
   final String modePaiement;
   final double montantRemise;
   final double montantPaye;
+
   /// true : l'excédent payé est ajouté au solde du client au lieu d'être rendu
   @JsonKey(defaultValue: false)
   final bool resteVersSolde;

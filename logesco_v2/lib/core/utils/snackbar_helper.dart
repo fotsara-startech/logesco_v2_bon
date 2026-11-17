@@ -85,7 +85,7 @@ class SnackbarHelper {
         backgroundColor: backgroundColor,
         duration: duration ?? const Duration(seconds: 3),
         action: action,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }

@@ -11,6 +11,8 @@ import '../../cash_registers/controllers/cash_session_controller.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../../../core/services/permission_service.dart';
 import '../../../shared/widgets/date_filter_bar.dart';
+import '../../printing/controllers/printing_controller.dart';
+import '../../printing/models/print_format.dart';
 
 /// Vue du compte client - SOLUTION 2: Système centralisé
 ///
@@ -451,7 +453,8 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (detteReglee > 0) Text('Dette réglée : ${detteReglee.toStringAsFixed(0)} FCFA'),
-                            if (nouveauSolde > 0) Text('Avance disponible après dépôt : ${nouveauSolde.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
+                            if (nouveauSolde > 0)
+                              Text('Avance disponible après dépôt : ${nouveauSolde.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
                             if (nouveauSolde < 0) Text('Dette restante : ${(-nouveauSolde).toStringAsFixed(0)} FCFA', style: TextStyle(color: Colors.red.shade700)),
                             if (nouveauSolde == 0) const Text('Le compte sera soldé (solde = 0)'),
                           ],
@@ -498,6 +501,9 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     } catch (_) {}
     // L'argent déposé est entré en caisse : le solde du tableau de bord suit tout de suite
     await _refreshCashSessionBalance(montant);
+
+    // Proposer d'imprimer un reçu
+    _showPrintDepositReceiptDialog(montant, note);
   }
 
   /// Met à jour le solde de la caisse ouverte (tableau de bord) après une entrée d'argent.
@@ -507,6 +513,139 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     final session = Get.find<CashSessionController>();
     if (entree > 0) session.addToCurrentBalance(entree);
     await session.refreshActiveSessionSilently();
+  }
+
+  /// Affiche le dialogue pour imprimer le reçu d'approvisionnement
+  void _showPrintDepositReceiptDialog(double montant, String note) {
+    PrintFormat selectedFormat = PrintFormat.thermal;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.receipt, color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              const Text('Imprimer le reçu'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Souhaitez-vous imprimer un reçu d\'approvisionnement ?',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Client: ${_customer?.nomComplet}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Montant: ${montant.toStringAsFixed(0)} FCFA'),
+                    if (note.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text('Note: $note'),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Sélecteur de format d'impression
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Format d\'impression:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<PrintFormat>(
+                      value: selectedFormat,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: PrintFormat.thermal, child: Text('Thermique (80mm)')),
+                        DropdownMenuItem(value: PrintFormat.a4, child: Text('A4')),
+                        DropdownMenuItem(value: PrintFormat.a5, child: Text('A5')),
+                        DropdownMenuItem(value: PrintFormat.matriciel, child: Text('Matricielle')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedFormat = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('skip'.tr),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _printDepositReceipt(montant, note, selectedFormat);
+              },
+              icon: const Icon(Icons.print),
+              label: Text('print'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Imprime le reçu d'approvisionnement
+  Future<void> _printDepositReceipt(double montant, String note, PrintFormat format) async {
+    try {
+      final printingController = Get.find<PrintingController>();
+
+      // Récupérer le solde actuel (avant le dépôt, c'est le solde final calculé)
+      final currentBalance = _calculateFilteredBalance();
+      final initialBalance = currentBalance - montant; // Solde avant le dépôt
+      final finalBalance = currentBalance; // Solde après le dépôt
+
+      final success = await printingController.generateDepositReceipt(
+        clientId: _customer!.id,
+        customer: _customer!,
+        depositAmount: montant,
+        initialBalance: initialBalance,
+        finalBalance: finalBalance,
+        note: note.isEmpty ? null : note,
+        format: format,
+      );
+
+      if (success) {
+        SnackbarHelper.success('Reçu imprimé avec succès');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de l\'impression du reçu: $e');
+      SnackbarHelper.error('Erreur lors de l\'impression du reçu: $e');
+    }
   }
 
   /// Affiche le dialogue de paiement de dette

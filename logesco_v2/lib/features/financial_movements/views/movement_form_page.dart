@@ -562,7 +562,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
                         SnackBar(
                           content: Text('Catégories rafraîchies (${controller.categories.length} catégories)'),
                           duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
+                          behavior: SnackBarBehavior.fixed,
                         ),
                       );
                     },
@@ -866,7 +866,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
         SnackBar(
           content: Text('financial_movements_form_invalid_msg'.tr),
           backgroundColor: Colors.orange.shade600,
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
         ),
       );
       return;
@@ -918,7 +918,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
             SnackBar(
               content: Text(_isEditing ? 'financial_movements_form_success_update'.tr : 'financial_movements_form_success_create'.tr),
               backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
+              behavior: SnackBarBehavior.fixed,
             ),
           );
         });
@@ -927,7 +927,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
           SnackBar(
             content: Text('financial_movements_form_error'.tr),
             backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
+            behavior: SnackBarBehavior.fixed,
           ),
         );
       }
@@ -936,7 +936,7 @@ class _MovementFormPageState extends State<MovementFormPage> {
         SnackBar(
           content: Text('financial_movements_form_error'.tr),
           backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
         ),
       );
     } finally {

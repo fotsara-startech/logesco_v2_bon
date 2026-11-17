@@ -909,6 +909,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
               montantTotal: montantVenteTotal, // Montant TTC (HT - remise + TVA)
               montantPaye: montantPayePourCetteVente,
               montantRestant: Math.max(0, montantVenteTotal - montantPayePourCetteVente),
+              avanceUtilisee: avanceUtilisee, // Stocker l'avance utilisée
               statut: 'terminee',
               dateVente: dateVente ? new Date(dateVente) : new Date(),
               details: {

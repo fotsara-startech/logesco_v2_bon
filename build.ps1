@@ -268,8 +268,28 @@ Write-Step $flutterStep $totalSteps "Build Flutter Windows"
 
 Set-Location logesco_v2
 
+# Le plugin "printing" telecharge pdfium depuis GitHub a chaque build apres
+# un "flutter clean". Sur une connexion lente ce telechargement echoue
+# ("Build step for pdfium failed"), on garde donc pdfium en cache hors de build\.
+$pdfiumBuildDir = "build\windows\x64"
+$pdfiumCacheDir = Join-Path $env:LOCALAPPDATA "LogescoBuildCache\pdfium"
+function Save-PdfiumCache {
+    if (Test-Path "$pdfiumBuildDir\pdfium-src\PDFiumConfig.cmake") {
+        Remove-Item -Recurse -Force $pdfiumCacheDir -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force $pdfiumCacheDir | Out-Null
+        Copy-Item -Recurse "$pdfiumBuildDir\pdfium-download", "$pdfiumBuildDir\pdfium-src" $pdfiumCacheDir
+    }
+}
+Save-PdfiumCache
+
 Write-Host "Nettoyage Flutter..."
 & flutter clean 2>$null | Out-Null
+
+if (Test-Path "$pdfiumCacheDir\pdfium-src\PDFiumConfig.cmake") {
+    Write-Host "Restauration de pdfium depuis le cache local..."
+    New-Item -ItemType Directory -Force $pdfiumBuildDir | Out-Null
+    Copy-Item -Recurse "$pdfiumCacheDir\pdfium-download", "$pdfiumCacheDir\pdfium-src" $pdfiumBuildDir
+}
 
 Write-Host "Recuperation des dependances..."
 & flutter pub get
@@ -277,8 +297,16 @@ if ($LASTEXITCODE -ne 0) { Set-Location ..; Fail "flutter pub get echoue" }
 
 Write-Host "Build Windows release..."
 Write-Host "  flutter build windows --release $dartDefines" -ForegroundColor DarkGray
-Invoke-Expression "flutter build windows --release $dartDefines"
+$maxBuildAttempts = 3
+for ($attempt = 1; $attempt -le $maxBuildAttempts; $attempt++) {
+    Invoke-Expression "flutter build windows --release $dartDefines"
+    if ($LASTEXITCODE -eq 0) { break }
+    if ($attempt -lt $maxBuildAttempts) {
+        Write-Host "Build echoue (tentative $attempt/$maxBuildAttempts), nouvel essai..." -ForegroundColor Yellow
+    }
+}
 if ($LASTEXITCODE -ne 0) { Set-Location ..; Fail "flutter build windows echoue" }
+Save-PdfiumCache
 
 Set-Location ..
 

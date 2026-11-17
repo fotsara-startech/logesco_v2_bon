@@ -381,6 +381,7 @@ model Vente {
   modePaiement   String           @default("comptant") @map("mode_paiement")
   montantPaye    Float            @default(0) @map("montant_paye")
   montantRestant Float            @default(0) @map("montant_restant")
+  avanceUtilisee Float            @default(0) @map("avance_utilisee")
   dateModification DateTime? @map("date_modification")
   details        DetailVente[]
   recus          HistoriqueRecu[]

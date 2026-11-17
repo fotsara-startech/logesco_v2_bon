@@ -5,6 +5,7 @@ import '../models/print_format.dart' as print_models;
 import '../widgets/receipt_template_factory.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../sales/models/sale.dart';
+import '../../customers/models/customer.dart';
 
 /// Service pour la génération de reçus dans différents formats
 class ReceiptGenerationService {
@@ -35,6 +36,52 @@ class ReceiptGenerationService {
           format: format,
         ),
         error: 'Erreur lors de la génération du reçu: $e',
+      );
+    }
+  }
+
+  /// Génère un reçu pour un approvisionnement de compte
+  Future<ReceiptGenerationResponse> generateDepositReceipt({
+    required int clientId,
+    required Customer customer,
+    required double depositAmount,
+    required double initialBalance,
+    required double finalBalance,
+    required CompanyProfile companyInfo,
+    String? note,
+    print_models.PrintFormat format = print_models.PrintFormat.thermal,
+    print_models.PrintTemplate? customTemplate,
+  }) async {
+    try {
+      // Créer le modèle de reçu d'approvisionnement
+      final receipt = Receipt.fromDeposit(
+        clientId: clientId,
+        customer: customer,
+        depositAmount: depositAmount,
+        initialBalance: initialBalance,
+        finalBalance: finalBalance,
+        companyInfo: companyInfo,
+        note: note,
+        format: format,
+      );
+
+      return await generateReceipt(
+        receipt: receipt,
+        customTemplate: customTemplate,
+      );
+    } catch (e) {
+      return ReceiptGenerationResponse.error(
+        receipt: Receipt.fromDeposit(
+          clientId: clientId,
+          customer: customer,
+          depositAmount: depositAmount,
+          initialBalance: initialBalance,
+          finalBalance: finalBalance,
+          companyInfo: companyInfo,
+          note: note,
+          format: format,
+        ),
+        error: 'Erreur lors de la génération du reçu d\'approvisionnement: $e',
       );
     }
   }
@@ -155,7 +202,16 @@ class ReceiptGenerationService {
 
     // Titre du reçu
     buffer.writeln('\x1B\x21\x10'); // Double hauteur
-    buffer.writeln('RECU DE VENTE');
+    // Afficher le type de reçu selon le contexte
+    if (receipt.saleNumber.startsWith('DEP-')) {
+      buffer.writeln('RECU D\'APPROVISIONNEMENT');
+    } else if (receipt.saleNumber.startsWith('SUI-')) {
+      buffer.writeln('RECU DE SUIVI DE COMPTE');
+    } else if (receipt.isProforma) {
+      buffer.writeln('FACTURE PROFORMA');
+    } else {
+      buffer.writeln('RECU DE VENTE');
+    }
     buffer.writeln('\x1B\x21\x00'); // Taille normale
 
     // Indicateur de réimpression
@@ -167,7 +223,14 @@ class ReceiptGenerationService {
 
     // Informations de vente
     buffer.writeln('\x1B\x61\x00'); // Aligner à gauche
-    buffer.writeln('N° Vente:${receipt.saleNumber}');
+    // Afficher le numéro selon le type de reçu
+    if (receipt.saleNumber.startsWith('DEP-')) {
+      buffer.writeln('N° Dépôt:${receipt.saleNumber}');
+    } else if (receipt.saleNumber.startsWith('SUI-')) {
+      buffer.writeln('N° Suivi:${receipt.saleNumber}');
+    } else {
+      buffer.writeln('N° Vente:${receipt.saleNumber}');
+    }
     buffer.writeln('Date:${receipt.saleDate.day.toString().padLeft(2, '0')}/'
         '${receipt.saleDate.month.toString().padLeft(2, '0')}/'
         '${receipt.saleDate.year}');
@@ -194,52 +257,94 @@ class ReceiptGenerationService {
 
     buffer.writeln('================================');
 
-    // Articles
-    buffer.writeln('ARTICLES:');
-    buffer.writeln('');
-
-    for (int i = 0; i < receipt.items.length; i++) {
-      final item = receipt.items[i];
-      // Tronquer le nom du produit à 20 caractères
-      final productName = item.productName.length > 20 ? '${item.productName.substring(0, 17)}...' : item.productName;
-      // Ajouter la référence entre parenthèses sur la même ligne
-      final ref = item.productReference.isNotEmpty ? ' (${item.productReference})' : '';
-      buffer.writeln('${i + 1}. $productName$ref');
-      buffer.writeln('   ${item.quantity} x ${item.formattedUnitPrice} = ${item.formattedTotalPrice}');
+    // Articles ou informations de solde
+    if (receipt.saleNumber.startsWith('DEP-') || receipt.saleNumber.startsWith('SUI-')) {
+      // Pour les approvisionnements et suivis de compte, afficher les informations de solde
+      buffer.writeln('DETAILS:');
       buffer.writeln('');
+
+      final item = receipt.items.first;
+      // displayPrice contient le solde initial, discountAmount contient le solde final
+      final initialBalance = item.displayPrice;
+      final finalBalance = item.discountAmount;
+
+      buffer.writeln('Solde initial: ${initialBalance.toStringAsFixed(0)} FCFA');
+      buffer.writeln('');
+      buffer.writeln('Solde final: ${finalBalance.toStringAsFixed(0)} FCFA');
+      buffer.writeln('');
+
+      // Pour les suivis de compte, afficher la référence de vente
+      if (receipt.saleNumber.startsWith('SUI-') && item.productReference.isNotEmpty) {
+        buffer.writeln(item.productReference);
+        buffer.writeln('');
+      }
+
+      // Afficher la note si présente (pour les approvisionnements)
+      if (receipt.saleNumber.startsWith('DEP-') && item.productReference.isNotEmpty && !item.productReference.contains('Approvisionnement de compte')) {
+        buffer.writeln('Note: ${item.productReference}');
+        buffer.writeln('');
+      }
+    } else {
+      // Pour les ventes normales, afficher les articles
+      buffer.writeln('ARTICLES:');
+      buffer.writeln('');
+
+      for (int i = 0; i < receipt.items.length; i++) {
+        final item = receipt.items[i];
+        // Tronquer le nom du produit à 20 caractères
+        final productName = item.productName.length > 20 ? '${item.productName.substring(0, 17)}...' : item.productName;
+        // Ajouter la référence entre parenthèses sur la même ligne
+        final ref = item.productReference.isNotEmpty ? ' (${item.productReference})' : '';
+        buffer.writeln('${i + 1}. $productName$ref');
+        buffer.writeln('   ${item.quantity} x ${item.formattedUnitPrice} = ${item.formattedTotalPrice}');
+        buffer.writeln('');
+      }
     }
 
     buffer.writeln('--------------------------------');
 
     // Totaux
-    buffer.writeln('Sous-total: ${receipt.subtotal.toStringAsFixed(0)} FCFA');
-
-    if (receipt.discountAmount > 0) {
-      buffer.writeln('Remise: -${receipt.discountAmount.toStringAsFixed(0)} FCFA');
-    }
-
-    buffer.writeln('--------------------------------');
-    buffer.writeln('\x1B\x21\x10'); // Double hauteur
-    buffer.writeln('TOTAL: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
-    buffer.writeln('\x1B\x21\x00'); // Taille normale
-    buffer.writeln('Paye: ${receipt.paidAmount.toStringAsFixed(0)} FCFA');
-
-    // CORRECTION : Afficher la monnaie si le montant payé > total
-    if (receipt.paidAmount > receipt.totalAmount) {
-      final change = (receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0);
-      print('️ [THERMAL] Affichage Monnaie: $change FCFA');
-      buffer.writeln('Monnaie: $change FCFA');
+    if (receipt.saleNumber.startsWith('DEP-')) {
+      // Pour les approvisionnements
+      buffer.writeln('\x1B\x21\x10'); // Double hauteur
+      buffer.writeln('MONTANT VERSE: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
+      buffer.writeln('\x1B\x21\x00'); // Taille normale
+    } else if (receipt.saleNumber.startsWith('SUI-')) {
+      // Pour les suivis de compte
+      buffer.writeln('\x1B\x21\x10'); // Double hauteur
+      buffer.writeln('MONTANT UTILISE: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
+      buffer.writeln('\x1B\x21\x00'); // Taille normale
     } else {
-      print('️ [THERMAL] Pas de monnaie (Paid: ${receipt.paidAmount}, Total: ${receipt.totalAmount})');
-    }
+      // Pour les ventes normales
+      buffer.writeln('Sous-total: ${receipt.subtotal.toStringAsFixed(0)} FCFA');
 
-    // CORRECTION : Afficher le reste si > 0
-    if (receipt.remainingAmount > 0) {
-      final remaining = receipt.remainingAmount.toStringAsFixed(0);
-      print('️ [THERMAL] Affichage Reste: $remaining FCFA');
-      buffer.writeln('Reste: $remaining FCFA');
-    } else {
-      print('️ [THERMAL] Pas de reste (Remaining: ${receipt.remainingAmount})');
+      if (receipt.discountAmount > 0) {
+        buffer.writeln('Remise: -${receipt.discountAmount.toStringAsFixed(0)} FCFA');
+      }
+
+      buffer.writeln('--------------------------------');
+      buffer.writeln('\x1B\x21\x10'); // Double hauteur
+      buffer.writeln('TOTAL: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
+      buffer.writeln('\x1B\x21\x00'); // Taille normale
+      buffer.writeln('Paye: ${receipt.paidAmount.toStringAsFixed(0)} FCFA');
+
+      // CORRECTION : Afficher la monnaie si le montant payé > total
+      if (receipt.paidAmount > receipt.totalAmount) {
+        final change = (receipt.paidAmount - receipt.totalAmount).toStringAsFixed(0);
+        print('🖨️ [THERMAL] Affichage Monnaie: $change FCFA');
+        buffer.writeln('Monnaie: $change FCFA');
+      } else {
+        print('🖨️ [THERMAL] Pas de monnaie (Paid: ${receipt.paidAmount}, Total: ${receipt.totalAmount})');
+      }
+
+      // CORRECTION : Afficher le reste si > 0
+      if (receipt.remainingAmount > 0) {
+        final remaining = receipt.remainingAmount.toStringAsFixed(0);
+        print('🖨️ [THERMAL] Affichage Reste: $remaining FCFA');
+        buffer.writeln('Reste: $remaining FCFA');
+      } else {
+        print('🖨️ [THERMAL] Pas de reste (Remaining: ${receipt.remainingAmount})');
+      }
     }
 
     buffer.writeln('================================');

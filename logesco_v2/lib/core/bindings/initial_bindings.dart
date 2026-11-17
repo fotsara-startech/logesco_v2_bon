@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -39,6 +38,8 @@ import '../../features/boutiques/services/boutique_service.dart';
 import '../../features/boutiques/controllers/boutique_controller.dart';
 import '../../features/dashboard/controllers/dashboard_controller.dart';
 import '../../features/sync/controllers/sync_controller.dart';
+import '../../features/printing/services/printing_service.dart';
+import '../../features/printing/controllers/printing_controller.dart';
 
 /// Bindings initiaux pour l'injection de dépendances avec GetX
 class InitialBindings extends Bindings {
@@ -129,6 +130,10 @@ class InitialBindings extends Bindings {
 
     // Contrôleur de synchronisation cloud (Type 3 — Neon)
     Get.put<SyncController>(SyncController(), permanent: true);
+
+    // Services d'impression
+    Get.put<PrintingService>(PrintingService(Get.find<AuthService>()), permanent: true);
+    Get.put<PrintingController>(PrintingController(), permanent: true);
 
     // Services d'abonnement
     _configureSubscriptionServices();

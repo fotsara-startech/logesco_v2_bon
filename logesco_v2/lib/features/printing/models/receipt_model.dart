@@ -63,6 +63,105 @@ class Receipt {
   factory Receipt.fromJson(Map<String, dynamic> json) => _$ReceiptFromJson(json);
   Map<String, dynamic> toJson() => _$ReceiptToJson(this);
 
+  /// Crée un reçu pour un approvisionnement de compte client
+  factory Receipt.fromDeposit({
+    required int clientId,
+    required Customer customer,
+    required double depositAmount,
+    required double initialBalance,
+    required double finalBalance,
+    required CompanyProfile companyInfo,
+    String? note,
+    PrintFormat format = PrintFormat.thermal,
+  }) {
+    final now = DateTime.now();
+    final depositNumber = 'DEP-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch % 10000}';
+
+    // Créer une description détaillée avec les soldes
+    final description = note?.isNotEmpty == true ? 'Approvisionnement de compte\n$note' : 'Approvisionnement de compte';
+
+    return Receipt(
+      id: 'deposit_${clientId}_${now.millisecondsSinceEpoch}',
+      saleId: 'deposit_$clientId',
+      saleNumber: depositNumber,
+      companyInfo: companyInfo,
+      items: [
+        ReceiptItem(
+          productId: 'deposit',
+          productName: 'Approvisionnement de compte',
+          productReference: description,
+          quantity: 1,
+          unitPrice: depositAmount,
+          totalPrice: depositAmount,
+          // Utiliser displayPrice pour stocker le solde initial
+          displayPrice: initialBalance,
+          // Utiliser discountAmount pour stocker le solde final
+          discountAmount: finalBalance,
+        ),
+      ],
+      subtotal: depositAmount,
+      discountAmount: 0.0,
+      tvaRate: 0.0,
+      tvaAmount: 0.0,
+      totalAmount: depositAmount,
+      paidAmount: depositAmount,
+      remainingAmount: 0.0,
+      paymentMethod: 'Espèces',
+      saleDate: now,
+      customer: customer,
+      format: format,
+      language: companyInfo.receiptLanguage ?? 'fr',
+    );
+  }
+
+  /// Crée un reçu de suivi de compte après une vente utilisant l'avance client
+  factory Receipt.fromAccountUsage({
+    required int clientId,
+    required Customer customer,
+    required double usedAmount,
+    required double initialBalance,
+    required double finalBalance,
+    required CompanyProfile companyInfo,
+    required String saleReference,
+    PrintFormat format = PrintFormat.thermal,
+  }) {
+    final now = DateTime.now();
+    final followUpNumber = 'SUI-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch % 10000}';
+
+    return Receipt(
+      id: 'followup_${clientId}_${now.millisecondsSinceEpoch}',
+      saleId: 'followup_$clientId',
+      saleNumber: followUpNumber,
+      companyInfo: companyInfo,
+      items: [
+        ReceiptItem(
+          productId: 'account_usage',
+          productName: 'Utilisation avance compte',
+          productReference: 'Vente: $saleReference',
+          quantity: 1,
+          unitPrice: usedAmount,
+          totalPrice: usedAmount,
+          // Utiliser displayPrice pour stocker le solde initial
+          displayPrice: initialBalance,
+          // Utiliser discountAmount pour stocker le solde final
+          discountAmount: finalBalance,
+        ),
+      ],
+      subtotal: usedAmount,
+      discountAmount: 0.0,
+      tvaRate: 0.0,
+      tvaAmount: 0.0,
+      totalAmount: usedAmount,
+      paidAmount: usedAmount,
+      remainingAmount: 0.0,
+      paymentMethod: 'Avance compte',
+      saleDate: now,
+      customer: customer,
+      format: format,
+      language: companyInfo.receiptLanguage ?? 'fr',
+    );
+  }
+
   /// Crée un reçu à partir d'une facture proforma
   factory Receipt.fromProforma({
     required dynamic proforma, // ProformaInvoice — dynamic pour éviter import circulaire

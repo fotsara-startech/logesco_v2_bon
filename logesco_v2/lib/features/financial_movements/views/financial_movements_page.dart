@@ -523,7 +523,7 @@ class FinancialMovementsPage extends StatelessWidget {
                           SnackBar(
                             content: Text('financial_movements_deleted_success'.tr),
                             backgroundColor: Colors.green.shade700,
-                            behavior: SnackBarBehavior.floating,
+                            behavior: SnackBarBehavior.fixed,
                             duration: const Duration(seconds: 2),
                           ),
                         );
