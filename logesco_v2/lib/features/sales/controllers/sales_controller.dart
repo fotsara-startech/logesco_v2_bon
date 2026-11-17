@@ -1446,44 +1446,6 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
   }
 
-  // Paiement
-  Future<bool> addPayment(int saleId, double amount, {String? description}) async {
-    // Vérifier l'abonnement avant d'ajouter un paiement
-    final canAddPayment = await verifySubscriptionForWrite(actionName: 'Ajouter un paiement');
-    if (!canAddPayment) {
-      return false;
-    }
-
-    _isLoading.value = true;
-
-    try {
-      final request = SalePaymentRequest(
-        montantPaye: amount,
-        description: description,
-      );
-
-      final response = await _salesService.addPayment(saleId, request);
-
-      if (response.success) {
-        SnackbarUtils.showSuccess(response.message ?? 'Paiement enregistré avec succès');
-        _searchQuery.value = '';
-        await loadSales(refresh: true);
-        if (_currentSale.value?.id == saleId) {
-          await loadSale(saleId);
-        }
-        return true;
-      } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de l\'enregistrement du paiement');
-        return false;
-      }
-    } catch (e) {
-      SnackbarUtils.showError('Erreur lors de l\'enregistrement du paiement');
-      return false;
-    } finally {
-      _isLoading.value = false;
-    }
-  }
-
   // Annulation
   Future<bool> cancelSale(int saleId) async {
     // Vérifier l'abonnement avant d'annuler une vente

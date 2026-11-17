@@ -81,7 +81,6 @@ schemas.clientSchemas.search.validate(queryParams)
 ```javascript
 schemas.venteSchemas.create.validate(data)
 schemas.venteSchemas.update.validate(data)
-schemas.venteSchemas.paiement.validate(data)
 ```
 
 ### Middleware de Validation

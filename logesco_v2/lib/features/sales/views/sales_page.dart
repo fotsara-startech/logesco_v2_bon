@@ -392,8 +392,8 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                 label: Text('sales_print_account_followup'.tr),
               ),
           ],
-          // SOLUTION 2: Suppression du bouton "Ajouter paiement"
-          // Les paiements se font via de nouvelles ventes, la dette est gérée au compte client
+          // Pas de bouton "Ajouter paiement" : les paiements se font via de
+          // nouvelles ventes, la dette est gérée au compte client.
           if (!sale.isCancelled) ...[
             TextButton(
               onPressed: () {
@@ -411,66 +411,6 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
       ),
     );
   }
-
-  // SOLUTION 2: Méthode désactivée - Les paiements ne se font plus sur les ventes individuelles
-  // La dette est gérée au niveau du compte client
-  // Pour encaisser un paiement, créer une nouvelle vente qui inclura automatiquement la dette
-  /*
-  void _showPaymentDialog(BuildContext context, sale) {
-    final controller = Get.find<SalesController>();
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ajouter un paiement'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Montant restant: ${sale.montantRestant.toStringAsFixed(0)} FCFA'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              decoration: const InputDecoration(
-                labelText: 'Montant payé',
-                suffixText: 'FCFA',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optionnel)',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amount = double.tryParse(amountController.text);
-              if (amount != null && amount > 0) {
-                Navigator.of(context).pop();
-                await controller.addPayment(
-                  sale.id,
-                  amount,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                );
-              }
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-  }
-  */
 
   void _confirmCancelSale(BuildContext context, sale) {
     final controller = Get.find<SalesController>();

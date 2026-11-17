@@ -366,11 +366,6 @@ const venteSchemas = {
     statut: Joi.string().valid('terminee', 'annulee')
   }).min(1),
 
-  paiement: Joi.object({
-    montantPaye: baseSchemas.montant.min(0.01).required(),
-    description: Joi.string().max(500).allow('', null)
-  }),
-
   search: Joi.object({
     clientId: baseSchemas.id,
     vendeurId: baseSchemas.id,

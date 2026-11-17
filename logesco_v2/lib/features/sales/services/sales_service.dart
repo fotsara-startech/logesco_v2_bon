@@ -235,38 +235,6 @@ class SalesService {
     }
   }
 
-  Future<ApiResponse<Sale>> addPayment(int id, SalePaymentRequest payment) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null) {
-        return ApiResponse.error(message: 'Token d\'authentification manquant');
-      }
-
-      final response = await http.post(
-        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$id/payment'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(payment.toJson()),
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        final sale = Sale.fromJson(jsonData['data']);
-        return ApiResponse.success(
-          sale,
-          message: jsonData['message'],
-        );
-      } else {
-        final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'enregistrement du paiement');
-      }
-    } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
-    }
-  }
-
   Future<ApiResponse<void>> cancelSale(int id) async {
     try {
       final token = await _authService.getToken();

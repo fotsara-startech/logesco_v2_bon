@@ -280,20 +280,6 @@ class CreateSaleDetailRequest {
 }
 
 @JsonSerializable()
-class SalePaymentRequest {
-  final double montantPaye;
-  final String? description;
-
-  const SalePaymentRequest({
-    required this.montantPaye,
-    this.description,
-  });
-
-  factory SalePaymentRequest.fromJson(Map<String, dynamic> json) => _$SalePaymentRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$SalePaymentRequestToJson(this);
-}
-
-@JsonSerializable()
 class ProductSummary {
   final int id;
   final String nom;
