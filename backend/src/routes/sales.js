@@ -253,7 +253,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   details: {
                     include: {
                       produit: {
-                        select: { id: true, nom: true, reference: true }
+                        select: { id: true, nom: true, reference: true, prixAchat: true, cump: true }
                       }
                     }
                   }
@@ -296,7 +296,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 details: {
                   include: {
                     produit: {
-                      select: { id: true, nom: true, reference: true }
+                      select: { id: true, nom: true, reference: true, prixAchat: true, cump: true }
                     }
                   }
                 }
@@ -558,11 +558,13 @@ function createSalesRouter({ prisma, authService, syncService }) {
             details: {
               include: {
                 produit: {
-                  select: { 
-                    id: true, 
-                    nom: true, 
+                  select: {
+                    id: true,
+                    nom: true,
                     reference: true,
-                    prixUnitaire: true 
+                    prixUnitaire: true,
+                    prixAchat: true,
+                    cump: true
                   }
                 }
               }
@@ -935,7 +937,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
               details: {
                 include: {
                   produit: {
-                    select: { id: true, nom: true, reference: true }
+                    select: { id: true, nom: true, reference: true, prixAchat: true, cump: true }
                   }
                 }
               }
@@ -1592,7 +1594,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
             details: {
               include: {
                 produit: {
-                  select: { id: true, nom: true, reference: true }
+                  select: { id: true, nom: true, reference: true, prixAchat: true, cump: true }
                 }
               }
             }

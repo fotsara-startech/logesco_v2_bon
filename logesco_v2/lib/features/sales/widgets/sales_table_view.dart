@@ -72,10 +72,15 @@ class SalesTableView extends StatelessWidget {
                       Text('sales_amount'.tr, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                       Text('${sale.montantFinal.toStringAsFixed(0)} F', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     ]),
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
                       Text('sales_paid'.tr, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                       Text('${sale.montantPaye.toStringAsFixed(0)} F',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: sale.montantPaye >= sale.montantFinal ? Colors.green[700] : Colors.orange[700])),
+                    ]),
+                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text('sales_profit'.tr, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                      Text('${sale.benefice.toStringAsFixed(0)} F',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: sale.benefice < 0 ? Colors.red[700] : Colors.green[700])),
                     ]),
                   ]),
                 ],
@@ -108,8 +113,9 @@ class SalesTableView extends StatelessWidget {
                 2: FlexColumnWidth(1.5), // Date
                 3: FlexColumnWidth(1.5), // Montant
                 4: FlexColumnWidth(1.5), // Payé
-                5: FlexColumnWidth(1.2), // Statut
-                6: FlexColumnWidth(1), // Actions
+                5: FlexColumnWidth(1.5), // Bénéfice
+                6: FlexColumnWidth(1.2), // Statut
+                7: FlexColumnWidth(1), // Actions
               },
               children: [
                 TableRow(
@@ -119,6 +125,7 @@ class SalesTableView extends StatelessWidget {
                     _buildHeaderCell('sales_date'.tr),
                     _buildHeaderCell('sales_amount'.tr),
                     _buildHeaderCell('sales_paid'.tr),
+                    _buildHeaderCell('sales_profit'.tr),
                     _buildHeaderCell('sales_status'.tr),
                     _buildHeaderCell(''),
                   ],
@@ -137,15 +144,16 @@ class SalesTableView extends StatelessWidget {
                   2: FlexColumnWidth(1.5),
                   3: FlexColumnWidth(1.5),
                   4: FlexColumnWidth(1.5),
-                  5: FlexColumnWidth(1.2),
-                  6: FlexColumnWidth(1),
+                  5: FlexColumnWidth(1.5),
+                  6: FlexColumnWidth(1.2),
+                  7: FlexColumnWidth(1),
                 },
                 children: [
                   ...sales.map((sale) => _buildSaleRow(context, sale)),
                   if (hasMoreData)
                     TableRow(
                       children: List.generate(
-                        7,
+                        8,
                         (index) => Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: index == 3 ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink(),
@@ -241,6 +249,18 @@ class SalesTableView extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: sale.montantPaye >= sale.montantFinal ? Colors.green[700] : Colors.orange[700],
+            ),
+          ),
+        ),
+
+        // Bénéfice
+        _buildDataCell(
+          Text(
+            '${sale.benefice.toStringAsFixed(0)} F',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: sale.benefice < 0 ? Colors.red[700] : Colors.green[700],
             ),
           ),
         ),

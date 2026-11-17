@@ -163,6 +163,12 @@ class Sale {
 
   /// Indique si c'était un paiement partiel pour cette vente
   bool get isPartialPayment => montantPaye > 0 && montantRestant > 0;
+
+  /// Bénéfice de la vente : somme des bénéfices par ligne, moins la remise
+  /// globale (déjà déduite une fois, pas répartie entre les lignes).
+  /// 0 pour les lignes dont le coût est inconnu (même convention que
+  /// `GET /sales/analytics/products` côté backend).
+  double get benefice => details.fold<double>(0, (acc, d) => acc + d.beneficeLigne) - montantRemise;
 }
 
 @JsonSerializable()
@@ -204,6 +210,18 @@ class SaleDetail {
 
   /// Calcule le pourcentage de remise appliquée
   double get pourcentageRemise => prixAffiche > 0 ? (remiseAppliquee / prixAffiche * 100) : 0;
+
+  /// Coût unitaire de référence : CUMP en priorité, sinon prix d'achat
+  /// (même convention que AccountingService._getProductCump côté rapports).
+  double? get coutUnitaire => produit?.cump ?? produit?.prixAchat;
+
+  /// Bénéfice de cette ligne ; 0 si le coût du produit est inconnu (plutôt
+  /// que de compter tout le prix de vente comme bénéfice).
+  double get beneficeLigne {
+    final cout = coutUnitaire;
+    if (cout == null || cout <= 0) return 0;
+    return (prixUnitaire - cout) * quantite;
+  }
 }
 
 @JsonSerializable()
@@ -286,12 +304,15 @@ class ProductSummary {
   final String reference;
   @JsonKey(defaultValue: null)
   final double? prixAchat; // Prix d'achat pour calculer les coûts réels
+  @JsonKey(defaultValue: null)
+  final double? cump; // Coût unitaire moyen pondéré, prioritaire sur prixAchat (voir AccountingService)
 
   const ProductSummary({
     required this.id,
     required this.nom,
     required this.reference,
     this.prixAchat,
+    this.cump,
   });
 
   factory ProductSummary.fromJson(Map<String, dynamic> json) => _$ProductSummaryFromJson(json);

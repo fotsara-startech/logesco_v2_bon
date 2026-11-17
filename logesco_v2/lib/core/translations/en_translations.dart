@@ -1208,6 +1208,8 @@ const Map<String, String> enTranslations = {
   'sales_client_name': 'Customer: @name',
   'sales_total_label': 'Total: @amount FCFA',
   'sales_paid_label': 'Paid: @amount FCFA',
+  'sales_profit': 'Profit',
+  'sales_export_excel': 'Export to Excel',
   'sales_status_completed': 'Completed',
   'sales_status_cancelled': 'Cancelled',
   'sales_status_partial': 'Partial',

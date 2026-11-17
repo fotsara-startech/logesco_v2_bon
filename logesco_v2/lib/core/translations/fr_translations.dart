@@ -961,6 +961,8 @@ const Map<String, String> frTranslations = {
   'sales_client': 'Client',
   'sales_amount': 'Montant',
   'sales_paid': 'Payé',
+  'sales_profit': 'Bénéfice',
+  'sales_export_excel': 'Exporter en Excel',
   'sales_view_details': 'Voir les détails',
   'sales_no_client': 'Sans client',
   'sales_product': 'Produit',

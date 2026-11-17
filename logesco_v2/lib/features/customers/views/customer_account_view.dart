@@ -5,6 +5,7 @@ import '../controllers/customer_controller.dart';
 import '../services/statement_pdf_service.dart';
 import '../../accounts/models/account.dart';
 import '../../accounts/widgets/unpaid_sales_selector_dialog.dart';
+import '../../accounts/widgets/credit_sales_list_dialog.dart';
 import '../../financial_movements/controllers/financial_movement_controller.dart';
 import '../../../core/services/cash_register_refresh_service.dart';
 import '../../cash_registers/controllers/cash_session_controller.dart';
@@ -213,6 +214,23 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              if (aDette) const SizedBox(width: 8),
+              if (aDette)
+                OutlinedButton.icon(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (context) => CreditSalesListDialog(
+                      clientId: _customer!.id,
+                      clientName: _customer!.nomComplet,
+                    ),
+                  ),
+                  icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
+                  label: const Text('Ventes à crédit', style: TextStyle(color: Colors.white)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),

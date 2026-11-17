@@ -105,6 +105,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                         controller.setViewMode(next);
                       }
                       if (value == 'refresh') controller.refreshStocks();
+                      if (value == 'export') controller.exportToExcel();
                     },
                     itemBuilder: (context) => [
                       PopupMenuItem(
@@ -115,6 +116,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                               contentPadding: EdgeInsets.zero)),
                       PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.view_list), title: Text('sales_table_view'.tr), contentPadding: EdgeInsets.zero)),
                       PopupMenuItem(value: 'refresh', child: ListTile(leading: const Icon(Icons.refresh), title: Text('sales_refresh_stocks'.tr), contentPadding: EdgeInsets.zero)),
+                      PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.file_download), title: Text('sales_export_excel'.tr), contentPadding: EdgeInsets.zero)),
                     ],
                   ),
                 ],
@@ -142,6 +144,13 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                   return IconButton(onPressed: () => controller.setViewMode(next), icon: Icon(icon));
                 }),
                 IconButton(onPressed: () async => await controller.refreshStocks(), icon: const Icon(Icons.refresh)),
+                Obx(() => IconButton(
+                      onPressed: controller.isExporting ? null : () => controller.exportToExcel(),
+                      icon: controller.isExporting
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.file_download),
+                      tooltip: 'sales_export_excel'.tr,
+                    )),
                 OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,

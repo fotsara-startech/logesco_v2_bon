@@ -18,6 +18,7 @@ import '../../customers/controllers/customer_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../models/sale.dart';
 import '../services/sales_service.dart';
+import '../services/sales_excel_service.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../inventory/models/stock_model.dart' hide Product;
 import '../../products/controllers/product_controller.dart';
@@ -38,6 +39,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final InventoryService _inventoryService = InventoryService(Get.find<AuthService>());
   final CompanySettingsService _companyService = CompanySettingsService(Get.find<AuthService>());
   final PrintingService _printingService = PrintingService(Get.find<AuthService>());
+  final SalesExcelService _excelService = SalesExcelService();
 
   // État des ventes
   final RxList<Sale> _sales = <Sale>[].obs;
@@ -45,6 +47,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   final Rx<Sale?> _lastCreatedSale = Rx<Sale?>(null);
   final RxBool _isLoading = false.obs;
   final RxBool _isCreating = false.obs;
+  final RxBool _isExporting = false.obs;
   // Trigger de rafraîchissement — s'incrémente à chaque vente créée
   final RxInt saleCreatedTrigger = 0.obs;
 
@@ -130,6 +133,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   Sale? get lastCreatedSale => _lastCreatedSale.value;
   bool get isLoading => _isLoading.value;
   bool get isCreating => _isCreating.value;
+  bool get isExporting => _isExporting.value;
   CompanyProfile? get companyProfile => _companyProfile.value;
   Receipt? get pendingAccountUsageReceipt => _pendingAccountUsageReceipt.value;
 
@@ -393,6 +397,27 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   }
 
   // Gestion des ventes
+  /// Si l'utilisateur n'est pas admin, force le filtre sur ses propres ventes
+  /// — sauf si l'admin a activé "les vendeurs voient toutes les ventes" dans
+  /// les paramètres d'entreprise. Le serveur applique la même règle de son
+  /// côté (sales.js), donc ce filtre client n'est qu'un confort d'affichage,
+  /// pas la barrière de sécurité (voir backend).
+  int? _resolveEffectiveVendeurId() {
+    try {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+      final vendeursVoientTout = _companyProfile.value?.vendeursSeeAllSales ?? false;
+      if (currentUser != null && !currentUser.role.isAdmin && !vendeursVoientTout) {
+        // Vendeur : ne voit que ses propres ventes
+        return currentUser.id;
+      }
+      // Admin, ou réglage "voir toutes les ventes" activé : filtre manuel (ou aucun filtre)
+      return _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
+    } catch (e) {
+      return _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
+    }
+  }
+
   Future<void> loadSales({bool refresh = false}) async {
     if (refresh) {
       _currentPage.value = 1;
@@ -404,27 +429,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
     _isLoading.value = true;
 
-    // Si l'utilisateur n'est pas admin, forcer le filtre sur ses propres ventes
-    // — sauf si l'admin a activé "les vendeurs voient toutes les ventes"
-    // dans les paramètres d'entreprise. Le serveur applique la même règle
-    // de son côté (sales.js), donc ce filtre client n'est qu'un confort
-    // d'affichage, pas la barrière de sécurité (voir backend).
-    int? effectiveVendeurId;
-    try {
-      final authController = Get.find<AuthController>();
-      final currentUser = authController.currentUser.value;
-      final vendeursVoientTout = _companyProfile.value?.vendeursSeeAllSales ?? false;
-      if (currentUser != null && !currentUser.role.isAdmin && !vendeursVoientTout) {
-        // Vendeur : ne voit que ses propres ventes
-        effectiveVendeurId = currentUser.id;
-      } else {
-        // Admin, ou réglage "voir toutes les ventes" activé : filtre manuel (ou aucun filtre)
-        effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
-      }
-    } catch (e) {
-      effectiveVendeurId = _vendeurIdFilter.value > 0 ? _vendeurIdFilter.value : null;
-    }
-
+    final effectiveVendeurId = _resolveEffectiveVendeurId();
     final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
 
     print('🔍 [DIAGNOSTIC VENTES]');
@@ -486,6 +491,69 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     if (_hasMoreData.value && !_isLoading.value) {
       _currentPage.value++;
       await loadSales();
+    }
+  }
+
+  /// Exporte vers Excel toutes les ventes correspondant aux filtres
+  /// actuellement actifs (pas seulement la page déjà chargée en mémoire).
+  Future<void> exportToExcel() async {
+    if (_isExporting.value) return;
+    _isExporting.value = true;
+
+    try {
+      SnackbarHelper.info('Récupération des ventes...', title: 'Export en cours');
+
+      final effectiveVendeurId = _resolveEffectiveVendeurId();
+      final activeBoutiqueId = BoutiqueController.getActiveBoutiqueId();
+
+      final List<Sale> allSales = [];
+      int page = 1;
+      const limit = 200;
+      bool hasMore = true;
+
+      while (hasMore) {
+        final response = await _salesService.getSales(
+          page: page,
+          limit: limit,
+          statut: _statusFilter.value.isEmpty ? null : _statusFilter.value,
+          modePaiement: _paymentModeFilter.value.isEmpty ? null : _paymentModeFilter.value,
+          dateDebut: _startDateFilter.value,
+          dateFin: _endDateFilter.value,
+          vendeurId: effectiveVendeurId,
+          commercialId: _commercialIdFilter.value > 0 ? _commercialIdFilter.value : null,
+          boutiqueId: activeBoutiqueId,
+        );
+
+        if (!response.success || response.data == null) {
+          SnackbarUtils.showError(response.message ?? 'Erreur lors de la récupération des ventes');
+          return;
+        }
+
+        allSales.addAll(response.data!);
+
+        final pagination = response.pagination;
+        hasMore = pagination != null && page < pagination.totalPages && response.data!.isNotEmpty;
+        page++;
+      }
+
+      if (allSales.isEmpty) {
+        SnackbarHelper.info('Aucune vente à exporter');
+        return;
+      }
+
+      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
+      final filePath = await _excelService.exportSalesToExcel(allSales);
+
+      if (filePath != null) {
+        SnackbarHelper.success('${allSales.length} vente(s) exportée(s)', title: 'Export réussi', duration: const Duration(seconds: 4));
+      } else {
+        SnackbarHelper.error('Erreur lors de la génération du fichier Excel');
+      }
+    } catch (e) {
+      print('❌ Erreur export ventes Excel: $e');
+      SnackbarHelper.error('Erreur lors de l\'export Excel: $e');
+    } finally {
+      _isExporting.value = false;
     }
   }
 
