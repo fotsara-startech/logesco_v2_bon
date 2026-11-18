@@ -330,6 +330,31 @@ class _CustomerListItem extends StatelessWidget {
                   ],
                 ),
               ),
+            // Indicateur d'avance (solde positif) pour les clients
+            if (customer.solde > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  border: Border.all(color: Colors.green.shade400, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.savings_rounded, size: 14, color: Colors.green.shade700),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${customer.solde.toStringAsFixed(0)} FCFA',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
         subtitle: Column(
