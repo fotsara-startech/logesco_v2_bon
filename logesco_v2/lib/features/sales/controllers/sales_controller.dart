@@ -1422,7 +1422,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   /// l'écriture, donc fiable même si le solde actuel du compte a changé
   /// depuis à cause de ventes plus récentes).
   ///
-  /// BUG CORRIGÉ : l'ancien calcul prenait `soldeActuel + avanceUtilisee`
+  /// BUG CORRIGÉ (1) : l'ancien calcul prenait `soldeActuel + avanceUtilisee`
   /// comme solde avant. C'est faux dès que la vente a AUSSI créé de la dette
   /// (avance insuffisante pour couvrir tout le montant) : le solde après
   /// n'est alors pas juste "solde avant − avance utilisée", il intègre aussi
@@ -1430,6 +1430,14 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   /// compte, pas celui juste après cette vente précise — si une autre vente
   /// a eu lieu entre-temps (reçu généré avec un peu de retard, ventes
   /// rapprochées), le calcul se basait sur un solde déjà périmé.
+  ///
+  /// BUG CORRIGÉ (2) : une vente crée PLUSIEURS lignes dans l'historique
+  /// (achat, paiement(s), avance utilisée, reste ajouté...) qui partagent
+  /// TOUTES le même `soldeApres` (figé une seule fois côté serveur, voir
+  /// sales.js). Prendre "la ligne suivante" après celle d'utilisation
+  /// d'avance pouvait donc retomber sur une autre ligne de CETTE MÊME
+  /// vente — donnant solde avant = solde après. Il faut sauter par-dessus
+  /// TOUTES les lignes de cette vente, pas juste la première trouvée.
   ({double avant, double apres}) _resolveSaleBalances(
     Map<String, dynamic> accountData,
     int saleId,
@@ -1440,20 +1448,19 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     final transactions = accountData['transactions'] as List?;
 
     if (transactions != null) {
-      final index = transactions.indexWhere((t) =>
-          t is Map &&
-          t['referenceType'] == 'vente' &&
-          t['referenceId'] == saleId &&
-          t['typeTransactionDetail'] == 'utilisation_avance');
+      final saleIndices = <int>[
+        for (var i = 0; i < transactions.length; i++)
+          if (transactions[i] is Map && transactions[i]['referenceType'] == 'vente' && transactions[i]['referenceId'] == saleId) i,
+      ];
 
-      if (index != -1) {
-        // soldeApres de CETTE transaction = solde juste après la vente,
-        // indépendamment de ce qui s'est passé sur le compte depuis.
-        final apres = (transactions[index]['soldeApres'] as num).toDouble();
-        // La transaction suivante dans la liste (triée du plus récent au
-        // plus ancien) est la dernière écriture AVANT cette vente : son
-        // soldeApres est exactement le solde juste avant.
-        final avant = index + 1 < transactions.length ? (transactions[index + 1]['soldeApres'] as num).toDouble() : apres + avanceUtilisee;
+      if (saleIndices.isNotEmpty) {
+        // Toutes identiques : n'importe laquelle donne le solde après la vente.
+        final apres = (transactions[saleIndices.first]['soldeApres'] as num).toDouble();
+        // La liste est triée du plus récent au plus ancien : la ligne juste
+        // après la DERNIÈRE ligne de cette vente (donc la plus ancienne des
+        // siennes) est la dernière écriture AVANT cette vente.
+        final lastIndex = saleIndices.reduce((a, b) => a > b ? a : b);
+        final avant = lastIndex + 1 < transactions.length ? (transactions[lastIndex + 1]['soldeApres'] as num).toDouble() : apres + avanceUtilisee;
         return (avant: avant, apres: apres);
       }
     }
