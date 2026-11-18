@@ -22,7 +22,7 @@ class SalesDetailsView extends StatelessWidget {
     final List<_DetailRow> detailRows = [];
     for (final sale in sales) {
       if (sale.details.isNotEmpty) {
-        for (final detail in sale.details) {
+        for (final detail in sale.details.where((d) => !d.annule)) {
           detailRows.add(_DetailRow(sale: sale, detail: detail));
         }
       }

@@ -520,7 +520,8 @@ async function generateReceiptContent(vente, format, isReprint = false) {
   content += `ARTICLES:\n`;
 
   vente.details.forEach(detail => {
-    content += `${detail.produit.nom}\n`;
+    const annule = detail.annule ? ' [ANNULÉ]' : '';
+    content += `${detail.produit.nom}${annule}\n`;
     content += `  ${detail.quantite} x ${detail.prixUnitaire.toFixed(2)} = ${detail.prixTotal.toFixed(2)}\n`;
   });
 

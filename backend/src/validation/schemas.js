@@ -385,6 +385,10 @@ const venteSchemas = {
     categorieId: baseSchemas.id,
     limit: Joi.number().integer().min(1).max(200).default(50),
     includeServices: Joi.string().valid('true', 'false').default('true')
+  }),
+
+  cancelItems: Joi.object({
+    detailIds: Joi.array().items(baseSchemas.id).min(1).required()
   })
 };
 

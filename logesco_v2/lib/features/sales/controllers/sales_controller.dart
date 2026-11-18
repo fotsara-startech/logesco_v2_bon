@@ -1600,6 +1600,36 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
   }
 
+  /// Annule certains articles d'une vente (la vente reste, avec un total réduit).
+  /// Si ce sont les derniers articles actifs, la vente entière est annulée.
+  Future<bool> cancelSaleItems(int saleId, List<int> detailIds) async {
+    final canCancel = await verifySubscriptionForWrite(actionName: 'Annuler un article de vente');
+    if (!canCancel) {
+      return false;
+    }
+
+    _isLoading.value = true;
+
+    try {
+      final response = await _salesService.cancelSaleItems(saleId, detailIds);
+
+      if (response.success) {
+        SnackbarUtils.showSuccess(response.message ?? 'sales_cancel_items_success'.tr);
+        await loadSales(refresh: true);
+        await _rafraichirApresAnnulation();
+        return true;
+      } else {
+        SnackbarUtils.showError(response.message ?? 'sales_cancel_items_error'.tr);
+        return false;
+      }
+    } catch (e) {
+      SnackbarUtils.showError('sales_cancel_items_error'.tr);
+      return false;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
   /// Recharge les données impactées par une annulation de vente.
   ///
   /// Chaque contrôleur est optionnel : selon l'écran d'où part l'annulation,

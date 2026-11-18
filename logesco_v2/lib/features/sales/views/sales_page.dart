@@ -366,11 +366,37 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
               const SizedBox(height: 16),
               Text('sales_details'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
               if (sale.details != null && sale.details.isNotEmpty) ...[
-                ...sale.details.map((detail) => Padding(
-                      padding: const EdgeInsets.only(left: 16, top: 4),
-                      child: Text('sales_product_line'
-                          .trParams({'product': detail.produit?.nom ?? 'sales_product_fallback'.trParams({'id': '${detail.produitId}'}), 'quantity': detail.quantite.toString(), 'amount': detail.montantLigne.toStringAsFixed(0)})),
-                    )),
+                ...sale.details.map((detail) {
+                  final ligne = 'sales_product_line'.trParams({
+                    'product': detail.produit?.nom ?? 'sales_product_fallback'.trParams({'id': '${detail.produitId}'}),
+                    'quantity': detail.quantite.toString(),
+                    'amount': detail.montantLigne.toStringAsFixed(0),
+                  });
+                  final peutAnnuler = !sale.isCancelled && !detail.annule;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 16, top: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            detail.annule ? '$ligne (${'sales_item_cancelled'.tr})' : ligne,
+                            style: detail.annule ? const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough) : null,
+                          ),
+                        ),
+                        if (peutAnnuler)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
+                            tooltip: 'sales_cancel_item_tooltip'.tr,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _confirmCancelItem(context, sale, detail);
+                            },
+                          ),
+                      ],
+                    ),
+                  );
+                }),
               ] else ...[
                 Padding(
                   padding: const EdgeInsets.only(left: 16, top: 4),
@@ -438,6 +464,52 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
             onPressed: () async {
               Navigator.of(context).pop();
               await controller.cancelSale(sale.id);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('sales_yes_cancel'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmCancelItem(BuildContext context, sale, detail) {
+    final controller = Get.find<SalesController>();
+    final articlesActifs = sale.details.where((d) => !d.annule).length;
+    final estDernier = articlesActifs <= 1;
+    final nomProduit = detail.produit?.nom ?? 'sales_product_fallback'.trParams({'id': '${detail.produitId}'});
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('sales_cancel_item_title'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('sales_cancel_item_message'.trParams({
+              'product': nomProduit,
+              'amount': detail.montantLigne.toStringAsFixed(0),
+              'number': sale.numeroVente,
+            })),
+            if (estDernier) ...[
+              const SizedBox(height: 12),
+              Text(
+                'sales_cancel_item_last_warning'.tr,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('no'.tr),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await controller.cancelSaleItems(sale.id, [detail.id]);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text('sales_yes_cancel'.tr),

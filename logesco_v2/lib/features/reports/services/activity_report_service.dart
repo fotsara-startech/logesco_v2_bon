@@ -555,7 +555,7 @@ class ActivityReportService {
       double totalCostOfGoodsSold = 0.0;
 
       for (final sale in sales) {
-        for (final item in sale.details) {
+        for (final item in sale.details.where((d) => !d.annule)) {
           final cump = await _getProductCump(item.produitId, item);
           totalCostOfGoodsSold += item.quantite * cump;
         }
@@ -796,7 +796,7 @@ class ActivityReportService {
     int itemsWithCategory = 0;
 
     for (final sale in sales) {
-      for (final detail in sale.details) {
+      for (final detail in sale.details.where((d) => !d.annule)) {
         totalItems++;
 
         // Récupérer la catégorie du produit
@@ -893,7 +893,7 @@ class ActivityReportService {
     final Map<String, double> productRevenues = {};
 
     for (final sale in sales) {
-      for (final detail in sale.details) {
+      for (final detail in sale.details.where((d) => !d.annule)) {
         final productName = detail.produit?.nom ?? 'Produit inconnu';
         final quantity = detail.quantite;
         final revenue = detail.prixUnitaire * detail.quantite;

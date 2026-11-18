@@ -24,6 +24,11 @@ const MIGRATIONS = [
     name: 'add_avance_utilisee',
     sql: 'ALTER TABLE ventes ADD COLUMN IF NOT EXISTS avance_utilisee DOUBLE PRECISION NOT NULL DEFAULT 0',
   },
+  {
+    name: 'add_annulation_articles_vente',
+    sql: `ALTER TABLE details_ventes ADD COLUMN IF NOT EXISTS annule BOOLEAN NOT NULL DEFAULT false;
+          ALTER TABLE details_ventes ADD COLUMN IF NOT EXISTS date_annulation TIMESTAMPTZ`,
+  },
 ];
 
 const TRACKING_TABLE = '_app_migrations_pg';

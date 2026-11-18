@@ -265,6 +265,37 @@ class SalesService {
     }
   }
 
+  Future<ApiResponse<void>> cancelSaleItems(int saleId, List<int> detailIds) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        return ApiResponse.error(message: 'Token d\'authentification manquant');
+      }
+
+      final response = await http.post(
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$saleId/cancel-items'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'detailIds': detailIds}),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return ApiResponse.success(
+          null,
+          message: jsonData['message'],
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'annulation des articles');
+      }
+    } catch (e) {
+      return ApiResponse.error(message: 'Erreur de connexion: $e');
+    }
+  }
+
   /// Parse la pagination de manière sécurisée en gérant les valeurs null
   Pagination _parsePaginationSafely(Map<String, dynamic> data) {
     return Pagination(

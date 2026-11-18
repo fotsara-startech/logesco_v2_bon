@@ -384,9 +384,10 @@ function createSalesRouter({ prisma, authService, syncService }) {
             sousTotal: true,
             montantTotal: true,
             details: {
-              where: produitConditions.categorieId || produitConditions.estService !== undefined ? {
-                produit: produitConditions
-              } : undefined,
+              where: {
+                annule: false,
+                ...(produitConditions.categorieId || produitConditions.estService !== undefined ? { produit: produitConditions } : {})
+              },
               select: {
                 produitId: true,
                 quantite: true,
@@ -1952,6 +1953,322 @@ function createSalesRouter({ prisma, authService, syncService }) {
         res.status(500).json({
           success: false,
           message: 'Erreur lors de l\'annulation de la vente'
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /sales/:id/cancel-items
+   * Annuler certains articles d'une vente (pas la vente entière) : restaure
+   * le stock des articles choisis et réduit le total de la vente au prorata
+   * (même ratio que l'attribution de CA par produit, voir
+   * GET /sales/analytics/products).
+   *
+   * Le montant à "défaire" réduit d'abord la dette de cette vente (rien à
+   * rembourser, c'est juste moins dû) ; seul l'éventuel excédent — le client
+   * avait déjà payé plus que le nouveau total — est restitué, en priorité
+   * sur l'avance utilisée (recréditée au compte client), puis en espèces
+   * depuis la caisse ouverte.
+   *
+   * Si les articles annulés couvrent tous ceux qui restaient actifs sur la
+   * vente, celle-ci passe entièrement au statut "annulee" (les formules
+   * ci-dessous se réduisent alors exactement à celles de DELETE /:id).
+   */
+  router.post('/:id/cancel-items',
+    validateId,
+    validate(venteSchemas.cancelItems, 'body'),
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { detailIds } = req.body;
+        const venteId = parseInt(id);
+
+        const vente = await prisma.vente.findUnique({
+          where: { id: venteId },
+          include: { details: true, client: true, session: true }
+        });
+
+        if (!vente) {
+          return res.status(404).json({ success: false, message: 'Vente non trouvée' });
+        }
+        if (vente.statut === 'annulee') {
+          return res.status(400).json({ success: false, message: 'Cette vente est déjà annulée' });
+        }
+
+        const activeDetails = vente.details.filter((d) => !d.annule);
+        const detailsToCancel = activeDetails.filter((d) => detailIds.includes(d.id));
+
+        if (detailsToCancel.length === 0) {
+          return res.status(400).json({ success: false, message: 'Aucun article valide à annuler' });
+        }
+
+        const isFullCancellation = detailsToCancel.length === activeDetails.length;
+
+        console.log(`🔄 Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}` +
+          (isFullCancellation ? ' (derniers articles actifs — annulation complète)' : ''));
+
+        const result = await prisma.$transaction(async (tx) => {
+          // 1. Restaurer le stock des articles annulés (produits physiques uniquement)
+          for (const detail of detailsToCancel) {
+            const produit = await tx.produit.findUnique({
+              where: { id: detail.produitId },
+              select: { estService: true }
+            });
+
+            if (produit?.estService) {
+              console.log(`Service annulé: ${detail.produitId} - pas de restauration de stock`);
+              continue;
+            }
+
+            let stockInitial = 0;
+            if (vente.boutiqueId) {
+              const stockBoutique = await tx.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId: detail.produitId } }
+              });
+              stockInitial = stockBoutique?.quantiteDisponible || 0;
+              if (stockBoutique) {
+                await tx.stockBoutique.update({
+                  where: { id: stockBoutique.id },
+                  data: { quantiteDisponible: { increment: detail.quantite } }
+                });
+              }
+            } else {
+              const stock = await tx.stock.findUnique({ where: { produitId: detail.produitId } });
+              stockInitial = stock?.quantiteDisponible || 0;
+              await tx.stock.update({
+                where: { produitId: detail.produitId },
+                data: { quantiteDisponible: { increment: detail.quantite } }
+              });
+            }
+
+            const stockFinal = stockInitial + detail.quantite;
+
+            await tx.mouvementStock.create({
+              data: {
+                produitId: detail.produitId,
+                boutiqueId: vente.boutiqueId || null,
+                typeMouvement: 'retour',
+                changementQuantite: detail.quantite,
+                stockInitial,
+                stockFinal,
+                notes: `Annulation article (vente ${vente.numeroVente})`,
+                referenceId: venteId,
+                typeReference: 'vente_annulee'
+              }
+            });
+          }
+
+          // 2. Marquer les lignes annulées (conservées pour l'historique du reçu)
+          const detailsAnnulesMaj = [];
+          for (const detail of detailsToCancel) {
+            const maj = await tx.detailVente.update({
+              where: { id: detail.id },
+              data: { annule: true, dateAnnulation: new Date() }
+            });
+            detailsAnnulesMaj.push(maj);
+          }
+
+          // 3. Recalcul des totaux de la vente, au prorata de la remise/TVA globale
+          const prixArticlesAnnulesHT = detailsToCancel.reduce((somme, d) => somme + (parseFloat(d.prixTotal) || 0), 0);
+          const ancienSousTotal = vente.sousTotal;
+          const nouveauSousTotal = isFullCancellation ? 0 : Math.max(0, ancienSousTotal - prixArticlesAnnulesHT);
+          const ratioRestant = isFullCancellation ? 0 : (ancienSousTotal > 0 ? nouveauSousTotal / ancienSousTotal : 0);
+
+          const nouveauMontantRemise = vente.montantRemise * ratioRestant;
+          const nouveauMontantTva = vente.montantTva * ratioRestant;
+          const nouveauTotal = isFullCancellation ? 0 : (nouveauSousTotal - nouveauMontantRemise + nouveauMontantTva);
+          const valeurAnnuleeTTC = vente.montantTotal - nouveauTotal;
+
+          // 4. On réduit d'abord la dette (rien à rembourser) ; seul l'excédent
+          //    — déjà payé pour une valeur qui n'est plus due — est restitué,
+          //    avance en premier (recréditée), puis espèces.
+          const debtReduction = Math.min(vente.montantRestant, valeurAnnuleeTTC);
+          const excedent = valeurAnnuleeTTC - debtReduction;
+          const avanceRestituee = Math.min(vente.avanceUtilisee, excedent);
+          const remboursementEspeces = excedent - avanceRestituee;
+
+          const nouveauMontantPaye = vente.montantPaye - (avanceRestituee + remboursementEspeces);
+          const nouveauMontantRestant = Math.max(0, vente.montantRestant - debtReduction);
+          const nouvelleAvanceUtilisee = vente.avanceUtilisee - avanceRestituee;
+
+          const venteMaj = await tx.vente.update({
+            where: { id: venteId },
+            data: {
+              sousTotal: nouveauSousTotal,
+              montantRemise: nouveauMontantRemise,
+              montantTva: nouveauMontantTva,
+              montantTotal: nouveauTotal,
+              montantPaye: nouveauMontantPaye,
+              montantRestant: nouveauMontantRestant,
+              avanceUtilisee: nouvelleAvanceUtilisee,
+              ...(isFullCancellation ? { statut: 'annulee' } : {})
+            }
+          });
+
+          // 5. Compte client : rembourser la dette annulée + l'avance restituée
+          let compteClientMaj = null;
+          const creditARestituer = debtReduction + avanceRestituee;
+          if (vente.clientId && creditARestituer > 0) {
+            const compteClient = await tx.compteClient.findUnique({ where: { clientId: vente.clientId } });
+            if (compteClient) {
+              const nouveauSolde = compteClient.soldeActuel + creditARestituer;
+              compteClientMaj = await tx.compteClient.update({
+                where: { clientId: vente.clientId },
+                data: { soldeActuel: nouveauSolde }
+              });
+
+              await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'client',
+                  compteId: compteClient.id,
+                  typeTransaction: 'annulation',
+                  typeTransactionDetail: isFullCancellation ? 'annulation_vente' : 'annulation_article',
+                  montant: creditARestituer,
+                  description: isFullCancellation
+                    ? `Annulation vente ${vente.numeroVente} (derniers articles)`
+                    : `Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}`,
+                  referenceType: isFullCancellation ? 'vente_annulee' : 'vente_article_annule',
+                  referenceId: venteId,
+                  venteId,
+                  venteReference: vente.numeroVente,
+                  soldeApres: nouveauSolde
+                }
+              });
+            }
+          }
+
+          // 6. Remboursement en espèces si l'excédent dépasse l'avance disponible
+          let cancelMovementCreated = null;
+          let sessionCorrigee = null;
+          if (remboursementEspeces > 0) {
+            const sessionOuverte = await tx.cashSession.findFirst({
+              where: {
+                isActive: true,
+                dateFermeture: null,
+                ...(vente.boutiqueId ? { boutiqueId: vente.boutiqueId } : {})
+              },
+              orderBy: { id: 'desc' }
+            });
+
+            if (!sessionOuverte) {
+              throw new Error(
+                'Aucune caisse ouverte : ouvrez une session pour enregistrer le remboursement de cette annulation'
+              );
+            }
+
+            cancelMovementCreated = await tx.cashMovement.create({
+              data: {
+                caisseId: sessionOuverte.caisseId,
+                sessionId: sessionOuverte.id,
+                boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
+                type: 'annulation_vente',
+                montant: -remboursementEspeces,
+                description: isFullCancellation
+                  ? `Annulation vente ${vente.numeroVente}`
+                  : `Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}`,
+                utilisateurId: req.user?.id || null,
+                metadata: JSON.stringify({
+                  categorie: 'annulation_vente',
+                  referenceType: isFullCancellation ? 'vente_annulee' : 'vente_article_annule',
+                  referenceId: venteId,
+                  venteReference: vente.numeroVente,
+                  montantOriginal: remboursementEspeces
+                })
+              }
+            });
+
+            const soldeCourant = sessionOuverte.soldeAttendu != null
+              ? sessionOuverte.soldeAttendu
+              : sessionOuverte.soldeOuverture;
+            const nouveauSoldeAttendu = soldeCourant - remboursementEspeces;
+
+            sessionCorrigee = await tx.cashSession.update({
+              where: { id: sessionOuverte.id },
+              data: { soldeAttendu: nouveauSoldeAttendu }
+            });
+
+            await tx.cashRegister.update({
+              where: { id: sessionOuverte.caisseId },
+              data: { soldeActuel: { decrement: remboursementEspeces } }
+            });
+          }
+
+          return { venteMaj, detailsAnnulesMaj, compteClientMaj, cancelMovementCreated, sessionCorrigee };
+        });
+
+        // Sync : la vente et les lignes modifiées ne sont pas couvertes par les
+        // hooks Prisma automatiques (voir prisma-sync-hooks.js), il faut les
+        // enqueuer explicitement — sans quoi elles restent "actives" sur Neon
+        // et sur les autres postes (même limitation que DELETE /:id).
+        try {
+          const syncSvc = syncService || require('../services/sync-service');
+          await syncSvc.enqueue('ventes', 'UPDATE', result.venteMaj, req.user?.id);
+          for (const detail of result.detailsAnnulesMaj) {
+            await syncSvc.enqueue('details_ventes', 'UPDATE', detail, req.user?.id);
+          }
+        } catch (syncErr) {
+          console.warn('⚠️  Sync annulation articles vente:', syncErr.message);
+        }
+
+        if (result.compteClientMaj && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compteClientMaj);
+            } catch (syncError) {
+              console.error('❌ Erreur sync compte client annulation article:', syncError.message);
+            }
+          });
+        }
+
+        if (result.cancelMovementCreated && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('cash_movements', 'INSERT', result.cancelMovementCreated);
+              if (result.sessionCorrigee) {
+                await syncSvc.enqueue('cash_sessions', 'UPDATE', result.sessionCorrigee);
+                const caisseMaj = await prisma.cashRegister.findUnique({
+                  where: { id: result.cancelMovementCreated.caisseId }
+                });
+                if (caisseMaj) await syncSvc.enqueue('cash_registers', 'UPDATE', caisseMaj);
+              }
+            } catch (syncError) {
+              console.error('❌ Erreur sync cash_movement annulation article:', syncError.message);
+            }
+          });
+        }
+
+        const venteFinale = await prisma.vente.findUnique({
+          where: { id: venteId },
+          include: {
+            client: true,
+            details: {
+              include: {
+                produit: { select: { id: true, nom: true, reference: true, prixAchat: true, cump: true } }
+              }
+            }
+          }
+        });
+
+        res.json({
+          success: true,
+          message: isFullCancellation
+            ? 'Tous les articles restants ont été annulés — la vente est entièrement annulée'
+            : `${detailsToCancel.length} article(s) annulé(s) avec succès`,
+          data: venteFinale
+        });
+      } catch (error) {
+        console.error('Erreur lors de l\'annulation d\'articles:', error);
+
+        if (error.message?.includes('Aucune caisse ouverte')) {
+          return res.status(409).json({ success: false, message: error.message });
+        }
+
+        res.status(500).json({
+          success: false,
+          message: 'Erreur lors de l\'annulation des articles'
         });
       }
     }

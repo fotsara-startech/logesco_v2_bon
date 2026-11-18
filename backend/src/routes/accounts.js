@@ -415,6 +415,7 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
             montantPaye: true,
             montantRestant: true,
             details: {
+              where: { annule: false },
               select: {
                 produitId: true,
                 quantite: true,

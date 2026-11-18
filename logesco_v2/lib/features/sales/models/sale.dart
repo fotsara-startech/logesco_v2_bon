@@ -168,7 +168,7 @@ class Sale {
   /// globale (déjà déduite une fois, pas répartie entre les lignes).
   /// 0 pour les lignes dont le coût est inconnu (même convention que
   /// `GET /sales/analytics/products` côté backend).
-  double get benefice => details.fold<double>(0, (acc, d) => acc + d.beneficeLigne) - montantRemise;
+  double get benefice => details.where((d) => !d.annule).fold<double>(0, (acc, d) => acc + d.beneficeLigne) - montantRemise;
 }
 
 @JsonSerializable()
@@ -188,6 +188,8 @@ class SaleDetail {
   final String? justificationRemise;
   @JsonKey(name: 'prixTotal', defaultValue: 0.0)
   final double montantLigne;
+  @JsonKey(defaultValue: false)
+  final bool annule;
 
   const SaleDetail({
     required this.id,
@@ -200,6 +202,7 @@ class SaleDetail {
     this.remiseAppliquee = 0.0,
     this.justificationRemise,
     required this.montantLigne,
+    this.annule = false,
   });
 
   factory SaleDetail.fromJson(Map<String, dynamic> json) => _$SaleDetailFromJson(json);

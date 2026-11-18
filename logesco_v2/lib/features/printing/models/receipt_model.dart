@@ -221,7 +221,7 @@ class Receipt {
     String? reprintBy,
   }) {
     // Créer les articles du reçu
-    final items = sale.details.map((detail) => ReceiptItem.fromSaleDetail(detail)).toList();
+    final items = sale.details.where((d) => !d.annule).map((detail) => ReceiptItem.fromSaleDetail(detail)).toList();
 
     // Calculer le total des remises à partir des détails
     final totalDiscountFromItems = items.fold<double>(0.0, (sum, item) => sum + item.totalDiscountAmount);
