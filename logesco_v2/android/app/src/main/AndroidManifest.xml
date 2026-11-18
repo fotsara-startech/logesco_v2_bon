@@ -1,8 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- L'app mobile est un client : tout passe par le réseau (API backend). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- usesCleartextTraffic : le backend d'un client réseau est souvent en
+         http://IP-locale:8080 (pas de certificat TLS sur un réseau local).
+         Android 9+ bloque le HTTP en clair par défaut. -->
     <application
-        android:label="logesco_v2"
+        android:label="LOGESCO"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -103,6 +103,26 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
 
+  # Génération des icônes (Android, iOS, web) à partir du logo :
+  #   dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
+
+# Icônes de l'app (Android, iOS, web) — source : assets/img/logo.png.
+# L'icône adaptive Android utilise le logo réduit (assets/img/logo_adaptive_foreground.png)
+# sur fond uni, pour que le masque rond/arrondi du lanceur ne rogne pas le texte.
+flutter_launcher_icons:
+  image_path: "assets/img/logo.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: "#8FD4E1"
+  adaptive_icon_foreground: "assets/img/logo_adaptive_foreground.png"
+  web:
+    generate: true
+    image_path: "assets/img/logo.png"
+    background_color: "#8FD4E1"
+    theme_color: "#0E5A70"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

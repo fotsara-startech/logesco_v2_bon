@@ -1,4 +1,4 @@
-package com.example.logesco_v2
+package com.logesco.app
 
 import io.flutter.embedding.android.FlutterActivity
 
