@@ -608,7 +608,7 @@ function createInventoryRouter(models) {
           INNER JOIN produits p ON s.produit_id = p.id
           WHERE s.quantite_disponible <= p.seuil_stock_minimum
           AND p.seuil_stock_minimum > 0
-          AND p.est_actif = 1
+          AND p.est_actif = true
           ORDER BY (s.quantite_disponible - p.seuil_stock_minimum) ASC
           LIMIT ${parseInt(limit)} OFFSET ${(parseInt(page) - 1) * parseInt(limit)}
         `;
@@ -619,7 +619,7 @@ function createInventoryRouter(models) {
           INNER JOIN produits p ON s.produit_id = p.id
           WHERE s.quantite_disponible <= p.seuil_stock_minimum
           AND p.seuil_stock_minimum > 0
-          AND p.est_actif = 1
+          AND p.est_actif = true
         `;
 
         // Transformer les résultats en format attendu
@@ -1016,11 +1016,11 @@ function createInventoryRouter(models) {
             }),
             models.prisma.$queryRaw`
               SELECT 
-                SUM(sb.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
-                SUM(sb.quantite_disponible * p.prix_unitaire) as valeurVente
+                SUM(sb.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as "valeurAchat",
+                SUM(sb.quantite_disponible * p.prix_unitaire) as "valeurVente"
               FROM stock_boutiques sb
               INNER JOIN produits p ON sb.produit_id = p.id
-              WHERE sb.boutique_id = ${boutiqueId} AND p.est_actif = 1
+              WHERE sb.boutique_id = ${boutiqueId} AND p.est_actif = true
             `
           ]);
 
@@ -1078,7 +1078,7 @@ function createInventoryRouter(models) {
             INNER JOIN produits p ON s.produit_id = p.id
             WHERE s.quantite_disponible <= p.seuil_stock_minimum
             AND p.seuil_stock_minimum > 0
-            AND p.est_actif = 1
+            AND p.est_actif = true
           `,
 
           // Produits en rupture (stock = 0 OU pas d'entrée stock)
@@ -1087,18 +1087,18 @@ function createInventoryRouter(models) {
             FROM produits p
             LEFT JOIN stock s ON s.produit_id = p.id
             WHERE (s.quantite_disponible = 0 OR s.id IS NULL)
-            AND p.est_actif = 1
-            AND p.est_service = 0
+            AND p.est_actif = true
+            AND p.est_service = false
           `,
 
           // Valeur totale du stock (prix d'achat et de vente)
           models.prisma.$queryRaw`
             SELECT 
-              SUM(s.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as valeurAchat,
-              SUM(s.quantite_disponible * p.prix_unitaire) as valeurVente
+              SUM(s.quantite_disponible * COALESCE(p.cump, p.prix_achat, p.prix_unitaire * 0.8)) as "valeurAchat",
+              SUM(s.quantite_disponible * p.prix_unitaire) as "valeurVente"
             FROM stock s
             INNER JOIN produits p ON s.produit_id = p.id
-            WHERE p.est_actif = 1
+            WHERE p.est_actif = true
           `
         ]);
 
@@ -1112,7 +1112,7 @@ function createInventoryRouter(models) {
           valeurStockVente: parseFloat(valeurTotaleStock[0].valeurVente || 0),
           pourcentageEnStock: totalProduits > 0 ? Math.round((produitsEnStock / totalProduits) * 100) : 0,
           pourcentageEnAlerte: totalProduits > 0 ? Math.round((parseInt(produitsEnAlerte[0].count) / totalProduits) * 100) : 0,
-          pourcentageEnRupture: totalProduits > 0 ? Math.round((produitsEnRupture / totalProduits) * 100) : 0
+          pourcentageEnRupture: totalProduits > 0 ? Math.round((parseInt(produitsEnRupture[0].count) / totalProduits) * 100) : 0
         };
 
         res.json(BaseResponseDTO.success(summary, 'Résumé du stock récupéré avec succès'));
@@ -1340,7 +1340,7 @@ function createInventoryRouter(models) {
               INNER JOIN produits p ON s.produit_id = p.id
               WHERE s.quantite_disponible <= p.seuil_stock_minimum
               AND p.seuil_stock_minimum > 0
-              AND p.est_actif = 1
+              AND p.est_actif = true
               ORDER BY s.derniere_maj DESC
             `;
             stocks = raw.map(r => ({
