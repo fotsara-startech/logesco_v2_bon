@@ -29,12 +29,12 @@ class CommercialReportView extends StatelessWidget {
       privilege: 'READ',
       showFallback: true,
       fallback: Scaffold(
-        appBar: AppBar(title: const Text('Ventes par commercial')),
-        body: const Center(child: Text('Accès refusé')),
+        appBar: AppBar(title: Text('commercials_ventes_par_commercial'.tr)),
+        body: Center(child: Text('suppliers_access_denied'.tr)),
       ),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Ventes par commercial'),
+          title: Text('commercials_ventes_par_commercial'.tr),
           actions: [
             IconButton(icon: const Icon(Icons.refresh), onPressed: controller.loadReport),
           ],
@@ -136,10 +136,10 @@ class CommercialReportView extends StatelessWidget {
 
   Widget _buildGroupBySelector(CommercialReportController controller) {
     return Obx(() => SegmentedButton<CommercialReportGroupBy>(
-          segments: const [
-            ButtonSegment(value: CommercialReportGroupBy.commercial, label: Text('Par commercial'), icon: Icon(Icons.badge_outlined, size: 16)),
-            ButtonSegment(value: CommercialReportGroupBy.zone, label: Text('Par zone'), icon: Icon(Icons.map_outlined, size: 16)),
-            ButtonSegment(value: CommercialReportGroupBy.ville, label: Text('Par ville'), icon: Icon(Icons.location_city, size: 16)),
+          segments: [
+            ButtonSegment(value: CommercialReportGroupBy.commercial, label: Text('commercials_par_commercial'.tr), icon: Icon(Icons.badge_outlined, size: 16)),
+            ButtonSegment(value: CommercialReportGroupBy.zone, label: Text('commercials_par_zone'.tr), icon: Icon(Icons.map_outlined, size: 16)),
+            ButtonSegment(value: CommercialReportGroupBy.ville, label: Text('commercials_par_ville'.tr), icon: Icon(Icons.location_city, size: 16)),
           ],
           selected: {controller.groupBy.value},
           onSelectionChanged: (selection) => controller.setGroupBy(selection.first),
@@ -157,7 +157,7 @@ class CommercialReportView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Répartition', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('commercials_repartition'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               SizedBox(
                 height: 260,
@@ -256,7 +256,7 @@ class CommercialReportView extends StatelessWidget {
           children: [
             Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text('Aucune vente attribuée à un commercial sur cette période', style: TextStyle(color: Colors.grey[600]), textAlign: TextAlign.center),
+            Text('commercials_aucune_vente_attribuee_commercial_sur_periode'.tr, style: TextStyle(color: Colors.grey[600]), textAlign: TextAlign.center),
           ],
         ),
       ),

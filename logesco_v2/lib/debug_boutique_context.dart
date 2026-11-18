@@ -304,7 +304,7 @@ class _DebugBoutiqueContextPageState extends State<DebugBoutiqueContextPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Basculé vers: ${firstBoutique.nom}'),
+              content: Text('debugboutiquecontext_bascule_vers'.trParams({'nom': '${firstBoutique.nom}'})),
               backgroundColor: Colors.blue[100],
             ),
           );
@@ -313,7 +313,7 @@ class _DebugBoutiqueContextPageState extends State<DebugBoutiqueContextPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Aucune boutique disponible'),
+              content: Text('users_aucune_boutique_disponible'.tr),
               backgroundColor: Colors.orange[100],
             ),
           );
@@ -325,7 +325,7 @@ class _DebugBoutiqueContextPageState extends State<DebugBoutiqueContextPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur switch: $e'),
+            content: Text('debugboutiquecontext_erreur_switch'.trParams({'e': '${e}'})),
             backgroundColor: Colors.red[100],
           ),
         );

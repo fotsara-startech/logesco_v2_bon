@@ -137,13 +137,13 @@ class SupplierFormController extends GetxController {
           supplierForm,
         );
 
-        SnackbarHelper.success('Fournisseur modifié avec succès');
+        SnackbarHelper.success('suppliers_fournisseur_modifie_avec_succes'.tr);
       } else {
         // Création
         print('➕ Création d\'un nouveau fournisseur');
         savedSupplier = await _supplierService.createSupplier(supplierForm);
 
-        SnackbarHelper.success('Fournisseur créé avec succès');
+        SnackbarHelper.success('suppliers_fournisseur_cree_avec_succes'.tr);
       }
 
       print('✅ Sauvegarde réussie - ID: ${savedSupplier.id}');

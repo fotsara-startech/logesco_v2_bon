@@ -69,7 +69,7 @@ class AccountingController extends GetxController {
       // Charger aussi les KPI
       await loadKPIs();
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger le bilan financier: ${e.toString()}');
+      SnackbarHelper.error('accounting_impossible_charger_bilan_financier'.trParams({'toString': '${e.toString()}'}));
     } finally {
       isLoading.value = false;
     }
@@ -183,7 +183,7 @@ class AccountingController extends GetxController {
   /// Exporte le bilan en PDF
   Future<void> exportToPdf() async {
     if (currentBalance.value == null) {
-      SnackbarHelper.warning('Aucune donnee a exporter. Chargez le bilan d\'abord.');
+      SnackbarHelper.warning('accounting_aucune_donnee_exporter_chargez_bilan_abord'.tr);
       return;
     }
     try {
@@ -193,14 +193,14 @@ class AccountingController extends GetxController {
         boutiqueName: boutiqueName,
       );
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la generation du PDF: $e');
+      SnackbarHelper.error('accounting_erreur_lors_generation_pdf'.trParams({'e': '${e}'}));
     }
   }
 
   /// Exporte le bilan en Excel
   Future<void> exportToExcel() async {
     if (currentBalance.value == null) {
-      SnackbarHelper.warning('Aucune donnee a exporter. Chargez le bilan d\'abord.');
+      SnackbarHelper.warning('accounting_aucune_donnee_exporter_chargez_bilan_abord'.tr);
       return;
     }
     try {
@@ -210,10 +210,10 @@ class AccountingController extends GetxController {
         boutiqueName: boutiqueName,
       );
       if (path != null) {
-        SnackbarHelper.success('Fichier Excel genere avec succes');
+        SnackbarHelper.success('accounting_fichier_excel_genere_avec_succes'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la generation du fichier Excel: $e');
+      SnackbarHelper.error('accounting_erreur_lors_generation_fichier_excel'.trParams({'e': '${e}'}));
     }
   }
 

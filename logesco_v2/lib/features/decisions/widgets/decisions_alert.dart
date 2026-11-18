@@ -70,9 +70,9 @@ class _DecisionsAlertState extends State<DecisionsAlert> {
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       if (_conflits > 0)
-                        Text("$_conflits conflit(s) de synchronisation bloquent l'envoi de données", style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
+                        Text('decisions_conflit_s_synchronisation_bloquent_envoi_donnees'.trParams({'conflits': '${_conflits}'}), style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
                       if (unites > 0)
-                        Text("$unites unité(s) vendues n'ont jamais diminué le stock", style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
+                        Text('decisions_unite_s_vendues_n_ont_jamais'.trParams({'unites': '${unites}'}), style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
                     ],
                   ),
                 ),

@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/financial_balance.dart';
 
 /// Widget d'explication du calcul de la marge
@@ -164,11 +165,11 @@ class MarginExplanationWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.school, color: Colors.blue),
             SizedBox(width: 8),
-            Text('Comment calculer la rentabilité'),
+            Text('accounting_comment_calculer_rentabilite'.tr),
           ],
         ),
         content: SingleChildScrollView(

@@ -78,7 +78,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
   Future<void> _appliquer(DecisionCase c) async {
     final optionId = _choix[c.key];
     if (optionId == null) {
-      SnackbarHelper.warning('Choisissez d\'abord une option.');
+      SnackbarHelper.warning('decisions_choisissez_abord_option'.tr);
       return;
     }
     int? cible;
@@ -87,7 +87,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     if (optionId == 'manuel') {
       cible = int.tryParse(_controleurManuel(c.key).text.trim());
       if (cible == null || cible < 0) {
-        SnackbarHelper.warning('Saisissez une quantité entière (0 ou plus).');
+        SnackbarHelper.warning('decisions_saisissez_quantite_entiere_0_plus'.tr);
         return;
       }
       resume = 'Stock ${c.stockAffiche} → $cible (${cible - c.stockAffiche >= 0 ? '+' : ''}${cible - c.stockAffiche})';
@@ -101,7 +101,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmer cette décision ?'),
+        title: Text('decisions_confirmer_decision'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +112,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
             Text(resume, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             if (physique) ...[
               const SizedBox(height: 8),
-              const Text('Le produit sera marqué « produit physique » (géré en stock).'),
+              Text('decisions_produit_sera_marque_produit_physique_gere'.tr),
             ],
             const SizedBox(height: 8),
             Text(
@@ -122,7 +122,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Appliquer')),
         ],
       ),
@@ -136,9 +136,9 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Laisser tel quel ?'),
-        content: const Text('Rien ne sera modifié et ce cas ne sera plus affiché (il réapparaîtra seulement si la situation change).'),
+        content: Text('decisions_rien_ne_sera_modifie_cas_ne'.tr),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Laisser tel quel')),
         ],
       ),
@@ -165,7 +165,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
   Future<void> _envoyerConflit(SyncConflict k, String optionId, String? valeur) async {
     try {
       await _service.applyConflict(caseKey: k.key, optionId: optionId, valeur: valeur);
-      SnackbarHelper.success('Décision appliquée : « ${k.titre} »');
+      SnackbarHelper.success('decisions_decision_appliquee'.trParams({'titre': '${k.titre}'}));
     } catch (e) {
       SnackbarHelper.error(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -176,7 +176,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Décisions à prendre'),
+        title: Text('decisions_decisions_prendre'.tr),
         actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh), tooltip: 'Actualiser')],
       ),
       body: _loading
@@ -190,9 +190,9 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                       children: [
                         const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
                         const SizedBox(height: 12),
-                        const Text('Impossible de charger la liste (serveur injoignable ou trop ancien).', textAlign: TextAlign.center),
+                        Text('decisions_impossible_charger_liste_serveur_injoignable_trop'.tr, textAlign: TextAlign.center),
                         const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                        ElevatedButton(onPressed: _load, child: Text('roles_retry'.tr)),
                       ],
                     ),
                   ),
@@ -204,7 +204,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                         children: [
                           Icon(Icons.check_circle_outline, size: 56, color: Colors.green.shade400),
                           const SizedBox(height: 12),
-                          const Text('Aucune décision à prendre', style: TextStyle(fontSize: 16)),
+                          Text('decisions_aucune_decision_prendre'.tr, style: TextStyle(fontSize: 16)),
                         ],
                       ),
                     )
@@ -230,7 +230,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     Icon(Icons.rule, color: Colors.orange.shade800),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('${cases.length + _conflits.length} cas où l\'application ne peut pas trancher seule',
+                      child: Text('decisions_cas_application_ne_peut_pas_trancher'.trParams({'length': '${cases.length + _conflits.length}'}),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ],
@@ -244,7 +244,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                 ),
                 if (!peutDecider) ...[
                   const SizedBox(height: 8),
-                  Text('Seul un administrateur peut appliquer une décision.', style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
+                  Text('decisions_seul_administrateur_peut_appliquer_decision'.tr, style: TextStyle(fontSize: 12, color: Colors.red.shade800)),
                 ],
               ],
             ),
@@ -253,9 +253,9 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
         const SizedBox(height: 12),
         ...cases.map((c) => _buildCase(c, peutDecider)),
         if (_conflits.isNotEmpty) ...[
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(4, 8, 4, 6),
-            child: Text('Conflits de synchronisation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            child: Text('decisions_conflits_synchronisation'.tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
@@ -330,7 +330,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
               ),
             if (c.dernierMouvementStock != null) _faits('Historique', ['Le dernier mouvement indique un stock de ${c.dernierMouvementStock}']),
             const Divider(),
-            const Text('Votre décision', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('decisions_votre_decision'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
             ...c.options.map((o) => RadioListTile<String>(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -344,7 +344,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(8)),
-                          child: Text('conseillé', style: TextStyle(fontSize: 10, color: Colors.green.shade800, fontWeight: FontWeight.bold)),
+                          child: Text('decisions_conseille'.tr, style: TextStyle(fontSize: 10, color: Colors.green.shade800, fontWeight: FontWeight.bold)),
                         ),
                     ],
                   ),
@@ -353,7 +353,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     children: [
                       Text(o.consequence, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: o.delta == 0 ? Colors.grey.shade700 : Colors.blue.shade800)),
                       Text(o.description, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                      if (o.marquePhysique) Text('→ le produit sera marqué « produit physique »', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                      if (o.marquePhysique) Text('decisions_produit_sera_marque_produit_physique'.tr, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
                     ],
                   ),
                 )),
@@ -363,7 +363,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
               value: 'manuel',
               groupValue: choix,
               onChanged: (busy || !peutDecider) ? null : (v) => setState(() => _choix[c.key] = v!),
-              title: const Text('Saisir la quantité comptée', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              title: Text('decisions_saisir_quantite_comptee'.tr, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               subtitle: choix == 'manuel'
                   ? Padding(
                       padding: const EdgeInsets.only(top: 6),
@@ -375,12 +375,12 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                           child: TextField(
                             controller: _controleurManuel(c.key),
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(isDense: true, labelText: 'Quantité réelle', border: OutlineInputBorder()),
+                            decoration: InputDecoration(isDense: true, labelText: 'decisions_quantite_reelle'.tr, border: OutlineInputBorder()),
                           ),
                         ),
                       ),
                     )
-                  : const Text('Après comptage physique : le plus fiable', style: TextStyle(fontSize: 11)),
+                  : Text('decisions_apres_comptage_physique_plus_fiable'.tr, style: TextStyle(fontSize: 11)),
             ),
             const SizedBox(height: 8),
             // Wrap : sur un téléphone les deux boutons passent à la ligne au lieu de déborder
@@ -394,7 +394,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                 ElevatedButton.icon(
                   onPressed: (busy || !peutDecider || choix == null) ? null : () => _appliquer(c),
                   icon: busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check),
-                  label: const Text('Appliquer ma décision'),
+                  label: Text('decisions_appliquer_ma_decision'.tr),
                 ),
               ],
             ),

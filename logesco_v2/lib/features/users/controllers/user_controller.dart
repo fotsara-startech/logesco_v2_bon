@@ -33,7 +33,7 @@ class UserController extends GetxController with PermissionMixin {
     try {
       // Vérifier les permissions
       if (!hasPermission('users.view')) {
-        SnackbarHelper.info('Vous n\'avez pas les permissions pour voir les utilisateurs', title: 'Accès refusé');
+        SnackbarHelper.info('users_vous_n_avez_pas_permissions_voir'.tr, title: 'suppliers_access_denied'.tr);
         return;
       }
 
@@ -51,7 +51,7 @@ class UserController extends GetxController with PermissionMixin {
       print('❌ [UserController] Type d\'erreur: ${e.runtimeType}');
       print('❌ [UserController] Stack trace: ${StackTrace.current}');
 
-      SnackbarHelper.error('Erreur lors du chargement de la liste des users: $e');
+      SnackbarHelper.error('users_erreur_lors_chargement_liste_users'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
       print('🏁 [UserController] Fin loadUsers()');
@@ -67,7 +67,7 @@ class UserController extends GetxController with PermissionMixin {
 
       if (roleList.isEmpty) {
         print('⚠️ [UserController] Aucun rôle trouvé en base de données');
-        SnackbarHelper.warning('Aucun rôle trouvé. Veuillez créer des rôles via l\'interface de gestion des rôles.');
+        SnackbarHelper.warning('users_aucun_role_trouve_veuillez_creer_roles'.tr);
       } else {
         roleList.forEach((role) => print('   - ${role.displayName} (${role.nom})'));
       }
@@ -76,7 +76,7 @@ class UserController extends GetxController with PermissionMixin {
       print('✅ [UserController] Rôles assignés avec succès');
     } catch (e) {
       print('❌ [UserController] Erreur loadRoles: $e');
-      SnackbarHelper.error('Impossible de charger les rôles: $e');
+      SnackbarHelper.error('users_impossible_charger_roles'.trParams({'e': '${e}'}));
       availableRoles.clear();
     }
   }
@@ -107,10 +107,10 @@ class UserController extends GetxController with PermissionMixin {
       // Stocker le dernier utilisateur créé pour récupérer son ID
       selectedUser.value = newUser;
 
-      SnackbarHelper.success('Utilisateur créé avec succès');
+      SnackbarHelper.success('users_created_success'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer l\'utilisateur: $e');
+      SnackbarHelper.error('users_impossible_creer_utilisateur'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -131,10 +131,10 @@ class UserController extends GetxController with PermissionMixin {
         users[index] = updatedUser;
       }
 
-      SnackbarHelper.success('Utilisateur mis à jour avec succès');
+      SnackbarHelper.success('users_utilisateur_mis_jour_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour l\'utilisateur: $e');
+      SnackbarHelper.error('users_impossible_mettre_jour_utilisateur'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -150,10 +150,10 @@ class UserController extends GetxController with PermissionMixin {
       await _userService.deleteUser(userId);
       users.removeWhere((user) => user.id == userId);
 
-      SnackbarHelper.success('Utilisateur supprimé avec succès');
+      SnackbarHelper.success('users_deleted_success'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de supprimer l\'utilisateur: $e');
+      SnackbarHelper.error('users_impossible_supprimer_utilisateur'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -168,9 +168,9 @@ class UserController extends GetxController with PermissionMixin {
         users[index] = updatedUser;
       }
 
-      SnackbarHelper.success('Statut de l\'utilisateur modifié avec succès');
+      SnackbarHelper.success('users_statut_utilisateur_modifie_avec_succes'.tr);
     } catch (e) {
-      SnackbarHelper.error('Impossible de modifier le statut: $e');
+      SnackbarHelper.error('users_impossible_modifier_statut'.trParams({'e': '${e}'}));
     }
   }
 
@@ -179,10 +179,10 @@ class UserController extends GetxController with PermissionMixin {
     try {
       await _userService.changePassword(userId, newPassword);
 
-      SnackbarHelper.success('Mot de passe modifié avec succès');
+      SnackbarHelper.success('users_password_changed_success'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de changer le mot de passe: $e');
+      SnackbarHelper.error('users_impossible_changer_mot_passe'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -196,10 +196,10 @@ class UserController extends GetxController with PermissionMixin {
   Future<bool> updateUserBoutiques(int userId, List<int> boutiqueIds) async {
     try {
       final success = await _userService.updateUserBoutiques(userId, boutiqueIds);
-      if (success) SnackbarHelper.success('Boutiques assignées mises à jour');
+      if (success) SnackbarHelper.success('users_boutiques_assignees_mises_jour'.tr);
       return success;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour les boutiques: $e');
+      SnackbarHelper.error('users_impossible_mettre_jour_boutiques'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -218,12 +218,12 @@ class UserController extends GetxController with PermissionMixin {
   void confirmDeleteUser(User user) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer l\'utilisateur "${user.nomUtilisateur}" ?'),
+        title: Text('users_delete_confirm_title'.tr),
+        content: Text('users_etes_vous_sur_vouloir_supprimer_utilisateur'.trParams({'nomUtilisateur': '${user.nomUtilisateur}'})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -234,7 +234,7 @@ class UserController extends GetxController with PermissionMixin {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),

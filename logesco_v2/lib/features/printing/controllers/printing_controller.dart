@@ -225,8 +225,7 @@ class PrintingController extends GetxController {
         PrintingService.setCompanyProfile(companyProfile);
         print('📋 Utilisation du profil d\'entreprise fourni: ${companyProfile.name}');
       } else {
-        SnackbarUtils.showError('Profil d\'entreprise non configuré\n'
-            'Allez dans Paramètres > Entreprise pour configurer les informations de votre entreprise');
+        SnackbarUtils.showError('printing_company_profile_not_configured_full'.tr);
         return false;
       }
 
@@ -489,7 +488,7 @@ class PrintingController extends GetxController {
                             : 'N° Vente: ${receipt.saleNumber}',
                     style: pw.TextStyle(fontSize: 9),
                   ),
-                  pw.Text('Date: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('inventory_date'.trParams({'date': '${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}'}), style: pw.TextStyle(fontSize: 9)),
                   pw.Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: pw.TextStyle(fontSize: 9)),
                   if (receipt.customer != null) pw.Text('printing_client'.trParams({'nomComplet': '${receipt.customer!.nomComplet}'}), style: pw.TextStyle(fontSize: 9)),
                 ],

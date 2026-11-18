@@ -1,4 +1,5 @@
 ﻿import 'dart:convert';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
@@ -58,7 +59,7 @@ class DiscountReportService {
       }
     } catch (e) {
       print(' Erreur récupération résumé remises: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -116,7 +117,7 @@ class DiscountReportService {
       }
     } catch (e) {
       print(' Erreur récupération remises par vendeur: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -162,7 +163,7 @@ class DiscountReportService {
       }
     } catch (e) {
       print(' Erreur récupération top remises: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -207,7 +208,7 @@ class DiscountReportService {
       }
     } catch (e) {
       print(' Erreur validation remise: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 }

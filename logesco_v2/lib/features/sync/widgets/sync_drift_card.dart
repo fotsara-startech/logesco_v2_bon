@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../services/sync_status_service.dart';
 
@@ -51,10 +52,10 @@ class SyncDriftCard extends StatelessWidget {
     if (v == null) return null;
     final lignes = <Widget>[];
     if (v.envoyables > 0) {
-      lignes.add(Text('${v.envoyables} peut/peuvent être renvoyé(s) sans risque.', style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w600)));
+      lignes.add(Text('sync_peut_peuvent_etre_renvoye_s_sans'.trParams({'envoyables': '${v.envoyables}'}), style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w600)));
     }
     if (v.refuses > 0) {
-      lignes.add(Text('${v.refuses} ne sera/seront pas renvoyé(s) automatiquement :', style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.w600)));
+      lignes.add(Text('sync_ne_sera_seront_pas_renvoye_s'.trParams({'refuses': '${v.refuses}'}), style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.w600)));
       for (final r in v.raisons) {
         lignes.add(Text('   $r', style: TextStyle(fontSize: 12, color: Colors.orange.shade900)));
       }
@@ -97,7 +98,7 @@ class SyncDriftCard extends StatelessWidget {
             if (r?.verifieLe != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('Vérifié le ${_quand(r!.verifieLe)}', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                child: Text('sync_verifie'.trParams({'verifieLe': '${_quand(r!.verifieLe)}'}), style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
               ),
             if (alerte) ...[
               const SizedBox(height: 6),
@@ -119,14 +120,14 @@ class SyncDriftCard extends StatelessWidget {
                       Text('${g.tableLabel} · ${_sens(g.sens)} (${g.nombre})', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       Text(g.libelle, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
                       ...g.exemples.map((e) => Text('• ${e.resume}', style: const TextStyle(fontSize: 12))),
-                      if (g.nombre > g.exemples.length) Text('… et ${g.nombre - g.exemples.length} autre(s)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      if (g.nombre > g.exemples.length) Text('sync_autre_s_2'.trParams({'length': '${g.nombre - g.exemples.length}'}), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                       if (verdict != null) Padding(padding: const EdgeInsets.only(top: 4), child: verdict),
                       if (peutForcer || peutIgnorer)
                         Wrap(
                           spacing: 8,
                           children: [
-                            if (peutForcer) TextButton(onPressed: checking ? null : () => onForce!(g), child: const Text('Envoyer quand même')),
-                            if (peutIgnorer) TextButton(onPressed: checking ? null : () => onIgnore!(g), child: const Text('Ignorer cet écart')),
+                            if (peutForcer) TextButton(onPressed: checking ? null : () => onForce!(g), child: Text('sync_envoyer_quand_meme_2'.tr)),
+                            if (peutIgnorer) TextButton(onPressed: checking ? null : () => onIgnore!(g), child: Text('sync_ignorer_cet_ecart_2'.tr)),
                           ],
                         ),
                     ],
@@ -137,8 +138,8 @@ class SyncDriftCard extends StatelessWidget {
             if ((r?.ignores ?? 0) > 0 && onRestore != null)
               Row(
                 children: [
-                  Expanded(child: Text('${r!.ignores} écart(s) ignoré(s)', style: TextStyle(fontSize: 12, color: Colors.grey.shade700))),
-                  TextButton(onPressed: checking ? null : onRestore, child: const Text('Réafficher')),
+                  Expanded(child: Text('sync_ecart_s_ignore_s'.trParams({'ignores': '${r!.ignores}'}), style: TextStyle(fontSize: 12, color: Colors.grey.shade700))),
+                  TextButton(onPressed: checking ? null : onRestore, child: Text('sync_reafficher'.tr)),
                 ],
               ),
             const SizedBox(height: 4),
@@ -152,7 +153,7 @@ class SyncDriftCard extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: checking ? null : onResend,
                     icon: const Icon(Icons.cloud_upload_outlined),
-                    label: const Text('Renvoyer vers le cloud'),
+                    label: Text('sync_renvoyer_vers_cloud_2'.tr),
                   ),
                 OutlinedButton.icon(
                   onPressed: checking ? null : onCheck,

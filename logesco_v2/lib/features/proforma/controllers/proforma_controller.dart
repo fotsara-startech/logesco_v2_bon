@@ -177,7 +177,7 @@ class ProformaController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Erreur chargement proformas');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur: $e');
+      SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
     } finally {
       isLoading = false;
       update();
@@ -215,7 +215,7 @@ class ProformaController extends GetxController {
   /// Crée une proforma depuis le panier actuel
   Future<ProformaInvoice?> createFromCart(SalesController salesCtrl) async {
     if (salesCtrl.cartItems.isEmpty) {
-      SnackbarUtils.showError('Le panier est vide');
+      SnackbarUtils.showError('proforma_panier_est_vide'.tr);
       return null;
     }
 
@@ -252,14 +252,14 @@ class ProformaController extends GetxController {
       if (response.success && response.data != null) {
         proformas = [response.data!, ...proformas];
         update();
-        SnackbarUtils.showSuccess('Proforma ${response.data!.numeroProforma} créée');
+        SnackbarUtils.showSuccess('proforma_proforma_creee'.trParams({'numeroProforma': '${response.data!.numeroProforma}'}));
         return response.data;
       } else {
         SnackbarUtils.showError(response.message ?? 'Erreur création proforma');
         return null;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur: $e');
+      SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
       return null;
     } finally {
       isSaving = false;
@@ -270,7 +270,7 @@ class ProformaController extends GetxController {
   /// Met à jour une proforma existante depuis le panier
   Future<bool> updateFromCart(int proformaId, SalesController salesCtrl) async {
     if (salesCtrl.cartItems.isEmpty) {
-      SnackbarUtils.showError('Le panier est vide');
+      SnackbarUtils.showError('proforma_panier_est_vide'.tr);
       return false;
     }
 
@@ -310,14 +310,14 @@ class ProformaController extends GetxController {
           proformas = List.from(proformas)..[idx] = response.data!;
         }
         update();
-        SnackbarUtils.showSuccess('Proforma mise à jour');
+        SnackbarUtils.showSuccess('proforma_proforma_mise_jour'.tr);
         return true;
       } else {
         SnackbarUtils.showError(response.message ?? 'Erreur mise à jour');
         return false;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur: $e');
+      SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isSaving = false;
@@ -337,7 +337,7 @@ class ProformaController extends GetxController {
     try {
       final cashCtrl = Get.find<CashSessionController>();
       if (!cashCtrl.canMakeSales) {
-        SnackbarUtils.showError('Vous devez vous connecter à une caisse pour valider une proforma');
+        SnackbarUtils.showError('proforma_vous_devez_vous_connecter_caisse_valider'.tr);
         Get.toNamed('/cash-session');
         return null;
       }
@@ -375,7 +375,7 @@ class ProformaController extends GetxController {
           await salesCtrl.loadStocks();
         } catch (_) {}
 
-        SnackbarHelper.success('Vente ${sale.numeroVente} créée avec succès', duration: const Duration(seconds: 4));
+        SnackbarHelper.success('proforma_vente_creee_avec_succes'.trParams({'numeroVente': '${sale.numeroVente}'}), duration: const Duration(seconds: 4));
 
         return sale;
       } else {
@@ -383,7 +383,7 @@ class ProformaController extends GetxController {
         return null;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur: $e');
+      SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
       return null;
     } finally {
       isValidating = false;
@@ -422,7 +422,7 @@ class ProformaController extends GetxController {
     }
 
     if (companyProfile == null) {
-      SnackbarUtils.showError('Profil d\'entreprise non configuré. Allez dans Paramètres > Entreprise.');
+      SnackbarUtils.showError('proforma_profil_entreprise_non_configure_allez_dans'.tr);
       return;
     }
 
@@ -439,7 +439,7 @@ class ProformaController extends GetxController {
     );
 
     if (!success || printingController.currentReceipt == null) {
-      SnackbarUtils.showError('Impossible de générer le reçu pour l\'impression');
+      SnackbarUtils.showError('proforma_impossible_generer_recu_impression'.tr);
       return;
     }
     final receipt = printingController.currentReceipt!;
@@ -452,7 +452,7 @@ class ProformaController extends GetxController {
           name: 'Reçu_${receipt.saleNumber}.pdf',
         );
       } catch (e) {
-        SnackbarUtils.showError('Erreur lors de l\'impression: $e');
+        SnackbarUtils.showError('proforma_erreur_lors_impression'.trParams({'e': '${e}'}));
       }
     } else {
       Get.to(() => const ReceiptPreviewPage(), arguments: receipt);
@@ -470,7 +470,7 @@ class ProformaController extends GetxController {
 
       final companyProfile = companyCtrl.companyProfile;
       if (companyProfile == null) {
-        SnackbarUtils.showError('Profil entreprise non configuré. Allez dans Paramètres > Entreprise.');
+        SnackbarUtils.showError('proforma_profil_entreprise_non_configure_allez_dans_2'.tr);
         return;
       }
 
@@ -491,7 +491,7 @@ class ProformaController extends GetxController {
       // Naviguer vers la prévisualisation
       Get.to(() => const ReceiptPreviewPage(), arguments: receipt);
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la génération du document: $e');
+      SnackbarUtils.showError('proforma_erreur_lors_generation_document'.trParams({'e': '${e}'}));
     }
   }
 
@@ -502,14 +502,14 @@ class ProformaController extends GetxController {
       if (response.success) {
         proformas = proformas.where((p) => p.id != id).toList();
         update();
-        SnackbarUtils.showSuccess('Proforma annulée');
+        SnackbarUtils.showSuccess('proforma_proforma_annulee'.tr);
         return true;
       } else {
         SnackbarUtils.showError(response.message ?? 'Erreur annulation');
         return false;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur: $e');
+      SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
       return false;
     }
   }

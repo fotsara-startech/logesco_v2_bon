@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 /// Widget d'affichage d'erreur réutilisable
@@ -50,7 +51,7 @@ class ErrorDisplayWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Réessayer'),
+                label: Text('roles_retry'.tr),
               ),
             ],
           ],

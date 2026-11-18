@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
@@ -37,7 +38,7 @@ class ExpenseCategoryService {
         );
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -69,7 +70,7 @@ class ExpenseCategoryService {
         );
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -101,7 +102,7 @@ class ExpenseCategoryService {
         );
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -130,7 +131,7 @@ class ExpenseCategoryService {
         );
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 }

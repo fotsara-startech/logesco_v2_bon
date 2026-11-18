@@ -33,7 +33,7 @@ class _StockTransfertPageState extends State<StockTransfertPage> with SingleTick
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transferts de stock'),
+        title: Text('boutiques_transferts_stock'.tr),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -120,7 +120,7 @@ class _TransfertFormState extends State<_TransfertForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur chargement stock: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('boutiques_erreur_chargement_stock'.trParams({'e': '${e}'})), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -146,7 +146,7 @@ class _TransfertFormState extends State<_TransfertForm> {
     if (!mounted) return;
     if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Transfert effectué avec succès'), backgroundColor: Colors.green),
+        SnackBar(content: Text('boutiques_transfert_effectue_avec_succes'.tr), backgroundColor: Colors.green),
       );
       _formKey.currentState!.reset();
       _quantiteCtrl.clear();
@@ -186,8 +186,8 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _source,
-                decoration: const InputDecoration(
-                  labelText: 'Sélectionner la boutique source',
+                decoration: InputDecoration(
+                  labelText: 'boutiques_selectionner_boutique_source'.tr,
                   prefixIcon: Icon(Icons.storefront),
                   border: OutlineInputBorder(),
                 ),
@@ -209,8 +209,8 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _destination,
-                decoration: const InputDecoration(
-                  labelText: 'Sélectionner la boutique destination',
+                decoration: InputDecoration(
+                  labelText: 'boutiques_selectionner_boutique_destination'.tr,
                   prefixIcon: Icon(Icons.storefront),
                   border: OutlineInputBorder(),
                 ),
@@ -222,7 +222,7 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 20),
 
               // Produit
-              const _SectionTitle(title: 'Produit à transférer', icon: Icons.inventory_2),
+              _SectionTitle(title: 'boutiques_produit_transferer'.tr, icon: Icons.inventory_2),
               const SizedBox(height: 8),
               if (_loadingStock)
                 const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
@@ -234,11 +234,11 @@ class _TransfertFormState extends State<_TransfertForm> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.info_outline, color: Colors.grey),
                       SizedBox(width: 8),
-                      Text('Sélectionnez d\'abord la boutique source', style: TextStyle(color: Colors.grey)),
+                      Text('boutiques_selectionnez_abord_boutique_source'.tr, style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -250,11 +250,11 @@ class _TransfertFormState extends State<_TransfertForm> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.orange[200]!),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.warning_amber, color: Colors.orange),
                       SizedBox(width: 8),
-                      Text('Aucun stock disponible dans cette boutique', style: TextStyle(color: Colors.orange)),
+                      Text('boutiques_aucun_stock_disponible_dans_boutique'.tr, style: TextStyle(color: Colors.orange)),
                     ],
                   ),
                 )
@@ -263,7 +263,7 @@ class _TransfertFormState extends State<_TransfertForm> {
                 TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Rechercher un produit',
+                    labelText: 'sales_search_product'.tr,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
@@ -282,8 +282,8 @@ class _TransfertFormState extends State<_TransfertForm> {
                 // Dropdown des produits filtrés
                 DropdownButtonFormField<Map<String, dynamic>>(
                   value: _selectedProduit,
-                  decoration: const InputDecoration(
-                    labelText: 'Sélectionner un produit',
+                  decoration: InputDecoration(
+                    labelText: 'inventory_adjustment_select_product'.tr,
                     prefixIcon: Icon(Icons.inventory),
                     border: OutlineInputBorder(),
                   ),
@@ -293,7 +293,7 @@ class _TransfertFormState extends State<_TransfertForm> {
                     final dispo = s['quantiteDisponible'] as int? ?? 0;
                     return DropdownMenuItem(
                       value: s,
-                      child: Text('$nom (dispo: $dispo)'),
+                      child: Text('boutiques_dispo'.trParams({'nom': '${nom}', 'dispo': '${dispo}'})),
                     );
                   }).toList(),
                   onChanged: (v) => setState(() => _selectedProduit = v),
@@ -304,13 +304,13 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 20),
 
               // Quantité
-              const _SectionTitle(title: 'Quantité', icon: Icons.numbers),
+              _SectionTitle(title: 'quantity'.tr, icon: Icons.numbers),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _quantiteCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Quantité à transférer',
+                decoration: InputDecoration(
+                  labelText: 'boutiques_quantite_transferer'.tr,
                   prefixIcon: Icon(Icons.numbers),
                   border: OutlineInputBorder(),
                 ),
@@ -350,7 +350,7 @@ class _TransfertFormState extends State<_TransfertForm> {
                       icon: widget.controller.isTransferLoading.value
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.swap_horiz),
-                      label: const Text('Effectuer le transfert', style: TextStyle(fontSize: 16)),
+                      label: Text('boutiques_effectuer_transfert'.tr, style: TextStyle(fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -379,13 +379,13 @@ class _TransfertHistory extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (controller.transferts.isEmpty) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.swap_horiz, size: 64, color: Colors.grey),
               SizedBox(height: 16),
-              Text('Aucun transfert effectué', style: TextStyle(color: Colors.grey)),
+              Text('boutiques_aucun_transfert_effectue'.tr, style: TextStyle(color: Colors.grey)),
             ],
           ),
         );
@@ -457,7 +457,7 @@ class _TransfertCard extends StatelessWidget {
                     color: Colors.blue[50],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text('${transfert.quantite} unités', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.w600)),
+                  child: Text('boutiques_unites'.trParams({'quantite': '${transfert.quantite}'}), style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.w600)),
                 ),
               ],
             ),

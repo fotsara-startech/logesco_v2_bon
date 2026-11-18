@@ -122,7 +122,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard consolidé'),
+        title: Text('boutiques_dashboard_consolide'.tr),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
@@ -134,9 +134,9 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(child: Text('Erreur: $_error', style: const TextStyle(color: Colors.red)))
+                    ? Center(child: Text('boutiques_erreur'.trParams({'error': '${_error}'}), style: const TextStyle(color: Colors.red)))
                     : _data == null
-                        ? const Center(child: Text('Aucune donnée'))
+                        ? Center(child: Text('no_data'.tr))
                         : _buildContent(),
           ),
         ],
@@ -165,7 +165,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                 ),
                 const SizedBox(width: 8),
                 _PeriodChip(
-                  label: 'Cette semaine',
+                  label: 'sales_this_week'.tr,
                   selected: _selectedPeriod == PeriodFilter.week,
                   onTap: () {
                     setState(() => _selectedPeriod = PeriodFilter.week);
@@ -174,7 +174,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                 ),
                 const SizedBox(width: 8),
                 _PeriodChip(
-                  label: 'Ce mois',
+                  label: 'analytics_this_month'.tr,
                   selected: _selectedPeriod == PeriodFilter.month,
                   onTap: () {
                     setState(() => _selectedPeriod = PeriodFilter.month);
@@ -183,7 +183,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                 ),
                 const SizedBox(width: 8),
                 _PeriodChip(
-                  label: 'Cette année',
+                  label: 'analytics_this_year'.tr,
                   selected: _selectedPeriod == PeriodFilter.year,
                   onTap: () {
                     setState(() => _selectedPeriod = PeriodFilter.year);
@@ -242,13 +242,13 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                   color: Colors.green,
                 ),
                 _StatCard(
-                  label: 'Montant encaissé',
+                  label: 'boutiques_montant_encaisse'.tr,
                   value: _formatMoney(totaux['montantEncaisse']),
                   icon: Icons.payments,
                   color: Colors.blue,
                 ),
                 _StatCard(
-                  label: 'Nombre de ventes',
+                  label: 'reports_pdf_sales_count'.tr,
                   value: '${totaux['nbVentes'] ?? 0}',
                   icon: Icons.receipt_long,
                   color: Colors.orange,
@@ -265,7 +265,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             const SizedBox(height: 24),
 
             // Par boutique
-            const _SectionTitle(title: 'Par boutique', icon: Icons.store),
+            _SectionTitle(title: 'boutiques_par_boutique'.tr, icon: Icons.store),
             const SizedBox(height: 12),
             ...boutiques.map((b) => _BoutiqueStatCard(data: b)),
           ],
@@ -379,7 +379,7 @@ class _BoutiqueStatCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: _MiniStat(label: 'CA', value: '${_fmt(data['chiffreAffaires'])} FCFA', color: Colors.green)),
-                Expanded(child: _MiniStat(label: 'Encaissé', value: '${_fmt(data['montantEncaisse'])} FCFA', color: Colors.blue)),
+                Expanded(child: _MiniStat(label: 'boutiques_encaisse'.tr, value: '${_fmt(data['montantEncaisse'])} FCFA', color: Colors.blue)),
                 Expanded(child: _MiniStat(label: 'Ventes', value: '${data['nbVentes'] ?? 0}', color: Colors.orange)),
               ],
             ),

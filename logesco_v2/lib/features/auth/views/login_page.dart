@@ -82,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
               child: SelectableText(response, style: const TextStyle(fontSize: 11)),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text('suppliers_close'.tr)),
             ],
           ),
         );
@@ -93,9 +93,9 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Backend inaccessible'),
-            content: SelectableText('Erreur: $e'),
+            content: SelectableText('auth_erreur'.trParams({'e': '${e}'})),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text('suppliers_close'.tr)),
             ],
           ),
         );
@@ -168,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                               TextButton.icon(
                                 onPressed: _restartBackend,
                                 icon: const Icon(Icons.refresh, color: Colors.white, size: 18),
-                                label: const Text('Réessayer', style: TextStyle(color: Colors.white)),
+                                label: Text('roles_retry'.tr, style: TextStyle(color: Colors.white)),
                               ),
                           ],
                         ),

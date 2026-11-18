@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/sync_doublons.dart';
 
@@ -60,7 +61,7 @@ class SyncDoublonsCard extends StatelessWidget {
                 ),
                 if (onActualiser != null)
                   IconButton(
-                    tooltip: 'Revérifier',
+                    tooltip: 'sync_reverifier'.tr,
                     onPressed: verification ? null : onActualiser,
                     icon: verification
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))

@@ -56,7 +56,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération des comptes clients',
+        message: 'accounts_erreur_lors_recuperation_comptes_clients'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -111,7 +111,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération des comptes fournisseurs',
+        message: 'accounts_erreur_lors_recuperation_comptes_fournisseurs'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -132,7 +132,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération du solde client',
+        message: 'accounts_erreur_lors_recuperation_solde_client'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -153,7 +153,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération du solde fournisseur',
+        message: 'accounts_erreur_lors_recuperation_solde_fournisseur'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -184,7 +184,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la création de la transaction client',
+        message: 'accounts_erreur_lors_creation_transaction_client'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -210,7 +210,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération des ventes impayées',
+        message: 'accounts_erreur_lors_recuperation_ventes_impayees'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -253,7 +253,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la création de la transaction',
+        message: 'accounts_erreur_lors_creation_transaction'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -284,7 +284,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la création de la transaction fournisseur',
+        message: 'accounts_erreur_lors_creation_transaction_fournisseur'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -321,7 +321,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération des transactions client',
+        message: 'accounts_erreur_lors_recuperation_transactions_client'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -358,7 +358,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la récupération des transactions fournisseur',
+        message: 'accounts_erreur_lors_recuperation_transactions_fournisseur'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -389,7 +389,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la mise à jour de la limite de crédit client',
+        message: 'accounts_erreur_lors_mise_jour_limite_credit'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );
@@ -420,7 +420,7 @@ class AccountApiService implements AccountService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
-        message: 'Erreur lors de la mise à jour de la limite de crédit fournisseur',
+        message: 'accounts_erreur_lors_mise_jour_limite_credit_2'.tr,
         code: 'UNKNOWN_ERROR',
         statusCode: 500,
       );

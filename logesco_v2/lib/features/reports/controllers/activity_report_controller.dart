@@ -141,12 +141,12 @@ class ActivityReportController extends GetxController {
   /// Génère le bilan comptable
   Future<void> generateReport() async {
     if (_selectedStartDate.value == null || _selectedEndDate.value == null) {
-      SnackbarHelper.error('Veuillez sélectionner une période valide');
+      SnackbarHelper.error('reports_veuillez_selectionner_periode_valide'.tr);
       return;
     }
 
     if (_selectedStartDate.value!.isAfter(_selectedEndDate.value!)) {
-      SnackbarHelper.error('La date de début doit être antérieure à la date de fin');
+      SnackbarHelper.error('reports_date_debut_doit_etre_anterieure_date'.tr);
       return;
     }
 
@@ -160,10 +160,10 @@ class ActivityReportController extends GetxController {
 
       _currentReport.value = report;
 
-      SnackbarHelper.success('Bilan comptable généré avec succès');
+      SnackbarHelper.success('reports_bilan_comptable_genere_avec_succes'.tr);
     } catch (e) {
       print(' Erreur lors de la génération du bilan: $e');
-      SnackbarHelper.error('Erreur lors de la génération du bilan: $e');
+      SnackbarHelper.error('reports_erreur_lors_generation_bilan'.trParams({'e': '${e}'}));
     } finally {
       _isLoading.value = false;
     }
@@ -172,7 +172,7 @@ class ActivityReportController extends GetxController {
   /// Exporte le bilan en PDF
   Future<void> exportToPdf() async {
     if (_currentReport.value == null) {
-      SnackbarHelper.error('Aucun bilan à exporter. Veuillez d\'abord générer un bilan.');
+      SnackbarHelper.error('reports_aucun_bilan_exporter_veuillez_abord_generer'.tr);
       return;
     }
 
@@ -192,12 +192,12 @@ class ActivityReportController extends GetxController {
         );
       } else {
         // Sur desktop/mobile, afficher les actions
-        SnackbarHelper.success('PDF généré avec succès: $filename', duration: const Duration(seconds: 4));
+        SnackbarHelper.success('reports_pdf_genere_avec_succes'.trParams({'filename': '${filename}'}), duration: const Duration(seconds: 4));
         _showPdfActions(pdfPath);
       }
     } catch (e) {
       print('❌ Erreur lors de l\'export PDF: $e');
-      SnackbarHelper.error('Erreur lors de l\'export PDF: $e');
+      SnackbarHelper.error('reports_erreur_lors_export_pdf'.trParams({'e': '${e}'}));
     } finally {
       _isGeneratingPdf.value = false;
     }
@@ -260,7 +260,7 @@ class ActivityReportController extends GetxController {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text('Fermer'),
+              child: Text('suppliers_close'.tr),
             ),
           ],
         ),
@@ -271,25 +271,25 @@ class ActivityReportController extends GetxController {
   /// Ouvre le PDF avec l'application par défaut
   Future<void> _openPdf(String pdfPath) async {
     if (kIsWeb) {
-      SnackbarHelper.info('Le PDF a été téléchargé. Consultez votre dossier de téléchargements.', duration: const Duration(seconds: 3));
+      SnackbarHelper.info('reports_pdf_ete_telecharge_consultez_votre_dossier'.tr, duration: const Duration(seconds: 3));
       return;
     }
 
     try {
       final result = await OpenFile.open(pdfPath);
       if (result.type != ResultType.done) {
-        SnackbarHelper.info('Impossible d\'ouvrir le PDF automatiquement. Fichier sauvegardé dans: $pdfPath', title: 'Information', duration: const Duration(seconds: 5));
+        SnackbarHelper.info('reports_impossible_ouvrir_pdf_automatiquement_fichier_sauvegarde'.trParams({'pdfPath': '${pdfPath}'}), title: 'Information', duration: const Duration(seconds: 5));
       }
     } catch (e) {
       print('❌ Erreur lors de l\'ouverture du PDF: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le PDF: $e');
+      SnackbarHelper.error('reports_impossible_ouvrir_pdf'.trParams({'e': '${e}'}));
     }
   }
 
   /// Partage le PDF
   Future<void> _sharePdf(String pdfPath) async {
     if (kIsWeb) {
-      SnackbarHelper.info('Le partage n\'est pas disponible sur le web.', duration: const Duration(seconds: 3));
+      SnackbarHelper.info('reports_partage_n_est_pas_disponible_sur'.tr, duration: const Duration(seconds: 3));
       return;
     }
 
@@ -301,7 +301,7 @@ class ActivityReportController extends GetxController {
       );
     } catch (e) {
       print(' Erreur lors du partage du PDF: $e');
-      SnackbarHelper.error('Impossible de partager le PDF: $e');
+      SnackbarHelper.error('reports_impossible_partager_pdf'.trParams({'e': '${e}'}));
     }
   }
 

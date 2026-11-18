@@ -147,11 +147,11 @@ class SupplierController extends GetxController {
       // Si un fournisseur a été créé, afficher un message
       if (result != null && result is Supplier) {
         print('🎉 Nouveau fournisseur créé: ${result.nom}');
-        SnackbarHelper.success('Fournisseur "${result.nom}" ajouté à la liste', duration: const Duration(seconds: 2));
+        SnackbarHelper.success('suppliers_fournisseur_ajoute_liste'.trParams({'nom': '${result.nom}'}), duration: const Duration(seconds: 2));
       }
     } catch (e) {
       print('❌ Erreur navigation: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de création');
+      SnackbarHelper.error('customers_create_form_error'.tr);
     }
   }
 
@@ -178,7 +178,7 @@ class SupplierController extends GetxController {
       }
     } catch (e) {
       print('❌ Erreur navigation édition: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le formulaire d\'édition');
+      SnackbarHelper.error('customers_edit_form_error'.tr);
     }
   }
 
@@ -192,12 +192,12 @@ class SupplierController extends GetxController {
   Future<void> deleteSupplier(Supplier supplier) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('users_delete_confirm_title'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Êtes-vous sûr de vouloir supprimer le fournisseur "${supplier.nom}" ?'),
+            Text('suppliers_etes_vous_sur_vouloir_supprimer_fournisseur'.trParams({'nom': '${supplier.nom}'})),
             const SizedBox(height: 8),
             Text(
               'Note: La suppression échouera si le fournisseur a des commandes associées.',
@@ -212,7 +212,7 @@ class SupplierController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -220,7 +220,7 @@ class SupplierController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -239,10 +239,10 @@ class SupplierController extends GetxController {
           suppliers.removeWhere((s) => s.id == supplier.id);
           print('✅ Fournisseur retiré de la liste locale');
 
-          SnackbarHelper.success('Fournisseur "${supplier.nom}" supprimé avec succès', duration: const Duration(seconds: 3));
+          SnackbarHelper.success('suppliers_fournisseur_supprime_avec_succes'.trParams({'nom': '${supplier.nom}'}), duration: const Duration(seconds: 3));
         } else {
           print('❌ Suppression échouée - service retourné false');
-          SnackbarHelper.error('La suppression du fournisseur a échoué. Veuillez réessayer.', duration: const Duration(seconds: 4));
+          SnackbarHelper.error('suppliers_suppression_fournisseur_echoue_veuillez_reessayer'.tr, duration: const Duration(seconds: 4));
         }
       } catch (e) {
         print('❌ Exception lors de la suppression: $e');
@@ -279,7 +279,7 @@ class SupplierController extends GetxController {
     try {
       return await _supplierService.getSupplierById(id);
     } catch (e) {
-      SnackbarHelper.error('Impossible de récupérer les détails du fournisseur');
+      SnackbarHelper.error('suppliers_impossible_recuperer_details_fournisseur'.tr);
       return null;
     }
   }
@@ -329,10 +329,10 @@ class SupplierController extends GetxController {
       );
 
       if (success) {
-        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré');
+        SnackbarHelper.success('suppliers_paiement_fcfa_enregistre'.trParams({'toStringAsFixed': '${montant.toStringAsFixed(0)}'}));
         return true;
       } else {
-        SnackbarHelper.error('Le paiement a échoué');
+        SnackbarHelper.error('suppliers_paiement_echoue'.tr);
         return false;
       }
     } catch (e) {
@@ -369,10 +369,10 @@ class SupplierController extends GetxController {
       );
 
       if (success) {
-        SnackbarHelper.success('Paiement de ${montant.toStringAsFixed(0)} FCFA enregistré pour la commande');
+        SnackbarHelper.success('suppliers_paiement_fcfa_enregistre_commande'.trParams({'toStringAsFixed': '${montant.toStringAsFixed(0)}'}));
         return true;
       } else {
-        SnackbarHelper.error('Le paiement a échoué');
+        SnackbarHelper.error('suppliers_paiement_echoue'.tr);
         return false;
       }
     } catch (e) {
@@ -395,7 +395,7 @@ class SupplierController extends GetxController {
       return await _supplierService.getSupplierStatement(supplierId);
     } catch (e) {
       print('❌ Erreur récupération relevé: $e');
-      SnackbarHelper.error('Impossible de récupérer le relevé de compte');
+      SnackbarHelper.error('suppliers_impossible_recuperer_releve_compte'.tr);
       return null;
     }
   }
@@ -427,7 +427,7 @@ class SupplierController extends GetxController {
   /// Exporte tous les fournisseurs vers Excel
   Future<void> exportToExcel() async {
     try {
-      SnackbarHelper.info('Récupération des fournisseurs...', title: 'Export en cours');
+      SnackbarHelper.info('suppliers_recuperation_fournisseurs'.tr, title: 'Export en cours');
 
       // Récupérer tous les fournisseurs par pagination
       List<Supplier> allSuppliers = [];
@@ -465,7 +465,7 @@ class SupplierController extends GetxController {
           // Ignorer l'erreur de fermeture
         }
 
-        SnackbarHelper.info('Aucun fournisseur à exporter', title: 'Aucune donnée');
+        SnackbarHelper.info('suppliers_aucun_fournisseur_exporter'.tr, title: 'no_data'.tr);
         return;
       }
 
@@ -479,7 +479,7 @@ class SupplierController extends GetxController {
       }
 
       // Afficher la progression de génération
-      SnackbarHelper.info('Génération du fichier Excel...', title: 'Export en cours');
+      SnackbarHelper.info('customers_export_generating'.tr, title: 'Export en cours');
 
       final filePath = await _excelService.exportSuppliersToExcel(allSuppliers);
 
@@ -502,13 +502,13 @@ class SupplierController extends GetxController {
         if (kIsWeb) {
           SnackbarHelper.success(
             'Export de ${allSuppliers.length} fournisseur(s) réussi.\nFichier: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 4),
           );
         } else {
           Get.dialog(
             AlertDialog(
-              title: const Text('Export réussi'),
+              title: Text('customers_export_success'.tr),
               content: Text(
                 'Export de ${allSuppliers.length} fournisseur(s) réussi.\n'
                 'Fichier: $filename',
@@ -516,14 +516,14 @@ class SupplierController extends GetxController {
               actions: [
                 TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text('Fermer'),
+                  child: Text('suppliers_close'.tr),
                 ),
               ],
             ),
           );
         }
       } else {
-        SnackbarHelper.error('Erreur lors de l\'export des fournisseurs');
+        SnackbarHelper.error('suppliers_erreur_lors_export_fournisseurs'.tr);
       }
     } catch (e) {
       print('❌ Erreur export fournisseurs: $e');
@@ -536,7 +536,7 @@ class SupplierController extends GetxController {
         // Ignorer l'erreur de fermeture
       }
 
-      SnackbarHelper.error('Erreur lors de l\'export: $e');
+      SnackbarHelper.error('suppliers_erreur_lors_export'.trParams({'e': '${e}'}));
     }
   }
 
@@ -545,7 +545,7 @@ class SupplierController extends GetxController {
     try {
       print('📝 Début de l\'import Excel des fournisseurs...');
 
-      SnackbarHelper.info('Sélection du fichier...', title: 'Import en cours', duration: const Duration(seconds: 2));
+      SnackbarHelper.info('suppliers_selection_fichier'.tr, title: 'Import en cours', duration: const Duration(seconds: 2));
 
       final importData = await _excelService.importSuppliersFromExcel();
 
@@ -553,7 +553,7 @@ class SupplierController extends GetxController {
 
       if (importData == null || importData.isEmpty) {
         print('⚠️  Aucune donnée à importer');
-        SnackbarHelper.info('Aucun fichier sélectionné ou fichier vide', title: 'Annulé');
+        SnackbarHelper.info('customers_import_no_file'.tr, title: 'suppliers_annule'.tr);
         return;
       }
 
@@ -562,7 +562,7 @@ class SupplierController extends GetxController {
       // Afficher un aperçu et demander confirmation
       final confirmed = await Get.dialog<bool>(
         AlertDialog(
-          title: Text('Importer ${importData.length} fournisseur(s) ?'),
+          title: Text('suppliers_importer_fournisseur_s'.trParams({'length': '${importData.length}'})),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -580,7 +580,7 @@ class SupplierController extends GetxController {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: const Text('Annuler'),
+              child: Text('suppliers_form_cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),
@@ -619,20 +619,20 @@ class SupplierController extends GetxController {
 
       Get.dialog(
         AlertDialog(
-          title: const Text('Import terminé'),
+          title: Text('customers_import_success'.tr),
           content: Text(
             'Importés: $successCount\nErreurs: $errorCount',
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text('Fermer'),
+              child: Text('suppliers_close'.tr),
             ),
           ],
         ),
       );
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de l\'import: $e');
+      SnackbarHelper.error('suppliers_erreur_lors_import'.trParams({'e': '${e}'}));
     }
   }
 
@@ -644,7 +644,7 @@ class SupplierController extends GetxController {
       if (filePath != null) {
         Get.dialog(
           AlertDialog(
-            title: const Text('Template généré'),
+            title: Text('customers_template_success'.tr),
             content: Text(
               'Template d\'import généré avec succès.\n'
               'Fichier: ${kIsWeb ? filePath : filePath.split('/').last}',
@@ -652,16 +652,16 @@ class SupplierController extends GetxController {
             actions: [
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
+                child: Text('suppliers_close'.tr),
               ),
             ],
           ),
         );
       } else {
-        SnackbarHelper.error('Erreur lors de la génération du template');
+        SnackbarHelper.error('customers_template_error'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur: $e');
+      SnackbarHelper.error('suppliers_erreur'.trParams({'e': '${e}'}));
     }
   }
 }

@@ -25,7 +25,7 @@ class CashSessionView extends StatelessWidget {
             if (isAdmin) {
               return IconButton(
                 icon: const Icon(Icons.admin_panel_settings),
-                tooltip: 'Gérer les sessions (Admin)',
+                tooltip: 'cashregisters_gerer_sessions_admin'.tr,
                 onPressed: () => controller.showAdminSessionsDialog(),
               );
             }
@@ -380,7 +380,7 @@ class CashSessionView extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${_formatDateTime(session.dateOuverture)} - ${session.formattedDuration}'),
+            Text('cashregisters_texte'.trParams({'dateOuverture': '${_formatDateTime(session.dateOuverture)}', 'formattedDuration': '${session.formattedDuration}'})),
             if (session.soldeFermeture != null) Text('cash_session_difference'.tr.replaceAll('@amount', CurrencyUtils.formatDifference(session.soldeFermeture ?? 0, session.soldeOuverture))),
           ],
         ),

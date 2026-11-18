@@ -337,7 +337,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
     }
 
     if (details.isEmpty) {
-      SnackbarHelper.warning('Aucune quantité à réceptionner');
+      SnackbarHelper.warning('procurement_aucune_quantite_receptionner'.tr);
       return;
     }
 

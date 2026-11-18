@@ -81,8 +81,8 @@ class EmptyProductsState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.inventory_2_outlined,
-      title: 'Aucun produit',
-      subtitle: 'Commencez par ajouter vos premiers produits pour gérer votre inventaire.',
+      title: 'sales_no_products'.tr,
+      subtitle: 'shared_commencez_par_ajouter_vos_premiers_produits'.tr,
       actionText: onAddProduct != null ? 'Ajouter un produit' : null,
       onAction: onAddProduct,
     );
@@ -102,8 +102,8 @@ class EmptySalesState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.point_of_sale_outlined,
-      title: 'Aucune vente',
-      subtitle: 'Aucune vente n\'a été enregistrée pour le moment.',
+      title: 'sales_no_sales'.tr,
+      subtitle: 'shared_aucune_vente_n_ete_enregistree_moment'.tr,
       actionText: onCreateSale != null ? 'Nouvelle vente' : null,
       onAction: onCreateSale,
     );
@@ -123,8 +123,8 @@ class EmptyCustomersState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.people_outline,
-      title: 'Aucun client',
-      subtitle: 'Ajoutez vos clients pour faciliter la gestion des ventes.',
+      title: 'shared_aucun_client'.tr,
+      subtitle: 'shared_ajoutez_vos_clients_faciliter_gestion_ventes'.tr,
       actionText: onAddCustomer != null ? 'Ajouter un client' : null,
       onAction: onAddCustomer,
     );
@@ -144,8 +144,8 @@ class EmptySuppliersState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.business_outlined,
-      title: 'Aucun fournisseur',
-      subtitle: 'Ajoutez vos fournisseurs pour gérer vos approvisionnements.',
+      title: 'suppliers_no_suppliers'.tr,
+      subtitle: 'shared_ajoutez_vos_fournisseurs_gerer_vos_approvisionnements'.tr,
       actionText: onAddSupplier != null ? 'Ajouter un fournisseur' : null,
       onAction: onAddSupplier,
     );
@@ -165,8 +165,8 @@ class EmptyFinancialMovementsState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.account_balance_wallet_outlined,
-      title: 'Aucun mouvement',
-      subtitle: 'Aucun mouvement financier n\'a été enregistré.',
+      title: 'shared_aucun_mouvement'.tr,
+      subtitle: 'shared_aucun_mouvement_financier_n_ete_enregistre'.tr,
       actionText: onAddMovement != null ? 'Ajouter un mouvement' : null,
       onAction: onAddMovement,
     );
@@ -188,8 +188,8 @@ class EmptySearchState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.search_off_outlined,
-      title: 'Aucun résultat',
-      subtitle: 'Aucun résultat trouvé pour "$searchTerm".\nEssayez avec d\'autres mots-clés.',
+      title: 'no_results'.tr,
+      subtitle: 'shared_aucun_resultat_trouve_nessayez_avec_autres'.trParams({'searchTerm': '${searchTerm}'}),
       actionText: onClearSearch != null ? 'Effacer la recherche' : null,
       onAction: onClearSearch,
     );
@@ -276,8 +276,8 @@ class NetworkErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return ErrorState(
       icon: Icons.wifi_off_outlined,
-      title: 'Erreur de connexion',
-      subtitle: 'Vérifiez votre connexion internet et réessayez.',
+      title: 'shared_erreur_connexion'.tr,
+      subtitle: 'shared_verifiez_votre_connexion_internet_reessayez'.tr,
       actionText: onRetry != null ? 'Réessayer' : null,
       onAction: onRetry,
     );
@@ -297,8 +297,8 @@ class ServerErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return ErrorState(
       icon: Icons.cloud_off_outlined,
-      title: 'Erreur serveur',
-      subtitle: 'Une erreur s\'est produite sur le serveur. Veuillez réessayer plus tard.',
+      title: 'error_server'.tr,
+      subtitle: 'shared_erreur_s_est_produite_sur_serveur'.tr,
       actionText: onRetry != null ? 'Réessayer' : null,
       onAction: onRetry,
     );
@@ -318,8 +318,8 @@ class AccessDeniedState extends StatelessWidget {
   Widget build(BuildContext context) {
     return ErrorState(
       icon: Icons.lock_outline,
-      title: 'Accès refusé',
-      subtitle: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette section.',
+      title: 'suppliers_access_denied'.tr,
+      subtitle: 'shared_vous_n_avez_pas_permissions_necessaires'.tr,
       actionText: onGoBack != null ? 'Retour' : null,
       onAction: onGoBack,
     );
@@ -359,10 +359,10 @@ class ConditionalState extends StatelessWidget {
 
     if (isEmpty) {
       return emptyWidget ??
-          const EmptyState(
+          EmptyState(
             icon: Icons.inbox_outlined,
-            title: 'Aucune donnée',
-            subtitle: 'Aucune donnée disponible pour le moment.',
+            title: 'no_data'.tr,
+            subtitle: 'shared_aucune_donnee_disponible_moment'.tr,
           );
     }
 

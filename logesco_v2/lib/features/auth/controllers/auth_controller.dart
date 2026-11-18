@@ -204,17 +204,17 @@ class AuthController extends GetxController {
         try {
           await Get.offAllNamed(AppRoutes.dashboard);
         } catch (e) {
-          SnackbarHelper.error('Impossible de charger le tableau de bord');
+          SnackbarHelper.error('auth_impossible_charger_tableau_bord'.tr);
         }
 
         return true;
       }
     } on ApiException catch (e) {
       errorMessage.value = e.message;
-      SnackbarHelper.error(e.message, title: 'Erreur de connexion');
+      SnackbarHelper.error(e.message, title: 'shared_erreur_connexion'.tr);
     } catch (e) {
       errorMessage.value = 'Erreur inattendue lors de la connexion';
-      SnackbarHelper.error('Erreur inattendue lors de la connexion');
+      SnackbarHelper.error('auth_erreur_inattendue_lors_connexion'.tr);
     } finally {
       isLoading.value = false;
     }

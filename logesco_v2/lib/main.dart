@@ -32,7 +32,7 @@ void main() async {
       try {
         SnackbarHelper.success(
           'Service restauré',
-          title: 'Connexion rétablie',
+          title: 'main_connexion_retablie'.tr,
           duration: const Duration(seconds: 3),
         );
       } catch (_) {}

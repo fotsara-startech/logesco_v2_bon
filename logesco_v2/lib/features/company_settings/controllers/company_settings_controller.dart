@@ -179,7 +179,7 @@ class CompanySettingsController extends GetxController {
         PrintingService.setCompanyProfile(response.data);
 
         if (forceRefresh) {
-          SnackbarUtils.showSuccess('Profil rechargé avec succès');
+          SnackbarUtils.showSuccess('companysettings_profil_recharge_avec_succes'.tr);
         }
       } else {
         // Profil non trouvé, initialiser un profil vide
@@ -191,7 +191,7 @@ class CompanySettingsController extends GetxController {
         }
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur de connexion: $e');
+      SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     } finally {
       _isLoading.value = false;
     }
@@ -232,7 +232,7 @@ class CompanySettingsController extends GetxController {
   /// Sauvegarde le profil d'entreprise
   Future<void> saveCompanyProfile() async {
     if (!_canEdit.value) {
-      SnackbarUtils.showError('Vous n\'avez pas les permissions pour modifier le profil');
+      SnackbarUtils.showError('companysettings_vous_n_avez_pas_permissions_modifier'.tr);
       return;
     }
 
@@ -240,7 +240,7 @@ class CompanySettingsController extends GetxController {
 
     // Valider le formulaire
     if (!formKey.currentState!.validate()) {
-      SnackbarUtils.showError('Veuillez corriger les erreurs dans le formulaire');
+      SnackbarUtils.showError('products_veuillez_corriger_erreurs_dans_formulaire'.tr);
       return;
     }
 
@@ -262,7 +262,7 @@ class CompanySettingsController extends GetxController {
         await _saveProfileWithoutLogo();
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur de connexion: $e');
+      SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     } finally {
       _isSaving.value = false;
     }
@@ -355,13 +355,13 @@ class CompanySettingsController extends GetxController {
         await _companySettingsService.clearCache();
 
         PrintingService.setCompanyProfile(profile);
-        SnackbarUtils.showSuccess('Profil et logo sauvegardés avec succès');
+        SnackbarUtils.showSuccess('companysettings_profil_logo_sauvegardes_avec_succes'.tr);
       } else {
-        SnackbarUtils.showError('Erreur lors de la sauvegarde: ${response.statusCode}');
+        SnackbarUtils.showError('companysettings_erreur_lors_sauvegarde'.trParams({'statusCode': '${response.statusCode}'}));
       }
     } catch (e) {
       print('❌ Erreur upload logo: $e');
-      SnackbarUtils.showError('Erreur lors de l\'upload du logo: $e');
+      SnackbarUtils.showError('companysettings_erreur_lors_upload_logo'.trParams({'e': '${e}'}));
     }
   }
 
@@ -423,14 +423,14 @@ class CompanySettingsController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Erreur lors de la sauvegarde');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur de connexion: $e');
+      SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
   /// Supprime le profil d'entreprise
   Future<void> deleteCompanyProfile() async {
     if (!_isAdmin.value) {
-      SnackbarUtils.showError('Seuls les administrateurs peuvent supprimer le profil');
+      SnackbarUtils.showError('companysettings_seuls_administrateurs_peuvent_supprimer_profil'.tr);
       return;
     }
 
@@ -439,7 +439,7 @@ class CompanySettingsController extends GetxController {
     // Demander confirmation
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('users_delete_confirm_title'.tr),
         content: const Text(
           'Êtestes-vous sûr de vouloir supprimer le profil d\'entreprise ? '
           'Cette action est irréversible.',
@@ -447,12 +447,12 @@ class CompanySettingsController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -473,7 +473,7 @@ class CompanySettingsController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Erreur lors de la suppression');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur de connexion: $e');
+      SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     } finally {
       _isLoading.value = false;
     }
@@ -513,7 +513,7 @@ class CompanySettingsController extends GetxController {
 
     final result = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Modifications non sauvegardées'),
+        title: Text('company_settings_unsaved_changes'.tr),
         content: const Text(
           'Vous avez des modifications non sauvegardées. '
           'Voulez-vous les abandonner ?',
@@ -565,14 +565,14 @@ class CompanySettingsController extends GetxController {
         // Vérifier que le fichier existe
         final file = File(filePath);
         if (!await file.exists()) {
-          SnackbarUtils.showError('Le fichier sélectionné n\'existe pas');
+          SnackbarUtils.showError('companysettings_fichier_selectionne_n_existe_pas'.tr);
           return;
         }
 
         // Vérifier la taille du fichier (max 5MB)
         final fileSize = await file.length();
         if (fileSize > 5 * 1024 * 1024) {
-          SnackbarUtils.showError('Le fichier est trop volumineux (max 5MB)');
+          SnackbarUtils.showError('companysettings_fichier_est_trop_volumineux_max_5mb'.tr);
           return;
         }
 
@@ -580,11 +580,11 @@ class CompanySettingsController extends GetxController {
         _logoPath.value = filePath;
         _hasUnsavedChanges.value = true;
 
-        SnackbarUtils.showSuccess('Logo sélectionné: ${result.files.single.name}');
+        SnackbarUtils.showSuccess('companysettings_logo_selectionne'.trParams({'name': '${result.files.single.name}'}));
       }
     } catch (e) {
       print('❌ Erreur lors de la sélection du logo: $e');
-      SnackbarUtils.showError('Erreur lors de la sélection du fichier: $e');
+      SnackbarUtils.showError('companysettings_erreur_lors_selection_fichier'.trParams({'e': '${e}'}));
     }
   }
 
@@ -619,12 +619,12 @@ class CompanySettingsController extends GetxController {
           _hasUnsavedChanges.value = false;
           await _companySettingsService.clearCache();
           PrintingService.setCompanyProfile(response.data);
-          SnackbarUtils.showSuccess('Logo supprimé avec succès');
+          SnackbarUtils.showSuccess('companysettings_logo_supprime_avec_succes'.tr);
         } else {
           SnackbarUtils.showError(response.message ?? 'Erreur lors de la suppression du logo');
         }
       } catch (e) {
-        SnackbarUtils.showError('Erreur: $e');
+        SnackbarUtils.showError('suppliers_erreur'.trParams({'e': '${e}'}));
       } finally {
         _isSaving.value = false;
       }

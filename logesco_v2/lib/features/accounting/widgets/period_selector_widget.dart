@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../controllers/accounting_controller.dart';
 
@@ -46,7 +47,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                       onStartDateChanged(startDate!);
                     }
                   },
-                  tooltip: 'Actualiser les données',
+                  tooltip: 'accounting_actualiser_donnees'.tr,
                 ),
               ],
             ),

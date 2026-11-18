@@ -246,7 +246,7 @@ class _ProformaFiltersState extends State<ProformaFilters> {
                           controller.setDateFilter(null, null);
                         },
                         icon: const Icon(Icons.close),
-                        tooltip: 'Effacer les dates',
+                        tooltip: 'sales_clear_dates'.tr,
                       ),
                   ],
                 ),

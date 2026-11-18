@@ -1,6 +1,7 @@
 /// Widget réutilisable pour filtrer par période
 library;
 
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 enum PeriodFilter { all, today, week, month, year, custom }
@@ -41,19 +42,19 @@ class DateFilterBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Cette semaine',
+              label: 'sales_this_week'.tr,
               selected: selectedPeriod == PeriodFilter.week,
               onTap: () => onPeriodChanged(PeriodFilter.week),
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Ce mois',
+              label: 'analytics_this_month'.tr,
               selected: selectedPeriod == PeriodFilter.month,
               onTap: () => onPeriodChanged(PeriodFilter.month),
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Cette année',
+              label: 'analytics_this_year'.tr,
               selected: selectedPeriod == PeriodFilter.year,
               onTap: () => onPeriodChanged(PeriodFilter.year),
             ),

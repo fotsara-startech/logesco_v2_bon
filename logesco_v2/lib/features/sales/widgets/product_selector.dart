@@ -449,7 +449,7 @@ class _ProductSelectorState extends State<ProductSelector> {
 
         SnackbarHelper.success(
           'Produit ajouté: ${product.nom} (${product.reference})',
-          title: 'Ajouté au panier',
+          title: 'sales_ajoute_panier'.tr,
         );
       } else {
         // Aucun produit trouvé

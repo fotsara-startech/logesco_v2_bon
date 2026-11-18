@@ -297,7 +297,7 @@ class FinancialMovementService {
     final errors = form.validate();
     if (errors.isNotEmpty) {
       throw FinancialMovementException.validation(
-        message: 'Données invalides: ${errors.join(', ')}',
+        message: 'common_invalid_data_list'.trParams({'list': errors.join(', ')}),
         fieldErrors: Map.fromEntries(
           errors.map((error) => MapEntry(error, error)),
         ),
@@ -393,7 +393,7 @@ class FinancialMovementService {
     final errors = form.validate();
     if (errors.isNotEmpty) {
       throw FinancialMovementException.validation(
-        message: 'Données invalides: ${errors.join(', ')}',
+        message: 'common_invalid_data_list'.trParams({'list': errors.join(', ')}),
         fieldErrors: Map.fromEntries(
           errors.map((error) => MapEntry(error, error)),
         ),

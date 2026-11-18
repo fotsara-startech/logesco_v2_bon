@@ -29,18 +29,18 @@ class CommercialFormView extends StatelessWidget {
           children: [
             TextField(
               controller: controller.nomController,
-              decoration: const InputDecoration(labelText: 'Nom *', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: 'boutiques_nom'.tr, border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller.prenomController,
-              decoration: const InputDecoration(labelText: 'Prénom', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: 'customers_first_name'.tr, border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller.telephoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Téléphone', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: 'suppliers_phone'.tr, border: OutlineInputBorder()),
             ),
             const SizedBox(height: 20),
             const Text('Localisation', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -62,7 +62,7 @@ class CommercialFormView extends StatelessWidget {
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
-                      tooltip: 'Nouvelle ville',
+                      tooltip: 'commercials_nouvelle_ville'.tr,
                       onPressed: () async {
                         final ville = await commercialController.createVilleDialog();
                         if (ville != null) controller.setVille(ville);
@@ -88,7 +88,7 @@ class CommercialFormView extends StatelessWidget {
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
-                      tooltip: 'Nouvelle zone',
+                      tooltip: 'commercials_nouvelle_zone'.tr,
                       onPressed: controller.selectedVille.value == null
                           ? null
                           : () async {
@@ -99,16 +99,16 @@ class CommercialFormView extends StatelessWidget {
                   ],
                 )),
             if (controller.selectedVille.value == null)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 4),
-                child: Text('Choisissez une ville pour voir ses zones', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                child: Text('commercials_choisissez_ville_voir_ses_zones'.tr, style: TextStyle(fontSize: 12, color: Colors.grey)),
               ),
             const SizedBox(height: 20),
 
             Obx(() => SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Actif'),
-                  subtitle: const Text('Un commercial inactif n\'apparaît plus dans le sélecteur de vente'),
+                  subtitle: Text('commercials_commercial_inactif_n_apparait_plus_dans'.tr),
                   value: controller.isActive.value,
                   onChanged: (v) => controller.isActive.value = v,
                 )),
@@ -120,7 +120,7 @@ class CommercialFormView extends StatelessWidget {
                     onPressed: controller.isLoading.value ? null : controller.saveCommercial,
                     child: controller.isLoading.value
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Enregistrer'),
+                        : Text('suppliers_form_save'.tr),
                   ),
                 )),
           ],

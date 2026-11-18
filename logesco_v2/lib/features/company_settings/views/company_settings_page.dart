@@ -440,14 +440,14 @@ class CompanySettingsPage extends StatelessWidget {
               enabled: controller.canEdit,
               hintText: 'company_settings_select_language'.tr,
             ),
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: 'fr',
                 child: Row(
                   children: [
                     Text(''),
                     SizedBox(width: 8),
-                    Text('Français'),
+                    Text('language_french'.tr),
                   ],
                 ),
               ),

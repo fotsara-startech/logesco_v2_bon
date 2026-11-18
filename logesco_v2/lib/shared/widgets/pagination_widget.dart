@@ -103,14 +103,14 @@ class PaginationWidget extends StatelessWidget {
         IconButton(
           onPressed: paginationInfo.page > 1 ? () => onPageChanged(1) : null,
           icon: const Icon(Icons.first_page),
-          tooltip: 'Première page',
+          tooltip: 'financial_movements_pagination_first_page'.tr,
         ),
 
         // Page précédente
         IconButton(
           onPressed: paginationInfo.hasPrev ? () => onPageChanged(paginationInfo.page - 1) : null,
           icon: const Icon(Icons.chevron_left),
-          tooltip: 'Page précédente',
+          tooltip: 'financialmovements_page_precedente'.tr,
         ),
 
         // Pages numériques
@@ -127,7 +127,7 @@ class PaginationWidget extends StatelessWidget {
         IconButton(
           onPressed: paginationInfo.page < paginationInfo.pages ? () => onPageChanged(paginationInfo.pages) : null,
           icon: const Icon(Icons.last_page),
-          tooltip: 'Dernière page',
+          tooltip: 'financial_movements_pagination_last_page'.tr,
         ),
 
         if (showJumpToPage) ...[

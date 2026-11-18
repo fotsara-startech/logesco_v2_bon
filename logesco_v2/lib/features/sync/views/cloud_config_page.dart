@@ -115,15 +115,15 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Enregistrer et redémarrer le serveur ?'),
+        title: Text('sync_enregistrer_redemarrer_serveur'.tr),
         content: const Text(
           "Le lien sera enregistré, puis le serveur de LOGESCO redémarrera pour utiliser le cloud. "
           "Cela prend environ une minute : les autres postes du réseau perdront la connexion un instant.\n\n"
           "Faites-le en dehors des heures de vente si possible.",
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Enregistrer et redémarrer')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text('sync_enregistrer_redemarrer'.tr)),
         ],
       ),
     );
@@ -152,7 +152,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
       await _charger();
       if (Get.isRegistered<SyncController>()) await Get.find<SyncController>().refresh();
       if (mounted) setState(() => _test = null);
-      SnackbarHelper.success('Connecté au cloud. La synchronisation démarre.');
+      SnackbarHelper.success('sync_connecte_cloud_synchronisation_demarre'.tr);
     } catch (e) {
       if (mounted) setState(() => _erreurSaisie = _messageErreur(e));
     } finally {
@@ -263,10 +263,10 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
     if (!CloudConfigPage.disponible) {
       return Scaffold(
         appBar: AppBar(title: const Text('Connexion au cloud')),
-        body: const Center(
+        body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
-            child: Text("Cet écran est réservé à l'administrateur, sur l'ordinateur qui héberge le serveur LOGESCO.", textAlign: TextAlign.center),
+            child: Text('sync_cet_ecran_est_reserve_administrateur_sur'.tr, textAlign: TextAlign.center),
           ),
         ),
       );
@@ -301,7 +301,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
                 _erreurSaisie = null;
               }),
               decoration: InputDecoration(
-                labelText: 'Lien de connexion Neon',
+                labelText: 'sync_lien_connexion_neon'.tr,
                 hintText: 'postgresql://utilisateur:motdepasse@...neon.tech/base',
                 border: const OutlineInputBorder(),
                 errorText: _erreurSaisie,
@@ -317,14 +317,14 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
               ),
             ),
             const SizedBox(height: 4),
-            Text("Ce lien contient le mot de passe de votre base : ne le partagez avec personne.", style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+            Text('sync_lien_contient_mot_passe_votre_base'.tr, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _occupe ? null : _tester,
                   icon: const Icon(Icons.wifi_tethering),
-                  label: const Text('Tester la connexion'),
+                  label: Text('sync_tester_connexion'.tr),
                 ),
               ),
               const SizedBox(width: 12),
@@ -332,14 +332,14 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
                 child: ElevatedButton.icon(
                   onPressed: peutEnregistrer ? _enregistrer : null,
                   icon: const Icon(Icons.save),
-                  label: const Text('Enregistrer et redémarrer'),
+                  label: Text('sync_enregistrer_redemarrer'.tr),
                 ),
               ),
             ]),
             if (_test == null && !_occupe)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text("Testez d'abord la connexion : l'enregistrement n'est possible que si elle réussit.", style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+                child: Text('sync_testez_abord_connexion_enregistrement_n_est'.tr, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
               ),
             if (_occupe) ...[
               const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'friendly_error.dart';
@@ -102,7 +103,7 @@ class InsufficientStockException extends BusinessException {
     required this.available,
     required this.requested,
   }) : super(
-          message: 'Stock insuffisant pour $productName. Disponible: $available, Demandé: $requested',
+          message: 'core_stock_insuffisant_disponible_demande'.trParams({'productName': '${productName}', 'available': '${available}', 'requested': '${requested}'}),
           code: 'INSUFFICIENT_STOCK',
         );
 }

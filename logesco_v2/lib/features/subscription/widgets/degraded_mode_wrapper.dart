@@ -177,7 +177,7 @@ class ReadOnlyOverlay extends StatelessWidget {
                         onPressed: () {
                           Get.to(() => const LicenseActivationPage());
                         },
-                        child: const Text('Activer une licence'),
+                        child: Text('subscription_activate_license'.tr),
                       ),
                     ],
                   ),

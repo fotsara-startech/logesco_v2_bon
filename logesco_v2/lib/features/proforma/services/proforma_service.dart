@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
@@ -79,7 +80,7 @@ class ProformaService {
         return ApiResponse.error(message: err['message'] ?? 'Erreur lors du chargement des proformas');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -97,7 +98,7 @@ class ProformaService {
         return ApiResponse.error(message: err['message'] ?? 'Proforma introuvable');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -131,7 +132,7 @@ class ProformaService {
         return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la création de la proforma');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -162,7 +163,7 @@ class ProformaService {
         return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la mise à jour');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -188,7 +189,7 @@ class ProformaService {
         return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la validation');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -199,13 +200,13 @@ class ProformaService {
       final response = await http.delete(Uri.parse('$_baseUrl/$id'), headers: headers).timeout(AppConfig.connectTimeout);
 
       if (response.statusCode == 200) {
-        return ApiResponse.success(null, message: 'Proforma annulée');
+        return ApiResponse.success(null, message: 'proforma_proforma_annulee'.tr);
       } else {
         final err = jsonDecode(response.body);
         return ApiResponse.error(message: err['message'] ?? 'Erreur lors de l\'annulation');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 

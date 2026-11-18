@@ -163,7 +163,7 @@ class ErrorService extends GetxService {
 
     ErrorHandler.showWarning(
       error.message,
-      title: 'Stock insuffisant',
+      title: 'sales_stock_insufficient'.tr,
     );
   }
 
@@ -176,7 +176,7 @@ class ErrorService extends GetxService {
 
     ErrorHandler.showWarning(
       error.message,
-      title: 'Limite de crédit',
+      title: 'accounts_credit_limit'.tr,
     );
   }
 }

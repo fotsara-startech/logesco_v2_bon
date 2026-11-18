@@ -95,11 +95,11 @@ class CommercialFormController extends GetxController {
 
   Future<void> saveCommercial() async {
     if (nomController.text.trim().isEmpty) {
-      SnackbarHelper.error('Le nom du commercial est obligatoire');
+      SnackbarHelper.error('commercials_nom_commercial_est_obligatoire'.tr);
       return;
     }
     if (selectedZone.value == null) {
-      SnackbarHelper.error('Veuillez sélectionner une zone');
+      SnackbarHelper.error('commercials_veuillez_selectionner_zone'.tr);
       return;
     }
 
@@ -117,10 +117,10 @@ class CommercialFormController extends GetxController {
       Commercial saved;
       if (isEditing.value && _currentCommercial != null) {
         saved = await _service.updateCommercial(_currentCommercial!.id, form);
-        SnackbarHelper.success('Commercial modifié avec succès');
+        SnackbarHelper.success('commercials_commercial_modifie_avec_succes'.tr);
       } else {
         saved = await _service.createCommercial(form);
-        SnackbarHelper.success('Commercial créé avec succès');
+        SnackbarHelper.success('commercials_commercial_cree_avec_succes'.tr);
       }
 
       _commercialController.onCommercialSaved(saved, isEdit: isEditing.value);

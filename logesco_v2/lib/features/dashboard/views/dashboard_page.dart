@@ -16,7 +16,7 @@ class DashboardPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LOGESCO v2 - Tableau de bord'),
+        title: Text('dashboard_logesco_v2_tableau_bord'.tr),
         actions: [
           // Informations utilisateur
           Obx(() {
@@ -52,13 +52,13 @@ class DashboardPage extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
                     Icon(Icons.logout),
                     SizedBox(width: 8),
-                    Text('Déconnexion'),
+                    Text('logout'.tr),
                   ],
                 ),
               ),
@@ -308,7 +308,7 @@ class DashboardPage extends StatelessWidget {
       Expanded(
         child: _buildQuickActionButton(
           icon: Icons.point_of_sale,
-          label: 'Nouvelle vente',
+          label: 'dashboard_new_sale'.tr,
           color: Colors.green,
           onTap: () => Get.toNamed(AppRoutes.createSale),
         ),
@@ -326,7 +326,7 @@ class DashboardPage extends StatelessWidget {
       Expanded(
         child: _buildQuickActionButton(
           icon: Icons.account_balance_wallet,
-          label: 'Nouvelle dépense',
+          label: 'dashboard_financial_movement'.tr,
           color: Colors.pink,
           onTap: () => Get.toNamed(AppRoutes.createFinancialMovement),
         ),
@@ -335,7 +335,7 @@ class DashboardPage extends StatelessWidget {
       Expanded(
         child: _buildQuickActionButton(
           icon: Icons.print,
-          label: 'Réimprimer reçu',
+          label: 'sales_reprint'.tr,
           color: Colors.deepPurple,
           onTap: () => Get.toNamed(AppRoutes.printing),
         ),
@@ -344,7 +344,7 @@ class DashboardPage extends StatelessWidget {
       Expanded(
         child: _buildQuickActionButton(
           icon: Icons.inventory_2,
-          label: 'Vérifier stock',
+          label: 'dashboard_verifier_stock'.tr,
           color: Colors.teal,
           onTap: () => Get.toNamed(AppRoutes.inventory),
         ),
@@ -358,7 +358,7 @@ class DashboardPage extends StatelessWidget {
         Expanded(
           child: _buildQuickActionButton(
             icon: Icons.settings,
-            label: 'Paramètres',
+            label: 'settings'.tr,
             color: Colors.amber,
             onTap: () => Get.toNamed(AppRoutes.companySettings),
             isAdminAction: true,
@@ -460,7 +460,7 @@ class DashboardPage extends StatelessWidget {
     final allModules = [
       _ModuleItem(
         title: 'Produits',
-        subtitle: 'Gérer le catalogue',
+        subtitle: 'dashboard_gerer_catalogue'.tr,
         icon: Icons.inventory_2,
         color: Colors.blue,
         route: AppRoutes.products,
@@ -468,7 +468,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Fournisseurs',
-        subtitle: 'Gérer les fournisseurs',
+        subtitle: 'dashboard_gerer_fournisseurs'.tr,
         icon: Icons.business,
         color: Colors.green,
         route: AppRoutes.suppliers,
@@ -476,7 +476,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Clients',
-        subtitle: 'Gérer les clients',
+        subtitle: 'dashboard_gerer_clients'.tr,
         icon: Icons.people,
         color: Colors.orange,
         route: AppRoutes.customers,
@@ -492,15 +492,15 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Ventes',
-        subtitle: 'Point de vente',
+        subtitle: 'dashboard_point_vente'.tr,
         icon: Icons.point_of_sale,
         color: Colors.red,
         route: AppRoutes.sales,
         requiredPermission: 'sales.make',
       ),
       _ModuleItem(
-        title: 'Stock',
-        subtitle: 'Gestion du stock',
+        title: 'products_stock'.tr,
+        subtitle: 'product_form_stock_management'.tr,
         icon: Icons.warehouse,
         color: Colors.teal,
         route: AppRoutes.inventory,
@@ -508,7 +508,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Impression',
-        subtitle: 'Reçus et réimpressions',
+        subtitle: 'dashboard_recus_reimpressions'.tr,
         icon: Icons.print,
         color: Colors.deepPurple,
         route: AppRoutes.printing,
@@ -516,7 +516,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Comptes',
-        subtitle: 'Crédits clients/fournisseurs',
+        subtitle: 'dashboard_credits_clients_fournisseurs'.tr,
         icon: Icons.account_balance,
         color: Colors.indigo,
         route: AppRoutes.accounts,
@@ -524,14 +524,14 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Rapports',
-        subtitle: 'Analyses et statistiques',
+        subtitle: 'dashboard_analyses_statistiques'.tr,
         icon: Icons.analytics,
         color: Colors.brown,
         route: AppRoutes.reports,
         requiredPermission: 'reports.view',
       ),
       _ModuleItem(
-        title: 'Paramètres',
+        title: 'settings'.tr,
         subtitle: 'Configuration entreprise',
         icon: Icons.settings,
         color: Colors.grey,
@@ -541,7 +541,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Utilisateurs',
-        subtitle: 'Gestion des utilisateurs',
+        subtitle: 'dashboard_gestion_utilisateurs'.tr,
         icon: Icons.people,
         color: Colors.deepOrange,
         route: AppRoutes.users,
@@ -550,15 +550,15 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Caisses',
-        subtitle: 'Gestion des caisses',
+        subtitle: 'dashboard_gestion_caisses'.tr,
         icon: Icons.point_of_sale,
         color: Colors.cyan,
         route: AppRoutes.cashRegisters,
         requiredPermission: 'cash.manage',
       ),
       _ModuleItem(
-        title: 'Inventaire Stock',
-        subtitle: 'Comptage et vérification',
+        title: 'dashboard_inventaire_stock'.tr,
+        subtitle: 'dashboard_comptage_verification'.tr,
         icon: Icons.inventory,
         color: Colors.lime,
         route: AppRoutes.stockInventory,
@@ -566,7 +566,7 @@ class DashboardPage extends StatelessWidget {
       ),
       _ModuleItem(
         title: 'Mouvements Financiers',
-        subtitle: 'Traçabilité des sorties',
+        subtitle: 'dashboard_tracabilite_sorties'.tr,
         icon: Icons.account_balance_wallet,
         color: Colors.pink,
         route: AppRoutes.financialMovements,
@@ -810,19 +810,19 @@ class DashboardPage extends StatelessWidget {
   void _showLogoutDialog(BuildContext context, AuthController authController) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Êtestes-vous sûr de vouloir vous déconnecter ?'),
+        title: Text('logout'.tr),
+        content: Text('dashboard_etestes_vous_sur_vouloir_vous_deconnecter'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
               Get.back();
               await authController.logout(); // La redirection est maintenant gérée dans logout()
             },
-            child: const Text('Déconnexion'),
+            child: Text('logout'.tr),
           ),
         ],
       ),

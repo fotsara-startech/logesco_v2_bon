@@ -25,7 +25,7 @@ class CancelCommandeDialog extends StatelessWidget {
         children: [
           Icon(Icons.cancel, color: Colors.red[700]),
           const SizedBox(width: 8),
-          const Text('Annuler la commande'),
+          Text('procurement_annuler_commande'.tr),
         ],
       ),
       content: ConstrainedBox(
@@ -53,8 +53,8 @@ class CancelCommandeDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Fournisseur: ${commande.fournisseur?.nom ?? 'N/A'}'),
-                  Text('Date: ${_formatDate(commande.dateCommande)}'),
+                  Text('procurement_supplier_label'.trParams({'nom': commande.fournisseur?.nom ?? 'N/A'})),
+                  Text('procurement_date_2'.trParams({'dateCommande': '${_formatDate(commande.dateCommande)}'})),
                   if (commande.montantTotal != null)
                     Text(
                       'Montant: ${commande.montantTotal!.toStringAsFixed(0)} FCFA',
@@ -150,7 +150,7 @@ class CancelCommandeDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Non, garder la commande'),
+          child: Text('procurement_non_garder_commande'.tr),
         ),
         Obx(() => ElevatedButton(
               onPressed: controller.isUpdating.value ? null : _handleCancel,
@@ -167,7 +167,7 @@ class CancelCommandeDialog extends StatelessWidget {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text('Oui, annuler'),
+                  : Text('sales_yes_cancel'.tr),
             )),
       ],
     );
@@ -198,12 +198,12 @@ class CancelCommandeDialog extends StatelessWidget {
   Future<void> _handleCancel() async {
     // Vérifier si la commande peut être annulée
     if (commande.statut == CommandeStatut.terminee) {
-      SnackbarHelper.error('Une commande terminée ne peut pas être annulée');
+      SnackbarHelper.error('procurement_commande_terminee_ne_peut_pas_etre'.tr);
       return;
     }
 
     if (commande.statut == CommandeStatut.annulee) {
-      SnackbarHelper.info('Cette commande est déjà annulée', title: 'Information');
+      SnackbarHelper.info('procurement_commande_est_deja_annulee'.tr, title: 'Information');
       return;
     }
 
@@ -225,7 +225,7 @@ class CancelCommandeDialog extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Oui, annuler définitivement'),
+            child: Text('procurement_oui_annuler_definitivement'.tr),
           ),
         ],
       ),

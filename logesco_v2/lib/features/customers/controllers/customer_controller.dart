@@ -572,7 +572,7 @@ class CustomerController extends GetxController {
         if (kIsWeb) {
           SnackbarHelper.success(
             '${allCustomers.length} clients exportés.\nFichier: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 4),
           );
         } else {

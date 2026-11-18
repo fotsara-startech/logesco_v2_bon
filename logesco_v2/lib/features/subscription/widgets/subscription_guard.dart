@@ -123,7 +123,7 @@ class SubscriptionProtectedAction extends StatelessWidget {
         ),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Fermer')),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('suppliers_close'.tr)),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();

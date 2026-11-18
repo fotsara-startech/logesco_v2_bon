@@ -127,7 +127,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'sales_product_reference'.trParams({'ref': widget.cartItem.productReference}),
+                    'sales_discount_dialog_reference'.trParams({'ref': widget.cartItem.productReference}),
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 12,
@@ -137,12 +137,12 @@ class _DiscountDialogState extends State<DiscountDialog> {
                   Row(
                     children: [
                       Text(
-                        'sales_product_price'.trParams({'price': widget.cartItem.originalPrice.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
+                        'sales_discount_dialog_price'.trParams({'price': widget.cartItem.originalPrice.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const Spacer(),
                       Text(
-                        'sales_discount_max'.trParams({'max': widget.cartItem.maxDiscountAllowed.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
+                        'sales_discount_dialog_max'.trParams({'max': widget.cartItem.maxDiscountAllowed.toStringAsFixed(0), 'currency': CurrencyConstants.defaultCurrency}),
                         style: TextStyle(
                           color: Colors.orange.shade700,
                           fontWeight: FontWeight.w500,

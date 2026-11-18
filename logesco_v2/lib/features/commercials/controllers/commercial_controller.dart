@@ -50,7 +50,7 @@ class CommercialController extends GetxController {
       zones.assignAll(results[1] as List<Zone>);
       commerciaux.assignAll(results[2] as List<Commercial>);
     } catch (e) {
-      SnackbarHelper.error('Erreur lors du chargement des commerciaux');
+      SnackbarHelper.error('commercials_erreur_lors_chargement_commerciaux'.tr);
     } finally {
       isLoading.value = false;
     }
@@ -63,17 +63,17 @@ class CommercialController extends GetxController {
     final controller = TextEditingController();
     final nom = await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Nouvelle ville'),
+        title: Text('commercials_nouvelle_ville'.tr),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nom de la ville'),
+          decoration: InputDecoration(labelText: 'commercials_nom_ville'.tr),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
+          TextButton(onPressed: () => Get.back(), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             onPressed: () => Get.back(result: controller.text.trim()),
-            child: const Text('Créer'),
+            child: Text('suppliers_form_create'.tr),
           ),
         ],
       ),
@@ -85,10 +85,10 @@ class CommercialController extends GetxController {
       final ville = await _service.createVille(nom);
       villes.add(ville);
       villes.sort((a, b) => a.nom.compareTo(b.nom));
-      SnackbarHelper.success('Ville "${ville.nom}" créée');
+      SnackbarHelper.success('commercials_ville_creee'.trParams({'nom': '${ville.nom}'}));
       return ville;
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la création de la ville');
+      SnackbarHelper.error('commercials_erreur_lors_creation_ville'.tr);
       return null;
     }
   }
@@ -98,17 +98,17 @@ class CommercialController extends GetxController {
     final controller = TextEditingController();
     final nom = await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Nouvelle zone'),
+        title: Text('commercials_nouvelle_zone'.tr),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nom de la zone (quartier)'),
+          decoration: InputDecoration(labelText: 'commercials_nom_zone_quartier'.tr),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
+          TextButton(onPressed: () => Get.back(), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             onPressed: () => Get.back(result: controller.text.trim()),
-            child: const Text('Créer'),
+            child: Text('suppliers_form_create'.tr),
           ),
         ],
       ),
@@ -119,10 +119,10 @@ class CommercialController extends GetxController {
     try {
       final zone = await _service.createZone(nom, villeId);
       zones.add(zone);
-      SnackbarHelper.success('Zone "${zone.nom}" créée');
+      SnackbarHelper.success('commercials_zone_creee'.trParams({'nom': '${zone.nom}'}));
       return zone;
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la création de la zone');
+      SnackbarHelper.error('commercials_erreur_lors_creation_zone'.tr);
       return null;
     }
   }
@@ -130,14 +130,14 @@ class CommercialController extends GetxController {
   Future<void> deleteCommercial(Commercial commercial) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Supprimer le commercial "${commercial.nomComplet}" ?'),
+        title: Text('users_delete_confirm_title'.tr),
+        content: Text('commercials_supprimer_commercial'.trParams({'nomComplet': '${commercial.nomComplet}'})),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Get.back(result: false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -149,9 +149,9 @@ class CommercialController extends GetxController {
       final success = await _service.deleteCommercial(commercial.id);
       if (success) {
         commerciaux.removeWhere((c) => c.id == commercial.id);
-        SnackbarHelper.success('Commercial "${commercial.nomComplet}" supprimé');
+        SnackbarHelper.success('commercials_commercial_supprime'.trParams({'nomComplet': '${commercial.nomComplet}'}));
       } else {
-        SnackbarHelper.error('La suppression a échoué');
+        SnackbarHelper.error('commercials_suppression_echoue'.tr);
       }
     } catch (e) {
       String message = 'Erreur lors de la suppression';

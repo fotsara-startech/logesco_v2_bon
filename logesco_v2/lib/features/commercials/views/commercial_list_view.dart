@@ -21,7 +21,7 @@ class CommercialListView extends StatelessWidget {
       showFallback: true,
       fallback: Scaffold(
         appBar: AppBar(title: const Text('Commerciaux')),
-        body: const Center(child: Text('Accès refusé')),
+        body: Center(child: Text('suppliers_access_denied'.tr)),
       ),
       child: Scaffold(
         appBar: AppBar(
@@ -31,7 +31,7 @@ class CommercialListView extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => controller.loadAll(),
-              tooltip: 'Rafraîchir',
+              tooltip: 'commercials_rafraichir'.tr,
             ),
           ],
         ),
@@ -46,7 +46,7 @@ class CommercialListView extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Rechercher un commercial...',
+                    hintText: 'commercials_rechercher_commercial'.tr,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
@@ -91,7 +91,7 @@ class CommercialListView extends StatelessWidget {
               if (result == null) controller.loadAll();
             },
             icon: const Icon(Icons.person_add_alt_1),
-            label: const Text('Nouveau commercial'),
+            label: Text('commercials_nouveau_commercial'.tr),
           ),
         ),
       ),

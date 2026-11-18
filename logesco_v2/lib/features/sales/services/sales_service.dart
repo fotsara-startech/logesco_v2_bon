@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
@@ -119,7 +120,7 @@ class SalesService {
       }
     } catch (e) {
       print('❌ [DIAGNOSTIC API] Exception: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -147,7 +148,7 @@ class SalesService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération de la vente');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -195,11 +196,11 @@ class SalesService {
     } catch (e) {
       print('Error creating sale: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez que le serveur backend est démarré.');
+        return ApiResponse.error(message: 'sales_serveur_ne_repond_pas_verifiez_que'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur. Vérifiez que le serveur backend est démarré sur le port 8080.');
+        return ApiResponse.error(message: 'sales_impossible_se_connecter_serveur_verifiez_que'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -231,7 +232,7 @@ class SalesService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la modification de la vente');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -261,7 +262,7 @@ class SalesService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'annulation de la vente');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -292,7 +293,7 @@ class SalesService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'annulation des articles');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -331,7 +332,7 @@ class SalesService {
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors du remplacement de l\'article');
       }
     } catch (e) {
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 

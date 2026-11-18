@@ -267,7 +267,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
         ),
         onTap: () {
           // TODO: Naviguer vers la création d'une commande pour ce produit
-          SnackbarHelper.info('Création de commande pour ${produit['nom']} à implémenter');
+          SnackbarHelper.info('procurement_create_order_for_todo'.trParams({'nom': '${produit['nom']}'}));
         },
       ),
     );

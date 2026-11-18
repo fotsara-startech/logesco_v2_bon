@@ -409,7 +409,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
                                       children: [
                                         Icon(Icons.person_add, size: 18, color: Colors.orange[700]),
                                         const SizedBox(width: 10),
-                                        Expanded(child: Text('Créer "$query"', style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500))),
+                                        Expanded(child: Text('proforma_creer'.trParams({'query': '${query}'}), style: TextStyle(fontSize: 14, color: Colors.orange[700], fontWeight: FontWeight.w500))),
                                       ],
                                     ),
                                   ),
@@ -446,7 +446,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la création du client: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('proforma_erreur_lors_creation_client'.trParams({'e': '${e}'})), backgroundColor: Colors.red),
         );
       }
     }

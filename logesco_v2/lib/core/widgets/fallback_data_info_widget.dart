@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 /// Widget d'information pour indiquer l'utilisation des données par défaut
@@ -64,7 +65,7 @@ class FallbackDataInfoWidget extends StatelessWidget {
                 color: Colors.amber.shade700,
                 size: 20,
               ),
-              tooltip: 'Réessayer',
+              tooltip: 'roles_retry'.tr,
               constraints: const BoxConstraints(
                 minWidth: 32,
                 minHeight: 32,

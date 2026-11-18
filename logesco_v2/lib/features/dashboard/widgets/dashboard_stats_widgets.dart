@@ -25,7 +25,7 @@ class DashboardStatsWidgets {
 
     return Obx(() {
       return StatsCardWidget(
-        title: 'Ventes du jour',
+        title: 'dashboard_today_sales'.tr,
         value: '${controller.todaySales.value} FCFA',
         subtitle: '${controller.todaySalesCount.value} transactions',
         icon: Icons.point_of_sale,
@@ -46,9 +46,9 @@ class DashboardStatsWidgets {
 
     return Obx(() {
       return StatsCardWidget(
-        title: 'Produits en stock',
+        title: 'dashboard_produits_stock'.tr,
         value: controller.totalProducts.value,
-        subtitle: '${controller.totalCategories.value} catégories',
+        subtitle: 'dashboard_categories'.trParams({'value': '${controller.totalCategories.value}'}),
         icon: Icons.inventory_2,
         color: Colors.blue,
         trend: controller.productsTrend.value,

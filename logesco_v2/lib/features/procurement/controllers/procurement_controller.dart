@@ -107,7 +107,7 @@ class ProcurementController extends GetxController {
       currentPage.value++;
     } catch (e) {
       print(' ERREUR CHARGEMENT: $e');
-      SnackbarHelper.error('Impossible de charger les commandes: $e');
+      SnackbarHelper.error('procurement_impossible_charger_commandes'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -121,7 +121,7 @@ class ProcurementController extends GetxController {
       final commande = await _procurementService.getCommande(id);
       commandeSelectionnee.value = commande;
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger la commande: $e');
+      SnackbarHelper.error('procurement_impossible_charger_commande'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -130,7 +130,7 @@ class ProcurementController extends GetxController {
   /// Crée une nouvelle commande
   Future<bool> createCommande() async {
     if (fournisseurSelectionne.value == null || detailsCommande.isEmpty) {
-      SnackbarHelper.error('Veuillez sélectionner un fournisseur et ajouter des produits');
+      SnackbarHelper.error('procurement_veuillez_selectionner_fournisseur_ajouter_produits'.tr);
       return false;
     }
 
@@ -157,11 +157,11 @@ class ProcurementController extends GetxController {
       commandes.insert(0, commande);
       resetNouvelleCommande();
 
-      SnackbarHelper.success('Commande créée avec succès');
+      SnackbarHelper.success('procurement_commande_creee_avec_succes'.tr);
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer la commande: $e');
+      SnackbarHelper.error('procurement_impossible_creer_commande'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isCreating.value = false;
@@ -186,14 +186,14 @@ class ProcurementController extends GetxController {
         commandeSelectionnee.value = commande;
       }
 
-      SnackbarHelper.success('Réception enregistrée avec succès');
+      SnackbarHelper.success('procurement_reception_enregistree_avec_succes'.tr);
 
       // Recharger les alertes car le stock a changé
       loadAlertes();
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible d\'enregistrer la réception: $e');
+      SnackbarHelper.error('procurement_impossible_enregistrer_reception'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isUpdating.value = false;
@@ -213,11 +213,11 @@ class ProcurementController extends GetxController {
         commandes[index] = commande;
       }
 
-      SnackbarHelper.success('Commande annulée avec succès');
+      SnackbarHelper.success('procurement_commande_annulee_avec_succes'.tr);
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible d\'annuler la commande: $e');
+      SnackbarHelper.error('procurement_impossible_annuler_commande'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isUpdating.value = false;
@@ -316,17 +316,17 @@ class ProcurementController extends GetxController {
       if (kIsWeb) {
         SnackbarHelper.success(
           'Commande exportée en PDF: $filename',
-          title: 'Export réussi',
+          title: 'customers_export_success'.tr,
           duration: const Duration(seconds: 3),
         );
       } else {
-        SnackbarHelper.success('Commande exportée en PDF: $filename');
+        SnackbarHelper.success('procurement_commande_exportee_pdf'.trParams({'filename': '${filename}'}));
       }
 
       return filePath;
     } catch (e) {
       print('❌ Erreur export commande PDF: $e');
-      SnackbarHelper.error('Impossible d\'exporter la commande: $e');
+      SnackbarHelper.error('procurement_impossible_exporter_commande'.trParams({'e': '${e}'}));
       return null;
     }
   }
@@ -343,7 +343,7 @@ class ProcurementController extends GetxController {
 
       suggestions.assignAll(result);
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les suggestions: $e');
+      SnackbarHelper.error('procurement_impossible_charger_suggestions'.trParams({'e': '${e}'}));
     } finally {
       isLoadingSuggestions.value = false;
     }
@@ -374,14 +374,14 @@ class ProcurementController extends GetxController {
         commandes.insert(0, nouvelleCommande);
       }
 
-      SnackbarHelper.success('Commande générée automatiquement avec succès');
+      SnackbarHelper.success('procurement_commande_generee_automatiquement_avec_succes'.tr);
 
       // Recharger les suggestions pour mettre à jour les données
       loadSuggestions(fournisseurId: fournisseurId);
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de générer la commande: $e');
+      SnackbarHelper.error('procurement_impossible_generer_commande'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isCreating.value = false;

@@ -121,7 +121,7 @@ class BoutiqueActiveBadge extends StatelessWidget {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Changer de boutique', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                child: Text('boutiques_changer_boutique'.tr, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
               ...controller.boutiques.where((b) => b.isActive).map((b) => ListTile(

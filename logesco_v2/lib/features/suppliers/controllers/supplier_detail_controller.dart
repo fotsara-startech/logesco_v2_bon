@@ -110,24 +110,24 @@ class SupplierDetailController extends GetxController {
     try {
       final canDelete = await _supplierService.canDeleteSupplier(supplier.value!.id);
       if (!canDelete) {
-        SnackbarHelper.warning('Ce fournisseur ne peut pas être supprimé car il a des commandes associées.', title: 'Suppression impossible');
+        SnackbarHelper.warning('suppliers_fournisseur_ne_peut_pas_etre_supprime'.tr, title: 'suppliers_suppression_impossible'.tr);
         return;
       }
     } catch (e) {
-      SnackbarHelper.error('Impossible de vérifier les dépendances du fournisseur');
+      SnackbarHelper.error('suppliers_impossible_verifier_dependances_fournisseur'.tr);
       return;
     }
 
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('users_delete_confirm_title'.tr),
         content: Text(
           'Êtes-vous sûr de vouloir supprimer le fournisseur "${supplier.value!.nom}" ?',
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -135,7 +135,7 @@ class SupplierDetailController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -155,7 +155,7 @@ class SupplierDetailController extends GetxController {
             // Le contrôleur de liste n'existe pas, pas grave
           }
 
-          SnackbarHelper.success('Fournisseur supprimé avec succès');
+          SnackbarHelper.success('suppliers_delete_success'.tr);
 
           // Retourner à la liste
           Get.back();
@@ -181,7 +181,7 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      SnackbarHelper.error('Impossible d\'ouvrir l\'application téléphone');
+      SnackbarHelper.error('suppliers_call_error'.tr);
     }
   }
 
@@ -191,7 +191,7 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      SnackbarHelper.error('Impossible d\'ouvrir l\'application email');
+      SnackbarHelper.error('suppliers_email_error'.tr);
     }
   }
 
@@ -203,13 +203,13 @@ class SupplierDetailController extends GetxController {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      SnackbarHelper.error('Impossible d\'ouvrir l\'application cartes');
+      SnackbarHelper.error('suppliers_impossible_ouvrir_application_cartes'.tr);
     }
   }
 
   /// Affiche les commandes du fournisseur
   void viewOrders() {
-    SnackbarHelper.info('Affichage des commandes à implémenter', title: 'Fonctionnalité');
+    SnackbarHelper.info('suppliers_affichage_commandes_implementer'.tr, title: 'product_search_price_feature'.tr);
   }
 
   /// Récupère le total des achats d'un fournisseur

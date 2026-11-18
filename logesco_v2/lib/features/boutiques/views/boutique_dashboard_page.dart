@@ -101,7 +101,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        title: const Text('Dashboard consolidé', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text('boutiques_dashboard_consolide'.tr, style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -119,7 +119,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                 : _error != null
                     ? _buildError()
                     : _data == null
-                        ? const Center(child: Text('Aucune donnée'))
+                        ? Center(child: Text('no_data'.tr))
                         : _buildContent(),
           ),
         ],
@@ -134,12 +134,12 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
         children: [
           Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
           const SizedBox(height: 16),
-          Text('Erreur: $_error', style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          Text('boutiques_erreur'.trParams({'error': '${_error}'}), style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text('roles_retry'.tr),
           ),
         ],
       ),
@@ -164,7 +164,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Cette semaine',
+              label: 'sales_this_week'.tr,
               selected: _selectedPeriod == PeriodFilter.week,
               onTap: () {
                 setState(() => _selectedPeriod = PeriodFilter.week);
@@ -173,7 +173,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Ce mois',
+              label: 'analytics_this_month'.tr,
               selected: _selectedPeriod == PeriodFilter.month,
               onTap: () {
                 setState(() => _selectedPeriod = PeriodFilter.month);
@@ -182,7 +182,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: 'Cette année',
+              label: 'analytics_this_year'.tr,
               selected: _selectedPeriod == PeriodFilter.year,
               onTap: () {
                 setState(() => _selectedPeriod = PeriodFilter.year);
@@ -254,7 +254,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             const SizedBox(width: 10),
             Expanded(
               child: _CompactStatCard(
-                label: 'Montant encaissé',
+                label: 'boutiques_montant_encaisse'.tr,
                 value: _formatMoney(totaux['montantEncaisse']),
                 icon: Icons.account_balance_wallet_rounded,
                 color: const Color(0xFF2196F3),
@@ -263,7 +263,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             const SizedBox(width: 10),
             Expanded(
               child: _CompactStatCard(
-                label: 'Nombre de ventes',
+                label: 'reports_pdf_sales_count'.tr,
                 value: '${totaux['nbVentes'] ?? 0}',
                 icon: Icons.receipt_long_rounded,
                 color: const Color(0xFFFF9800),
@@ -668,7 +668,7 @@ class _ModernBoutiqueCard extends StatelessWidget {
               ),
               Expanded(
                 child: _StatItem(
-                  label: 'Encaissé',
+                  label: 'boutiques_encaisse'.tr,
                   value: '${_fmt(encaisse)} FCFA',
                   icon: Icons.payments_rounded,
                   color: Colors.blue,
@@ -704,7 +704,7 @@ class _ModernBoutiqueCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Tooltip(
-                  message: 'Solde actuel total de chaque caisse\n(indépendant de la période sélectionnée)',
+                  message: 'boutiques_solde_actuel_total_chaque_caisse_n'.tr,
                   child: Icon(Icons.info_outline, size: 14, color: Colors.grey[500]),
                 ),
               ],

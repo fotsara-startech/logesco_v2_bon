@@ -230,7 +230,7 @@ class CashSessionFAB extends StatelessWidget {
         return FloatingActionButton.extended(
           onPressed: controller.showConnectToCashRegisterDialog,
           icon: const Icon(Icons.login),
-          label: const Text('Connecter caisse'),
+          label: Text('cashregisters_connecter_caisse'.tr),
           backgroundColor: Colors.blue,
         );
       }
@@ -238,7 +238,7 @@ class CashSessionFAB extends StatelessWidget {
       return FloatingActionButton.extended(
         onPressed: () => Get.toNamed('/sales'),
         icon: const Icon(Icons.shopping_cart),
-        label: const Text('Nouvelle vente'),
+        label: Text('dashboard_new_sale'.tr),
         backgroundColor: Colors.green,
       );
     });

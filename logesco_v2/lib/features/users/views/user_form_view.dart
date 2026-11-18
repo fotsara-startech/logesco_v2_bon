@@ -488,7 +488,7 @@ class _UserFormViewState extends State<UserFormView> {
             if (_loadingBoutiques)
               const Center(child: CircularProgressIndicator())
             else if (_allBoutiques.isEmpty)
-              Text('Aucune boutique disponible', style: TextStyle(color: Colors.grey.shade500))
+              Text('users_aucune_boutique_disponible'.tr, style: TextStyle(color: Colors.grey.shade500))
             else
               ..._allBoutiques.map((b) {
                 final id = b['id'] as int;

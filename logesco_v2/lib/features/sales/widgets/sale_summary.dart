@@ -32,8 +32,8 @@ class SaleSummary extends StatelessWidget {
           children: [
             // Sélection du client
             DropdownButtonFormField<Customer?>(
-              decoration: const InputDecoration(
-                labelText: 'Client (optionnel)',
+              decoration: InputDecoration(
+                labelText: 'sales_customer_optional'.tr,
                 border: OutlineInputBorder(),
               ),
               value: salesController.selectedCustomer,
@@ -56,8 +56,8 @@ class SaleSummary extends StatelessWidget {
 
             // Mode de paiement
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Mode de paiement',
+              decoration: InputDecoration(
+                labelText: 'suppliers_payment_method'.tr,
                 border: OutlineInputBorder(),
               ),
               value: salesController.paymentMode,
@@ -95,8 +95,8 @@ class SaleSummary extends StatelessWidget {
 
             // Montant payé
             TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Montant payé',
+              decoration: InputDecoration(
+                labelText: 'sales_amount_paid'.tr,
                 suffixText: 'FCFA',
                 border: OutlineInputBorder(),
               ),

@@ -1,4 +1,5 @@
 ﻿import 'dart:convert';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/config/app_config.dart';
@@ -24,7 +25,7 @@ class CompanySettingsService {
       if (!forceRefresh) {
         final cachedProfile = await _getCachedProfile();
         if (cachedProfile != null) {
-          return ApiResponse.success(cachedProfile, message: 'Données récupérées du cache');
+          return ApiResponse.success(cachedProfile, message: 'printing_donnees_recuperees_cache'.tr);
         }
       }
 
@@ -103,7 +104,7 @@ class CompanySettingsService {
         print('🔄 [INFO] Erreur d\'authentification, utilisation de l\'endpoint public...');
         return await _getCompanyProfileFromPublicEndpoint();
       } else if (response.statusCode == 404) {
-        return ApiResponse.error(message: 'Profil d\'entreprise non trouvé');
+        return ApiResponse.error(message: 'companysettings_profil_entreprise_non_trouve'.tr);
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du profil');
@@ -111,11 +112,11 @@ class CompanySettingsService {
     } catch (e) {
       print(' Error getting company profile: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -166,20 +167,20 @@ class CompanySettingsService {
         // Mettre en cache le profil
         await _cacheProfile(profile);
 
-        return ApiResponse.success(profile, message: 'Profil récupéré depuis endpoint public');
+        return ApiResponse.success(profile, message: 'companysettings_profil_recupere_depuis_endpoint_public'.tr);
       } else if (response.statusCode == 404) {
-        return ApiResponse.error(message: 'Profil d\'entreprise non configuré');
+        return ApiResponse.error(message: 'company_settings_not_configured'.tr);
       } else {
-        return ApiResponse.error(message: 'Erreur lors de la récupération du profil depuis l\'endpoint public');
+        return ApiResponse.error(message: 'companysettings_erreur_lors_recuperation_profil_depuis_endpoint'.tr);
       }
     } catch (e) {
       print(' [ERROR] Erreur endpoint public: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -265,7 +266,7 @@ class CompanySettingsService {
       final validationErrors = tempProfile.validate();
       if (validationErrors.isNotEmpty) {
         return ApiResponse.error(
-          message: 'Données invalides',
+          message: 'companysettings_donnees_invalides'.tr,
           errors: validationErrors.entries.map((e) => ApiError(field: e.key, message: e.value)).toList(),
         );
       }
@@ -332,11 +333,11 @@ class CompanySettingsService {
     } catch (e) {
       print(' Error creating company profile: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -363,7 +364,7 @@ class CompanySettingsService {
       final validationErrors = tempProfile.validate();
       if (validationErrors.isNotEmpty) {
         return ApiResponse.error(
-          message: 'Données invalides',
+          message: 'companysettings_donnees_invalides'.tr,
           errors: validationErrors.entries.map((e) => ApiError(field: e.key, message: e.value)).toList(),
         );
       }
@@ -429,11 +430,11 @@ class CompanySettingsService {
     } catch (e) {
       print(' Error updating company profile: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -472,11 +473,11 @@ class CompanySettingsService {
     } catch (e) {
       print(' Error deleting company profile: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'companysettings_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 

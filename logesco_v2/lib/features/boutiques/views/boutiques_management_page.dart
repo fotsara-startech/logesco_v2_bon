@@ -14,11 +14,11 @@ class BoutiquesManagementPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des boutiques'),
+        title: Text('boutiques_gestion_boutiques'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.swap_horiz),
-            tooltip: 'Transferts de stock',
+            tooltip: 'boutiques_transferts_stock'.tr,
             onPressed: () => Get.to(() => const StockTransfertPage()),
           ),
           IconButton(
@@ -30,14 +30,14 @@ class BoutiquesManagementPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showBoutiqueForm(context, controller),
         icon: const Icon(Icons.add),
-        label: const Text('Nouvelle boutique'),
+        label: Text('boutiques_nouvelle_boutique'.tr),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
         if (controller.boutiques.isEmpty) {
-          return const Center(child: Text('Aucune boutique'));
+          return Center(child: Text('boutiques_aucune_boutique'.tr));
         }
         return ListView.separated(
           padding: const EdgeInsets.all(16),
@@ -76,13 +76,13 @@ class BoutiquesManagementPage extends StatelessWidget {
               children: [
                 TextFormField(
                   controller: nomCtrl,
-                  decoration: const InputDecoration(labelText: 'Nom *', prefixIcon: Icon(Icons.store)),
+                  decoration: InputDecoration(labelText: 'boutiques_nom'.tr, prefixIcon: Icon(Icons.store)),
                   validator: (v) => v == null || v.isEmpty ? 'Requis' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(controller: adresseCtrl, decoration: const InputDecoration(labelText: 'Adresse', prefixIcon: Icon(Icons.location_on))),
                 const SizedBox(height: 12),
-                TextFormField(controller: telCtrl, decoration: const InputDecoration(labelText: 'Téléphone', prefixIcon: Icon(Icons.phone))),
+                TextFormField(controller: telCtrl, decoration: InputDecoration(labelText: 'suppliers_phone'.tr, prefixIcon: Icon(Icons.phone))),
                 const SizedBox(height: 12),
                 TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email))),
                 const SizedBox(height: 12),
@@ -92,7 +92,7 @@ class BoutiquesManagementPage extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
@@ -123,7 +123,7 @@ class BoutiquesManagementPage extends StatelessWidget {
                 ));
               }
             },
-            child: const Text('Enregistrer'),
+            child: Text('suppliers_form_save'.tr),
           ),
         ],
       ),
@@ -134,17 +134,17 @@ class BoutiquesManagementPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Désactiver la boutique'),
-        content: Text('Désactiver "${boutique.nom}" ?'),
+        title: Text('boutiques_desactiver_boutique'.tr),
+        content: Text('boutiques_desactiver'.trParams({'nom': '${boutique.nom}'})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await controller.deleteBoutique(boutique.id);
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Désactiver'),
+            child: Text('users_deactivate'.tr),
           ),
         ],
       ),
@@ -218,9 +218,9 @@ class _BoutiqueCard extends StatelessWidget {
           },
           itemBuilder: (_) => [
             if (!isActive) const PopupMenuItem(value: 'switch', child: ListTile(leading: Icon(Icons.check_circle_outline), title: Text('Activer'))),
-            const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text('Modifier'))),
+            PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text('roles_modify'.tr))),
             const PopupMenuItem(value: 'users', child: ListTile(leading: Icon(Icons.people), title: Text('Utilisateurs'))),
-            if (onDelete != null) const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('Désactiver', style: TextStyle(color: Colors.red)))),
+            if (onDelete != null) PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('users_deactivate'.tr, style: TextStyle(color: Colors.red)))),
           ],
         ),
       ),
@@ -273,11 +273,11 @@ class _BoutiqueUsersPageState extends State<_BoutiqueUsersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Utilisateurs — ${widget.boutique.nom}')),
+      appBar: AppBar(title: Text('boutiques_utilisateurs'.trParams({'nom': '${widget.boutique.nom}'}))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _assignments.isEmpty
-              ? const Center(child: Text('Aucun utilisateur assigné'))
+              ? Center(child: Text('boutiques_aucun_utilisateur_assigne'.tr))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _assignments.length,

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../services/decisions_service.dart';
 
@@ -51,7 +52,7 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmer cette décision ?'),
+        title: Text('decisions_confirmer_decision'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -67,7 +68,7 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Appliquer')),
         ],
       ),
@@ -126,7 +127,7 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
               ],
             ),
             const Divider(),
-            const Text('Votre décision', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('decisions_votre_decision'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
             ..._c.options.map((o) => RadioListTile<String>(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -140,7 +141,7 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(8)),
-                          child: Text('conseillé', style: TextStyle(fontSize: 10, color: Colors.green.shade800, fontWeight: FontWeight.bold)),
+                          child: Text('decisions_conseille'.tr, style: TextStyle(fontSize: 10, color: Colors.green.shade800, fontWeight: FontWeight.bold)),
                         ),
                     ],
                   ),
@@ -171,7 +172,7 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
               child: ElevatedButton.icon(
                 onPressed: (actif && choix != null) ? _appliquer : null,
                 icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check),
-                label: const Text('Appliquer cette décision'),
+                label: Text('decisions_appliquer_decision'.tr),
               ),
             ),
           ],

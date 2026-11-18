@@ -116,7 +116,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     )
                   : const Icon(Icons.refresh),
               onPressed: isRefreshing ? null : () => dashboardController.refresh(),
-              tooltip: 'Actualiser le dashboard',
+              tooltip: 'dashboard_actualiser_dashboard'.tr,
             );
           }),
           const CashSessionIndicator(),

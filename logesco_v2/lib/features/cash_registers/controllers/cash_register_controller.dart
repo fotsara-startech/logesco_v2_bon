@@ -118,7 +118,7 @@ class CashRegisterController extends GetxController {
       final cashRegisterList = AppConfig.useTestData ? await MockCashRegisterService.getAllCashRegisters() : await CashRegisterService.getAllCashRegisters();
       cashRegisters.assignAll(cashRegisterList);
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les caisses: $e');
+      SnackbarHelper.error('cashregisters_impossible_charger_caisses'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -146,10 +146,10 @@ class CashRegisterController extends GetxController {
       final newCashRegister = AppConfig.useTestData ? await MockCashRegisterService.createCashRegister(cashRegister) : await CashRegisterService.createCashRegister(cashRegister);
       cashRegisters.add(newCashRegister);
 
-      SnackbarHelper.success('Caisse créée avec succès');
+      SnackbarHelper.success('cashregisters_caisse_creee_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer la caisse: $e');
+      SnackbarHelper.error('cashregisters_impossible_creer_caisse'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -168,10 +168,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      SnackbarHelper.success('Caisse mise à jour avec succès');
+      SnackbarHelper.success('cashregisters_caisse_mise_jour_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour la caisse: $e');
+      SnackbarHelper.error('cashregisters_impossible_mettre_jour_caisse'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -184,10 +184,10 @@ class CashRegisterController extends GetxController {
       AppConfig.useTestData ? await MockCashRegisterService.deleteCashRegister(cashRegisterId) : await CashRegisterService.deleteCashRegister(cashRegisterId);
       cashRegisters.removeWhere((cashRegister) => cashRegister.id == cashRegisterId);
 
-      SnackbarHelper.success('Caisse supprimée avec succès');
+      SnackbarHelper.success('cashregisters_caisse_supprimee_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de supprimer la caisse: $e');
+      SnackbarHelper.error('cashregisters_impossible_supprimer_caisse'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -204,10 +204,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      SnackbarHelper.success('Caisse ouverte avec succès');
+      SnackbarHelper.success('cashregisters_caisse_ouverte_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible d\'ouvrir la caisse: $e');
+      SnackbarHelper.error('cashregisters_impossible_ouvrir_caisse'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -228,10 +228,10 @@ class CashRegisterController extends GetxController {
         cashRegisters[index] = updatedCashRegister;
       }
 
-      SnackbarHelper.success('Caisse fermée avec succès');
+      SnackbarHelper.success('cashregisters_caisse_fermee_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de fermer la caisse: $e');
+      SnackbarHelper.error('cashregisters_impossible_fermer_caisse'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -250,12 +250,12 @@ class CashRegisterController extends GetxController {
   void confirmDeleteCashRegister(CashRegister cashRegister) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Êtestes-vous sûr de vouloir supprimer la caisse "${cashRegister.nom}" ?'),
+        title: Text('users_delete_confirm_title'.tr),
+        content: Text('cashregisters_etestes_vous_sur_vouloir_supprimer_caisse'.trParams({'nom': '${cashRegister.nom}'})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -266,7 +266,7 @@ class CashRegisterController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),

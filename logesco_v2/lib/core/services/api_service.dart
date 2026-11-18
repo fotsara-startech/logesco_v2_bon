@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -72,7 +73,7 @@ class ApiService {
     } catch (e) {
       return ApiResponse<dynamic>(
         success: false,
-        message: 'Erreur de parsing: $e',
+        message: 'core_erreur_parsing'.trParams({'e': '${e}'}),
         timestamp: DateTime.now().toIso8601String(),
       );
     }

@@ -241,7 +241,7 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Montant TTC', style: TextStyle(fontSize: 14, color: Colors.grey[800], fontWeight: FontWeight.bold)),
+                  Text('proforma_montant_ttc'.tr, style: TextStyle(fontSize: 14, color: Colors.grey[800], fontWeight: FontWeight.bold)),
                   Text(
                     '${total.toStringAsFixed(0)} FCFA',
                     style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue),

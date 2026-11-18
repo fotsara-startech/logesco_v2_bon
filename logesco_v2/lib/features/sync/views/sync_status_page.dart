@@ -91,25 +91,25 @@ class SyncStatusPage extends StatelessWidget {
     }
     if (!context.mounted) return;
     if (apercu.aEnvoyer == 0 && apercu.refuses.isEmpty) {
-      SnackbarHelper.warning('Rien à renvoyer.');
+      SnackbarHelper.warning('sync_rien_renvoyer'.tr);
       return;
     }
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Renvoyer vers le cloud ?'),
+        title: Text('sync_renvoyer_vers_cloud'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${apercu.aEnvoyer} élément(s) peuvent être envoyés sans risque (rien n\'est écrasé dans le cloud).',
+              Text('sync_element_s_peuvent_etre_envoyes_sans'.trParams({'aEnvoyer': '${apercu.aEnvoyer}'}),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               ...apercu.envoyables.take(6).map((l) => Text('• ${l.resume}', style: const TextStyle(fontSize: 12))),
-              if (apercu.envoyables.length > 6) Text('… et ${apercu.envoyables.length - 6} autre(s)', style: const TextStyle(fontSize: 12)),
+              if (apercu.envoyables.length > 6) Text('sync_autre_s'.trParams({'length6': '${apercu.envoyables.length - 6}'}), style: const TextStyle(fontSize: 12)),
               if (apercu.refuses.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text('${apercu.refuses.length} élément(s) NE seront PAS envoyés :', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+                Text('sync_element_s_ne_seront_pas_envoyes'.trParams({'length': '${apercu.refuses.length}'}), style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
                 ...apercu.refuses.take(6).map((l) => Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text('• ${l.resume}\n   ${l.raison ?? ''}', style: const TextStyle(fontSize: 12)),
@@ -119,7 +119,7 @@ class SyncStatusPage extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
           if (apercu.aEnvoyer > 0) ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer')),
         ],
       ),
@@ -141,30 +141,30 @@ class SyncStatusPage extends StatelessWidget {
     final forcables = apercu.refuses.where((l) => l.forcable && duGroupe.contains('${l.table}|${l.id}')).toList();
     if (!context.mounted) return;
     if (forcables.isEmpty) {
-      SnackbarHelper.warning('Rien ne peut être envoyé de force pour cet écart.');
+      SnackbarHelper.warning('sync_rien_ne_peut_etre_envoye_force'.tr);
       return;
     }
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Envoyer quand même ?'),
+        title: Text('sync_envoyer_quand_meme'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${forcables.length} élément(s) seront ajoutés au cloud :', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text('sync_element_s_seront_ajoutes_cloud'.trParams({'length': '${forcables.length}'}), style: const TextStyle(fontWeight: FontWeight.w600)),
               ...forcables.take(6).map((l) => Text('• ${l.resume}', style: const TextStyle(fontSize: 12))),
               const SizedBox(height: 10),
               Text(forcables.first.raison ?? '', style: TextStyle(fontSize: 12, color: Colors.orange.shade900)),
               const SizedBox(height: 10),
-              const Text("N'envoyez que si ce mouvement est bien réel (vérifié avec le magasin). Rien n'est écrasé dans le cloud : la ligne est ajoutée.", style: TextStyle(fontSize: 12)),
+              Text('sync_n_envoyez_que_si_mouvement_est'.tr, style: TextStyle(fontSize: 12)),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer quand même')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text('sync_envoyer_quand_meme_2'.tr)),
         ],
       ),
     );
@@ -179,13 +179,13 @@ class SyncStatusPage extends StatelessWidget {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ignorer cet écart ?'),
+        title: Text('sync_ignorer_cet_ecart'.tr),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${g.tableLabel} · ${g.nombre} élément(s)', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text('sync_element_s'.trParams({'tableLabel': '${g.tableLabel}', 'nombre': '${g.nombre}'}), style: const TextStyle(fontWeight: FontWeight.w600)),
               ...g.exemples.take(4).map((e) => Text('• ${e.resume}', style: const TextStyle(fontSize: 12))),
               const SizedBox(height: 10),
               const Text(
@@ -199,7 +199,7 @@ class SyncStatusPage extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Ignorer')),
         ],
       ),
@@ -361,12 +361,12 @@ class SyncStatusPage extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Copier le détail (pour le support)',
+                  tooltip: 'sync_copier_detail_support'.tr,
                   icon: const Icon(Icons.copy_all_outlined),
                   onPressed: () async {
                     final texte = 'Synchronisation — ${items.length} élément(s) non synchronisé(s)\n${tries.map((i) => i.toReportLine()).join('\n')}';
                     await Clipboard.setData(ClipboardData(text: texte));
-                    SnackbarHelper.success('Détail copié dans le presse-papiers');
+                    SnackbarHelper.success('sync_detail_copie_dans_presse_papiers'.tr);
                   },
                 ),
               ],
@@ -571,7 +571,7 @@ class _SyncDetailTile extends StatelessWidget {
             ],
             if (item.isReception && item.attempts > 0) ...[
               const SizedBox(height: 6),
-              Text('Application tentée ${item.attempts} fois', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text('sync_application_tentee_fois'.trParams({'attempts': '${item.attempts}'}), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
             ],
             if ((item.error.technique ?? '').isNotEmpty) ...[
               const SizedBox(height: 8),

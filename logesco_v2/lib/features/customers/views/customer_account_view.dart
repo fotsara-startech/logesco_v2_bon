@@ -721,7 +721,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
                       setState(() {
                         selectedSale = result['sale'] as UnpaidSale;
                         amountController.text = (result['montant'] as double).toStringAsFixed(0);
-                        descriptionController.text = 'customers_debt_payment'.trParams({'reference': selectedSale!.reference});
+                        descriptionController.text = 'customers_debt_payment_with_ref'.trParams({'reference': selectedSale!.reference});
                       });
                     }
                   },

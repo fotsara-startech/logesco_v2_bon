@@ -276,8 +276,8 @@ class _ProtectedFormExampleState extends State<ProtectedFormExample> {
                 children: [
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nom',
+                    decoration: InputDecoration(
+                      labelText: 'suppliers_name'.tr,
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {

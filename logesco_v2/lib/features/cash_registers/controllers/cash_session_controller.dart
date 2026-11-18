@@ -92,7 +92,7 @@ class CashSessionController extends GetxController {
       availableCashRegisters.assignAll(cashRegisters);
     } catch (e) {
       print('Erreur lors du chargement des caisses disponibles: $e');
-      SnackbarUtils.showError('Impossible de charger les caisses disponibles: $e');
+      SnackbarUtils.showError('cashregisters_impossible_charger_caisses_disponibles'.trParams({'e': '${e}'}));
     }
   }
 
@@ -115,13 +115,13 @@ class CashSessionController extends GetxController {
         await loadActiveSession();
         if (activeSession.value != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            SnackbarUtils.showSuccess('Votre session sur "${activeSession.value!.nomCaisse}" a été rechargée');
+            SnackbarUtils.showSuccess('cashregisters_votre_session_sur_ete_rechargee'.trParams({'nomCaisse': '${activeSession.value!.nomCaisse}'}));
           });
           return true;
         }
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        SnackbarUtils.showError('Impossible de se connecter à la caisse: $e');
+        SnackbarUtils.showError('cashregisters_impossible_se_connecter_caisse'.trParams({'e': '${e}'}));
       });
       return false;
     } finally {
@@ -200,7 +200,7 @@ class CashSessionController extends GetxController {
               size: 32,
             ),
             const SizedBox(width: 12),
-            const Text('Session clôturée'),
+            Text('cashregisters_session_cloturee'.tr),
           ],
         ),
         content: Column(
@@ -270,7 +270,7 @@ class CashSessionController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Fermer'),
+            child: Text('suppliers_close'.tr),
           ),
         ],
       ),
@@ -347,7 +347,7 @@ class CashSessionController extends GetxController {
       await _calculateFinancialMovementsTotal(startDate, endDate);
     } catch (e) {
       print('❌ Erreur chargement historique: $e');
-      SnackbarUtils.showError('Impossible de charger l\'historique: $e');
+      SnackbarUtils.showError('cashregisters_impossible_charger_historique'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -693,7 +693,7 @@ class CashSessionController extends GetxController {
     final sessions = await CashSessionService.getAllActiveSessions();
 
     if (sessions.isEmpty) {
-      SnackbarUtils.showInfo('Aucune session active en ce moment');
+      SnackbarUtils.showInfo('cashregisters_aucune_session_active_moment'.tr);
       return;
     }
 
@@ -711,7 +711,7 @@ class CashSessionController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Fermer une session libère la caisse pour un autre utilisateur.'),
+              Text('cashregisters_fermer_session_libere_caisse_autre_utilisateur'.tr),
               const SizedBox(height: 12),
               ...sessions.map((s) => Card(
                     child: ListTile(
@@ -720,15 +720,15 @@ class CashSessionController extends GetxController {
                       subtitle: Text('Utilisateur: ${s['nomUtilisateur']} (ID: ${s['utilisateurId']})'),
                       trailing: IconButton(
                         icon: const Icon(Icons.close, color: Colors.red),
-                        tooltip: 'Fermer cette session',
+                        tooltip: 'cashregisters_fermer_session'.tr,
                         onPressed: () async {
                           Get.back();
                           final ok = await CashSessionService.adminCloseSession(s['id'] as int);
                           if (ok) {
-                            SnackbarUtils.showSuccess('Session fermée — la caisse est maintenant disponible');
+                            SnackbarUtils.showSuccess('cashregisters_session_fermee_caisse_est_maintenant_disponible'.tr);
                             await loadAvailableCashRegisters();
                           } else {
-                            SnackbarUtils.showError('Impossible de fermer la session');
+                            SnackbarUtils.showError('cashregisters_impossible_fermer_session'.tr);
                           }
                         },
                       ),
@@ -743,13 +743,13 @@ class CashSessionController extends GetxController {
               Get.back();
               final ok = await CashSessionService.cleanupOrphanSessions();
               if (ok) {
-                SnackbarUtils.showSuccess('Sessions orphelines fermées');
+                SnackbarUtils.showSuccess('cashregisters_sessions_orphelines_fermees'.tr);
                 await loadAvailableCashRegisters();
               }
             },
             child: const Text('Nettoyer orphelines', style: TextStyle(color: Colors.orange)),
           ),
-          TextButton(onPressed: () => Get.back(), child: const Text('Fermer')),
+          TextButton(onPressed: () => Get.back(), child: Text('suppliers_close'.tr)),
         ],
       ),
     );
@@ -761,20 +761,20 @@ class CashSessionController extends GetxController {
     await loadAvailableCashRegisters();
 
     if (availableCashRegisters.isEmpty) {
-      SnackbarUtils.showWarning('Aucune caisse disponible pour le moment');
+      SnackbarUtils.showWarning('cashregisters_aucune_caisse_disponible_moment'.tr);
       return;
     }
 
     // Afficher le dialog de sélection
     final result = await Get.dialog<Map<String, dynamic>>(
       AlertDialog(
-        title: const Text('Se connecter à une caisse'),
+        title: Text('cash_session_connect'.tr),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Sélectionnez une caisse et saisissez le solde d\'ouverture'),
+              Text('cashregisters_selectionnez_caisse_saisissez_solde_ouverture'.tr),
               const SizedBox(height: 16),
               Flexible(
                 child: ListView.builder(
@@ -802,7 +802,7 @@ class CashSessionController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
         ],
       ),
@@ -817,7 +817,7 @@ class CashSessionController extends GetxController {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Caisse: ${result['nom']}'),
+              Text('cashregisters_register_name'.trParams({'nom': '${result['nom']}'})),
               const SizedBox(height: 16),
               TextField(
                 controller: soldeController,
@@ -833,7 +833,7 @@ class CashSessionController extends GetxController {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: const Text('Annuler'),
+              child: Text('suppliers_form_cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),

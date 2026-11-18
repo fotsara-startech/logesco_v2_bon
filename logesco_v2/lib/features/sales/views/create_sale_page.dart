@@ -297,7 +297,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints())
                             ]),
-                            Text('Réf: ${item.productReference}', style: Theme.of(context).textTheme.bodySmall),
+                            Text('sales_ref'.trParams({'productReference': '${item.productReference}'}), style: Theme.of(context).textTheme.bodySmall),
                             const SizedBox(height: 8),
                             Row(children: [
                               IconButton(

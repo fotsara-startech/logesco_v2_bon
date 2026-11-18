@@ -206,7 +206,7 @@ class _NotificationUsageExampleState extends State<NotificationUsageExample> wit
                 if (status.remainingDays != null) _buildInfoRow('Jours restants', '${status.remainingDays}'),
                 _buildInfoRow('Mode dégradé', controller.isInDegradedMode() ? 'Oui' : 'Non'),
               ] else
-                const Text('Aucun statut disponible'),
+                Text('subscription_aucun_statut_disponible'.tr),
             ],
           ),
         ),

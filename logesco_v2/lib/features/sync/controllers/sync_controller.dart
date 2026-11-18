@@ -84,7 +84,7 @@ class SyncController extends GetxController {
     try {
       final rapport = await _service.ignorer(items, note: note);
       if (rapport != null) drift.value = rapport;
-      SnackbarHelper.success('Écart ignoré. Il sera de nouveau signalé s\'il change.');
+      SnackbarHelper.success('sync_ecart_ignore_il_sera_nouveau_signale'.tr);
       await _fetchStatus();
       return true;
     } catch (e) {
@@ -109,7 +109,7 @@ class SyncController extends GetxController {
   Future<SyncResendResult?> renvoyer({List<SyncDriftId> forcer = const []}) async {
     try {
       final r = await _service.resend(dryRun: false, forcer: forcer);
-      SnackbarHelper.success('${r.envoyes} élément(s) mis en file d\'envoi vers le cloud.');
+      SnackbarHelper.success('sync_element_s_mis_file_envoi_vers'.trParams({'envoyes': '${r.envoyes}'}));
       await _fetchStatus();
       return r;
     } catch (e) {
@@ -125,7 +125,7 @@ class SyncController extends GetxController {
     try {
       final rapport = await _service.getDrift(refresh: true);
       if (rapport == null) {
-        SnackbarHelper.error('Contrôle impossible : cloud injoignable ou serveur trop ancien.');
+        SnackbarHelper.error('sync_controle_impossible_cloud_injoignable_serveur_trop'.tr);
       } else {
         drift.value = rapport;
       }
