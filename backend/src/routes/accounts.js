@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO } = require('../dto');
@@ -54,10 +55,10 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
           options.where = {
             client: {
               OR: [
-                { nom: { contains: searchParams.q } },
-                { prenom: { contains: searchParams.q } },
-                { telephone: { contains: searchParams.q } },
-                { email: { contains: searchParams.q } }
+                { nom: like(searchParams.q) },
+                { prenom: like(searchParams.q) },
+                { telephone: like(searchParams.q) },
+                { email: like(searchParams.q) }
               ]
             }
           };
@@ -158,10 +159,10 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
           options.where = {
             fournisseur: {
               OR: [
-                { nom: { contains: searchParams.q } },
-                { personneContact: { contains: searchParams.q } },
-                { telephone: { contains: searchParams.q } },
-                { email: { contains: searchParams.q } }
+                { nom: like(searchParams.q) },
+                { personneContact: like(searchParams.q) },
+                { telephone: like(searchParams.q) },
+                { email: like(searchParams.q) }
               ]
             }
           };

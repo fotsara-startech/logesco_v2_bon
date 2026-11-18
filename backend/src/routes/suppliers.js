@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, FournisseurDTO } = require('../dto');
@@ -328,10 +329,10 @@ function createSupplierRouter(models) {
         const suggestions = await models.prisma.fournisseur.findMany({
           where: {
             OR: [
-              { nom: { contains: q } },
-              { personneContact: { contains: q } },
-              { telephone: { contains: q } },
-              { email: { contains: q } }
+              { nom: like(q) },
+              { personneContact: like(q) },
+              { telephone: like(q) },
+              { email: like(q) }
             ]
           },
           select: {

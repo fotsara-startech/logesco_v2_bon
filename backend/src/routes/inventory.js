@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { messageProduitService } = require('../utils/service-guard');
 const Joi = require('joi');
@@ -236,9 +237,9 @@ function createInventoryRouter(models) {
           if (search && search.trim()) {
             const s = search.trim();
             produitWhere.OR = [
-              { nom: { contains: s } }, 
-              { reference: { contains: s } }, 
-              { codeBarre: { contains: s } }
+              { nom: like(s) }, 
+              { reference: like(s) }, 
+              { codeBarre: like(s) }
             ];
           }
           if (category && category.trim()) {
@@ -377,9 +378,9 @@ function createInventoryRouter(models) {
         if (search && search.trim()) {
           const searchTerm = search.trim();
           produitWhere.OR = [
-            { nom: { contains: searchTerm } },
-            { reference: { contains: searchTerm } },
-            { codeBarre: { contains: searchTerm } }
+            { nom: like(searchTerm) },
+            { reference: like(searchTerm) },
+            { codeBarre: like(searchTerm) }
           ];
         }
 
@@ -694,8 +695,8 @@ function createInventoryRouter(models) {
         if (q && q.trim().length > 0) {
           where.produit = {
             OR: [
-              { nom: { contains: q } },
-              { reference: { contains: q } },
+              { nom: like(q) },
+              { reference: like(q) },
             ]
           };
         }
@@ -1275,9 +1276,9 @@ function createInventoryRouter(models) {
           if (produitId) whereProduct.id = parseInt(produitId);
           if (search && search.trim()) {
             whereProduct.OR = [
-              { nom: { contains: search.trim() } },
-              { reference: { contains: search.trim() } },
-              { codeBarre: { contains: search.trim() } }
+              { nom: like(search.trim()) },
+              { reference: like(search.trim()) },
+              { codeBarre: like(search.trim()) }
             ];
           }
           if (category && category.trim()) {
@@ -1322,9 +1323,9 @@ function createInventoryRouter(models) {
           if (produitId) where.produitId = parseInt(produitId);
           if (search && search.trim()) {
             produitWhere.OR = [
-              { nom: { contains: search.trim() } },
-              { reference: { contains: search.trim() } },
-              { codeBarre: { contains: search.trim() } }
+              { nom: like(search.trim()) },
+              { reference: like(search.trim()) },
+              { codeBarre: like(search.trim()) }
             ];
           }
           if (category && category.trim()) {

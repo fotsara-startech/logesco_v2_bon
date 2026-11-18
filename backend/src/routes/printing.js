@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { printingSchemas } = require('../validation/schemas');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
@@ -47,9 +48,7 @@ function createPrintingRouter({ prisma, authService }) {
         }
 
         if (numeroRecu) {
-          conditions.numeroRecu = {
-            contains: numeroRecu
-          };
+          conditions.numeroRecu = like(numeroRecu);
         }
 
         if (formatImpression) {
@@ -65,16 +64,14 @@ function createPrintingRouter({ prisma, authService }) {
         // Conditions pour la vente associée
         const venteConditions = {};
         if (numeroVente) {
-          venteConditions.numeroVente = {
-            contains: numeroVente
-          };
+          venteConditions.numeroVente = like(numeroVente);
         }
 
         if (clientNom) {
           venteConditions.client = {
             OR: [
-              { nom: { contains: clientNom } },
-              { prenom: { contains: clientNom } }
+              { nom: like(clientNom) },
+              { prenom: like(clientNom) }
             ]
           };
         }
