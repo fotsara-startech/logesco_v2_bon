@@ -433,7 +433,7 @@ class _PriceFilterDialogState extends State<_PriceFilterDialog> {
             controller: _minCtrl,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Prix minimum (FCFA)',
+              labelText: 'products_prix_minimum_fcfa'.tr,
               hintText: 'Ex: 1000',
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.arrow_downward, size: 18),
@@ -444,7 +444,7 @@ class _PriceFilterDialogState extends State<_PriceFilterDialog> {
             controller: _maxCtrl,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Prix maximum (FCFA)',
+              labelText: 'products_prix_maximum_fcfa'.tr,
               hintText: 'Ex: 50000',
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.arrow_upward, size: 18),

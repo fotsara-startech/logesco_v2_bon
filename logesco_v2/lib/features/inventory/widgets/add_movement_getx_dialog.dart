@@ -41,7 +41,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
     final productController = Get.find<ProductGetxController>();
 
     return AlertDialog(
-      title: const Text('Ajouter un mouvement de stock'),
+      title: Text('stock_add_movement'.tr),
       content: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 400,
@@ -72,7 +72,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                       ),
                       ElevatedButton(
                         onPressed: () => productController.loadProducts(refresh: true),
-                        child: const Text('Réessayer'),
+                        child: Text('roles_retry'.tr),
                       ),
                     ],
                   );
@@ -81,8 +81,8 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                 return DropdownButtonFormField<Product>(
                   value: selectedProduct,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Produit *',
+                  decoration: InputDecoration(
+                    labelText: 'stock_add_movement_product'.tr,
                     border: OutlineInputBorder(),
                   ),
                   items: productController.products.map((product) {
@@ -109,18 +109,18 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
               // Type de mouvement
               DropdownButtonFormField<String>(
                 value: selectedMovementType,
-                decoration: const InputDecoration(
-                  labelText: 'Type de mouvement *',
+                decoration: InputDecoration(
+                  labelText: 'stock_add_movement_type'.tr,
                   border: OutlineInputBorder(),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: 'entree',
-                    child: Text('Entrée de stock (+)'),
+                    child: Text('stock_add_movement_entry'.tr),
                   ),
                   DropdownMenuItem(
                     value: 'sortie',
-                    child: Text('Sortie de stock (-)'),
+                    child: Text('stock_add_movement_exit'.tr),
                   ),
                 ],
                 onChanged: (value) {
@@ -135,8 +135,8 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
               // Quantité
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantité *',
+                decoration: InputDecoration(
+                  labelText: 'expiration_dialog_quantity_label'.tr,
                   border: OutlineInputBorder(),
                   hintText: 'Ex: 10, 25, 100...',
                 ),
@@ -158,10 +158,10 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
               // Motif
               TextFormField(
                 controller: _reasonController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Motif *',
                   border: OutlineInputBorder(),
-                  hintText: 'Ex: Réception fournisseur, Vente, Ajustement...',
+                  hintText: 'stock_add_movement_reason_example'.tr,
                 ),
                 maxLines: 2,
                 validator: (value) {
@@ -178,7 +178,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
       actions: [
         TextButton(
           onPressed: () => Get.back(),
-          child: const Text('Annuler'),
+          child: Text('suppliers_form_cancel'.tr),
         ),
         Obx(() => ElevatedButton(
               onPressed: controller.isLoading.value ? null : _handleSubmit,
@@ -188,7 +188,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Ajouter'),
+                  : Text('add'.tr),
             )),
       ],
     );
@@ -210,7 +210,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
 
     if (success) {
       Get.back();
-      SnackbarHelper.success('Mouvement de stock ajouté avec succès');
+      SnackbarHelper.success('stock_add_movement_success'.tr);
     }
   }
 }

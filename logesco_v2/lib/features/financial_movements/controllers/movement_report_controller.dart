@@ -59,7 +59,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
     if (startDate.value == null || endDate.value == null) {
       error.value = 'Veuillez sélectionner une période';
       setError(
-        message: 'Veuillez sélectionner une période',
+        message: 'financialmovements_veuillez_selectionner_periode'.tr,
         operation: 'loadSummary',
       );
       return;
@@ -81,7 +81,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         print(' Résumé chargé avec succès');
       },
       loadingState: LoadingState.loading(
-        message: 'Chargement du résumé...',
+        message: 'financialmovements_chargement_resume'.tr,
         operation: 'loadSummary',
       ),
       successMessage: null, // Pas de message de succès pour éviter le spam
@@ -262,7 +262,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
     if (startDate.value == null || endDate.value == null) {
       error.value = 'Veuillez sélectionner une période';
       setError(
-        message: 'Veuillez sélectionner une période',
+        message: 'financialmovements_veuillez_selectionner_periode'.tr,
         operation: 'exportToPdf',
       );
       return null;
@@ -491,7 +491,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
     if (startDate.value == null || endDate.value == null || comparisonStartDate.value == null || comparisonEndDate.value == null) {
       error.value = 'Veuillez sélectionner les deux périodes à comparer';
       setError(
-        message: 'Veuillez sélectionner les deux périodes à comparer',
+        message: 'financialmovements_veuillez_selectionner_deux_periodes_comparer'.tr,
         operation: 'comparePeriods',
       );
       return;
@@ -513,7 +513,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         print(' Comparaison de périodes générée avec succès');
       },
       loadingState: LoadingState.loading(
-        message: 'Comparaison des périodes en cours...',
+        message: 'financialmovements_comparaison_periodes_cours'.tr,
         operation: 'comparePeriods',
       ),
       successMessage: 'Comparaison générée avec succès',

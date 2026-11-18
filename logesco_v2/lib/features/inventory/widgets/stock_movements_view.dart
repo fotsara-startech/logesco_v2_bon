@@ -65,7 +65,7 @@ class _StockMovementsViewState extends State<StockMovementsView> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => controller.loadMovements(refresh: true),
-                  child: const Text('Réessayer'),
+                  child: Text('roles_retry'.tr),
                 ),
               ],
             ),

@@ -70,7 +70,7 @@ class StockInventoryController extends GetxController {
       final inventoryList = AppConfig.useTestData ? await MockInventoryService.getAllInventories() : await StockInventoryService.getAllInventories();
       inventories.assignAll(inventoryList);
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les inventaires: $e');
+      SnackbarHelper.error('stockinventory_impossible_charger_inventaires'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -129,7 +129,7 @@ class StockInventoryController extends GetxController {
             categories.clear();
             print(' Aucune catégorie disponible');
 
-            SnackbarHelper.warning('Impossible de charger les catégories. Veuillez vérifier votre connexion.');
+            SnackbarHelper.warning('inventory_impossible_charger_categories_veuillez_verifier_votre'.tr);
           }
         }
       }
@@ -156,7 +156,7 @@ class StockInventoryController extends GetxController {
       final newInventory = AppConfig.useTestData ? await MockInventoryService.createInventory(inventory) : await StockInventoryService.createInventory(inventory);
       inventories.add(newInventory);
 
-      SnackbarHelper.success('Inventaire créé avec succès');
+      SnackbarHelper.success('stockinventory_inventaire_cree_avec_succes'.tr);
 
       // Déclencher la synchronisation automatiquement après création
       try {
@@ -173,7 +173,7 @@ class StockInventoryController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_creer_inventaire'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -191,7 +191,7 @@ class StockInventoryController extends GetxController {
         inventories[index] = updatedInventory;
       }
 
-      SnackbarHelper.success('Inventaire mis à jour avec succès');
+      SnackbarHelper.success('stockinventory_inventaire_mis_jour_avec_succes'.tr);
 
       // Déclencher la synchronisation après mise à jour
       try {
@@ -207,7 +207,7 @@ class StockInventoryController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_mettre_jour_inventaire'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -220,7 +220,7 @@ class StockInventoryController extends GetxController {
       AppConfig.useTestData ? await MockInventoryService.deleteInventory(inventoryId) : await StockInventoryService.deleteInventory(inventoryId);
       inventories.removeWhere((inventory) => inventory.id == inventoryId);
 
-      SnackbarHelper.success('Inventaire supprimé avec succès');
+      SnackbarHelper.success('stockinventory_inventaire_supprime_avec_succes'.tr);
 
       // Déclencher la synchronisation après suppression
       try {
@@ -236,7 +236,7 @@ class StockInventoryController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de supprimer l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_supprimer_inventaire'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -248,7 +248,7 @@ class StockInventoryController extends GetxController {
       final items = AppConfig.useTestData ? await MockInventoryService.getInventoryItems(inventoryId) : await StockInventoryService.getInventoryItems(inventoryId);
       currentInventoryItems.assignAll(items);
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les articles: $e');
+      SnackbarHelper.error('stockinventory_impossible_charger_articles'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -274,12 +274,12 @@ class StockInventoryController extends GetxController {
       }
 
       if (showSnackbar) {
-        SnackbarHelper.success('Article mis à jour avec succès');
+        SnackbarHelper.success('stockinventory_article_mis_jour_avec_succes'.tr);
       }
       return true;
     } catch (e) {
       if (showSnackbar) {
-        SnackbarHelper.error('Impossible de mettre à jour l\'article: $e');
+        SnackbarHelper.error('stockinventory_impossible_mettre_jour_article'.trParams({'e': '${e}'}));
       }
       return false;
     }
@@ -299,10 +299,10 @@ class StockInventoryController extends GetxController {
         selectedInventory.value = updatedInventory;
       }
 
-      SnackbarHelper.success('Inventaire démarré avec succès');
+      SnackbarHelper.success('stockinventory_inventaire_demarre_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de démarrer l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_demarrer_inventaire'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -321,7 +321,7 @@ class StockInventoryController extends GetxController {
         selectedInventory.value = updatedInventory;
       }
 
-      SnackbarHelper.success('Inventaire terminé avec succès');
+      SnackbarHelper.success('stockinventory_inventaire_termine_avec_succes'.tr);
 
       // Déclencher la synchronisation après fin d'inventaire
       try {
@@ -337,7 +337,7 @@ class StockInventoryController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de terminer l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_terminer_inventaire'.trParams({'e': '${e}'}));
       return false;
     }
   }
@@ -347,16 +347,16 @@ class StockInventoryController extends GetxController {
     // Confirmation avant clôture
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la clôture'),
+        title: Text('cash_session_confirm_close'.tr),
         content: const Text(
           'La clôture va ajuster le stock de la boutique selon les écarts constatés. Cette action est irréversible.',
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Get.back(result: false), child: Text('suppliers_form_cancel'.tr)),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-            child: const Text('Clôturer'),
+            child: Text('inventory_detail_close'.tr),
           ),
         ],
       ),
@@ -372,7 +372,7 @@ class StockInventoryController extends GetxController {
       if (index != -1) inventories[index] = updatedInventory;
       if (selectedInventory.value?.id == inventoryId) selectedInventory.value = updatedInventory;
 
-      SnackbarHelper.success('Inventaire clôturé - Stock boutique équilibré');
+      SnackbarHelper.success('stockinventory_inventaire_cloture_stock_boutique_equilibre'.tr);
 
       // Déclencher la synchronisation après clôture (très important car modifie le stock)
       try {
@@ -388,7 +388,7 @@ class StockInventoryController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de clôturer l\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_cloturer_inventaire'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -415,18 +415,18 @@ class StockInventoryController extends GetxController {
         if (kIsWeb) {
           SnackbarHelper.success(
             'Feuille de comptage téléchargée: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
         } else {
-          SnackbarHelper.success('Feuille de comptage exportée et ouverte');
+          SnackbarHelper.success('stockinventory_feuille_comptage_exportee_ouverte'.tr);
         }
       } else {
-        SnackbarHelper.error('Impossible de générer la feuille de comptage');
+        SnackbarHelper.error('stockinventory_impossible_generer_feuille_comptage'.tr);
       }
     } catch (e) {
       print('❌ Erreur export feuille de comptage: $e');
-      SnackbarHelper.error('Impossible de générer la feuille de comptage: $e');
+      SnackbarHelper.error('stockinventory_impossible_generer_feuille_comptage_2'.trParams({'e': '${e}'}));
     }
   }
 
@@ -448,18 +448,18 @@ class StockInventoryController extends GetxController {
         if (kIsWeb) {
           SnackbarHelper.success(
             'Rapport d\'inventaire téléchargé: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
         } else {
-          SnackbarHelper.success('Rapport d\'inventaire exporté et ouvert');
+          SnackbarHelper.success('stockinventory_rapport_inventaire_exporte_ouvert'.tr);
         }
       } else {
-        SnackbarHelper.error('Impossible de générer le rapport d\'inventaire');
+        SnackbarHelper.error('stockinventory_impossible_generer_rapport_inventaire'.tr);
       }
     } catch (e) {
       print('❌ Erreur export rapport inventaire: $e');
-      SnackbarHelper.error('Impossible de générer le rapport d\'inventaire: $e');
+      SnackbarHelper.error('stockinventory_impossible_generer_rapport_inventaire_2'.trParams({'e': '${e}'}));
     }
   }
 
@@ -485,12 +485,12 @@ class StockInventoryController extends GetxController {
   void confirmDeleteInventory(StockInventory inventory) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text('Êtestes-vous sûr de vouloir supprimer l\'inventaire "${inventory.nom}" ?'),
+        title: Text('users_delete_confirm_title'.tr),
+        content: Text('stockinventory_etestes_vous_sur_vouloir_supprimer_inventaire'.trParams({'nom': '${inventory.nom}'})),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -501,7 +501,7 @@ class StockInventoryController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -609,7 +609,7 @@ class StockInventoryController extends GetxController {
       );
     } catch (e) {
       print('❌ Erreur export Excel: $e');
-      SnackbarHelper.error('Impossible d\'exporter la fiche: $e');
+      SnackbarHelper.error('stockinventory_impossible_exporter_fiche'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -626,7 +626,7 @@ class StockInventoryController extends GetxController {
       final imports = await InventoryExcelService.importCountingSheet();
 
       if (imports.isEmpty) {
-        SnackbarHelper.warning('Aucune donnée de comptage trouvée dans le fichier');
+        SnackbarHelper.warning('stockinventory_aucune_donnee_comptage_trouvee_dans_fichier'.tr);
         return;
       }
 
@@ -701,11 +701,11 @@ class StockInventoryController extends GetxController {
           await loadInventoryItems(selectedInventory.value!.id!);
         }
       } else {
-        SnackbarHelper.warning('Aucun comptage n\'a pu être importé');
+        SnackbarHelper.warning('stockinventory_aucun_comptage_n_pu_etre_importe'.tr);
       }
     } catch (e) {
       print('❌ Erreur import Excel: $e');
-      SnackbarHelper.error('Impossible d\'importer la fiche: $e');
+      SnackbarHelper.error('stockinventory_impossible_importer_fiche'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
       isImporting.value = false;

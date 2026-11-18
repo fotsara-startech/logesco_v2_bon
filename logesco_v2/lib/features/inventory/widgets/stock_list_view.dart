@@ -60,7 +60,7 @@ class _StockListViewState extends State<StockListView> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => controller.loadStocks(refresh: true),
-                  child: const Text('Réessayer'),
+                  child: Text('roles_retry'.tr),
                 ),
               ],
             ),

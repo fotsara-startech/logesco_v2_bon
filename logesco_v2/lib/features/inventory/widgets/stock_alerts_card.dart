@@ -317,21 +317,21 @@ class StockActionSheet extends StatelessWidget {
   void _showAdjustmentDialog(BuildContext context) {
     // TODO: Implémenter le dialogue d'ajustement
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ajustement de stock - À implémenter')),
+      SnackBar(content: Text('inventory_ajustement_stock_implementer'.tr)),
     );
   }
 
   void _showOrderDialog(BuildContext context) {
     // TODO: Implémenter le dialogue de commande
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Commande d\'approvisionnement - À implémenter')),
+      SnackBar(content: Text('inventory_commande_approvisionnement_implementer'.tr)),
     );
   }
 
   void _showStockHistory(BuildContext context) {
     // TODO: Implémenter l'historique des mouvements
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Historique des mouvements - À implémenter')),
+      SnackBar(content: Text('inventory_historique_mouvements_implementer'.tr)),
     );
   }
 }

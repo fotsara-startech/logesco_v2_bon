@@ -444,7 +444,7 @@ class ProductFormController extends GetxController {
   void toggleGestionPeremption() {
     // Un service ne peut pas avoir de gestion de péremption
     if (estService.value) {
-      SnackbarHelper.info('Un service ne peut pas avoir de gestion de péremption');
+      SnackbarHelper.info('products_service_ne_peut_pas_avoir_gestion'.tr);
       return;
     }
     gestionPeremption.value = !gestionPeremption.value;
@@ -456,7 +456,7 @@ class ProductFormController extends GetxController {
     if (isEditing.value) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.isRegistered<ProductFormController>()) {
-          SnackbarHelper.info('La référence ne peut pas être modifiée en mode édition');
+          SnackbarHelper.info('products_reference_ne_peut_pas_etre_modifiee'.tr);
         }
       });
       return;
@@ -491,7 +491,7 @@ class ProductFormController extends GetxController {
         // Afficher un message informatif (avec délai pour éviter les conflits)
         Future.delayed(const Duration(milliseconds: 100), () {
           if (Get.isRegistered<ProductFormController>()) {
-            SnackbarHelper.info('Référence générée localement (serveur indisponible)', duration: const Duration(seconds: 3));
+            SnackbarHelper.info('products_reference_generee_localement_serveur_indisponible'.tr, duration: const Duration(seconds: 3));
           }
         });
       }
@@ -554,7 +554,7 @@ class ProductFormController extends GetxController {
     if (!isFormValid) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.isRegistered<ProductFormController>()) {
-          SnackbarHelper.error('Veuillez corriger les erreurs dans le formulaire');
+          SnackbarHelper.error('products_veuillez_corriger_erreurs_dans_formulaire'.tr);
         }
       });
       return;
@@ -570,7 +570,7 @@ class ProductFormController extends GetxController {
           referenceError.value = 'La référence ne peut pas être modifiée en mode édition';
           Future.delayed(const Duration(milliseconds: 100), () {
             if (Get.isRegistered<ProductFormController>()) {
-              SnackbarHelper.error('La référence ne peut pas être modifiée lors de l\'édition');
+              SnackbarHelper.error('product_form_reference_not_editable'.tr);
             }
           });
           return;
@@ -639,10 +639,10 @@ class ProductFormController extends GetxController {
       final fileName = await _productService.uploadProductImage(productId, filePath);
       if (fileName != null) {
         currentImageUrl.value = fileName;
-        SnackbarHelper.success('Image mise à jour');
+        SnackbarHelper.success('products_image_mise_jour'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de l\'upload de l\'image');
+      SnackbarHelper.error('products_erreur_lors_upload_image'.tr);
     } finally {
       isUploadingImage.value = false;
     }
@@ -657,10 +657,10 @@ class ProductFormController extends GetxController {
       final ok = await _productService.deleteProductImage(productId);
       if (ok) {
         currentImageUrl.value = '';
-        SnackbarHelper.success('Image supprimée');
+        SnackbarHelper.success('products_image_supprimee'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la suppression de l\'image');
+      SnackbarHelper.error('products_erreur_lors_suppression_image'.tr);
     } finally {
       isUploadingImage.value = false;
     }

@@ -397,7 +397,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (stock.produit?.reference != null) Text('Réf: ${stock.produit!.reference}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  if (stock.produit?.reference != null) Text('inventory_ref'.trParams({'reference': '${stock.produit!.reference}'}), style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                   const SizedBox(height: 4),
                   Row(children: [
                     Icon(Icons.access_time, size: 14, color: Colors.grey[600]),

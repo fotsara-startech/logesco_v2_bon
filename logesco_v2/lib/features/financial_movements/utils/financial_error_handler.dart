@@ -46,7 +46,7 @@ class FinancialMovementException extends ApiException {
 
   factory FinancialMovementException.networkError({String? details}) {
     return FinancialMovementException(
-      message: 'Erreur de connexion réseau. Vérifiez votre connexion internet.',
+      message: 'financialmovements_erreur_connexion_reseau_verifiez_votre_connexion'.tr,
       code: 'NETWORK_ERROR',
       statusCode: 0,
       errorType: FinancialErrorType.networkError,
@@ -56,7 +56,7 @@ class FinancialMovementException extends ApiException {
 
   factory FinancialMovementException.timeout({String? operation}) {
     return FinancialMovementException(
-      message: 'L\'opération a pris trop de temps. Veuillez réessayer.',
+      message: 'financialmovements_operation_pris_trop_temps_veuillez_reessayer'.tr,
       code: 'TIMEOUT_ERROR',
       statusCode: 408,
       errorType: FinancialErrorType.timeoutError,
@@ -163,7 +163,7 @@ class FinancialErrorHandler {
 
     if (error is HttpException) {
       return FinancialMovementException(
-        message: 'Erreur HTTP: ${error.message}',
+        message: 'financialmovements_erreur_http'.trParams({'message': '${error.message}'}),
         code: 'HTTP_ERROR',
         statusCode: 500,
         errorType: FinancialErrorType.serverError,
@@ -173,7 +173,7 @@ class FinancialErrorHandler {
 
     // Erreur générique
     return FinancialMovementException(
-      message: 'Erreur inattendue: ${error.toString()}',
+      message: 'financialmovements_erreur_inattendue'.trParams({'toString': '${error.toString()}'}),
       code: 'UNKNOWN_ERROR',
       statusCode: 500,
       errorType: FinancialErrorType.unknownError,

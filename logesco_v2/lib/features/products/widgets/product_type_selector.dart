@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 /// Choix du type de produit : produit physique (stock suivi) ou service (aucun stock).
@@ -155,7 +156,7 @@ Future<bool?> confirmerChangementDeType(BuildContext context, {required bool ver
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Ce que cela change :', style: TextStyle(fontWeight: FontWeight.w600)),
+            Text('products_que_cela_change'.tr, style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             ...points.map((p) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -173,12 +174,12 @@ Future<bool?> confirmerChangementDeType(BuildContext context, {required bool ver
               ),
             ],
             const SizedBox(height: 10),
-            Text('Le changement ne sera enregistré que lorsque vous cliquerez sur « Modifier ».', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+            Text('products_changement_ne_sera_enregistre_que_lorsque'.tr, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
         ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(versService ? 'Passer en service' : 'Passer en produit')),
       ],
     ),

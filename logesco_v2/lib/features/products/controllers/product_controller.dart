@@ -306,14 +306,14 @@ class ProductController extends GetxController {
   Future<void> deleteProduct(Product product) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Confirmer la suppression'),
+        title: Text('users_delete_confirm_title'.tr),
         content: Text(
           'Êtestes-vous sûr de vouloir supprimer le produit "${product.nom}" ?',
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -321,7 +321,7 @@ class ProductController extends GetxController {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),
@@ -343,7 +343,7 @@ class ProductController extends GetxController {
           print(' Produit supprimé de la liste locale');
 
           Future.delayed(const Duration(milliseconds: 100), () {
-            SnackbarHelper.success('Produit supprimé avec succès');
+            SnackbarHelper.success('products_delete_success'.tr);
           });
         } else {
           throw Exception('Échec de la suppression');
@@ -396,7 +396,7 @@ class ProductController extends GetxController {
         products[index] = updatedProduct;
       }
 
-      SnackbarHelper.success('Statut du produit mis à jour');
+      SnackbarHelper.success('products_statut_produit_mis_jour'.tr);
     } catch (e) {
       String message = 'Erreur lors de la mise à jour du statut';
       if (e is ApiException) {

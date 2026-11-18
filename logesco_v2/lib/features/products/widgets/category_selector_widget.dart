@@ -77,9 +77,9 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
       _textController.text = newCategory.nom;
       widget.onChanged(newCategory.nom);
 
-      SnackbarHelper.success('Catégorie "${newCategory.nom}" créée avec succès', duration: const Duration(seconds: 2));
+      SnackbarHelper.success('products_categorie_creee_avec_succes'.trParams({'nom': '${newCategory.nom}'}), duration: const Duration(seconds: 2));
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer la catégorie: $e');
+      SnackbarHelper.error('products_impossible_creer_categorie'.trParams({'e': '${e}'}));
     } finally {
       setState(() {
         _isCreatingCategory = false;
@@ -115,7 +115,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
               focusNode: focusNode,
               enabled: widget.enabled,
               decoration: InputDecoration(
-                labelText: 'Catégorie',
+                labelText: 'products_category'.tr,
                 prefixIcon: const Icon(Icons.category),
                 border: const OutlineInputBorder(),
                 helperText: widget.availableCategories.isEmpty ? 'Aucune catégorie disponible' : '${widget.availableCategories.length} catégorie(s) disponible(s)',
@@ -159,8 +159,8 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
 
                         return ListTile(
                           leading: const Icon(Icons.add, color: Colors.green),
-                          title: Text('Créer "$currentText"'),
-                          subtitle: const Text('Nouvelle catégorie'),
+                          title: Text('products_creer'.trParams({'currentText': '${currentText}'})),
+                          subtitle: Text('expenses_category_new'.tr),
                           onTap: () {
                             _createNewCategory(currentText);
                           },
@@ -206,7 +206,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
         // Bouton pour créer une catégorie rapide
         ActionChip(
           avatar: const Icon(Icons.add, size: 16),
-          label: const Text('Créer catégorie'),
+          label: Text('products_creer_categorie'.tr),
           onPressed: widget.enabled ? _showCreateCategoryDialog : null,
         ),
 
@@ -226,14 +226,14 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Créer une nouvelle catégorie'),
+        title: Text('products_creer_nouvelle_categorie'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de la catégorie *',
+              decoration: InputDecoration(
+                labelText: 'categories_name_label'.tr,
                 border: OutlineInputBorder(),
               ),
               autofocus: true,
@@ -252,7 +252,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -262,7 +262,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
                 await _createNewCategory(name);
               }
             },
-            child: const Text('Créer'),
+            child: Text('suppliers_form_create'.tr),
           ),
         ],
       ),
@@ -278,9 +278,9 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
         _filteredCategories = categories;
       });
 
-      SnackbarHelper.success('${categories.length} catégories rechargées', duration: const Duration(seconds: 2));
+      SnackbarHelper.success('products_categories_rechargees'.trParams({'length': '${categories.length}'}), duration: const Duration(seconds: 2));
     } catch (e) {
-      SnackbarHelper.error('Impossible de recharger les catégories: $e');
+      SnackbarHelper.error('products_impossible_recharger_categories'.trParams({'e': '${e}'}));
     }
   }
 }

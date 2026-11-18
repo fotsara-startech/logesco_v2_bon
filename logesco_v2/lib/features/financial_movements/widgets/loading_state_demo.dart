@@ -124,7 +124,7 @@ class LoadingStateDemo extends StatelessWidget {
                       ),
                       ElevatedButton(
                         onPressed: () => controller.setIdle(),
-                        child: const Text('Réinitialiser'),
+                        child: Text('financial_movements_filter_reset'.tr),
                       ),
                     ],
                   ),
@@ -173,13 +173,13 @@ class LoadingStateDemo extends StatelessWidget {
 
   void _simulateCreate(FinancialMovementController controller) {
     controller.setCreating(
-      message: 'Création d\'un nouveau mouvement...',
+      message: 'financialmovements_creation_nouveau_mouvement'.tr,
       operation: 'simulateCreate',
     );
 
     Future.delayed(const Duration(seconds: 2), () {
       controller.setSuccess(
-        message: 'Mouvement créé avec succès',
+        message: 'financial_movements_form_success_create'.tr,
         operation: 'simulateCreate',
       );
 
@@ -191,13 +191,13 @@ class LoadingStateDemo extends StatelessWidget {
 
   void _simulateUpdate(FinancialMovementController controller) {
     controller.setUpdating(
-      message: 'Mise à jour du mouvement...',
+      message: 'financialmovements_mise_jour_mouvement'.tr,
       operation: 'simulateUpdate',
     );
 
     Future.delayed(const Duration(seconds: 2), () {
       controller.setSuccess(
-        message: 'Mouvement mis à jour avec succès',
+        message: 'financialmovements_mouvement_mis_jour_avec_succes'.tr,
         operation: 'simulateUpdate',
       );
 
@@ -209,13 +209,13 @@ class LoadingStateDemo extends StatelessWidget {
 
   void _simulateDelete(FinancialMovementController controller) {
     controller.setDeleting(
-      message: 'Suppression du mouvement...',
+      message: 'financialmovements_suppression_mouvement'.tr,
       operation: 'simulateDelete',
     );
 
     Future.delayed(const Duration(seconds: 2), () {
       controller.setSuccess(
-        message: 'Mouvement supprimé avec succès',
+        message: 'financial_movements_form_delete_success'.tr,
         operation: 'simulateDelete',
       );
 

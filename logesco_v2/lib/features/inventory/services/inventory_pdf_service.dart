@@ -199,7 +199,7 @@ class InventoryPdfService {
                       ],
                       if (company?.phone?.isNotEmpty == true) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text('Tél : ${company!.phone}', style: const pw.TextStyle(fontSize: 9)),
+                        pw.Text('inventory_tel'.trParams({'phone': '${company!.phone}'}), style: const pw.TextStyle(fontSize: 9)),
                       ],
                       if (company?.email?.isNotEmpty == true) ...[
                         pw.SizedBox(height: 2),
@@ -223,7 +223,7 @@ class InventoryPdfService {
               children: [
                 pw.Text(reportTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _primary), textAlign: pw.TextAlign.right),
                 pw.SizedBox(height: 4),
-                pw.Text('Date : $date', style: pw.TextStyle(fontSize: 9, color: _grey), textAlign: pw.TextAlign.right),
+                pw.Text('inventory_date'.trParams({'date': '${date}'}), style: pw.TextStyle(fontSize: 9, color: _grey), textAlign: pw.TextAlign.right),
                 if (boutiqueName != null) ...[
                   pw.SizedBox(height: 4),
                   pw.Container(
@@ -257,7 +257,7 @@ class InventoryPdfService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Généré par LOGESCO v2', style: pw.TextStyle(fontSize: 8, color: _grey)),
+          pw.Text('inventory_genere_par_logesco_v2'.tr, style: pw.TextStyle(fontSize: 8, color: _grey)),
           pw.Text('Page ${ctx.pageNumber} / ${ctx.pagesCount}', style: pw.TextStyle(fontSize: 8, color: _grey)),
         ],
       ),

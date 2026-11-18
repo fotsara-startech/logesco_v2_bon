@@ -560,14 +560,14 @@ class _MovementFormPageState extends State<MovementFormPage> {
                       await controller.loadCategories(forceRefresh: true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Catégories rafraîchies (${controller.categories.length} catégories)'),
+                          content: Text('financialmovements_categories_rafraichies_categories'.trParams({'length': '${controller.categories.length}'})),
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.fixed,
                         ),
                       );
                     },
                     icon: const Icon(Icons.refresh, size: 20),
-                    tooltip: 'Rafraîchir les catégories',
+                    tooltip: 'financialmovements_rafraichir_categories'.tr,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),

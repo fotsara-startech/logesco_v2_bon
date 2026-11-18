@@ -837,7 +837,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
     // Confirmer avant import
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Importer fiche de comptage'),
+        title: Text('stockinventory_importer_fiche_comptage'.tr),
         content: const Text(
           'Sélectionnez le fichier Excel contenant les comptages remplis.\n\n'
           'Les quantités comptées seront importées et remplaceront les valeurs existantes.',
@@ -845,7 +845,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),

@@ -11,9 +11,9 @@ class CategoryQuickAccess extends StatelessWidget {
     return FloatingActionButton.extended(
       onPressed: () => Get.toNamed(AppRoutes.categories),
       icon: const Icon(Icons.category),
-      label: const Text('Catégories'),
+      label: Text('categories_title'.tr),
       backgroundColor: Colors.purple,
-      tooltip: 'Gérer les catégories de produits',
+      tooltip: 'products_gerer_categories_produits'.tr,
     );
   }
 }
@@ -27,7 +27,7 @@ class CategoryQuickButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () => Get.toNamed(AppRoutes.categories),
       icon: const Icon(Icons.category, size: 18),
-      label: const Text('Catégories'),
+      label: Text('categories_title'.tr),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.purple,
         foregroundColor: Colors.white,
@@ -45,7 +45,7 @@ class CategoryAccessChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: const Icon(Icons.category, size: 16),
-      label: const Text('Gérer les catégories'),
+      label: Text('product_list_categories'.tr),
       onPressed: () => Get.toNamed(AppRoutes.categories),
       backgroundColor: Colors.purple.withOpacity(0.1),
       side: BorderSide(color: Colors.purple.withOpacity(0.3)),

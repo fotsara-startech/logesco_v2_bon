@@ -26,9 +26,9 @@ class ProductFilters extends GetView<ProductController> {
           // Barre de recherche
           TextField(
             onChanged: controller.updateSearchQuery,
-            decoration: const InputDecoration(
-              labelText: 'Rechercher un produit',
-              hintText: 'Nom, référence, code-barre...',
+            decoration: InputDecoration(
+              labelText: 'sales_search_product'.tr,
+              hintText: 'sales_search_product_hint'.tr,
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
@@ -74,7 +74,7 @@ class ProductFilters extends GetView<ProductController> {
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: controller.clearFilters,
-                  child: const Text('Effacer tous les filtres'),
+                  child: Text('product_search_clear_all'.tr),
                 ),
               ],
             );

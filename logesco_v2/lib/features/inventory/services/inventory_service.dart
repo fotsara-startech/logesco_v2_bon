@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
@@ -63,7 +64,7 @@ class InventoryService {
 
           if (jsonData['data'] == null) {
             print('❌ jsonData[\'data\'] est null');
-            return ApiResponse.error(message: 'Aucune donnée reçue de l\'API');
+            return ApiResponse.error(message: 'inventory_aucune_donnee_recue_api'.tr);
           }
 
           List<dynamic> dataList;
@@ -72,7 +73,7 @@ class InventoryService {
           } catch (e) {
             print('❌ Impossible de convertir data en List: $e');
             print('📄 Type réel: ${jsonData['data'].runtimeType}');
-            return ApiResponse.error(message: 'Format de données invalide');
+            return ApiResponse.error(message: 'inventory_format_donnees_invalide'.tr);
           }
 
           for (int i = 0; i < dataList.length; i++) {
@@ -122,7 +123,7 @@ class InventoryService {
             pagination: jsonData['pagination'] != null ? _safeParsePagination(jsonData['pagination']) : null,
           );
         } catch (e) {
-          return ApiResponse.error(message: 'Erreur lors du parsing des données: $e');
+          return ApiResponse.error(message: 'inventory_erreur_lors_parsing_donnees'.trParams({'e': '${e}'}));
         }
       } else if (response.statusCode == 401) {
         print('🔐 Erreur d\'authentification - token invalide');
@@ -134,7 +135,7 @@ class InventoryService {
       }
     } catch (e) {
       print('💥 Erreur de connexion: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'inventory_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -228,7 +229,7 @@ class InventoryService {
         final testStock = TestDataService.getTestStockByProductId(productId);
         return ApiResponse.success(testStock);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'inventory_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 

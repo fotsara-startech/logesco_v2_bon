@@ -156,11 +156,11 @@ class PrintingController extends GetxController {
 
       // Gestion spécifique des erreurs de cast
       if (e.toString().contains('type \'Null\' is not a subtype of type \'String\'')) {
-        SnackbarUtils.showError('Données de reçus corrompues. Contactez l\'administrateur.');
+        SnackbarUtils.showError('printing_donnees_recus_corrompues_contactez_administrateur'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        SnackbarUtils.showError('Impossible de se connecter au serveur des reçus');
+        SnackbarUtils.showError('printing_impossible_se_connecter_serveur_recus'.tr);
       } else {
-        SnackbarUtils.showError('Erreur lors de la recherche des reçus: ${e.toString().substring(0, 50)}...');
+        SnackbarUtils.showError('printing_erreur_lors_recherche_recus'.trParams({'substring': '${e.toString().substring(0, 50)}'}));
       }
     } finally {
       _isSearching.value = false;
@@ -187,7 +187,7 @@ class PrintingController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Erreur lors de la récupération du reçu');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la récupération du reçu');
+      SnackbarUtils.showError('printing_erreur_lors_recuperation_recu'.tr);
       print(' Erreur récupération reçu: $e');
     } finally {
       _isLoading.value = false;
@@ -206,7 +206,7 @@ class PrintingController extends GetxController {
         SnackbarUtils.showError(response.message ?? 'Aucun reçu trouvé pour cette vente');
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la récupération du reçu');
+      SnackbarUtils.showError('printing_erreur_lors_recuperation_recu'.tr);
       print(' Erreur récupération reçu par vente: $e');
     } finally {
       _isLoading.value = false;
@@ -253,7 +253,7 @@ class PrintingController extends GetxController {
         return false;
       }
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la génération du reçu');
+      SnackbarUtils.showError('printing_erreur_lors_generation_recu'.tr);
       print(' Erreur génération reçu: $e');
       return false;
     } finally {
@@ -271,10 +271,10 @@ class PrintingController extends GetxController {
         showFormatInfo: true,
       );
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la génération de la prévisualisation');
+      SnackbarUtils.showError('printing_erreur_lors_generation_previsualisation'.tr);
       print(' Erreur prévisualisation: $e');
-      return const Center(
-        child: Text('Erreur de prévisualisation'),
+      return Center(
+        child: Text('printing_erreur_previsualisation'.tr),
       );
     }
   }
@@ -400,7 +400,7 @@ class PrintingController extends GetxController {
       print(' Impression lancée');
     } catch (e) {
       print(' Erreur impression directe: $e');
-      SnackbarUtils.showError('Erreur lors de l\'impression: $e');
+      SnackbarUtils.showError('printing_erreur_lors_impression'.trParams({'e': '${e}'}));
     }
   }
 
@@ -491,7 +491,7 @@ class PrintingController extends GetxController {
                   ),
                   pw.Text('Date: ${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}', style: pw.TextStyle(fontSize: 9)),
                   pw.Text('Heure: ${receipt.saleDate.hour.toString().padLeft(2, '0')}:${receipt.saleDate.minute.toString().padLeft(2, '0')}', style: pw.TextStyle(fontSize: 9)),
-                  if (receipt.customer != null) pw.Text('Client: ${receipt.customer!.nomComplet}', style: pw.TextStyle(fontSize: 9)),
+                  if (receipt.customer != null) pw.Text('printing_client'.trParams({'nomComplet': '${receipt.customer!.nomComplet}'}), style: pw.TextStyle(fontSize: 9)),
                 ],
               ),
               pw.SizedBox(height: 8),
@@ -531,11 +531,11 @@ class PrintingController extends GetxController {
                           children: [
                             pw.Padding(
                               padding: pw.EdgeInsets.all(3),
-                              child: pw.Text('Désignation', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                              child: pw.Text('quick_billing_col_designation'.tr, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                             ),
                             pw.Padding(
                               padding: pw.EdgeInsets.all(3),
-                              child: pw.Text('Qté', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                              child: pw.Text('quick_billing_col_qty'.tr, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                             ),
                             pw.Padding(
                               padding: pw.EdgeInsets.all(3),
@@ -543,7 +543,7 @@ class PrintingController extends GetxController {
                             ),
                             pw.Padding(
                               padding: pw.EdgeInsets.all(3),
-                              child: pw.Text('Montant', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                              child: pw.Text('suppliers_transaction_amount'.tr, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -583,7 +583,7 @@ class PrintingController extends GetxController {
                 // Pour les approvisionnements
                 pw.Row(
                   children: [
-                    pw.Text('Montant versé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.Text('printing_montant_verse'.tr, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     pw.Spacer(),
                     pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                   ],
@@ -592,7 +592,7 @@ class PrintingController extends GetxController {
                 // Pour les suivis de compte
                 pw.Row(
                   children: [
-                    pw.Text('Montant utilisé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.Text('printing_montant_utilise'.tr, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     pw.SizedBox(width: 5),
                     pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                   ],
@@ -611,7 +611,7 @@ class PrintingController extends GetxController {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Payé:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('printing_paye'.tr, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         pw.Text('${receipt.paidAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
@@ -664,7 +664,7 @@ class PrintingController extends GetxController {
       if (_companyProfile.value == null) {
         await _loadCompanyProfile();
         if (_companyProfile.value == null) {
-          SnackbarUtils.showError('Profil d\'entreprise non configuré');
+          SnackbarUtils.showError('company_settings_not_configured'.tr);
           return false;
         }
       }
@@ -690,10 +690,10 @@ class PrintingController extends GetxController {
       // Imprimer selon le format
       await printReceiptDirect(receipt);
 
-      SnackbarUtils.showSuccess('Reçu d\'approvisionnement généré avec succès');
+      SnackbarUtils.showSuccess('printing_recu_approvisionnement_genere_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la génération du reçu: $e');
+      SnackbarUtils.showError('printing_erreur_lors_generation_recu_2'.trParams({'e': '${e}'}));
       print('❌ Erreur génération reçu d\'approvisionnement: $e');
       return false;
     } finally {
@@ -718,7 +718,7 @@ class PrintingController extends GetxController {
       if (_companyProfile.value == null) {
         await _loadCompanyProfile();
         if (_companyProfile.value == null) {
-          SnackbarUtils.showError('Profil d\'entreprise non configuré');
+          SnackbarUtils.showError('company_settings_not_configured'.tr);
           return false;
         }
       }
@@ -744,10 +744,10 @@ class PrintingController extends GetxController {
       // Imprimer selon le format
       await printReceiptDirect(receipt);
 
-      SnackbarUtils.showSuccess('Reçu de suivi de compte généré avec succès');
+      SnackbarUtils.showSuccess('printing_recu_suivi_compte_genere_avec_succes'.tr);
       return true;
     } catch (e) {
-      SnackbarUtils.showError('Erreur lors de la génération du reçu: $e');
+      SnackbarUtils.showError('printing_erreur_lors_generation_recu_2'.trParams({'e': '${e}'}));
       print('❌ Erreur génération reçu de suivi de compte: $e');
       return false;
     } finally {

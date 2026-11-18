@@ -214,7 +214,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                               _isIncrement ? Icons.add : Icons.remove,
                               color: _isIncrement ? Colors.green : Colors.red,
                             ),
-                            suffixText: 'unités',
+                            suffixText: 'procurement_units'.tr,
                             hintText: 'stock_adjustment_quantity_hint'.tr,
                           ),
                           keyboardType: TextInputType.number,
@@ -377,7 +377,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
   void _selectProduct() {
     // TODO: Implémenter la sélection de produit
     // Pour l'instant, on affiche un message
-    SnackbarHelper.info('Sélection de produit - À implémenter', duration: const Duration(seconds: 2));
+    SnackbarHelper.info('inventory_selection_produit_implementer'.tr, duration: const Duration(seconds: 2));
   }
 
   void _submitAdjustment() async {
@@ -407,7 +407,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
         SnackbarHelper.error(controller.error ?? 'Erreur lors de l\'ajustement', duration: const Duration(seconds: 3));
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur: $e', duration: const Duration(seconds: 3));
+      SnackbarHelper.error('inventory_erreur'.trParams({'e': '${e}'}), duration: const Duration(seconds: 3));
     } finally {
       if (mounted) {
         setState(() {

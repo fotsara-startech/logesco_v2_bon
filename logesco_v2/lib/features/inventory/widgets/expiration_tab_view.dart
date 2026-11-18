@@ -252,23 +252,23 @@ class _ExpirationTabViewState extends State<ExpirationTabView> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'exhausted',
                       child: Row(
                         children: [
                           Icon(Icons.check_circle, size: 18),
                           SizedBox(width: 8),
-                          Text('Marquer épuisé'),
+                          Text('expiration_list_mark_exhausted'.tr),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
                           Icon(Icons.delete, size: 18, color: Colors.red),
                           SizedBox(width: 8),
-                          Text('Supprimer', style: TextStyle(color: Colors.red)),
+                          Text('suppliers_delete'.tr, style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
@@ -336,7 +336,7 @@ class _ExpirationTabViewState extends State<ExpirationTabView> {
                   children: [
                     Icon(Icons.inventory_2, size: 18, color: Colors.grey.shade600),
                     const SizedBox(width: 8),
-                    Text('${date.quantite} unités', style: const TextStyle(fontSize: 14)),
+                    Text('inventory_unites'.trParams({'quantite': '${date.quantite}'}), style: const TextStyle(fontSize: 14)),
                   ],
                 ),
                 if (date.numeroLot != null)
@@ -345,7 +345,7 @@ class _ExpirationTabViewState extends State<ExpirationTabView> {
                     children: [
                       Icon(Icons.qr_code, size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 8),
-                      Text('Lot: ${date.numeroLot}', style: const TextStyle(fontSize: 14)),
+                      Text('inventory_lot'.trParams({'numeroLot': '${date.numeroLot}'}), style: const TextStyle(fontSize: 14)),
                     ],
                   ),
               ],

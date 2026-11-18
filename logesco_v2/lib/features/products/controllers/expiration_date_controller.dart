@@ -45,7 +45,7 @@ class ExpirationDateController extends GetxController {
 
       expirationDates.value = result['data'] as List<ExpirationDate>;
     } catch (e) {
-      SnackbarHelper.error('Impossible de charger les dates de péremption: $e');
+      SnackbarHelper.error('products_impossible_charger_dates_peremption'.trParams({'e': '${e}'}));
     } finally {
       isLoading.value = false;
     }
@@ -115,12 +115,12 @@ class ExpirationDateController extends GetxController {
         boutiqueId: boutiqueId,
       );
 
-      SnackbarHelper.success('Date de péremption ajoutée');
+      SnackbarHelper.success('products_date_peremption_ajoutee'.tr);
 
       await loadExpirationDates(produitId: produitId, boutiqueId: boutiqueId);
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible d\'ajouter la date: $e');
+      SnackbarHelper.error('products_impossible_ajouter_date'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -146,12 +146,12 @@ class ExpirationDateController extends GetxController {
         notes: notes,
       );
 
-      SnackbarHelper.success('Date de péremption mise à jour');
+      SnackbarHelper.success('products_date_peremption_mise_jour'.tr);
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de mettre à jour: $e');
+      SnackbarHelper.error('products_impossible_mettre_jour'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -165,12 +165,12 @@ class ExpirationDateController extends GetxController {
 
       await _service.deleteExpirationDate(id);
 
-      SnackbarHelper.success('Date de péremption supprimée');
+      SnackbarHelper.success('products_date_peremption_supprimee'.tr);
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de supprimer: $e');
+      SnackbarHelper.error('products_impossible_supprimer'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -184,12 +184,12 @@ class ExpirationDateController extends GetxController {
 
       await _service.markAsExhausted(id);
 
-      SnackbarHelper.success('Marqué comme épuisé');
+      SnackbarHelper.success('products_marque_comme_epuise'.tr);
 
       await loadExpirationDates();
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de marquer comme épuisé: $e');
+      SnackbarHelper.error('products_impossible_marquer_comme_epuise'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;

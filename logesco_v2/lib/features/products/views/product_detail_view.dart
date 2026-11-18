@@ -314,7 +314,7 @@ class ProductDetailView extends StatelessWidget {
             onPressed: () {
               Get.back();
               // TODO: Implémenter la suppression
-              SnackbarHelper.info('Fonctionnalité à implémenter', title: 'product_detail_delete'.tr);
+              SnackbarHelper.info('products_fonctionnalite_implementer'.tr, title: 'product_detail_delete'.tr);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

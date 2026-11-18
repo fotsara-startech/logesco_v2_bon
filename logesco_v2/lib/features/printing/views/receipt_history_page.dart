@@ -15,7 +15,7 @@ class ReceiptHistoryPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique des reçus'),
+        title: Text('printing_historique_recus'.tr),
         actions: [
           IconButton(
             onPressed: controller.refresh,
@@ -25,7 +25,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           IconButton(
             onPressed: () => _showSearchDialog(context, controller),
             icon: const Icon(Icons.search),
-            tooltip: 'Rechercher',
+            tooltip: 'search'.tr,
           ),
           PopupMenuButton<ReceiptFilterPreset>(
             icon: const Icon(Icons.filter_list),
@@ -133,7 +133,7 @@ class ReceiptHistoryPage extends StatelessWidget {
             TextField(
               controller: controller.searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher par numéro de vente...',
+                hintText: 'printing_rechercher_par_numero_vente'.tr,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: controller.searchController.text.isNotEmpty
                     ? IconButton(
@@ -369,7 +369,7 @@ class ReceiptHistoryPage extends StatelessWidget {
                   if (controller.canReprintReceipt(receipt))
                     PopupMenuButton<PrintFormat>(
                       icon: const Icon(Icons.print, color: Colors.blue),
-                      tooltip: 'Réimprimer',
+                      tooltip: 'receipts_reprint'.tr,
                       onSelected: (format) => _reprintReceipt(receipt, format),
                       itemBuilder: (context) => [
                         PopupMenuItem(
@@ -379,7 +379,7 @@ class ReceiptHistoryPage extends StatelessWidget {
                             children: [
                               Icon(Icons.refresh, size: 16, color: Colors.blue[600]),
                               const SizedBox(width: 8),
-                              Text('Même format (${receipt.format.displayName})'),
+                              Text('printing_meme_format'.trParams({'displayName': '${receipt.format.displayName}'})),
                             ],
                           ),
                         ),
@@ -437,7 +437,7 @@ class ReceiptHistoryPage extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: controller.clearSearchCriteria,
-              child: const Text('Effacer les filtres'),
+              child: Text('sales_clear_filters'.tr),
             ),
           ],
         ],
@@ -464,7 +464,7 @@ class ReceiptHistoryPage extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: controller.hasPreviousPages && !controller.isLoading ? controller.loadPreviousPage : null,
               icon: const Icon(Icons.chevron_left),
-              label: const Text('Précédent'),
+              label: Text('previous'.tr),
             ),
 
             // Indicateur de page
@@ -498,7 +498,7 @@ class ReceiptHistoryPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Recherche avancée'),
+        title: Text('financial_movements_filter_advanced_search'.tr),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
@@ -506,16 +506,16 @@ class ReceiptHistoryPage extends StatelessWidget {
             children: [
               TextField(
                 controller: controller.saleNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de vente',
+                decoration: InputDecoration(
+                  labelText: 'printing_numero_vente'.tr,
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: controller.customerNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom du client',
+                decoration: InputDecoration(
+                  labelText: 'customers_name'.tr,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -525,7 +525,7 @@ class ReceiptHistoryPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -536,7 +536,7 @@ class ReceiptHistoryPage extends StatelessWidget {
               controller.searchReceipts();
               Get.back();
             },
-            child: const Text('Rechercher'),
+            child: Text('search'.tr),
           ),
         ],
       ),
@@ -615,7 +615,7 @@ class ReceiptHistoryPage extends StatelessWidget {
         arguments: controller.currentReceipt,
       );
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la réimpression: $e');
+      SnackbarHelper.error('printing_erreur_lors_reimpression'.trParams({'e': '${e}'}));
     }
   }
 }

@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
 import 'receipt_template_base.dart';
@@ -110,7 +111,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (company.phone?.isNotEmpty == true) Text('Tél: ${company.phone}', style: textStyle),
+                if (company.phone?.isNotEmpty == true) Text('printing_tel'.trParams({'phone': '${company.phone}'}), style: textStyle),
                 if (company.email?.isNotEmpty == true && company.phone?.isNotEmpty == true) Text(' À ', style: textStyle),
                 if (company.email?.isNotEmpty == true) Text('Email: ${company.email}', style: textStyle),
               ],

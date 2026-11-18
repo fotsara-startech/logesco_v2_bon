@@ -72,7 +72,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
-      SnackbarHelper.error('Veuillez sélectionner une date');
+      SnackbarHelper.error('expiration_dialog_date_error'.tr);
       return;
     }
 
@@ -127,8 +127,8 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
               // Date de péremption
               TextFormField(
                 controller: _dateController,
-                decoration: const InputDecoration(
-                  labelText: 'Date de péremption *',
+                decoration: InputDecoration(
+                  labelText: 'expiration_dialog_date_label'.tr,
                   prefixIcon: Icon(Icons.calendar_today),
                   border: OutlineInputBorder(),
                 ),
@@ -146,10 +146,10 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
               // Quantité
               TextFormField(
                 controller: _quantiteController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantité *',
+                decoration: InputDecoration(
+                  labelText: 'expiration_dialog_quantity_label'.tr,
                   prefixIcon: Icon(Icons.inventory_2),
-                  suffixText: 'unités',
+                  suffixText: 'procurement_units'.tr,
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
@@ -170,8 +170,8 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
               // Numéro de lot
               TextFormField(
                 controller: _numeroLotController,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de lot',
+                decoration: InputDecoration(
+                  labelText: 'expiration_dialog_lot_label'.tr,
                   prefixIcon: Icon(Icons.qr_code),
                   border: OutlineInputBorder(),
                   helperText: 'Optionnel',
@@ -200,7 +200,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
                 children: [
                   TextButton(
                     onPressed: _isLoading ? null : () => Get.back(),
-                    child: const Text('Annuler'),
+                    child: Text('suppliers_form_cancel'.tr),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(

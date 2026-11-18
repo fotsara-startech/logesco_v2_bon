@@ -160,9 +160,9 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (movement.produit?.reference != null) Text('Réf: ${movement.produit!.reference}'),
+            if (movement.produit?.reference != null) Text('inventory_ref'.trParams({'reference': '${movement.produit!.reference}'})),
             Text('Type: ${_getTypeLabel(movement.typeMouvement)}'),
-            Text('Date: ${_formatDate(movement.dateMouvement)}'),
+            Text('inventory_date_2'.trParams({'dateMouvement': '${_formatDate(movement.dateMouvement)}'})),
             const SizedBox(height: 4),
             // Affichage du stock initial ' changement ' stock final
             Row(

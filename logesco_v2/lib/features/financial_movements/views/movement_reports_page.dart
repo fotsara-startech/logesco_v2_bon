@@ -72,7 +72,7 @@ class MovementReportsPage extends StatelessWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erreur: $e'),
+                            content: Text('financialmovements_erreur'.trParams({'e': '${e}'})),
                             backgroundColor: Colors.red.shade600,
                             duration: const Duration(seconds: 3),
                           ),
@@ -118,7 +118,7 @@ class MovementReportsPage extends StatelessWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erreur: $e'),
+                            content: Text('financialmovements_erreur'.trParams({'e': '${e}'})),
                             backgroundColor: Colors.red.shade600,
                             duration: const Duration(seconds: 3),
                           ),
@@ -238,7 +238,7 @@ class MovementReportsPage extends StatelessWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Erreur: $e'),
+                                content: Text('financialmovements_erreur'.trParams({'e': '${e}'})),
                                 backgroundColor: Colors.red.shade600,
                                 duration: const Duration(seconds: 3),
                               ),
@@ -285,7 +285,7 @@ class MovementReportsPage extends StatelessWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Erreur: $e'),
+                                content: Text('financialmovements_erreur'.trParams({'e': '${e}'})),
                                 backgroundColor: Colors.red.shade600,
                                 duration: const Duration(seconds: 3),
                               ),

@@ -32,7 +32,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => controller.loadStockAlerts(refresh: true),
-                child: const Text('Réessayer'),
+                child: Text('roles_retry'.tr),
               ),
             ],
           ),
@@ -109,8 +109,8 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (product?.reference != null) Text('Réf: ${product!.reference}'),
-            Text('Stock actuel: ${stock.quantiteDisponible}'),
+            if (product?.reference != null) Text('inventory_ref'.trParams({'reference': '${product!.reference}'})),
+            Text('inventory_stock_actuel'.trParams({'quantiteDisponible': '${stock.quantiteDisponible}'})),
             Text('Seuil minimum: $seuilMinimum'),
             Text(
               isOutOfStock ? 'RUPTURE DE STOCK' : 'STOCK FAIBLE',
@@ -124,7 +124,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
         trailing: IconButton(
           icon: const Icon(Icons.swap_horiz),
           onPressed: () => controller.goToStockMovement(stock),
-          tooltip: 'Mouvement de stock',
+          tooltip: 'inventory_mouvement_stock'.tr,
         ),
         onTap: () => controller.goToStockDetail(stock),
       ),

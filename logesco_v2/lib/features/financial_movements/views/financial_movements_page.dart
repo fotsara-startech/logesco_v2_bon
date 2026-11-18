@@ -976,8 +976,8 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
               onChanged: (value) => controller.searchMovements(value),
               onSubmitted: (value) => onFieldSubmitted(),
               decoration: InputDecoration(
-                hintText: 'Rechercher par description, référence, notes...',
-                helperText: 'Utilisez "desc:", "ref:", "notes:", "user:" pour une recherche ciblée',
+                hintText: 'financial_movements_search_hint'.tr,
+                helperText: 'financial_movements_search_helper'.tr,
                 helperMaxLines: 2,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: Row(
@@ -990,7 +990,7 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
                               controller.searchMovements('');
                             },
                             icon: const Icon(Icons.clear),
-                            tooltip: 'Effacer la recherche',
+                            tooltip: 'suppliers_clear_search'.tr,
                           )
                         : const SizedBox.shrink()),
                     IconButton(
@@ -1002,7 +1002,7 @@ class _AdvancedSearchDialogState extends State<_AdvancedSearchDialog> {
                         );
                       },
                       icon: const Icon(Icons.tune),
-                      tooltip: 'Recherche avancée',
+                      tooltip: 'financial_movements_filter_advanced_search'.tr,
                     ),
                   ],
                 ),

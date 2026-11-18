@@ -122,7 +122,7 @@ class MovementDetailPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/financial-movements/${movement.id}/edit', arguments: movement),
-        tooltip: 'Modifier le mouvement',
+        tooltip: 'financial_movements_edit'.tr,
         child: const Icon(Icons.edit),
       ),
     );

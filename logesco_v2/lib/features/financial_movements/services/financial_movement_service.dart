@@ -96,7 +96,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -214,7 +214,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -286,7 +286,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -382,7 +382,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -476,7 +476,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -537,7 +537,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -650,7 +650,7 @@ class FinancialMovementService {
     final token = await _authService.getToken();
     if (token == null) {
       throw FinancialMovementException(
-        message: 'Session expirée. Veuillez vous reconnecter.',
+        message: 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr,
         code: 'AUTH_TOKEN_MISSING',
         statusCode: 401,
         errorType: FinancialErrorType.authenticationError,
@@ -824,7 +824,7 @@ class FinancialMovementService {
     } else {
       print(' Échec de la récupération du service');
       throw FinancialMovementException(
-        message: 'Impossible de récupérer le service',
+        message: 'financialmovements_impossible_recuperer_service'.tr,
         code: 'RECOVERY_FAILED',
         statusCode: 503,
         errorType: FinancialErrorType.serverError,
@@ -848,7 +848,7 @@ class FinancialMovementService {
       );
     } catch (e) {
       return FinancialMovementException(
-        message: 'Erreur de communication avec le serveur (${response.statusCode})',
+        message: 'financialmovements_erreur_communication_avec_serveur'.trParams({'statusCode': '${response.statusCode}'}),
         code: 'COMMUNICATION_ERROR',
         statusCode: response.statusCode,
         errorType: _getErrorTypeFromStatusCode(response.statusCode),

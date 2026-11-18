@@ -50,7 +50,7 @@ class ProductFormView extends StatelessWidget {
                       children: [
                         Icon(Icons.arrow_upward, color: Colors.grey.shade600, size: 20),
                         const SizedBox(width: 8),
-                        Expanded(child: Text('Choisissez le type ci-dessus pour afficher le formulaire.', style: TextStyle(color: Colors.grey.shade700))),
+                        Expanded(child: Text('products_choisissez_type_ci_dessus_afficher_formulaire'.tr, style: TextStyle(color: Colors.grey.shade700))),
                       ],
                     ),
                   );

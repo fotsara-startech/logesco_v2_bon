@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/config/app_config.dart';
@@ -88,7 +89,7 @@ class ProductImagePicker extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: isLoading ? null : onImageDeleted,
                 icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Supprimer'),
+                label: Text('suppliers_delete'.tr),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.error,
                 ),

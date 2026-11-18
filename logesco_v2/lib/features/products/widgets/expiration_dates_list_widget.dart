@@ -110,7 +110,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
             ElevatedButton.icon(
               onPressed: () => _showAddDialog(context, widget.produitId, controller),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Ajouter'),
+              label: Text('add'.tr),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
@@ -280,33 +280,33 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
                       Icon(Icons.edit, size: 18),
                       SizedBox(width: 8),
-                      Text('Modifier'),
+                      Text('roles_modify'.tr),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'exhausted',
                   child: Row(
                     children: [
                       Icon(Icons.check_circle, size: 18),
                       SizedBox(width: 8),
-                      Text('Marquer épuisé'),
+                      Text('expiration_list_mark_exhausted'.tr),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
                       Icon(Icons.delete, size: 18, color: Colors.red),
                       SizedBox(width: 8),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      Text('suppliers_delete'.tr, style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -406,12 +406,12 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
   void _markAsExhausted(BuildContext context, ExpirationDate date, ExpirationDateController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Marquer comme épuisé'),
-        content: const Text('Voulez-vous marquer ce lot comme épuisé ?'),
+        title: Text('expiration_list_exhausted_title'.tr),
+        content: Text('expiration_list_exhausted_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -428,12 +428,12 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
   void _confirmDelete(BuildContext context, ExpirationDate date, ExpirationDateController controller) {
     Get.dialog(
       AlertDialog(
-        title: const Text('Supprimer'),
-        content: const Text('Voulez-vous vraiment supprimer cette date de péremption ?'),
+        title: Text('suppliers_delete'.tr),
+        content: Text('expiration_list_delete_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -441,7 +441,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
               Get.back();
               controller.deleteExpirationDate(date.id).then((_) => _loadStats());
             },
-            child: const Text('Supprimer'),
+            child: Text('suppliers_delete'.tr),
           ),
         ],
       ),

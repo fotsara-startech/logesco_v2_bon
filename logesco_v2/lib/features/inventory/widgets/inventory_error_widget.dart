@@ -2,6 +2,7 @@
  * Widget d'erreur personnalisé pour l'inventaire
  */
 
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 class InventoryErrorWidget extends StatelessWidget {
@@ -50,7 +51,7 @@ class InventoryErrorWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Réessayer'),
+                label: Text('roles_retry'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,

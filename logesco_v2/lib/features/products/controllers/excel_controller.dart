@@ -58,7 +58,7 @@ class ExcelController extends GetxController {
 
       if (products.isEmpty) {
         exportStatus.value = 'Aucun produit à exporter';
-        SnackbarHelper.info('Aucun produit trouvé pour l\'export', title: 'Information');
+        SnackbarHelper.info('products_aucun_produit_trouve_export'.tr, title: 'Information');
         return;
       }
 
@@ -76,19 +76,19 @@ class ExcelController extends GetxController {
           // Sur le web, le fichier est automatiquement téléchargé
           SnackbarHelper.success(
             '${products.length} produits exportés.\nFichier: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 4),
           );
         } else {
           // Sur desktop/mobile, proposer de partager
           Get.dialog(
             AlertDialog(
-              title: const Text('Export réussi'),
-              content: Text('${products.length} produits exportés avec succès.\nFichier: $filename\nVoulez-vous partager le fichier ?'),
+              title: Text('customers_export_success'.tr),
+              content: Text('products_produits_exportes_avec_succes_nfichier_nvoulez'.trParams({'length': '${products.length}', 'filename': '${filename}'})),
               actions: [
                 TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text('Fermer'),
+                  child: Text('suppliers_close'.tr),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -103,12 +103,12 @@ class ExcelController extends GetxController {
         }
       } else {
         exportStatus.value = 'Erreur lors de l\'export';
-        SnackbarHelper.error('Impossible d\'exporter les produits');
+        SnackbarHelper.error('products_impossible_exporter_produits'.tr);
       }
     } catch (e) {
       exportStatus.value = 'Erreur: $e';
       print('❌ Erreur export produits: $e');
-      SnackbarHelper.error('Erreur lors de l\'export: $e');
+      SnackbarHelper.error('products_erreur_lors_export'.trParams({'e': '${e}'}));
     } finally {
       isExporting.value = false;
     }
@@ -130,7 +130,7 @@ class ExcelController extends GetxController {
 
       if (importResult.products.isEmpty) {
         importStatus.value = 'Aucun produit valide trouvé';
-        SnackbarHelper.info('Aucun produit valide trouvé dans le fichier', title: 'Information');
+        SnackbarHelper.info('products_aucun_produit_valide_trouve_dans_fichier'.tr, title: 'Information');
         return;
       }
 
@@ -146,7 +146,7 @@ class ExcelController extends GetxController {
       importStatus.value = statusMessage;
     } catch (e) {
       importStatus.value = 'Erreur: $e';
-      SnackbarHelper.error('Erreur lors de l\'import: $e');
+      SnackbarHelper.error('products_erreur_lors_import'.trParams({'e': '${e}'}));
     } finally {
       isImporting.value = false;
     }
@@ -198,7 +198,7 @@ class ExcelController extends GetxController {
       }
     } catch (e) {
       importStatus.value = 'Erreur: $e';
-      SnackbarHelper.error('Erreur lors de l\'import: $e');
+      SnackbarHelper.error('products_erreur_lors_import'.trParams({'e': '${e}'}));
     } finally {
       isImporting.value = false;
     }
@@ -223,12 +223,12 @@ class ExcelController extends GetxController {
         exportStatus.value = 'Template généré';
         await _excelService.shareExcelFile(filePath);
 
-        SnackbarHelper.success('Template d\'import généré et partagé');
+        SnackbarHelper.success('products_template_import_genere_partage'.tr);
       } else {
-        SnackbarHelper.error('Impossible de générer le template');
+        SnackbarHelper.error('products_impossible_generer_template'.tr);
       }
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la génération du template: $e');
+      SnackbarHelper.error('products_erreur_lors_generation_template'.trParams({'e': '${e}'}));
     }
   }
 

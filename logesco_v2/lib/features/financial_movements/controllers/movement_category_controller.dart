@@ -44,11 +44,11 @@ class MovementCategoryController extends GetxController with LoadingStateMixin {
       },
       loadingState: forceRefresh
           ? LoadingState.refreshing(
-              message: 'Actualisation des catégories...',
+              message: 'financialmovements_actualisation_categories'.tr,
               operation: 'refreshCategories',
             )
           : LoadingState.loading(
-              message: 'Chargement des catégories...',
+              message: 'categories_loading'.tr,
               operation: 'loadCategories',
             ),
       successMessage: null, // Pas de message de succès pour éviter le spam

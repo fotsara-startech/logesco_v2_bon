@@ -105,7 +105,7 @@ class StockSummaryCard extends StatelessWidget {
                     ),
                     Expanded(
                       child: _SummaryItem(
-                        title: 'En Stock',
+                        title: 'inventory_stock_2'.tr,
                         value: summary.produitsEnStock.toString(),
                         subtitle: '${summary.pourcentageEnStock}%',
                         icon: Icons.check_circle,

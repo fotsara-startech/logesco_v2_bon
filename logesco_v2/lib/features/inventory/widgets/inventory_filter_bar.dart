@@ -72,7 +72,7 @@ class InventoryFilterBar extends StatelessWidget {
                 // Filtre de catégorie
                 if (controller.selectedCategory.value.isNotEmpty)
                   _buildFilterChip(
-                    label: 'Catégorie: ${controller.selectedCategory.value}',
+                    label: 'inventory_categorie'.trParams({'value': '${controller.selectedCategory.value}'}),
                     onRemove: () => controller.updateSelectedCategory(''),
                   ),
 
@@ -93,7 +93,7 @@ class InventoryFilterBar extends StatelessWidget {
                 // Filtre de date
                 if (controller.dateDebutFilter.value != null || controller.dateFinFilter.value != null)
                   _buildFilterChip(
-                    label: 'Période: ${_getDateRangeLabel(controller.dateDebutFilter.value, controller.dateFinFilter.value)}',
+                    label: 'inventory_periode'.trParams({'value': '${_getDateRangeLabel(controller.dateDebutFilter.value, controller.dateFinFilter.value)}'}),
                     onRemove: () {
                       controller.dateDebutFilter.value = null;
                       controller.dateFinFilter.value = null;

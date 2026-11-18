@@ -14,7 +14,7 @@ class ReceiptDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détails du reçu'),
+        title: Text('printing_details_recu'.tr),
         actions: [
           Obx(() {
             final receipt = controller.selectedReceipt;
@@ -23,35 +23,35 @@ class ReceiptDetailPage extends StatelessWidget {
             return PopupMenuButton<String>(
               onSelected: (value) => _handleMenuAction(value, receipt, controller),
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'preview',
                   child: Row(
                     children: [
                       Icon(Icons.visibility),
                       SizedBox(width: 8),
-                      Text('Aperçu'),
+                      Text('printing_apercu'.tr),
                     ],
                   ),
                 ),
                 if (controller.canReprintReceipt(receipt)) ...[
                   const PopupMenuDivider(),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'reprint_same',
                     child: Row(
                       children: [
                         Icon(Icons.print),
                         SizedBox(width: 8),
-                        Text('Réimprimer (même format)'),
+                        Text('printing_reimprimer_meme_format'.tr),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'reprint_other',
                     child: Row(
                       children: [
                         Icon(Icons.print_outlined),
                         SizedBox(width: 8),
-                        Text('Réimprimer (autre format)'),
+                        Text('printing_reimprimer_autre_format'.tr),
                       ],
                     ),
                   ),
@@ -65,8 +65,8 @@ class ReceiptDetailPage extends StatelessWidget {
         final receipt = controller.selectedReceipt;
 
         if (receipt == null) {
-          return const Center(
-            child: Text('Aucun reçu sélectionné'),
+          return Center(
+            child: Text('printing_aucun_recu_selectionne'.tr),
           );
         }
 
@@ -518,7 +518,7 @@ class ReceiptDetailPage extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () => _showPreview(receipt, controller),
                     icon: const Icon(Icons.visibility),
-                    label: const Text('Aperçu'),
+                    label: Text('printing_apercu'.tr),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -637,7 +637,7 @@ class ReceiptDetailPage extends StatelessWidget {
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
-        title: const Text('Choisir le format de réimpression'),
+        title: Text('printing_choisir_format_reimpression'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: controller.getAvailableFormats().map((format) {
@@ -658,7 +658,7 @@ class ReceiptDetailPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text('suppliers_form_cancel'.tr),
           ),
         ],
       ),
@@ -711,7 +711,7 @@ class ReceiptDetailPage extends StatelessWidget {
         arguments: controller.currentReceipt,
       );
     } catch (e) {
-      SnackbarHelper.error('Erreur lors de la réimpression: $e');
+      SnackbarHelper.error('printing_erreur_lors_reimpression'.trParams({'e': '${e}'}));
     }
   }
 }

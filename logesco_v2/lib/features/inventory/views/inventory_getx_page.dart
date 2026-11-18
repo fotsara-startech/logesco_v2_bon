@@ -353,7 +353,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           );
         } else {
           // Sur desktop/mobile, ouvrir le fichier
-          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          SnackbarHelper.info('inventory_ouverture_fichier'.tr, duration: const Duration(seconds: 1));
           await ExportService.openExcelFile(filePath);
 
           // Afficher le dialog de confirmation
@@ -385,7 +385,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       }
     } catch (e) {
       print('❌ Erreur export: $e');
-      SnackbarHelper.error('Erreur lors de l\'exportation des stocks: ${e.toString()}');
+      SnackbarHelper.error('inventory_erreur_lors_exportation_stocks'.trParams({'toString': '${e.toString()}'}));
     }
   }
 
@@ -440,7 +440,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       }
     } catch (e) {
       print('❌ Erreur export mouvements: $e');
-      SnackbarHelper.error('Erreur lors de l\'exportation des mouvements: ${e.toString()}');
+      SnackbarHelper.error('inventory_erreur_lors_exportation_mouvements'.trParams({'toString': '${e.toString()}'}));
     }
   }
 
@@ -451,7 +451,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
   void _exportStockPdf() async {
     final controller = Get.find<InventoryGetxController>();
     try {
-      SnackbarHelper.info('Génération du PDF...', duration: const Duration(seconds: 2));
+      SnackbarHelper.info('inventory_generation_pdf'.tr, duration: const Duration(seconds: 2));
       final filePath = await controller.exportStockToPdf();
       if (filePath != null) {
         // En mode web, filePath est juste le nom du fichier
@@ -461,12 +461,12 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
             'PDF téléchargé: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
         } else {
           // Sur desktop/mobile, ouvrir le fichier
-          SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+          SnackbarHelper.info('inventory_ouverture_pdf'.tr, duration: const Duration(seconds: 1));
           await InventoryPdfService.openPdf(filePath);
           _showExportSuccessDialog(filePath, isPdf: true);
         }
@@ -475,14 +475,14 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
       }
     } catch (e) {
       print('❌ Erreur export PDF: $e');
-      SnackbarHelper.error('Erreur lors de l\'export PDF: ${e.toString()}');
+      SnackbarHelper.error('inventory_erreur_lors_export_pdf'.trParams({'toString': '${e.toString()}'}));
     }
   }
 
   void _exportMovementsPdf() async {
     final controller = Get.find<InventoryGetxController>();
     try {
-      SnackbarHelper.info('Génération du PDF des mouvements...', duration: const Duration(seconds: 2));
+      SnackbarHelper.info('inventory_generation_pdf_mouvements'.tr, duration: const Duration(seconds: 2));
       final filePath = await controller.exportMovementsToPdf();
       if (filePath != null) {
         // En mode web, filePath est juste le nom du fichier
@@ -492,12 +492,12 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
             'PDF téléchargé: $filename',
-            title: 'Export réussi',
+            title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
         } else {
           // Sur desktop/mobile, ouvrir le fichier
-          SnackbarHelper.info('Ouverture du PDF...', duration: const Duration(seconds: 1));
+          SnackbarHelper.info('inventory_ouverture_pdf'.tr, duration: const Duration(seconds: 1));
           await InventoryPdfService.openPdf(filePath);
           _showExportSuccessDialog(filePath, isPdf: true);
         }

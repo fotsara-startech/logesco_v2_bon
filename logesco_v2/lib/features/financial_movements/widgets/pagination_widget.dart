@@ -152,7 +152,7 @@ class PaginationWidget extends StatelessWidget {
               IconButton(
                 onPressed: hasPrev && !isLoading ? onPrevPage : null,
                 icon: const Icon(Icons.chevron_left),
-                tooltip: 'Page précédente',
+                tooltip: 'financialmovements_page_precedente'.tr,
               ),
 
               const SizedBox(width: 8),
@@ -175,7 +175,7 @@ class PaginationWidget extends StatelessWidget {
               IconButton(
                 onPressed: currentPage < totalPages ? () => onGoToPage?.call(totalPages) : null,
                 icon: const Icon(Icons.last_page),
-                tooltip: 'Dernière page',
+                tooltip: 'financial_movements_pagination_last_page'.tr,
               ),
             ],
           ),

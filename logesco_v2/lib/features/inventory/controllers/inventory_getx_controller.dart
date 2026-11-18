@@ -405,7 +405,7 @@ class InventoryGetxController extends GetxController {
       print(' Navigation réussie');
     } catch (e) {
       print(' Erreur navigation: $e');
-      SnackbarHelper.error('Impossible d\'ouvrir le formulaire de mouvement: $e');
+      SnackbarHelper.error('inventory_impossible_ouvrir_formulaire_mouvement'.trParams({'e': '${e}'}));
     }
   }
 
@@ -540,7 +540,7 @@ class InventoryGetxController extends GetxController {
 
       return true;
     } catch (e) {
-      SnackbarHelper.error('Impossible de créer le mouvement: $e');
+      SnackbarHelper.error('inventory_impossible_creer_mouvement'.trParams({'e': '${e}'}));
       return false;
     } finally {
       isLoading.value = false;
@@ -572,7 +572,7 @@ class InventoryGetxController extends GetxController {
       categories.clear();
       print(' Aucune catégorie disponible');
 
-      SnackbarHelper.warning('Impossible de charger les catégories. Veuillez vérifier votre connexion.');
+      SnackbarHelper.warning('inventory_impossible_charger_categories_veuillez_verifier_votre'.tr);
     }
   }
 

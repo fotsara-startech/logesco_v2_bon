@@ -135,7 +135,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         onPressed: () {
           Get.to(() => StockMovementPage());
         }, // _showAdjustmentDialog,
-        tooltip: 'Ajuster le stock',
+        tooltip: 'inventory_detail_adjust'.tr,
         child: const Icon(Icons.add),
       ),
     );
@@ -194,7 +194,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
           );
         } else {
           // Sur desktop/mobile, ouvrir le fichier
-          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          SnackbarHelper.info('inventory_ouverture_fichier'.tr, duration: const Duration(seconds: 1));
           await ExportService.openExcelFile(filePath);
 
           // Afficher le dialog de confirmation
@@ -223,7 +223,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
       }
     } catch (e) {
       print('❌ Erreur export: $e');
-      SnackbarHelper.error('Erreur lors de l\'exportation: ${e.toString()}');
+      SnackbarHelper.error('inventory_erreur_lors_exportation'.trParams({'toString': '${e.toString()}'}));
     }
   }
 
@@ -248,7 +248,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
           );
         } else {
           // Sur desktop/mobile, ouvrir le fichier
-          SnackbarHelper.info('Ouverture du fichier...', duration: const Duration(seconds: 1));
+          SnackbarHelper.info('inventory_ouverture_fichier'.tr, duration: const Duration(seconds: 1));
           await ExportService.openExcelFile(filePath);
 
           // Afficher le dialog de confirmation
@@ -277,7 +277,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
       }
     } catch (e) {
       print('❌ Erreur export mouvements: $e');
-      SnackbarHelper.error('Erreur lors de l\'exportation des mouvements: ${e.toString()}');
+      SnackbarHelper.error('inventory_erreur_lors_exportation_mouvements'.trParams({'toString': '${e.toString()}'}));
     }
   }
 
@@ -506,7 +506,7 @@ class StockAlertsView extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => controller.loadStockAlerts(refresh: true),
-                  child: const Text('Réessayer'),
+                  child: Text('roles_retry'.tr),
                 ),
               ],
             ),
@@ -554,8 +554,8 @@ class BulkStockAdjustmentPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Ajustement en lot'),
       ),
-      body: const Center(
-        child: Text('Page d\'ajustement en lot - À implémenter'),
+      body: Center(
+        child: Text('inventory_page_ajustement_lot_implementer'.tr),
       ),
     );
   }

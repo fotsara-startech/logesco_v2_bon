@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,7 +57,7 @@ class PrintingService {
       if (useCache && !request.criteria.hasFilters) {
         final cachedResponse = await _getCachedReceipts();
         if (cachedResponse != null) {
-          return ApiResponse.success(cachedResponse, message: 'Données récupérées du cache');
+          return ApiResponse.success(cachedResponse, message: 'printing_donnees_recuperees_cache'.tr);
         }
       }
 
@@ -271,11 +272,11 @@ class PrintingService {
     } catch (e) {
       print('❌ Error searching receipts: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -365,7 +366,7 @@ class PrintingService {
 
         return ApiResponse.success(receipt, message: jsonData['message']);
       } else if (response.statusCode == 404) {
-        return ApiResponse.error(message: 'Reçu non trouvé');
+        return ApiResponse.error(message: 'printing_recu_non_trouve'.tr);
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du reçu');
@@ -373,11 +374,11 @@ class PrintingService {
     } catch (e) {
       print('❌ Error getting receipt: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -443,14 +444,14 @@ class PrintingService {
 
         return ApiResponse.success(receipt, message: jsonData['message']);
       } else if (response.statusCode == 404) {
-        return ApiResponse.error(message: 'Aucun reçu trouvé pour cette vente');
+        return ApiResponse.error(message: 'printing_aucun_recu_trouve_vente'.tr);
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du reçu');
       }
     } catch (e) {
       print('❌ Error getting receipt by sale: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -499,9 +500,9 @@ class PrintingService {
 
         return ApiResponse.success(reprintResponse, message: jsonData['message']);
       } else if (response.statusCode == 404) {
-        return ApiResponse.error(message: 'Reçu non trouvé pour réimpression');
+        return ApiResponse.error(message: 'printing_recu_non_trouve_reimpression'.tr);
       } else if (response.statusCode == 403) {
-        return ApiResponse.error(message: 'Vous n\'avez pas l\'autorisation de réimprimer ce reçu');
+        return ApiResponse.error(message: 'printing_vous_n_avez_pas_autorisation_reimprimer'.tr);
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la réimpression');
@@ -509,11 +510,11 @@ class PrintingService {
     } catch (e) {
       print('❌ Error reprinting receipt: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -531,7 +532,7 @@ class PrintingService {
       return await _generateReceiptFromSaleData(request);
     } catch (e) {
       print('❌ Error generating receipt: $e');
-      return ApiResponse.error(message: 'Erreur lors de la génération du reçu: $e');
+      return ApiResponse.error(message: 'printing_erreur_lors_generation_recu_2'.trParams({'e': '${e}'}));
     }
   }
 
@@ -568,7 +569,7 @@ class PrintingService {
       }
     } catch (e) {
       print('❌ Error getting reprint history: $e');
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 
@@ -618,7 +619,7 @@ class PrintingService {
 
     // D'abord chercher dans le cache
     if (_testReceiptsCache.containsKey(receiptId)) {
-      return ApiResponse.success(_testReceiptsCache[receiptId]!, message: 'Reçu récupéré avec succès');
+      return ApiResponse.success(_testReceiptsCache[receiptId]!, message: 'printing_recu_recupere_avec_succes'.tr);
     }
 
     // Sinon chercher dans les reçus de test par défaut
@@ -627,9 +628,9 @@ class PrintingService {
       final receipt = testReceipts.firstWhere(
         (r) => r.id == receiptId,
       );
-      return ApiResponse.success(receipt, message: 'Reçu récupéré avec succès');
+      return ApiResponse.success(receipt, message: 'printing_recu_recupere_avec_succes'.tr);
     } catch (e) {
-      return ApiResponse.error(message: 'Reçu non trouvé');
+      return ApiResponse.error(message: 'printing_recu_non_trouve'.tr);
     }
   }
 
@@ -660,7 +661,7 @@ class PrintingService {
     );
 
     if (cachedReceipt.id.isNotEmpty) {
-      return ApiResponse.success(cachedReceipt, message: 'Reçu récupéré avec succès');
+      return ApiResponse.success(cachedReceipt, message: 'printing_recu_recupere_avec_succes'.tr);
     }
 
     // Si pas trouvé dans le cache, créer un nouveau reçu à partir des vraies données
@@ -674,7 +675,7 @@ class PrintingService {
       // Récupérer les vraies données de vente
       final saleData = await _getRealSaleData(saleId);
       if (saleData == null) {
-        return ApiResponse.error(message: 'Aucun reçu trouvé pour cette vente');
+        return ApiResponse.error(message: 'printing_aucun_recu_trouve_vente'.tr);
       }
 
       // Créer le reçu à partir des vraies données
@@ -688,10 +689,10 @@ class PrintingService {
       _testReceiptsCache[receipt.id] = receipt;
 
       print('✅ Reçu créé à partir des vraies données: ${receipt.saleNumber}');
-      return ApiResponse.success(receipt, message: 'Reçu récupéré avec succès');
+      return ApiResponse.success(receipt, message: 'printing_recu_recupere_avec_succes'.tr);
     } catch (e) {
       print('❌ Erreur lors de la création du reçu: $e');
-      return ApiResponse.error(message: 'Erreur lors de la récupération du reçu');
+      return ApiResponse.error(message: 'printing_erreur_lors_recuperation_recu'.tr);
     }
   }
 
@@ -728,13 +729,13 @@ class PrintingService {
       // Récupérer le profil d'entreprise réel
       final companyProfile = await _getRealCompanyProfile();
       if (companyProfile == null) {
-        return ApiResponse.error(message: 'Profil d\'entreprise requis pour la réimpression');
+        return ApiResponse.error(message: 'printing_profil_entreprise_requis_reimpression'.tr);
       }
 
       // Récupérer les vraies données de vente
       final saleData = await _getRealSaleData(request.saleId);
       if (saleData == null) {
-        return ApiResponse.error(message: 'Impossible de récupérer les données de la vente ${request.saleId}');
+        return ApiResponse.error(message: 'printing_impossible_recuperer_donnees_vente'.trParams({'saleId': '${request.saleId}'}));
       }
 
       // Créer le reçu à partir des vraies données
@@ -761,7 +762,7 @@ class PrintingService {
       thermalData: reprintedReceipt.format == PrintFormat.thermal ? 'thermal_data_${reprintedReceipt.id}' : null,
     );
 
-    return ApiResponse.success(response, message: 'Reçu réimprimé avec succès');
+    return ApiResponse.success(response, message: 'printing_recu_reimprime_avec_succes'.tr);
   }
 
   /// Génère un nouveau reçu avec les vraies données de vente et d'entreprise
@@ -773,7 +774,7 @@ class PrintingService {
       CompanyProfile? companyProfile = await _getRealCompanyProfile();
       if (companyProfile == null) {
         print('❌ AUCUN PROFIL RÉCUPÉRÉ - Profil d\'entreprise requis');
-        return ApiResponse.error(message: 'Profil d\'entreprise requis pour générer le reçu');
+        return ApiResponse.error(message: 'printing_profil_entreprise_requis_generer_recu'.tr);
       }
 
       print('🎯 PROFIL RÉCUPÉRÉ POUR GÉNÉRATION: ${companyProfile.name}');
@@ -782,7 +783,7 @@ class PrintingService {
       final saleData = await _getRealSaleData(request.saleId);
       if (saleData == null) {
         print('❌ IMPOSSIBLE DE RÉCUPÉRER LES DONNÉES DE VENTE: ${request.saleId}');
-        return ApiResponse.error(message: 'Impossible de récupérer les données de la vente');
+        return ApiResponse.error(message: 'printing_impossible_recuperer_donnees_vente_2'.tr);
       }
 
       print('✅ DONNÉES DE VENTE RÉCUPÉRÉES: ${saleData['numeroVente']}');
@@ -805,10 +806,10 @@ class PrintingService {
       );
 
       print('✅ Reçu généré avec succès à partir des données réelles: ${receipt.id}');
-      return ApiResponse.success(response, message: 'Reçu généré avec les vraies données');
+      return ApiResponse.success(response, message: 'printing_recu_genere_avec_vraies_donnees'.tr);
     } catch (e) {
       print('❌ Erreur lors de la génération du reçu: $e');
-      return ApiResponse.error(message: 'Erreur lors de la génération du reçu: $e');
+      return ApiResponse.error(message: 'printing_erreur_lors_generation_recu_2'.trParams({'e': '${e}'}));
     }
   }
 
@@ -947,7 +948,7 @@ class PrintingService {
       print('📊 Get Sale API Response Status: ${saleResponse.statusCode}');
 
       if (saleResponse.statusCode != 200) {
-        return ApiResponse.error(message: 'Vente non trouvée');
+        return ApiResponse.error(message: 'printing_vente_non_trouvee'.tr);
       }
 
       final saleData = json.decode(saleResponse.body);
@@ -1018,15 +1019,15 @@ class PrintingService {
       );
 
       print('✅ Reçu généré avec succès à partir des données réelles: ${receipt.id}');
-      return ApiResponse.success(response, message: 'Reçu généré avec succès');
+      return ApiResponse.success(response, message: 'printing_recu_genere_avec_succes'.tr);
     } catch (e) {
       print('❌ Erreur lors de la génération du reçu: $e');
       if (e.toString().contains('Timeout')) {
-        return ApiResponse.error(message: 'Le serveur ne répond pas. Vérifiez votre connexion.');
+        return ApiResponse.error(message: 'printing_serveur_ne_repond_pas_verifiez_votre'.tr);
       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
-        return ApiResponse.error(message: 'Impossible de se connecter au serveur.');
+        return ApiResponse.error(message: 'printing_impossible_se_connecter_serveur'.tr);
       }
-      return ApiResponse.error(message: 'Erreur de connexion: $e');
+      return ApiResponse.error(message: 'printing_erreur_connexion'.trParams({'e': '${e}'}));
     }
   }
 

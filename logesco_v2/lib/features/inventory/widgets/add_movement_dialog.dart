@@ -37,7 +37,7 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
     final productController = Get.find<ProductController>();
 
     return AlertDialog(
-      title: const Text('Ajouter un mouvement de stock'),
+      title: Text('stock_add_movement'.tr),
       content: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 400,
@@ -52,8 +52,8 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
               Obx(() => DropdownButtonFormField<Product>(
                     value: selectedProduct,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Produit *',
+                    decoration: InputDecoration(
+                      labelText: 'stock_add_movement_product'.tr,
                       border: OutlineInputBorder(),
                     ),
                     items: productController.products.map((product) {
@@ -79,18 +79,18 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
               // Type de mouvement
               DropdownButtonFormField<String>(
                 value: selectedMovementType,
-                decoration: const InputDecoration(
-                  labelText: 'Type de mouvement *',
+                decoration: InputDecoration(
+                  labelText: 'stock_add_movement_type'.tr,
                   border: OutlineInputBorder(),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: 'entree',
-                    child: Text('Entrée de stock'),
+                    child: Text('stock_movement_type_entree'.tr),
                   ),
                   DropdownMenuItem(
                     value: 'sortie',
-                    child: Text('Sortie de stock'),
+                    child: Text('stock_movement_type_sortie'.tr),
                   ),
                 ],
                 onChanged: (value) {
@@ -105,8 +105,8 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
               // Quantité
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantité *',
+                decoration: InputDecoration(
+                  labelText: 'expiration_dialog_quantity_label'.tr,
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
@@ -127,10 +127,10 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
               // Motif
               TextFormField(
                 controller: _reasonController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Motif *',
                   border: OutlineInputBorder(),
-                  hintText: 'Ex: Réception fournisseur, Vente, Ajustement...',
+                  hintText: 'stock_add_movement_reason_example'.tr,
                 ),
                 maxLines: 2,
                 validator: (value) {
@@ -147,7 +147,7 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text('suppliers_form_cancel'.tr),
         ),
         Obx(() => ElevatedButton(
               onPressed: inventoryController.isLoading.value ? null : _handleSubmit,
@@ -157,7 +157,7 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Ajouter'),
+                  : Text('add'.tr),
             )),
       ],
     );
@@ -179,7 +179,7 @@ class _AddMovementDialogState extends State<AddMovementDialog> {
 
     if (success) {
       Navigator.of(context).pop();
-      SnackbarHelper.success('Mouvement de stock ajouté avec succès');
+      SnackbarHelper.success('stock_add_movement_success'.tr);
     }
   }
 }

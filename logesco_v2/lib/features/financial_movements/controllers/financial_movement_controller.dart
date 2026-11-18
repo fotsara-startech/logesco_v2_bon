@@ -109,19 +109,19 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       if (append) {
         isLoadingMore.value = true;
         setLoadingMore(
-          message: 'Chargement de plus de mouvements...',
+          message: 'financialmovements_chargement_plus_mouvements'.tr,
           operation: 'loadMoreMovements',
         );
       } else if (forceRefresh) {
         isRefreshing.value = true;
         setRefreshing(
-          message: 'Actualisation des mouvements...',
+          message: 'financialmovements_actualisation_mouvements'.tr,
           operation: 'refreshMovements',
         );
       } else {
         isLoading.value = true;
         setLoading(
-          message: 'Chargement des mouvements...',
+          message: 'financial_movements_loading'.tr,
           operation: 'loadMovements',
         );
       }
@@ -576,7 +576,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         return true;
       },
       loadingState: LoadingState.creating(
-        message: 'Création du mouvement en cours...',
+        message: 'financialmovements_creation_mouvement_cours'.tr,
         operation: 'createMovement',
       ),
       successMessage: 'Mouvement créé avec succès',
@@ -619,7 +619,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         return true;
       },
       loadingState: LoadingState.updating(
-        message: 'Mise à jour du mouvement en cours...',
+        message: 'financialmovements_mise_jour_mouvement_cours'.tr,
         operation: 'updateMovement',
       ),
       successMessage: 'Mouvement mis à jour avec succès',
@@ -662,7 +662,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         return true;
       },
       loadingState: LoadingState.deleting(
-        message: 'Suppression du mouvement en cours...',
+        message: 'financialmovements_suppression_mouvement_cours'.tr,
         operation: 'deleteMovement',
       ),
       successMessage: 'Mouvement supprimé avec succès',
