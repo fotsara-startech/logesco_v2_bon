@@ -110,6 +110,11 @@ class Sale {
   @JsonKey(defaultValue: <SaleDetail>[])
   final List<SaleDetail> details;
 
+  /// true tant que la session de caisse qui a créé la vente est ouverte :
+  /// c'est la seule période où la vente peut être annulée ou échangée.
+  @JsonKey(name: 'session', fromJson: _sessionOuverteFromJson, toJson: _sessionOuverteToJson)
+  final bool sessionOuverte;
+
   const Sale({
     required this.id,
     required this.numeroVente,
@@ -132,10 +137,16 @@ class Sale {
     required this.dateCreation,
     this.dateModification,
     this.details = const <SaleDetail>[],
+    this.sessionOuverte = false,
   });
 
   factory Sale.fromJson(Map<String, dynamic> json) => _$SaleFromJson(json);
   Map<String, dynamic> toJson() => _$SaleToJson(this);
+
+  static bool _sessionOuverteFromJson(dynamic json) =>
+      json is Map && json['isActive'] == true && json['dateFermeture'] == null;
+
+  static Object? _sessionOuverteToJson(bool ouverte) => null;
 
   // Sérialisation de la date en heure locale (sans conversion UTC)
   static String _dateToJsonLocal(DateTime date) {

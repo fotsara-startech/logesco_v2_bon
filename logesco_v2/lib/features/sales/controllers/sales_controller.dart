@@ -1630,6 +1630,48 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     }
   }
 
+  /// Remplace un article d'une vente par un autre produit (annule l'ancien,
+  /// ajoute le nouveau, règle l'écart de prix).
+  Future<bool> replaceSaleItem(
+    int saleId, {
+    required int detailId,
+    required int produitId,
+    required int quantite,
+    double montantVerse = 0,
+  }) async {
+    final canReplace = await verifySubscriptionForWrite(actionName: 'Remplacer un article de vente');
+    if (!canReplace) {
+      return false;
+    }
+
+    _isLoading.value = true;
+
+    try {
+      final response = await _salesService.replaceSaleItem(
+        saleId,
+        detailId: detailId,
+        produitId: produitId,
+        quantite: quantite,
+        montantVerse: montantVerse,
+      );
+
+      if (response.success) {
+        SnackbarUtils.showSuccess(response.message ?? 'sales_replace_item_success'.tr);
+        await loadSales(refresh: true);
+        await _rafraichirApresAnnulation();
+        return true;
+      } else {
+        SnackbarUtils.showError(response.message ?? 'sales_replace_item_error'.tr);
+        return false;
+      }
+    } catch (e) {
+      SnackbarUtils.showError('sales_replace_item_error'.tr);
+      return false;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
   /// Recharge les données impactées par une annulation de vente.
   ///
   /// Chaque contrôleur est optionnel : selon l'écran d'où part l'annulation,

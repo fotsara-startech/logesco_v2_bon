@@ -7,6 +7,7 @@ import '../widgets/sales_table_view.dart';
 import '../widgets/sales_details_view.dart';
 import '../widgets/sales_grid_view.dart';
 import '../widgets/sales_filters.dart';
+import '../widgets/replace_item_dialog.dart';
 import '../widgets/sales_search_bar.dart';
 import 'create_sale_page.dart';
 import '../../printing/controllers/printing_controller.dart';
@@ -363,6 +364,13 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                 ),
               ],
               Text('sales_status'.tr + ': ${sale.statut}'),
+              if (!sale.isCancelled && !sale.sessionOuverte) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'sales_origin_session_closed_hint'.tr,
+                  style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+                ),
+              ],
               const SizedBox(height: 16),
               Text('sales_details'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
               if (sale.details != null && sale.details.isNotEmpty) ...[
@@ -372,7 +380,7 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                     'quantity': detail.quantite.toString(),
                     'amount': detail.montantLigne.toStringAsFixed(0),
                   });
-                  final peutAnnuler = !sale.isCancelled && !detail.annule;
+                  final peutAnnuler = !sale.isCancelled && !detail.annule && sale.sessionOuverte;
                   return Padding(
                     padding: const EdgeInsets.only(left: 16, top: 4),
                     child: Row(
@@ -383,6 +391,19 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
                             style: detail.annule ? const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough) : null,
                           ),
                         ),
+                        if (peutAnnuler)
+                          IconButton(
+                            icon: const Icon(Icons.swap_horiz, size: 18, color: Colors.blue),
+                            tooltip: 'sales_replace_item_tooltip'.tr,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              showDialog(
+                                context: context,
+                                builder: (_) => ReplaceItemDialog(sale: sale, detail: detail),
+                              );
+                            },
+                          ),
                         if (peutAnnuler)
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
@@ -429,7 +450,8 @@ class _SalesPageState extends State<SalesPage> with AutomaticKeepAliveClientMixi
           ],
           // Pas de bouton "Ajouter paiement" : les paiements se font via de
           // nouvelles ventes, la dette est gérée au compte client.
-          if (!sale.isCancelled) ...[
+          // Annulation/échange : uniquement dans la session de caisse qui a créé la vente.
+          if (!sale.isCancelled && sale.sessionOuverte) ...[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();

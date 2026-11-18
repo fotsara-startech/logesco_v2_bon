@@ -389,6 +389,14 @@ const venteSchemas = {
 
   cancelItems: Joi.object({
     detailIds: Joi.array().items(baseSchemas.id).min(1).required()
+  }),
+
+  replaceItem: Joi.object({
+    detailId: baseSchemas.id.required(),
+    produitId: baseSchemas.id.required(),
+    quantite: Joi.number().integer().min(1).required(),
+    remiseAppliquee: baseSchemas.montant.default(0),
+    montantVerse: baseSchemas.montant.default(0)
   })
 };
 

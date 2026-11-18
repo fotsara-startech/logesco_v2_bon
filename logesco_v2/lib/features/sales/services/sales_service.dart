@@ -296,6 +296,45 @@ class SalesService {
     }
   }
 
+  Future<ApiResponse<void>> replaceSaleItem(
+    int saleId, {
+    required int detailId,
+    required int produitId,
+    required int quantite,
+    double montantVerse = 0,
+  }) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        return ApiResponse.error(message: 'Token d\'authentification manquant');
+      }
+
+      final response = await http.post(
+        Uri.parse('${AppConfig.currentBaseUrl}${AppConfig.salesEndpoint}/$saleId/replace-item'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'detailId': detailId,
+          'produitId': produitId,
+          'quantite': quantite,
+          'montantVerse': montantVerse,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return ApiResponse.success(null, message: jsonData['message']);
+      } else {
+        final errorData = json.decode(response.body);
+        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors du remplacement de l\'article');
+      }
+    } catch (e) {
+      return ApiResponse.error(message: 'Erreur de connexion: $e');
+    }
+  }
+
   /// Parse la pagination de manière sécurisée en gérant les valeurs null
   Pagination _parsePaginationSafely(Map<String, dynamic> data) {
     return Pagination(

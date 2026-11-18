@@ -13,6 +13,169 @@ const { buildSalesSearchConditions, generateSaleNumber } = require('../utils/tra
 const { updateExpirationDatesAfterSale } = require('../utils/expiration-manager');
 const { resolveBoutiqueId } = require('../utils/boutique-helper');
 
+const SESSION_ORIGINE_FERMEE =
+  "Opération impossible : la session de caisse qui a créé cette vente est clôturée. " +
+  "Seule la session d'origine, tant qu'elle est ouverte, peut annuler ou échanger des articles.";
+
+function sessionOrigineOuverte(session) {
+  return !!session && session.isActive === true && !session.dateFermeture;
+}
+
+/** Session de caisse d'origine de la vente, relue dans la transaction ; erreur si clôturée ou absente. */
+async function getOriginSessionOrThrow(db, vente) {
+  const session = vente.sessionId ? await db.cashSession.findUnique({ where: { id: vente.sessionId } }) : null;
+  if (!sessionOrigineOuverte(session)) {
+    throw new Error(SESSION_ORIGINE_FERMEE);
+  }
+  return session;
+}
+
+/**
+ * Remet en stock la quantité d'une ligne de vente annulée (produits physiques
+ * uniquement) et journalise le mouvement.
+ */
+async function restoreStockForDetail(tx, vente, detail, note) {
+  const produit = await tx.produit.findUnique({
+    where: { id: detail.produitId },
+    select: { estService: true }
+  });
+
+  if (produit?.estService) {
+    console.log(`Service annulé: ${detail.produitId} - pas de restauration de stock`);
+    return;
+  }
+
+  let stockInitial = 0;
+  if (vente.boutiqueId) {
+    const stockBoutique = await tx.stockBoutique.findUnique({
+      where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId: detail.produitId } }
+    });
+    stockInitial = stockBoutique?.quantiteDisponible || 0;
+    if (stockBoutique) {
+      await tx.stockBoutique.update({
+        where: { id: stockBoutique.id },
+        data: { quantiteDisponible: { increment: detail.quantite } }
+      });
+    }
+  } else {
+    const stock = await tx.stock.findUnique({ where: { produitId: detail.produitId } });
+    stockInitial = stock?.quantiteDisponible || 0;
+    await tx.stock.update({
+      where: { produitId: detail.produitId },
+      data: { quantiteDisponible: { increment: detail.quantite } }
+    });
+  }
+
+  await tx.mouvementStock.create({
+    data: {
+      produitId: detail.produitId,
+      boutiqueId: vente.boutiqueId || null,
+      typeMouvement: 'retour',
+      changementQuantite: detail.quantite,
+      stockInitial,
+      stockFinal: stockInitial + detail.quantite,
+      notes: note,
+      referenceId: vente.id,
+      typeReference: 'vente_annulee'
+    }
+  });
+}
+
+/**
+ * Règle une valeur TTC "libérée" sur une vente (articles annulés ou remplacés
+ * par un moins cher). On réduit d'abord la dette de la vente (rien à
+ * rembourser) ; seul l'excédent — déjà payé pour une valeur qui n'est plus
+ * due — est restitué, avance en premier (recréditée au compte), puis espèces
+ * depuis la caisse ouverte. Écrit le compte client et le mouvement de caisse
+ * mais NE met PAS à jour la vente : l'appelant applique les montants renvoyés.
+ */
+async function settleReleasedValue(tx, vente, valeur, { req, description, transactionDetail, referenceType }) {
+  const debtReduction = Math.min(vente.montantRestant, valeur);
+  const excedent = valeur - debtReduction;
+  const avanceRestituee = Math.min(vente.avanceUtilisee, excedent);
+  const remboursementEspeces = excedent - avanceRestituee;
+
+  let compteClientMaj = null;
+  const creditARestituer = debtReduction + avanceRestituee;
+  if (vente.clientId && creditARestituer > 0) {
+    const compteClient = await tx.compteClient.findUnique({ where: { clientId: vente.clientId } });
+    if (compteClient) {
+      const nouveauSolde = compteClient.soldeActuel + creditARestituer;
+      compteClientMaj = await tx.compteClient.update({
+        where: { clientId: vente.clientId },
+        data: { soldeActuel: nouveauSolde }
+      });
+
+      await tx.transactionCompte.create({
+        data: {
+          typeCompte: 'client',
+          compteId: compteClient.id,
+          typeTransaction: 'annulation',
+          typeTransactionDetail: transactionDetail,
+          montant: creditARestituer,
+          description,
+          referenceType,
+          referenceId: vente.id,
+          venteId: vente.id,
+          venteReference: vente.numeroVente,
+          soldeApres: nouveauSolde
+        }
+      });
+    }
+  }
+
+  let cancelMovementCreated = null;
+  let sessionCorrigee = null;
+  if (remboursementEspeces > 0) {
+    const sessionOuverte = await getOriginSessionOrThrow(tx, vente);
+
+    cancelMovementCreated = await tx.cashMovement.create({
+      data: {
+        caisseId: sessionOuverte.caisseId,
+        sessionId: sessionOuverte.id,
+        boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
+        type: 'annulation_vente',
+        montant: -remboursementEspeces,
+        description,
+        utilisateurId: req.user?.id || null,
+        metadata: JSON.stringify({
+          categorie: 'annulation_vente',
+          referenceType,
+          referenceId: vente.id,
+          venteReference: vente.numeroVente,
+          montantOriginal: remboursementEspeces
+        })
+      }
+    });
+
+    const soldeCourant = sessionOuverte.soldeAttendu != null
+      ? sessionOuverte.soldeAttendu
+      : sessionOuverte.soldeOuverture;
+
+    sessionCorrigee = await tx.cashSession.update({
+      where: { id: sessionOuverte.id },
+      data: { soldeAttendu: soldeCourant - remboursementEspeces }
+    });
+
+    await tx.cashRegister.update({
+      where: { id: sessionOuverte.caisseId },
+      data: { soldeActuel: { decrement: remboursementEspeces } }
+    });
+  }
+
+  return {
+    debtReduction,
+    avanceRestituee,
+    remboursementEspeces,
+    nouveauMontantPaye: vente.montantPaye - (avanceRestituee + remboursementEspeces),
+    nouveauMontantRestant: Math.max(0, vente.montantRestant - debtReduction),
+    nouvelleAvanceUtilisee: vente.avanceUtilisee - avanceRestituee,
+    compteClientMaj,
+    cancelMovementCreated,
+    sessionCorrigee
+  };
+}
+
 function createSalesRouter({ prisma, authService, syncService }) {
   const router = express.Router();
 
@@ -244,6 +407,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   vendeur: {
                     select: { id: true, nomUtilisateur: true }
                   },
+                  session: { select: { id: true, isActive: true, dateFermeture: true } },
                   commercial: {
                     select: {
                       id: true, nom: true, prenom: true,
@@ -287,6 +451,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                 vendeur: {
                   select: { id: true, nomUtilisateur: true }
                 },
+                session: { select: { id: true, isActive: true, dateFermeture: true } },
                 commercial: {
                   select: {
                     id: true, nom: true, prenom: true,
@@ -1650,6 +1815,10 @@ function createSalesRouter({ prisma, authService, syncService }) {
           });
         }
 
+        if (!sessionOrigineOuverte(vente.session)) {
+          return res.status(409).json({ success: false, message: SESSION_ORIGINE_FERMEE });
+        }
+
         console.log(`🔄 Annulation de la vente ${vente.numeroVente}`);
         console.log(`   - Montant: ${vente.montantTotal} FCFA`);
         console.log(`   - Montant payé: ${vente.montantPaye} FCFA`);
@@ -1739,24 +1908,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
           let cancelMovementCreated = null;
           let sessionCorrigee = null;
           if (remboursementEspeces > 0) {
-            const sessionOuverte = await tx.cashSession.findFirst({
-              where: {
-                isActive: true,
-                dateFermeture: null,
-                ...(vente.boutiqueId ? { boutiqueId: vente.boutiqueId } : {})
-              },
-              orderBy: { id: 'desc' }
-            });
+            const sessionOuverte = await getOriginSessionOrThrow(tx, vente);
 
-            if (!sessionOuverte) {
-              throw new Error(
-                'Aucune caisse ouverte : ouvrez une session pour enregistrer le remboursement de cette annulation'
-              );
-            }
-
-            const surSessionOrigine = sessionOuverte.id === vente.sessionId;
-            console.log(`💰 Remboursement de ${remboursementEspeces} FCFA sur la session ${sessionOuverte.id}` +
-              (surSessionOrigine ? '' : ` (session d'origine ${vente.sessionId} clôturée)`));
+            console.log(`💰 Remboursement de ${remboursementEspeces} FCFA sur la session d'origine ${sessionOuverte.id}`);
 
             // Montant NÉGATIF : une vente comptant avait fait ENTRER l'argent
             // en caisse ; l'annuler consiste à rembourser le client, donc à le
@@ -1777,8 +1931,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
                   referenceId: parseInt(id),
                   venteReference: vente.numeroVente,
                   montantOriginal: remboursementEspeces,
-                  sessionOrigine: vente.sessionId,
-                  imputeSurSessionCourante: !surSessionOrigine
+                  sessionOrigine: vente.sessionId
                 })
               }
             });
@@ -1938,15 +2091,13 @@ function createSalesRouter({ prisma, authService, syncService }) {
           console.warn('⚠️  Sync annulation vente:', syncErr.message);
         }
 
-        const message = result.sessionCorrigee && result.sessionCorrigee.id !== updatedVente.sessionId
-          ? `Vente annulée — ${vente.montantPaye} FCFA remboursés depuis la caisse ouverte (la session d'origine était clôturée)`
-          : 'Vente annulée avec succès - montant remboursé depuis la session de caisse';
+        const message = 'Vente annulée avec succès - montant remboursé depuis la session de caisse';
 
         res.json({ success: true, message });
       } catch (error) {
         console.error('Erreur lors de l\'annulation de la vente:', error);
 
-        if (error.message?.includes('Aucune caisse ouverte')) {
+        if (error.message?.includes('Aucune caisse ouverte') || error.message === SESSION_ORIGINE_FERMEE) {
           return res.status(409).json({ success: false, message: error.message });
         }
 
@@ -1995,6 +2146,9 @@ function createSalesRouter({ prisma, authService, syncService }) {
         if (vente.statut === 'annulee') {
           return res.status(400).json({ success: false, message: 'Cette vente est déjà annulée' });
         }
+        if (!sessionOrigineOuverte(vente.session)) {
+          return res.status(409).json({ success: false, message: SESSION_ORIGINE_FERMEE });
+        }
 
         const activeDetails = vente.details.filter((d) => !d.annule);
         const detailsToCancel = activeDetails.filter((d) => detailIds.includes(d.id));
@@ -2011,52 +2165,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
         const result = await prisma.$transaction(async (tx) => {
           // 1. Restaurer le stock des articles annulés (produits physiques uniquement)
           for (const detail of detailsToCancel) {
-            const produit = await tx.produit.findUnique({
-              where: { id: detail.produitId },
-              select: { estService: true }
-            });
-
-            if (produit?.estService) {
-              console.log(`Service annulé: ${detail.produitId} - pas de restauration de stock`);
-              continue;
-            }
-
-            let stockInitial = 0;
-            if (vente.boutiqueId) {
-              const stockBoutique = await tx.stockBoutique.findUnique({
-                where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId: detail.produitId } }
-              });
-              stockInitial = stockBoutique?.quantiteDisponible || 0;
-              if (stockBoutique) {
-                await tx.stockBoutique.update({
-                  where: { id: stockBoutique.id },
-                  data: { quantiteDisponible: { increment: detail.quantite } }
-                });
-              }
-            } else {
-              const stock = await tx.stock.findUnique({ where: { produitId: detail.produitId } });
-              stockInitial = stock?.quantiteDisponible || 0;
-              await tx.stock.update({
-                where: { produitId: detail.produitId },
-                data: { quantiteDisponible: { increment: detail.quantite } }
-              });
-            }
-
-            const stockFinal = stockInitial + detail.quantite;
-
-            await tx.mouvementStock.create({
-              data: {
-                produitId: detail.produitId,
-                boutiqueId: vente.boutiqueId || null,
-                typeMouvement: 'retour',
-                changementQuantite: detail.quantite,
-                stockInitial,
-                stockFinal,
-                notes: `Annulation article (vente ${vente.numeroVente})`,
-                referenceId: venteId,
-                typeReference: 'vente_annulee'
-              }
-            });
+            await restoreStockForDetail(tx, vente, detail, `Annulation article (vente ${vente.numeroVente})`);
           }
 
           // 2. Marquer les lignes annulées (conservées pour l'historique du reçu)
@@ -2080,17 +2189,18 @@ function createSalesRouter({ prisma, authService, syncService }) {
           const nouveauTotal = isFullCancellation ? 0 : (nouveauSousTotal - nouveauMontantRemise + nouveauMontantTva);
           const valeurAnnuleeTTC = vente.montantTotal - nouveauTotal;
 
-          // 4. On réduit d'abord la dette (rien à rembourser) ; seul l'excédent
-          //    — déjà payé pour une valeur qui n'est plus due — est restitué,
-          //    avance en premier (recréditée), puis espèces.
-          const debtReduction = Math.min(vente.montantRestant, valeurAnnuleeTTC);
-          const excedent = valeurAnnuleeTTC - debtReduction;
-          const avanceRestituee = Math.min(vente.avanceUtilisee, excedent);
-          const remboursementEspeces = excedent - avanceRestituee;
-
-          const nouveauMontantPaye = vente.montantPaye - (avanceRestituee + remboursementEspeces);
-          const nouveauMontantRestant = Math.max(0, vente.montantRestant - debtReduction);
-          const nouvelleAvanceUtilisee = vente.avanceUtilisee - avanceRestituee;
+          // 4. Règlement de la valeur libérée : dette réduite d'abord, puis
+          //    excédent restitué (avance, puis espèces) — voir settleReleasedValue.
+          const libelle = isFullCancellation
+            ? `Annulation vente ${vente.numeroVente}`
+            : `Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}`;
+          const reglement = await settleReleasedValue(tx, vente, valeurAnnuleeTTC, {
+            req,
+            description: libelle,
+            transactionDetail: isFullCancellation ? 'annulation_vente' : 'annulation_article',
+            referenceType: isFullCancellation ? 'vente_annulee' : 'vente_article_annule'
+          });
+          const { compteClientMaj, cancelMovementCreated, sessionCorrigee } = reglement;
 
           const venteMaj = await tx.vente.update({
             where: { id: venteId },
@@ -2099,100 +2209,12 @@ function createSalesRouter({ prisma, authService, syncService }) {
               montantRemise: nouveauMontantRemise,
               montantTva: nouveauMontantTva,
               montantTotal: nouveauTotal,
-              montantPaye: nouveauMontantPaye,
-              montantRestant: nouveauMontantRestant,
-              avanceUtilisee: nouvelleAvanceUtilisee,
+              montantPaye: reglement.nouveauMontantPaye,
+              montantRestant: reglement.nouveauMontantRestant,
+              avanceUtilisee: reglement.nouvelleAvanceUtilisee,
               ...(isFullCancellation ? { statut: 'annulee' } : {})
             }
           });
-
-          // 5. Compte client : rembourser la dette annulée + l'avance restituée
-          let compteClientMaj = null;
-          const creditARestituer = debtReduction + avanceRestituee;
-          if (vente.clientId && creditARestituer > 0) {
-            const compteClient = await tx.compteClient.findUnique({ where: { clientId: vente.clientId } });
-            if (compteClient) {
-              const nouveauSolde = compteClient.soldeActuel + creditARestituer;
-              compteClientMaj = await tx.compteClient.update({
-                where: { clientId: vente.clientId },
-                data: { soldeActuel: nouveauSolde }
-              });
-
-              await tx.transactionCompte.create({
-                data: {
-                  typeCompte: 'client',
-                  compteId: compteClient.id,
-                  typeTransaction: 'annulation',
-                  typeTransactionDetail: isFullCancellation ? 'annulation_vente' : 'annulation_article',
-                  montant: creditARestituer,
-                  description: isFullCancellation
-                    ? `Annulation vente ${vente.numeroVente} (derniers articles)`
-                    : `Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}`,
-                  referenceType: isFullCancellation ? 'vente_annulee' : 'vente_article_annule',
-                  referenceId: venteId,
-                  venteId,
-                  venteReference: vente.numeroVente,
-                  soldeApres: nouveauSolde
-                }
-              });
-            }
-          }
-
-          // 6. Remboursement en espèces si l'excédent dépasse l'avance disponible
-          let cancelMovementCreated = null;
-          let sessionCorrigee = null;
-          if (remboursementEspeces > 0) {
-            const sessionOuverte = await tx.cashSession.findFirst({
-              where: {
-                isActive: true,
-                dateFermeture: null,
-                ...(vente.boutiqueId ? { boutiqueId: vente.boutiqueId } : {})
-              },
-              orderBy: { id: 'desc' }
-            });
-
-            if (!sessionOuverte) {
-              throw new Error(
-                'Aucune caisse ouverte : ouvrez une session pour enregistrer le remboursement de cette annulation'
-              );
-            }
-
-            cancelMovementCreated = await tx.cashMovement.create({
-              data: {
-                caisseId: sessionOuverte.caisseId,
-                sessionId: sessionOuverte.id,
-                boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
-                type: 'annulation_vente',
-                montant: -remboursementEspeces,
-                description: isFullCancellation
-                  ? `Annulation vente ${vente.numeroVente}`
-                  : `Annulation de ${detailsToCancel.length} article(s) sur la vente ${vente.numeroVente}`,
-                utilisateurId: req.user?.id || null,
-                metadata: JSON.stringify({
-                  categorie: 'annulation_vente',
-                  referenceType: isFullCancellation ? 'vente_annulee' : 'vente_article_annule',
-                  referenceId: venteId,
-                  venteReference: vente.numeroVente,
-                  montantOriginal: remboursementEspeces
-                })
-              }
-            });
-
-            const soldeCourant = sessionOuverte.soldeAttendu != null
-              ? sessionOuverte.soldeAttendu
-              : sessionOuverte.soldeOuverture;
-            const nouveauSoldeAttendu = soldeCourant - remboursementEspeces;
-
-            sessionCorrigee = await tx.cashSession.update({
-              where: { id: sessionOuverte.id },
-              data: { soldeAttendu: nouveauSoldeAttendu }
-            });
-
-            await tx.cashRegister.update({
-              where: { id: sessionOuverte.caisseId },
-              data: { soldeActuel: { decrement: remboursementEspeces } }
-            });
-          }
 
           return { venteMaj, detailsAnnulesMaj, compteClientMaj, cancelMovementCreated, sessionCorrigee };
         });
@@ -2262,7 +2284,7 @@ function createSalesRouter({ prisma, authService, syncService }) {
       } catch (error) {
         console.error('Erreur lors de l\'annulation d\'articles:', error);
 
-        if (error.message?.includes('Aucune caisse ouverte')) {
+        if (error.message?.includes('Aucune caisse ouverte') || error.message === SESSION_ORIGINE_FERMEE) {
           return res.status(409).json({ success: false, message: error.message });
         }
 
@@ -2270,6 +2292,374 @@ function createSalesRouter({ prisma, authService, syncService }) {
           success: false,
           message: 'Erreur lors de l\'annulation des articles'
         });
+      }
+    }
+  );
+
+  /**
+   * POST /sales/:id/replace-item
+   * Annule un article de la vente ET le remplace par un autre produit, en une
+   * seule opération : stock de l'ancien remis, stock du nouveau décrémenté,
+   * totaux recalculés au prorata de la remise/TVA globale.
+   *
+   * Écart de prix (nouveau total − ancien total) :
+   *  - négatif : valeur libérée, réglée comme une annulation (dette réduite
+   *    d'abord, puis excédent restitué en avance / espèces) ;
+   *  - positif : montant dû en plus ; `montantVerse` est encaissé en caisse,
+   *    le reste est mis à crédit sur le compte du client (client obligatoire).
+   */
+  router.post('/:id/replace-item',
+    validateId,
+    validate(venteSchemas.replaceItem, 'body'),
+    async (req, res) => {
+      try {
+        const venteId = parseInt(req.params.id);
+        const { detailId, produitId, quantite, remiseAppliquee, montantVerse } = req.body;
+
+        const vente = await prisma.vente.findUnique({
+          where: { id: venteId },
+          include: { details: true, client: true, session: true }
+        });
+
+        if (!vente) {
+          return res.status(404).json({ success: false, message: 'Vente non trouvée' });
+        }
+        if (vente.statut === 'annulee') {
+          return res.status(400).json({ success: false, message: 'Cette vente est annulée' });
+        }
+        if (!sessionOrigineOuverte(vente.session)) {
+          return res.status(409).json({ success: false, message: SESSION_ORIGINE_FERMEE });
+        }
+
+        const ancienDetail = vente.details.find((d) => d.id === detailId && !d.annule);
+        if (!ancienDetail) {
+          return res.status(400).json({ success: false, message: 'Article à remplacer introuvable ou déjà annulé' });
+        }
+
+        const nouveauProduit = await prisma.produit.findUnique({
+          where: { id: produitId },
+          select: { id: true, nom: true, reference: true, estService: true, estActif: true, remiseMaxAutorisee: true, prixUnitaire: true }
+        });
+        if (!nouveauProduit || nouveauProduit.estActif === false) {
+          return res.status(400).json({ success: false, message: 'Produit de remplacement introuvable ou inactif' });
+        }
+        if (remiseAppliquee > nouveauProduit.remiseMaxAutorisee) {
+          return res.status(400).json({
+            success: false,
+            message: `Remise non autorisée pour ${nouveauProduit.nom}. Maximum autorisé: ${nouveauProduit.remiseMaxAutorisee} FCFA`
+          });
+        }
+
+        const prixAffiche = nouveauProduit.prixUnitaire;
+        const prixUnitaire = prixAffiche - remiseAppliquee;
+        if (prixUnitaire < 0) {
+          return res.status(400).json({ success: false, message: 'Remise supérieure au prix du produit' });
+        }
+        const nouveauPrixHT = quantite * prixUnitaire;
+
+        // Contrôle de stock en amont (message clair avant tout calcul d'argent) ;
+        // la vérification faisant foi est refaite dans la transaction.
+        if (!nouveauProduit.estService) {
+          const stockActuel = vente.boutiqueId
+            ? await prisma.stockBoutique.findUnique({ where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId } } })
+            : await prisma.stock.findUnique({ where: { produitId } });
+          const rendu = ancienDetail.produitId === produitId ? ancienDetail.quantite : 0;
+          const disponible = (stockActuel?.quantiteDisponible || 0) + rendu;
+          if (disponible < quantite) {
+            return res.status(400).json({
+              success: false,
+              message: `Stock insuffisant pour ${nouveauProduit.nom} (${nouveauProduit.reference}). Disponible: ${disponible}, Demandé: ${quantite}`
+            });
+          }
+        }
+
+        // Totaux recalculés : la remise et la TVA globales suivent le sous-total
+        const ancienSousTotal = vente.sousTotal;
+        const nouveauSousTotal = Math.max(0, ancienSousTotal - ancienDetail.prixTotal + nouveauPrixHT);
+        const ratio = ancienSousTotal > 0 ? nouveauSousTotal / ancienSousTotal : 1;
+        const nouveauMontantRemise = vente.montantRemise * ratio;
+        const nouveauMontantTva = vente.montantTva * ratio;
+        const nouveauTotal = nouveauSousTotal - nouveauMontantRemise + nouveauMontantTva;
+        const ecart = Math.round((nouveauTotal - vente.montantTotal) * 100) / 100;
+
+        const supplementDu = Math.max(0, ecart);
+        if (montantVerse > supplementDu + 0.005) {
+          return res.status(400).json({
+            success: false,
+            message: `Le montant versé (${montantVerse} FCFA) dépasse le supplément dû (${supplementDu} FCFA)`
+          });
+        }
+        const montantEncaisse = Math.min(montantVerse, supplementDu);
+        const resteACredit = Math.round((supplementDu - montantEncaisse) * 100) / 100;
+        if (resteACredit > 0 && !vente.clientId) {
+          return res.status(400).json({
+            success: false,
+            message: `Supplément de ${supplementDu} FCFA : encaissez-le en totalité ou associez un client pour mettre le reste à crédit`
+          });
+        }
+
+        console.log(`🔁 Remplacement article ${ancienDetail.id} par produit ${produitId} (vente ${vente.numeroVente}), écart ${ecart} FCFA`);
+
+        const result = await prisma.$transaction(async (tx) => {
+          // 1. Ancien article : stock remis, ligne marquée annulée
+          await restoreStockForDetail(tx, vente, ancienDetail, `Remplacement article (vente ${vente.numeroVente})`);
+          const ancienDetailMaj = await tx.detailVente.update({
+            where: { id: ancienDetail.id },
+            data: { annule: true, dateAnnulation: new Date() }
+          });
+
+          // 2. Nouvel article : vérification et décrément du stock
+          if (!nouveauProduit.estService) {
+            let stockInitial = 0;
+            if (vente.boutiqueId) {
+              const stockBoutique = await tx.stockBoutique.findUnique({
+                where: { boutiqueId_produitId: { boutiqueId: vente.boutiqueId, produitId } }
+              });
+              stockInitial = stockBoutique?.quantiteDisponible || 0;
+              if (!stockBoutique || stockInitial < quantite) {
+                throw new Error(`Stock insuffisant pour ${nouveauProduit.nom} (${nouveauProduit.reference}). Disponible: ${stockInitial}, Demandé: ${quantite}`);
+              }
+              await tx.stockBoutique.update({
+                where: { id: stockBoutique.id },
+                data: { quantiteDisponible: stockInitial - quantite }
+              });
+            } else {
+              const stock = await tx.stock.findUnique({ where: { produitId } });
+              stockInitial = stock?.quantiteDisponible || 0;
+              if (!stock || stockInitial < quantite) {
+                throw new Error(`Stock insuffisant pour ${nouveauProduit.nom} (${nouveauProduit.reference}). Disponible: ${stockInitial}, Demandé: ${quantite}`);
+              }
+              await tx.stock.update({
+                where: { id: stock.id },
+                data: { quantiteDisponible: stockInitial - quantite }
+              });
+            }
+
+            await tx.mouvementStock.create({
+              data: {
+                produitId,
+                boutiqueId: vente.boutiqueId || null,
+                typeMouvement: 'vente',
+                changementQuantite: -quantite,
+                stockInitial,
+                stockFinal: stockInitial - quantite,
+                notes: `Remplacement article (vente ${vente.numeroVente})`,
+                referenceId: venteId,
+                typeReference: 'vente'
+              }
+            });
+
+            try {
+              await updateExpirationDatesAfterSale(tx, produitId, quantite);
+            } catch (peremptionErr) {
+              console.warn('⚠️ Péremption non mise à jour (remplacement):', peremptionErr.message);
+            }
+          }
+
+          const nouveauDetail = await tx.detailVente.create({
+            data: {
+              venteId,
+              produitId,
+              quantite,
+              prixUnitaire,
+              prixAffiche,
+              remiseAppliquee,
+              justificationRemise: null,
+              prixTotal: nouveauPrixHT
+            }
+          });
+
+          // 3. Règlement de l'écart
+          let venteChamps = { montantPaye: vente.montantPaye, montantRestant: vente.montantRestant, avanceUtilisee: vente.avanceUtilisee };
+          let compteClientMaj = null;
+          let mouvementCaisse = null;
+          let sessionMaj = null;
+
+          if (ecart < -0.005) {
+            const reglement = await settleReleasedValue(tx, vente, -ecart, {
+              req,
+              description: `Remplacement d'article moins cher sur la vente ${vente.numeroVente}`,
+              transactionDetail: 'remplacement_article',
+              referenceType: 'vente_article_remplace'
+            });
+            venteChamps = {
+              montantPaye: reglement.nouveauMontantPaye,
+              montantRestant: reglement.nouveauMontantRestant,
+              avanceUtilisee: reglement.nouvelleAvanceUtilisee
+            };
+            compteClientMaj = reglement.compteClientMaj;
+            mouvementCaisse = reglement.cancelMovementCreated;
+            sessionMaj = reglement.sessionCorrigee;
+          } else if (supplementDu > 0.005) {
+            if (montantEncaisse > 0) {
+              const sessionOuverte = await getOriginSessionOrThrow(tx, vente);
+
+              mouvementCaisse = await tx.cashMovement.create({
+                data: {
+                  caisseId: sessionOuverte.caisseId,
+                  sessionId: sessionOuverte.id,
+                  boutiqueId: sessionOuverte.boutiqueId || vente.boutiqueId || null,
+                  type: 'vente',
+                  montant: montantEncaisse,
+                  description: `Supplément remplacement article - Vente ${vente.numeroVente}`,
+                  utilisateurId: req.user?.id || null,
+                  metadata: JSON.stringify({
+                    categorie: 'vente',
+                    referenceType: 'vente_article_remplace',
+                    referenceId: venteId,
+                    venteReference: vente.numeroVente,
+                    supplementDu,
+                    montantEncaisse,
+                    resteACredit
+                  })
+                }
+              });
+
+              const soldeCourant = sessionOuverte.soldeAttendu != null ? sessionOuverte.soldeAttendu : sessionOuverte.soldeOuverture;
+              sessionMaj = await tx.cashSession.update({
+                where: { id: sessionOuverte.id },
+                data: { soldeAttendu: soldeCourant + montantEncaisse }
+              });
+              await tx.cashRegister.update({
+                where: { id: sessionOuverte.caisseId },
+                data: { soldeActuel: { increment: montantEncaisse } }
+              });
+            }
+
+            if (vente.clientId) {
+              let compteClient = await tx.compteClient.findUnique({ where: { clientId: vente.clientId } });
+              if (!compteClient) {
+                compteClient = await tx.compteClient.create({ data: { clientId: vente.clientId, soldeActuel: 0, limiteCredit: 0 } });
+              }
+              const soldeApresDebit = compteClient.soldeActuel - supplementDu;
+              const nouveauSolde = soldeApresDebit + montantEncaisse;
+
+              compteClientMaj = await tx.compteClient.update({
+                where: { clientId: vente.clientId },
+                data: { soldeActuel: nouveauSolde }
+              });
+
+              await tx.transactionCompte.create({
+                data: {
+                  typeCompte: 'client',
+                  compteId: compteClient.id,
+                  typeTransaction: 'achat_credit',
+                  typeTransactionDetail: 'remplacement_article',
+                  montant: supplementDu,
+                  description: `Supplément remplacement article - Vente ${vente.numeroVente}`,
+                  referenceType: 'vente_article_remplace',
+                  referenceId: venteId,
+                  venteId,
+                  venteReference: vente.numeroVente,
+                  soldeApres: soldeApresDebit
+                }
+              });
+              if (montantEncaisse > 0) {
+                await tx.transactionCompte.create({
+                  data: {
+                    typeCompte: 'client',
+                    compteId: compteClient.id,
+                    typeTransaction: 'paiement',
+                    typeTransactionDetail: 'remplacement_paiement',
+                    montant: montantEncaisse,
+                    description: `Paiement supplément remplacement article - Vente ${vente.numeroVente}`,
+                    referenceType: 'vente_article_remplace',
+                    referenceId: venteId,
+                    venteId,
+                    venteReference: vente.numeroVente,
+                    soldeApres: nouveauSolde
+                  }
+                });
+              }
+            }
+
+            venteChamps = {
+              montantPaye: vente.montantPaye + montantEncaisse,
+              montantRestant: vente.montantRestant + resteACredit,
+              avanceUtilisee: vente.avanceUtilisee
+            };
+          }
+
+          const venteMaj = await tx.vente.update({
+            where: { id: venteId },
+            data: {
+              sousTotal: nouveauSousTotal,
+              montantRemise: nouveauMontantRemise,
+              montantTva: nouveauMontantTva,
+              montantTotal: nouveauTotal,
+              ...venteChamps,
+              ...(venteChamps.montantRestant > 0 && vente.modePaiement === 'comptant' ? { modePaiement: 'credit' } : {})
+            }
+          });
+
+          return { venteMaj, ancienDetailMaj, nouveauDetail, compteClientMaj, mouvementCaisse, sessionMaj };
+        });
+
+        try {
+          const syncSvc = syncService || require('../services/sync-service');
+          await syncSvc.enqueue('ventes', 'UPDATE', result.venteMaj, req.user?.id);
+          await syncSvc.enqueue('details_ventes', 'UPDATE', result.ancienDetailMaj, req.user?.id);
+          await syncSvc.enqueue('details_ventes', 'INSERT', result.nouveauDetail, req.user?.id);
+        } catch (syncErr) {
+          console.warn('⚠️  Sync remplacement article:', syncErr.message);
+        }
+
+        if (result.compteClientMaj && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('comptes_clients', 'UPDATE', result.compteClientMaj);
+            } catch (syncError) {
+              console.error('❌ Erreur sync compte client remplacement article:', syncError.message);
+            }
+          });
+        }
+
+        if (result.mouvementCaisse && syncService) {
+          setImmediate(async () => {
+            try {
+              const syncSvc = syncService || require('../services/sync-service');
+              await syncSvc.enqueue('cash_movements', 'INSERT', result.mouvementCaisse);
+              if (result.sessionMaj) {
+                await syncSvc.enqueue('cash_sessions', 'UPDATE', result.sessionMaj);
+                const caisseMaj = await prisma.cashRegister.findUnique({ where: { id: result.mouvementCaisse.caisseId } });
+                if (caisseMaj) await syncSvc.enqueue('cash_registers', 'UPDATE', caisseMaj);
+              }
+            } catch (syncError) {
+              console.error('❌ Erreur sync caisse remplacement article:', syncError.message);
+            }
+          });
+        }
+
+        const venteFinale = await prisma.vente.findUnique({
+          where: { id: venteId },
+          include: {
+            client: true,
+            details: {
+              include: {
+                produit: { select: { id: true, nom: true, reference: true, prixAchat: true, cump: true } }
+              }
+            }
+          }
+        });
+
+        res.json({
+          success: true,
+          message: 'Article remplacé avec succès',
+          data: venteFinale,
+          ecart
+        });
+      } catch (error) {
+        console.error('Erreur lors du remplacement d\'article:', error);
+
+        if (error.message?.includes('Aucune caisse ouverte') || error.message === SESSION_ORIGINE_FERMEE) {
+          return res.status(409).json({ success: false, message: error.message });
+        }
+        if (error.message?.includes('Stock insuffisant')) {
+          return res.status(400).json({ success: false, message: error.message });
+        }
+
+        res.status(500).json({ success: false, message: 'Erreur lors du remplacement de l\'article' });
       }
     }
   );
