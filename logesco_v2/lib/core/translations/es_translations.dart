@@ -3526,5 +3526,9 @@ const Map<String, String> esTranslations = {
   'sales_filter_by_commercial': 'Filtrar por comercial',
   'sales_all_commercials': 'Todos los comerciales',
   'sales_clear_dates': 'Borrar fechas',
+  'quick_billing_credit_needs_customer': 'No se puede dejar un saldo pendiente sin cliente: seleccione un cliente o ingrese el monto total.',
+  'quick_billing_credit_confirm_title': 'Confirmar venta a crédito',
+  'quick_billing_credit_confirm_message': 'El cliente todavía deberá @amount FCFA después de esta venta. ¿Confirmar?',
+  'quick_billing_credit_confirm_action': 'Sí, vender a crédito',
 };
 // };

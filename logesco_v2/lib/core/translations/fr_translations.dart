@@ -3717,4 +3717,8 @@ const Map<String, String> frTranslations = {
   'sales_filter_by_commercial': 'Filtrer par commercial',
   'sales_all_commercials': 'Tous les commerciaux',
   'sales_clear_dates': 'Effacer les dates',
+  'quick_billing_credit_needs_customer': 'Impossible de laisser un reste à payer sans client : sélectionnez un client ou saisissez le montant total.',
+  'quick_billing_credit_confirm_title': 'Confirmer la vente à crédit',
+  'quick_billing_credit_confirm_message': 'Le client devra encore @amount FCFA après cette vente. Confirmer ?',
+  'quick_billing_credit_confirm_action': 'Oui, vendre à crédit',
 };

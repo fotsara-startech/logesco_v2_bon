@@ -3717,4 +3717,8 @@ const Map<String, String> enTranslations = {
   'sales_filter_by_commercial': 'Filter by sales rep',
   'sales_all_commercials': 'All sales reps',
   'sales_clear_dates': 'Clear dates',
+  'quick_billing_credit_needs_customer': 'A remaining balance cannot be left without a customer: select a customer or enter the full amount.',
+  'quick_billing_credit_confirm_title': 'Confirm credit sale',
+  'quick_billing_credit_confirm_message': 'The customer will still owe @amount FCFA after this sale. Confirm?',
+  'quick_billing_credit_confirm_action': 'Yes, sell on credit',
 };

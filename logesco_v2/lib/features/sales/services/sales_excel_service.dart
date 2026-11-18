@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
 import '../models/sale.dart';
 import '../../../core/utils/file_download_helper.dart';
 
@@ -75,11 +77,23 @@ class SalesExcelService {
       final bytes = excel.encode();
       if (bytes == null) return null;
 
-      return await FileDownloadHelper.saveFile(
+      final filePath = await FileDownloadHelper.saveFile(
         bytes: Uint8List.fromList(bytes),
         fileName: fileName,
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
+
+      // Ouvrir automatiquement le fichier généré (desktop/mobile seulement :
+      // sur web, FileDownloadHelper déclenche déjà le téléchargement navigateur).
+      if (!kIsWeb) {
+        try {
+          await OpenFile.open(filePath);
+        } catch (e) {
+          print('⚠️ Fichier Excel créé mais impossible de l\'ouvrir automatiquement: $e');
+        }
+      }
+
+      return filePath;
     } catch (e) {
       print('❌ Erreur lors de l\'export Excel des ventes: $e');
       return null;

@@ -872,17 +872,31 @@ class _QuickBillingViewState extends State<QuickBillingView> {
     // autorisé dans le tableau (voir _EditableCartRow), on le corrige avant
     // d'enregistrer — même garde-fou que la vue classique.
     _salesController.clampCartPricesToMinimum();
+
+    final customer = _salesController.selectedCustomer;
+    final settlement = SaleSettlement.compute(
+      soldeAvant: customer?.solde ?? 0.0,
+      venteTotal: _salesController.cartTotalTTC,
+      montantVerse: _montantVerse,
+      resteVersSolde: _addExcessToBalance,
+      hasClient: customer != null,
+    );
+
+    if (widget.includePayment && settlement.montantRestant > 0) {
+      if (customer == null) {
+        // Sans client, un reste à payer ne pourrait jamais être recouvré :
+        // la dette ne serait rattachée à aucun compte.
+        SnackbarHelper.error('quick_billing_credit_needs_customer'.tr);
+        return;
+      }
+      final confirmed = await _confirmCreditSale(settlement.montantRestant);
+      if (confirmed != true) return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       // Le choix "ajouter au solde" n'a de sens que s'il reste un excédent
-      final customer = _salesController.selectedCustomer;
-      final excedent = SaleSettlement.compute(
-        soldeAvant: customer?.solde ?? 0.0,
-        venteTotal: _salesController.cartTotalTTC,
-        montantVerse: _montantVerse,
-        hasClient: customer != null,
-      ).excedent;
-      _salesController.setResteVersSolde(_addExcessToBalance && excedent > 0 && customer != null);
+      _salesController.setResteVersSolde(_addExcessToBalance && settlement.excedent > 0 && customer != null);
       final success = await widget.onFinalize(_montantVerse);
       if (success) {
         _resetForNextSale();
@@ -890,6 +904,30 @@ class _QuickBillingViewState extends State<QuickBillingView> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  /// Demande confirmation avant d'enregistrer une vente à crédit (montant
+  /// versé insuffisant pour couvrir le total) — évite qu'un montant oublié
+  /// ou mal saisi crée une dette sans que le caissier s'en rende compte.
+  Future<bool?> _confirmCreditSale(double montantRestant) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('quick_billing_credit_confirm_title'.tr),
+        content: Text('quick_billing_credit_confirm_message'.trParams({'amount': montantRestant.toStringAsFixed(0)})),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('cancel'.tr),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('quick_billing_credit_confirm_action'.tr),
+          ),
+        ],
+      ),
+    );
   }
 
   void _resetForNextSale() {
