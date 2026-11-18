@@ -24,6 +24,20 @@ const DRIFT_FIRST_CHECK_DELAY_MS = parseInt(process.env.SYNC_DRIFT_FIRST_DELAY_M
 /** Tables d'historique : une ligne n'est jamais modifiée après sa création (voir _rattraperHistoriqueNonJournalise) */
 const TABLES_HISTORIQUE = ['mouvements_stock', 'details_ventes', 'transactions_comptes', 'cash_movements', 'historique_prix_achat'];
 
+/**
+ * Tables PARENTES (caisses, sessions) dont une ligne jamais journalisée bloque
+ * indéfiniment tout enfant qui la référence (cash_movements.session_id,
+ * ventes.session_id...) — violation de clé étrangère en boucle à chaque
+ * tentative de replay, sans jamais se résoudre toute seule. Contrairement aux
+ * tables d'historique, ces tables SONT modifiables (une session est mise à
+ * jour à sa fermeture) ; mais le rattrapage ci-dessous ne regarde que
+ * l'ABSENCE TOTALE d'entrée dans le journal (jamais, aucun statut) — donc le
+ * cloud n'a jamais reçu cette ligne, et journaliser son état actuel ne risque
+ * jamais d'écraser une version plus récente côté Neon. Voir
+ * _rattraperParentsNonJournalises.
+ */
+const TABLES_PARENTS_SESSION = ['cash_registers', 'cash_sessions'];
+
 const PULL_TABLES = [
   'user_roles', 'utilisateurs', 'boutiques', 'user_boutique_assignments',
   'categories', 'produits', 'historique_prix_achat', 'stock', 'stock_boutiques',
@@ -483,12 +497,59 @@ class SyncServiceV2 {
     return total;
   }
 
+  /**
+   * Même rattrapage que _rattraperHistoriqueNonJournalise, mais pour les
+   * tables PARENTES de TABLES_PARENTS_SESSION (caisses, sessions) : une ligne
+   * jamais journalisée y bloque indéfiniment tout enfant qui la référence
+   * (violation de clé étrangère en boucle à chaque replay — cash_movements
+   * et ventes ne pourront jamais être acceptés par Neon tant que la session
+   * qu'ils référencent n'y existe pas).
+   *
+   * Sûr même si la table est modifiable (contrairement aux tables
+   * d'historique) : on ne regarde que l'ABSENCE TOTALE d'entrée de journal,
+   * jamais un statut précis — donc Neon n'a par définition jamais reçu cette
+   * ligne, et journaliser son état actuel ne peut pas écraser une version
+   * plus récente côté cloud.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperParentsNonJournalises() {
+    const idPoste = installation.getInstallationId();
+    if (!idPoste) return 0;
+    const debut = installation.blockStartFor(idPoste);
+    const fin = debut + installation.ID_BLOCK_SIZE;
+    let total = 0;
+    for (const table of TABLES_PARENTS_SESSION) {
+      let manquantes;
+      try {
+        manquantes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT t.id AS id FROM "${table}" t
+            WHERE t.id >= ? AND t.id < ?
+              AND NOT EXISTS (SELECT 1 FROM operation_log o WHERE o.table_name = ? AND o.record_id = t.id)
+            ORDER BY t.id LIMIT 500`,
+          debut, fin, table
+        );
+      } catch (_) {
+        continue; // table absente sur ce poste
+      }
+      for (const m of manquantes) {
+        const id = Number(typeof m.id === 'bigint' ? Number(m.id) : m.id);
+        const lignes = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignes.length) continue;
+        await this.logOperation(table, 'INSERT', lignes[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Caisses/sessions : ${total} ligne(s) locale(s) jamais journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
   async _replayPendingOperations() {
     try {
       // Avant d'envoyer : récupérer les écritures locales que le journal n'a jamais reçues (stock, historique)
       try {
         await this._rattraperStockNonJournalise();
         await this._rattraperHistoriqueNonJournalise();
+        await this._rattraperParentsNonJournalises();
       } catch (e) {
         console.warn('⚠️  Rattrapage des écritures non journalisées:', e.message);
       }
