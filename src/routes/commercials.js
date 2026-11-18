@@ -13,6 +13,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, VilleDTO, ZoneDTO, CommercialDTO } = require('../dto');
@@ -270,9 +271,9 @@ function createCommercialRouter(models) {
         if (isActive !== undefined) where.isActive = isActive;
         if (q) {
           where.OR = [
-            { nom: { contains: q } },
-            { prenom: { contains: q } },
-            { telephone: { contains: q } }
+            { nom: like(q) },
+            { prenom: like(q) },
+            { telephone: like(q) }
           ];
         }
 

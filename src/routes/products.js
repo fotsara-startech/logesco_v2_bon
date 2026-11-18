@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { messageProduitService, stockTotalProduit, produitsServiceAvecStock } = require('../utils/service-guard');
 const multer = require('multer');
 const path = require('path');
@@ -872,8 +873,8 @@ function createProductRouter(models) {
         const suggestions = await models.prisma.produit.findMany({
           where: {
             OR: [
-              { nom: { contains: q } },
-              { reference: { contains: q } }
+              { nom: like(q) },
+              { reference: like(q) }
             ],
             estActif: true
           },

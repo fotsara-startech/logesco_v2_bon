@@ -4,6 +4,7 @@
  */
 
 const installation = require('./installation');
+const { like } = require('./search');
 const { appliquerFiltreDate } = require('./filtre-date');
 
 /**
@@ -66,16 +67,16 @@ function buildProductSearchConditions(searchParams) {
 
   if (searchParams.q) {
     conditions.OR = [
-      { nom: { contains: searchParams.q } },
-      { reference: { contains: searchParams.q } },
-      { description: { contains: searchParams.q } },
-      { codeBarre: { contains: searchParams.q } }
+      { nom: like(searchParams.q) },
+      { reference: like(searchParams.q) },
+      { description: like(searchParams.q) },
+      { codeBarre: like(searchParams.q) }
     ];
   }
 
   if (searchParams.categorie) {
     conditions.categorie = { 
-      nom: { contains: searchParams.categorie }
+      nom: like(searchParams.categorie)
     };
   }
 
@@ -96,19 +97,19 @@ function buildClientSearchConditions(searchParams) {
 
   if (searchParams.q) {
     conditions.OR = [
-      { nom: { contains: searchParams.q } },
-      { prenom: { contains: searchParams.q } },
-      { telephone: { contains: searchParams.q } },
-      { email: { contains: searchParams.q } }
+      { nom: like(searchParams.q) },
+      { prenom: like(searchParams.q) },
+      { telephone: like(searchParams.q) },
+      { email: like(searchParams.q) }
     ];
   }
 
   if (searchParams.telephone) {
-    conditions.telephone = { contains: searchParams.telephone };
+    conditions.telephone = like(searchParams.telephone);
   }
 
   if (searchParams.email) {
-    conditions.email = { contains: searchParams.email };
+    conditions.email = like(searchParams.email);
   }
 
   return conditions;
@@ -124,19 +125,19 @@ function buildSupplierSearchConditions(searchParams) {
 
   if (searchParams.q) {
     conditions.OR = [
-      { nom: { contains: searchParams.q } },
-      { personneContact: { contains: searchParams.q } },
-      { telephone: { contains: searchParams.q } },
-      { email: { contains: searchParams.q } }
+      { nom: like(searchParams.q) },
+      { personneContact: like(searchParams.q) },
+      { telephone: like(searchParams.q) },
+      { email: like(searchParams.q) }
     ];
   }
 
   if (searchParams.telephone) {
-    conditions.telephone = { contains: searchParams.telephone };
+    conditions.telephone = like(searchParams.telephone);
   }
 
   if (searchParams.email) {
-    conditions.email = { contains: searchParams.email };
+    conditions.email = like(searchParams.email);
   }
 
   return conditions;
@@ -362,9 +363,7 @@ function buildReceiptSearchConditions(searchParams) {
   }
 
   if (searchParams.numeroRecu) {
-    conditions.numeroRecu = {
-      contains: searchParams.numeroRecu
-    };
+    conditions.numeroRecu = like(searchParams.numeroRecu);
   }
 
   if (searchParams.formatImpression) {
@@ -386,16 +385,14 @@ function buildReceiptSearchConditions(searchParams) {
     conditions.vente = {};
     
     if (searchParams.numeroVente) {
-      conditions.vente.numeroVente = {
-        contains: searchParams.numeroVente
-      };
+      conditions.vente.numeroVente = like(searchParams.numeroVente);
     }
     
     if (searchParams.clientNom) {
       conditions.vente.client = {
         OR: [
-          { nom: { contains: searchParams.clientNom } },
-          { prenom: { contains: searchParams.clientNom } }
+          { nom: like(searchParams.clientNom) },
+          { prenom: like(searchParams.clientNom) }
         ]
       };
     }

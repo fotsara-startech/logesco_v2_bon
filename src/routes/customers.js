@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { validate, validateId, validatePagination } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, ClientDTO } = require('../dto');
@@ -340,10 +341,10 @@ function createCustomerRouter(models) {
         const suggestions = await models.client.findMany({
           where: {
             OR: [
-              { nom: { contains: q } },
-              { prenom: { contains: q } },
-              { telephone: { contains: q } },
-              { email: { contains: q } }
+              { nom: like(q) },
+              { prenom: like(q) },
+              { telephone: like(q) },
+              { email: like(q) }
             ]
           },
           select: {

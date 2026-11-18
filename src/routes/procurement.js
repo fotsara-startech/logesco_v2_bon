@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { messageProduitService } = require('../utils/service-guard');
 const installation = require('../utils/installation');
@@ -57,15 +58,11 @@ function createProcurementRouter(services) {
           const searchTerm = search.trim().toLowerCase();
           where.OR = [
             {
-              numeroCommande: {
-                contains: searchTerm
-              }
+              numeroCommande: like(searchTerm)
             },
             {
               fournisseur: {
-                nom: {
-                  contains: searchTerm
-                }
+                nom: like(searchTerm)
               }
             }
           ];

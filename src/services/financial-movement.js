@@ -4,6 +4,7 @@
  */
 
 const installation = require('../utils/installation');
+const { like } = require('../utils/search');
 const { appliquerFiltreDate } = require('../utils/filtre-date');
 
 class FinancialMovementService {
@@ -328,9 +329,9 @@ class FinancialMovementService {
       // Recherche textuelle
       if (search) {
         where.OR = [
-          { reference: { contains: search } },
-          { description: { contains: search } },
-          { notes: { contains: search } }
+          { reference: like(search) },
+          { description: like(search) },
+          { notes: like(search) }
         ];
       }
 

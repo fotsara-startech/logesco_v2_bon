@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { like } = require('../utils/search');
 const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO } = require('../dto');
@@ -248,7 +249,7 @@ function createBoutiquesRouter({ prisma, authService, syncService }) {
 
       const where = { boutiqueId };
       if (search) {
-        where.produit = { nom: { contains: search } };
+        where.produit = { nom: like(search) };
       }
 
       const [stocks, total] = await Promise.all([
