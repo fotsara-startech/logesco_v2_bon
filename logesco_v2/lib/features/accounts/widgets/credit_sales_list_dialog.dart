@@ -138,6 +138,25 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
             ),
             const SizedBox(height: 4),
             Text('accounts_articles_count'.trParams({'count': '${sale.nombreArticles}'}), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            if (sale.produits.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ...sale.produits.map((p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${p.quantite} x ${p.nom}',
+                            style: const TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(p.prixTotalFormatted, style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  )),
+            ],
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

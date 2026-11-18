@@ -509,7 +509,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
       final List<Sale> allSales = [];
       int page = 1;
-      const limit = 200;
+      const limit = 100; // plafond serveur (venteSchemas.search), voir backend/src/validation/schemas.js
       bool hasMore = true;
 
       while (hasMore) {

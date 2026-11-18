@@ -535,6 +535,38 @@ class Fournisseur {
   int get hashCode => id.hashCode;
 }
 
+/// Un produit vendu dans une vente impayée (voir [UnpaidSale.produits])
+class UnpaidSaleProduct {
+  final int produitId;
+  final String nom;
+  final String? reference;
+  final int quantite;
+  final double prixUnitaire;
+  final double prixTotal;
+
+  UnpaidSaleProduct({
+    required this.produitId,
+    required this.nom,
+    this.reference,
+    required this.quantite,
+    required this.prixUnitaire,
+    required this.prixTotal,
+  });
+
+  factory UnpaidSaleProduct.fromJson(Map<String, dynamic> json) {
+    return UnpaidSaleProduct(
+      produitId: json['produitId'] as int,
+      nom: json['nom'] as String,
+      reference: json['reference'] as String?,
+      quantite: json['quantite'] as int,
+      prixUnitaire: (json['prixUnitaire'] as num).toDouble(),
+      prixTotal: (json['prixTotal'] as num).toDouble(),
+    );
+  }
+
+  String get prixTotalFormatted => '${prixTotal.toStringAsFixed(0)} FCFA';
+}
+
 /// Modèle pour une vente impayée
 class UnpaidSale {
   final int id;
@@ -544,6 +576,7 @@ class UnpaidSale {
   final double montantPaye;
   final double montantRestant;
   final int nombreArticles;
+  final List<UnpaidSaleProduct> produits;
 
   UnpaidSale({
     required this.id,
@@ -553,6 +586,7 @@ class UnpaidSale {
     required this.montantPaye,
     required this.montantRestant,
     required this.nombreArticles,
+    this.produits = const [],
   });
 
   factory UnpaidSale.fromJson(Map<String, dynamic> json) {
@@ -564,6 +598,9 @@ class UnpaidSale {
       montantPaye: (json['montantPaye'] as num).toDouble(),
       montantRestant: (json['montantRestant'] as num).toDouble(),
       nombreArticles: json['nombreArticles'] as int,
+      produits: json['produits'] != null
+          ? (json['produits'] as List).map((p) => UnpaidSaleProduct.fromJson(p as Map<String, dynamic>)).toList()
+          : const [],
     );
   }
 

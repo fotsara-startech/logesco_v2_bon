@@ -419,7 +419,10 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
                 produitId: true,
                 quantite: true,
                 prixUnitaire: true,
-                prixTotal: true
+                prixTotal: true,
+                produit: {
+                  select: { nom: true, reference: true }
+                }
               }
             }
           },
@@ -433,7 +436,15 @@ function createAccountRouter({ prisma, authService, syncService, ...models }) {
           montantTotal: parseFloat(v.montantTotal),
           montantPaye: parseFloat(v.montantPaye),
           montantRestant: parseFloat(v.montantRestant),
-          nombreArticles: v.details.length
+          nombreArticles: v.details.length,
+          produits: v.details.map(d => ({
+            produitId: d.produitId,
+            nom: d.produit?.nom || `Produit ${d.produitId}`,
+            reference: d.produit?.reference || null,
+            quantite: d.quantite,
+            prixUnitaire: parseFloat(d.prixUnitaire),
+            prixTotal: parseFloat(d.prixTotal)
+          }))
         }));
 
         res.json(BaseResponseDTO.success(
