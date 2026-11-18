@@ -1379,11 +1379,9 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
         return;
       }
 
-      // Le solde final est dans le compte (après la vente)
-      final compteData = accountData['compte'] as Map<String, dynamic>?;
-      final finalBalance = (compteData?['soldeActuel'] as num?)?.toDouble() ?? 0.0;
-      // Le solde initial était le solde final + le montant utilisé
-      final initialBalance = finalBalance + usedAccountBalance;
+      final balances = _resolveSaleBalances(accountData, sale.id, usedAccountBalance);
+      final initialBalance = balances.avant;
+      final finalBalance = balances.apres;
 
       // Créer le reçu de suivi de compte sans l'imprimer
       // L'utilisateur pourra l'imprimer manuellement depuis le détail de la vente
@@ -1415,9 +1413,55 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   }
 
   /// Vérifie si une vente a utilisé l'avance du client
-  /// Vérifie si une vente a utilisé l'avance du client
   bool saleUsedAccountBalance(Sale sale) {
     return sale.avanceUtilisee > 0;
+  }
+
+  /// Retrouve le solde du compte juste avant/après une vente donnée, à partir
+  /// de l'historique des transactions (`soldeApres` est figé au moment de
+  /// l'écriture, donc fiable même si le solde actuel du compte a changé
+  /// depuis à cause de ventes plus récentes).
+  ///
+  /// BUG CORRIGÉ : l'ancien calcul prenait `soldeActuel + avanceUtilisee`
+  /// comme solde avant. C'est faux dès que la vente a AUSSI créé de la dette
+  /// (avance insuffisante pour couvrir tout le montant) : le solde après
+  /// n'est alors pas juste "solde avant − avance utilisée", il intègre aussi
+  /// la dette ajoutée. En plus, `soldeActuel` reflète le solde ACTUEL du
+  /// compte, pas celui juste après cette vente précise — si une autre vente
+  /// a eu lieu entre-temps (reçu généré avec un peu de retard, ventes
+  /// rapprochées), le calcul se basait sur un solde déjà périmé.
+  ({double avant, double apres}) _resolveSaleBalances(
+    Map<String, dynamic> accountData,
+    int saleId,
+    double avanceUtilisee,
+  ) {
+    final compteData = accountData['compte'] as Map<String, dynamic>?;
+    final soldeActuel = (compteData?['soldeActuel'] as num?)?.toDouble() ?? 0.0;
+    final transactions = accountData['transactions'] as List?;
+
+    if (transactions != null) {
+      final index = transactions.indexWhere((t) =>
+          t is Map &&
+          t['referenceType'] == 'vente' &&
+          t['referenceId'] == saleId &&
+          t['typeTransactionDetail'] == 'utilisation_avance');
+
+      if (index != -1) {
+        // soldeApres de CETTE transaction = solde juste après la vente,
+        // indépendamment de ce qui s'est passé sur le compte depuis.
+        final apres = (transactions[index]['soldeApres'] as num).toDouble();
+        // La transaction suivante dans la liste (triée du plus récent au
+        // plus ancien) est la dernière écriture AVANT cette vente : son
+        // soldeApres est exactement le solde juste avant.
+        final avant = index + 1 < transactions.length ? (transactions[index + 1]['soldeApres'] as num).toDouble() : apres + avanceUtilisee;
+        return (avant: avant, apres: apres);
+      }
+    }
+
+    // Repli (transaction hors de la fenêtre des 20 dernières, par ex. reçu
+    // réimprimé longtemps après) : approximation, correcte seulement si la
+    // vente n'a pas aussi créé de dette.
+    return (avant: soldeActuel + avanceUtilisee, apres: soldeActuel);
   }
 
   /// Génère et imprime un reçu de suivi de compte pour une vente donnée
@@ -1441,10 +1485,9 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
       }
 
       // Calculer les soldes avant et après la vente
-      final compteData = accountData['compte'] as Map<String, dynamic>?;
-      final currentBalance = (compteData?['soldeActuel'] as num?)?.toDouble() ?? 0.0;
-      // Le solde avant = solde actuel + avance utilisée (car l'avance a été déduite)
-      final balanceBeforeSale = currentBalance + sale.avanceUtilisee;
+      final balances = _resolveSaleBalances(accountData, sale.id, sale.avanceUtilisee);
+      final balanceBeforeSale = balances.avant;
+      final currentBalance = balances.apres;
 
       if (_companyProfile.value == null) {
         await _loadCompanyProfile();

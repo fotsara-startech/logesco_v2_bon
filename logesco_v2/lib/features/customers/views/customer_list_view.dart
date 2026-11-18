@@ -320,7 +320,7 @@ class _CustomerListItem extends StatelessWidget {
                     Icon(Icons.warning_rounded, size: 14, color: Colors.red.shade700),
                     const SizedBox(width: 4),
                     Text(
-                      'DETTE',
+                      '${(-customer.solde).toStringAsFixed(0)} FCFA',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
