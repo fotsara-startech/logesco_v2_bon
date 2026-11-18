@@ -553,6 +553,13 @@ class LogescoServer {
       const databaseUrl = process.env.DATABASE_URL || '';
       const isCloudOnly = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
       if (!isCloudOnly) {
+        // Rattrape le schéma Postgres de Neon (colonnes ajoutées côté
+        // SQLite mais oubliées dans schema.postgresql.prisma) AVANT toute
+        // synchro : sinon chaque écriture vers une table concernée échoue
+        // en cascade (voir cloud-migration-runner.js).
+        const cloudMigrationRunner = require('./services/cloud-migration-runner');
+        await cloudMigrationRunner.run(process.env.CLOUD_DB_URL);
+
         const syncService = require('./services/sync-service');
         this.syncService = syncService;
         this.app.locals.syncService = syncService;
