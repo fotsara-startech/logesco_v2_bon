@@ -116,7 +116,7 @@ class ProductController extends GetxController {
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement des produits';
+        errorMessage.value = 'sales_load_products_error'.tr;
       }
 
       SnackbarHelper.error(errorMessage.value);
@@ -308,7 +308,7 @@ class ProductController extends GetxController {
       AlertDialog(
         title: Text('users_delete_confirm_title'.tr),
         content: Text(
-          'Êtestes-vous sûr de vouloir supprimer le produit "${product.nom}" ?',
+          'products_etestes_vous_sur_vouloir_supprimer_produit'.trParams({'nom': '${product.nom}'}),
         ),
         actions: [
           TextButton(
@@ -350,7 +350,7 @@ class ProductController extends GetxController {
         }
       } catch (e) {
         print(' Erreur suppression: $e');
-        String message = 'Erreur lors de la suppression du produit';
+        String message = 'products_erreur_lors_suppression_produit'.tr;
         bool isInfo = false;
 
         if (e is ApiException) {
@@ -398,7 +398,7 @@ class ProductController extends GetxController {
 
       SnackbarHelper.success('products_statut_produit_mis_jour'.tr);
     } catch (e) {
-      String message = 'Erreur lors de la mise à jour du statut';
+      String message = 'products_erreur_lors_mise_jour_statut'.tr;
       if (e is ApiException) {
         message = e.message;
       }

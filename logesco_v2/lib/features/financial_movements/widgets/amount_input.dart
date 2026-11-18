@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -57,14 +58,14 @@ class _AmountInputState extends State<AmountInput> {
 
   String? _defaultValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Le montant est obligatoire';
+      return 'financial_movements_form_amount_required'.tr;
     }
     final amount = double.tryParse(value.trim());
     if (amount == null) {
-      return 'Veuillez entrer un montant valide';
+      return 'suppliers_invalid_amount'.tr;
     }
     if (amount <= 0) {
-      return 'Le montant doit être supérieur à 0';
+      return 'financialmovements_montant_doit_etre_superieur_0'.tr;
     }
     return null;
   }
@@ -146,15 +147,15 @@ class AmountFormatter {
 
     final amount = parseAmount(value);
     if (amount == null) {
-      return 'Veuillez entrer un montant valide';
+      return 'suppliers_invalid_amount'.tr;
     }
 
     if (amount <= 0) {
-      return 'Le montant doit être supérieur à 0';
+      return 'financialmovements_montant_doit_etre_superieur_0'.tr;
     }
 
     if (amount > 999999999) {
-      return 'Le montant est trop élevé';
+      return 'financialmovements_montant_est_trop_eleve'.tr;
     }
 
     return null;

@@ -44,7 +44,7 @@ class ProductImagePicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Image du produit',
+          'products_image_produit'.tr,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -82,7 +82,7 @@ class ProductImagePicker extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: isLoading ? null : _pickImage,
               icon: const Icon(Icons.image_outlined, size: 18),
-              label: Text(imageUrl != null ? 'Changer' : 'Ajouter une image'),
+              label: Text(imageUrl != null ? 'Changer' : 'products_ajouter_image'.tr),
             ),
             if (imageUrl != null && onImageDeleted != null) ...[
               const SizedBox(width: 8),
@@ -112,7 +112,7 @@ class ProductImagePicker extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Appuyer pour ajouter une image',
+          'products_appuyer_ajouter_image'.tr,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

@@ -38,11 +38,11 @@ class SyncDriftCard extends StatelessWidget {
   String _sens(String sens) {
     switch (sens) {
       case 'a_recevoir':
-        return 'Dans le cloud, pas ici';
+        return 'sync_dans_cloud_pas_ici'.tr;
       case 'a_envoyer':
-        return 'Ici, pas dans le cloud';
+        return 'sync_ici_pas_dans_cloud'.tr;
       default:
-        return 'Valeur différente';
+        return 'sync_valeur_differente'.tr;
     }
   }
 
@@ -88,8 +88,8 @@ class SyncDriftCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     r == null
-                        ? 'Écart avec le cloud : pas encore vérifié'
-                        : (alerte ? '$inexpliques élément(s) en écart avec le cloud' : 'Ce poste et le cloud concordent'),
+                        ? 'sync_ecart_avec_cloud_pas_encore_verifie'.tr
+                        : (alerte ? '$inexpliques élément(s) en écart avec le cloud' : 'sync_poste_cloud_concordent'.tr),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
@@ -158,7 +158,7 @@ class SyncDriftCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: checking ? null : onCheck,
                   icon: checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh),
-                  label: Text(checking ? 'Comparaison en cours…' : "Vérifier l'écart avec le cloud"),
+                  label: Text(checking ? 'Comparaison en cours…' : 'sync_verifier_ecart_avec_cloud'.tr),
                 ),
               ],
             ),

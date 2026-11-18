@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 import '../models/movement_category.dart';
@@ -112,7 +113,7 @@ class CategoryDropdown extends StatelessWidget {
       value: selectedCategoryId,
       decoration: InputDecoration(
         labelText: labelText != null ? '$labelText${isRequired ? ' *' : ''}' : null,
-        hintText: hintText ?? 'Sélectionnez une catégorie',
+        hintText: hintText ?? 'financial_movements_form_category_hint'.tr,
         prefixIcon: const Icon(Icons.category),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -148,7 +149,7 @@ class CategoryDropdown extends StatelessWidget {
       validator: isRequired
           ? (value) {
               if (value == null) {
-                return 'Veuillez sélectionner une catégorie';
+                return 'inventory_form_category_required'.tr;
               }
               return null;
             }

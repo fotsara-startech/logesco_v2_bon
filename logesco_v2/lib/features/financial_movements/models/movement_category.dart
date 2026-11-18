@@ -1,4 +1,5 @@
-﻿/// Modèle pour les catégories de mouvements financiers
+import 'package:get/get.dart';
+/// Modèle pour les catégories de mouvements financiers
 class MovementCategory {
   final int id;
   final String name;
@@ -219,31 +220,31 @@ class MovementCategoryForm {
     List<String> errors = [];
 
     if (name.trim().isEmpty) {
-      errors.add('Le nom de la catégorie est obligatoire');
+      errors.add('expenses_category_name_required'.tr);
     }
 
     if (name.trim().length < 2) {
-      errors.add('Le nom doit contenir au moins 2 caractères');
+      errors.add('roles_name_min_length'.tr);
     }
 
     if (displayName.trim().isEmpty) {
-      errors.add('Le nom d\'affichage est obligatoire');
+      errors.add('roles_display_name_required'.tr);
     }
 
     if (displayName.trim().length < 3) {
-      errors.add('Le nom d\'affichage doit contenir au moins 3 caractères');
+      errors.add('financialmovements_nom_affichage_doit_contenir_moins_3'.tr);
     }
 
     if (color.trim().isEmpty) {
-      errors.add('La couleur est obligatoire');
+      errors.add('financialmovements_couleur_est_obligatoire'.tr);
     }
 
     if (!color.startsWith('#') || color.length != 7) {
-      errors.add('La couleur doit être au format hexadécimal (#RRGGBB)');
+      errors.add('financialmovements_couleur_doit_etre_format_hexadecimal_rrggbb'.tr);
     }
 
     if (icon.trim().isEmpty) {
-      errors.add('L\'icône est obligatoire');
+      errors.add('financialmovements_icone_est_obligatoire'.tr);
     }
 
     return errors;

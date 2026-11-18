@@ -67,7 +67,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                   return Column(
                     children: [
                       Text(
-                        'Erreur: ${productController.error.value}',
+                        'inventory_erreur_3'.trParams({'value': '${productController.error.value}'}),
                         style: const TextStyle(color: Colors.red),
                       ),
                       ElevatedButton(
@@ -90,7 +90,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                       key: ValueKey(product.id),
                       value: product,
                       child: Text(
-                        '${product.nom} (Réf: ${product.reference})',
+                        'inventory_ref_3'.trParams({'nom': '${product.nom}', 'reference': '${product.reference}'}),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -143,11 +143,11 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez saisir une quantité';
+                    return 'stock_movement_quantity_required'.tr;
                   }
                   final quantity = int.tryParse(value);
                   if (quantity == null || quantity <= 0) {
-                    return 'La quantité doit être un nombre positif';
+                    return 'stock_add_movement_quantity_positive'.tr;
                   }
                   return null;
                 },
@@ -166,7 +166,7 @@ class _AddMovementDialogContentState extends State<_AddMovementDialogContent> {
                 maxLines: 2,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Veuillez saisir un motif';
+                    return 'inventory_veuillez_saisir_motif'.tr;
                   }
                   return null;
                 },

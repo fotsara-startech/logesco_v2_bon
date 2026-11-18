@@ -203,7 +203,7 @@ class PaginationWidget extends StatelessWidget {
     final endItem = (currentPage * itemsPerPage).clamp(0, totalItems);
 
     return Text(
-      '$startItem-$endItem sur $totalItems éléments',
+      'financialmovements_sur_elements'.trParams({'startItem': '${startItem}', 'endItem': '${endItem}', 'totalItems': '${totalItems}'}),
       style: const TextStyle(
         fontSize: 14,
         color: Colors.grey,
@@ -218,8 +218,8 @@ class PaginationWidget extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          'léments par page:',
+        Text(
+          'financialmovements_lements_par_page'.tr,
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(width: 8),
@@ -247,7 +247,7 @@ class PaginationWidget extends StatelessWidget {
     if (totalPages <= 1) {
       return Center(
         child: Text(
-          'Page $currentPage sur $totalPages',
+          'financialmovements_page_sur'.trParams({'currentPage': '${currentPage}', 'totalPages': '${totalPages}'}),
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
       );

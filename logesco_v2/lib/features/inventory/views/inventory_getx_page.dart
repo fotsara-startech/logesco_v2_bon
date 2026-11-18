@@ -347,7 +347,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'Fichier téléchargé: $filename',
+            'inventory_fichier_telecharge'.trParams({'filename': '${filename}'}),
             title: 'stock_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -404,7 +404,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'Fichier téléchargé: $filename',
+            'inventory_fichier_telecharge'.trParams({'filename': '${filename}'}),
             title: 'stock_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -460,7 +460,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'PDF téléchargé: $filename',
+            'inventory_pdf_telecharge'.trParams({'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -491,7 +491,7 @@ class _InventoryGetxPageState extends State<InventoryGetxPage> with SingleTicker
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'PDF téléchargé: $filename',
+            'inventory_pdf_telecharge'.trParams({'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );

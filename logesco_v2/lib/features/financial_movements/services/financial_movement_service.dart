@@ -55,7 +55,7 @@ class FinancialMovementService {
             maxAmount: maxAmount,
             forceRefresh: forceRefresh,
           ),
-          operationName: 'Récupération des mouvements financiers',
+          operationName: 'financialmovements_recuperation_mouvements_financiers'.tr,
         )
         .catchFinancialError(operation: 'getMovements');
   }
@@ -195,7 +195,7 @@ class FinancialMovementService {
     return await _readRetryPolicy
         .execute(
           () => _getMovementByIdInternal(id, forceRefresh: forceRefresh),
-          operationName: 'Récupération du mouvement $id',
+          operationName: 'financialmovements_recuperation_mouvement_2'.trParams({'id': '${id}'}),
         )
         .catchFinancialError(operation: 'getMovementById');
   }
@@ -273,7 +273,7 @@ class FinancialMovementService {
     return await _writeRetryPolicy
         .execute(
           () => _createMovementInternal(form),
-          operationName: 'Création du mouvement financier',
+          operationName: 'financialmovements_creation_mouvement_financier'.tr,
         )
         .catchFinancialError(operation: 'createMovement');
   }
@@ -281,7 +281,7 @@ class FinancialMovementService {
   /// Implémentation interne de la création d'un mouvement
   Future<FinancialMovement> _createMovementInternal(FinancialMovementForm form) async {
     // Vérifier qu'une boutique est active
-    _boutiqueContext.requireActiveBoutique('création de mouvement financier');
+    _boutiqueContext.requireActiveBoutique('financialmovements_creation_mouvement_financier_2'.tr);
 
     final token = await _authService.getToken();
     if (token == null) {
@@ -369,7 +369,7 @@ class FinancialMovementService {
     return await _writeRetryPolicy
         .execute(
           () => _updateMovementInternal(id, form),
-          operationName: 'Mise à jour du mouvement $id',
+          operationName: 'financialmovements_mise_jour_mouvement_3'.trParams({'id': '${id}'}),
         )
         .catchFinancialError(operation: 'updateMovement');
   }
@@ -377,7 +377,7 @@ class FinancialMovementService {
   /// Implémentation interne de la mise à jour d'un mouvement
   Future<FinancialMovement> _updateMovementInternal(int id, FinancialMovementForm form) async {
     // Vérifier qu'une boutique est active
-    _boutiqueContext.requireActiveBoutique('mise à jour de mouvement financier');
+    _boutiqueContext.requireActiveBoutique('financialmovements_mise_jour_mouvement_financier'.tr);
 
     final token = await _authService.getToken();
     if (token == null) {
@@ -466,7 +466,7 @@ class FinancialMovementService {
     return await _criticalRetryPolicy
         .execute(
           () => _deleteMovementInternal(id),
-          operationName: 'Suppression du mouvement $id',
+          operationName: 'financialmovements_suppression_mouvement_4'.trParams({'id': '${id}'}),
         )
         .catchFinancialError(operation: 'deleteMovement');
   }
@@ -518,7 +518,7 @@ class FinancialMovementService {
     return await _readRetryPolicy
         .execute(
           () => _getCategoriesInternal(forceRefresh: forceRefresh),
-          operationName: 'Récupération des catégories',
+          operationName: 'financialmovements_recuperation_categories'.tr,
         )
         .catchFinancialError(operation: 'getCategories');
   }
@@ -621,7 +621,7 @@ class FinancialMovementService {
             endDate: endDate,
             forceRefresh: forceRefresh,
           ),
-          operationName: 'Récupération des statistiques',
+          operationName: 'financialmovements_recuperation_statistiques'.tr,
         )
         .catchFinancialError(operation: 'getStatistics');
   }
@@ -754,7 +754,7 @@ class FinancialMovementService {
     try {
       await _readRetryPolicy.execute(
         () => _testConnectivityInternal(),
-        operationName: 'Test de connectivité',
+        operationName: 'financialmovements_test_connectivite'.tr,
       );
       return true;
     } catch (e) {
@@ -836,7 +836,7 @@ class FinancialMovementService {
   FinancialMovementException _createApiExceptionFromResponse(http.Response response) {
     try {
       final errorData = json.decode(response.body);
-      final message = errorData['message'] ?? 'Erreur lors de l\'opération';
+      final message = errorData['message'] ?? 'financialmovements_erreur_lors_operation'.tr;
       final code = errorData['code'] ?? 'API_ERROR';
 
       return FinancialMovementException(

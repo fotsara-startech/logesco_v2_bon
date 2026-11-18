@@ -59,7 +59,7 @@ class _StockMovementsViewState extends State<StockMovementsView> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Erreur: ${controller.movementsError}',
+                  'inventory_erreur_5'.trParams({'movementsError': '${controller.movementsError}'}),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -73,7 +73,7 @@ class _StockMovementsViewState extends State<StockMovementsView> {
         }
 
         if (controller.movements.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -84,12 +84,12 @@ class _StockMovementsViewState extends State<StockMovementsView> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Aucun mouvement trouvé',
+                  'financial_movements_no_results'.tr,
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Aucun mouvement de stock enregistré',
+                  'inventory_aucun_mouvement_stock_enregistre'.tr,
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
@@ -147,7 +147,7 @@ class StockMovementItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          product?.nom ?? 'Produit inconnu',
+          product?.nom ?? 'pdf_unknown_product'.tr,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
@@ -155,7 +155,7 @@ class StockMovementItem extends StatelessWidget {
           children: [
             if (product?.reference != null)
               Text(
-                'Réf: ${product!.reference}',
+                'inventory_ref_2'.trParams({'reference': '${product!.reference}'}),
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 12,
@@ -294,7 +294,7 @@ class StockMovementItem extends StatelessWidget {
       case 'achat':
         return 'Achat';
       case 'vente':
-        return 'Vente';
+        return 'inventory_movement_sale'.tr;
       case 'ajustement':
         return 'Ajustement';
       case 'retour':

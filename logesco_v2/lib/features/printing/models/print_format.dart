@@ -1,4 +1,5 @@
-﻿import 'package:json_annotation/json_annotation.dart';
+﻿import 'package:get/get.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'print_format.g.dart';
 
@@ -195,20 +196,20 @@ extension PrintModeExtension on PrintMode {
       case PrintMode.direct:
         return 'Impression directe';
       case PrintMode.preview:
-        return 'Aperçu avant impression';
+        return 'printing_apercu_avant_impression'.tr;
       case PrintMode.none:
-        return 'Sans impression';
+        return 'printing_sans_impression'.tr;
     }
   }
 
   String get description {
     switch (this) {
       case PrintMode.direct:
-        return 'Imprime immédiatement sur l\'imprimante par défaut, sans afficher d\'aperçu';
+        return 'printing_imprime_immediatement_sur_imprimante_par_defaut'.tr;
       case PrintMode.preview:
-        return 'Affiche l\'aperçu et permet de choisir le format avant d\'imprimer';
+        return 'printing_affiche_apercu_permet_choisir_format_avant'.tr;
       case PrintMode.none:
-        return 'Ne rien imprimer ni afficher après la validation de la facture';
+        return 'printing_ne_rien_imprimer_ni_afficher_apres'.tr;
     }
   }
 }

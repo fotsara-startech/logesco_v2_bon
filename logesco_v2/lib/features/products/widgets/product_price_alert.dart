@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 /// Bandeau d'alerte de la liste des produits : des produits sont vendus moins cher que leur prix d'achat.
@@ -37,11 +38,11 @@ class ProductPriceAlert extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      count == 1 ? '1 produit vendu moins cher que son prix d\'achat' : '$count produits vendus moins cher que leur prix d\'achat',
+                      count == 1 ? '1 produit vendu moins cher que son prix d\'achat' : 'products_produits_vendus_moins_cher_que_leur'.trParams({'count': '${count}'}),
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                     Text(
-                      'Chaque vente fait perdre de l\'argent : vérifiez le prix de vente ou le prix d\'achat.',
+                      'products_chaque_vente_fait_perdre_argent_verifiez'.tr,
                       style: TextStyle(fontSize: 12, color: Colors.red.shade900),
                     ),
                   ],

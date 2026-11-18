@@ -65,7 +65,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
     try {
       final newCategory = await _categoryService.createCategoryIfNotExists(
         categoryName.trim(),
-        description: 'Créée automatiquement lors de la saisie produit',
+        description: 'products_creee_automatiquement_lors_saisie_produit'.tr,
       );
 
       // Ajouter la nouvelle catégorie à la liste
@@ -118,7 +118,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
                 labelText: 'products_category'.tr,
                 prefixIcon: const Icon(Icons.category),
                 border: const OutlineInputBorder(),
-                helperText: widget.availableCategories.isEmpty ? 'Aucune catégorie disponible' : '${widget.availableCategories.length} catégorie(s) disponible(s)',
+                helperText: widget.availableCategories.isEmpty ? 'Aucune catégorie disponible' : 'products_categorie_s_disponible_s'.trParams({'length': '${widget.availableCategories.length}'}),
                 suffixIcon: _isCreatingCategory
                     ? const SizedBox(
                         width: 20,
@@ -146,7 +146,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
-                    itemCount: options.length + 1, // +1 pour l'option "Créer nouvelle catégorie"
+                    itemCount: options.length + 1, // +1 pour l'option 'products_creer_nouvelle_categorie_2'.tr
                     itemBuilder: (context, index) {
                       if (index == options.length) {
                         // Option pour créer une nouvelle catégorie

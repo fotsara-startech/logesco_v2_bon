@@ -51,15 +51,15 @@ class ProductDetailController extends GetxController {
             print(' Produit chargé avec catégorie: "${loadedProduct.categorie}"');
             product.value = loadedProduct;
           } else {
-            errorMessage.value = 'Produit non trouvé';
+            errorMessage.value = 'product_detail_not_found'.tr;
           }
         } else {
-          errorMessage.value = 'Aucun produit spécifié';
+          errorMessage.value = 'products_aucun_produit_specifie'.tr;
         }
       }
     } catch (e) {
       print(' Erreur chargement produit: $e');
-      errorMessage.value = 'Erreur lors du chargement: $e';
+      errorMessage.value = 'products_erreur_lors_chargement_2'.trParams({'e': '${e}'});
     } finally {
       isLoading.value = false;
     }

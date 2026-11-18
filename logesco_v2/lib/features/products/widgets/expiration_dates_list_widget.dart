@@ -77,7 +77,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'La gestion des dates de péremption n\'est pas activée pour ce produit',
+                'expiration_list_disabled'.tr,
                 style: TextStyle(color: Colors.grey.shade700),
               ),
             ),
@@ -103,8 +103,8 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Dates de péremption',
+            Text(
+              'expiration_list_title'.tr,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             ElevatedButton.icon(
@@ -150,7 +150,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
                   Icon(Icons.event_busy, size: 48, color: Colors.blue.shade300),
                   const SizedBox(height: 8),
                   Text(
-                    'Aucune date de péremption enregistrée',
+                    'expiration_list_empty'.tr,
                     style: TextStyle(color: Colors.blue.shade700),
                   ),
                 ],
@@ -245,7 +245,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
                       Icon(Icons.inventory_2, size: 14, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
                       Text(
-                        '${date.quantite} unités',
+                        'products_unites'.trParams({'quantite': '${date.quantite}'}),
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       ),
                       if (date.numeroLot != null) ...[
@@ -253,7 +253,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
                         Icon(Icons.qr_code, size: 14, color: Colors.grey.shade600),
                         const SizedBox(width: 4),
                         Text(
-                          'Lot: ${date.numeroLot}',
+                          'products_lot'.trParams({'numeroLot': '${date.numeroLot}'}),
                           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                         ),
                       ],
@@ -346,7 +346,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
               Icon(Icons.analytics, size: 18, color: Colors.blue.shade700),
               const SizedBox(width: 8),
               Text(
-                'Cohérence des quantités',
+                'expiration_list_stats_title'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -359,8 +359,8 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('Stock', stockDisponible.toString(), Colors.blue),
-              _buildStatItem('Enregistré', quantiteEnregistree.toString(), Colors.green),
+              _buildStatItem('products_stock'.tr, stockDisponible.toString(), Colors.blue),
+              _buildStatItem('expiration_list_stats_registered'.tr, quantiteEnregistree.toString(), Colors.green),
               _buildStatItem('Restant', quantiteRestante.toString(), quantiteRestante > 0 ? Colors.orange : Colors.grey),
               _buildStatItem('Couverture', '$pourcentage%', pourcentage >= 80 ? Colors.green : Colors.orange),
             ],

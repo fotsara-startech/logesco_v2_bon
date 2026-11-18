@@ -141,7 +141,7 @@ class PrintingService {
               fixedJson['companyInfo'] = {
                 'id': 0,
                 'name': 'LOGESCO',
-                'address': 'Adresse non définie',
+                'address': 'printing_adresse_non_definie'.tr,
                 'location': '',
                 'phone': '',
                 'email': '',
@@ -154,7 +154,7 @@ class PrintingService {
               final companyInfo = Map<String, dynamic>.from(fixedJson['companyInfo']);
               if (companyInfo['id'] == null) companyInfo['id'] = 0;
               companyInfo['name'] = companyInfo['name']?.toString() ?? 'LOGESCO';
-              companyInfo['address'] = companyInfo['address']?.toString() ?? 'Adresse non définie';
+              companyInfo['address'] = companyInfo['address']?.toString() ?? 'printing_adresse_non_definie'.tr;
               companyInfo['location'] = companyInfo['location']?.toString() ?? '';
               companyInfo['phone'] = companyInfo['phone']?.toString() ?? '';
               companyInfo['email'] = companyInfo['email']?.toString() ?? '';
@@ -175,7 +175,7 @@ class PrintingService {
               final items = List<Map<String, dynamic>>.from(fixedJson['items']);
               for (var item in items) {
                 item['productId'] = item['productId']?.toString() ?? '0';
-                item['productName'] = item['productName']?.toString() ?? 'Produit';
+                item['productName'] = item['productName']?.toString() ?? 'quick_billing_product'.tr;
                 item['productReference'] = item['productReference']?.toString() ?? '';
                 if (item['quantity'] == null) item['quantity'] = 1;
                 if (item['unitPrice'] == null) item['unitPrice'] = 0.0;
@@ -267,7 +267,7 @@ class PrintingService {
         return ApiResponse.success(searchResponse, message: jsonData['message']);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la recherche des reçus');
+        return ApiResponse.error(message: errorData['message'] ?? 'printing_erreur_lors_recherche_recus_2'.tr);
       }
     } catch (e) {
       print('❌ Error searching receipts: $e');
@@ -369,7 +369,7 @@ class PrintingService {
         return ApiResponse.error(message: 'printing_recu_non_trouve'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du reçu');
+        return ApiResponse.error(message: errorData['message'] ?? 'printing_erreur_lors_recuperation_recu'.tr);
       }
     } catch (e) {
       print('❌ Error getting receipt: $e');
@@ -447,7 +447,7 @@ class PrintingService {
         return ApiResponse.error(message: 'printing_aucun_recu_trouve_vente'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du reçu');
+        return ApiResponse.error(message: errorData['message'] ?? 'printing_erreur_lors_recuperation_recu'.tr);
       }
     } catch (e) {
       print('❌ Error getting receipt by sale: $e');
@@ -505,7 +505,7 @@ class PrintingService {
         return ApiResponse.error(message: 'printing_vous_n_avez_pas_autorisation_reimprimer'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la réimpression');
+        return ApiResponse.error(message: errorData['message'] ?? 'printing_erreur_lors_reimpression_2'.tr);
       }
     } catch (e) {
       print('❌ Error reprinting receipt: $e');
@@ -565,7 +565,7 @@ class PrintingService {
         return ApiResponse.success(reprints, message: jsonData['message']);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération de l\'historique');
+        return ApiResponse.error(message: errorData['message'] ?? 'printing_erreur_lors_recuperation_historique'.tr);
       }
     } catch (e) {
       print('❌ Error getting reprint history: $e');
@@ -867,7 +867,7 @@ class PrintingService {
         final product = detail['produit'];
         items.add(ReceiptItem(
           productId: detail['produitId'].toString(),
-          productName: product?['nom'] ?? 'Produit',
+          productName: product?['nom'] ?? 'quick_billing_product'.tr,
           productReference: product?['reference'] ?? '',
           quantity: detail['quantite'] ?? 1,
           unitPrice: (detail['prixUnitaire'] ?? 0).toDouble(),
@@ -885,7 +885,7 @@ class PrintingService {
       final clientData = saleData['client'];
       customer = Customer(
         id: clientData['id'] ?? 0,
-        nom: clientData['nom'] ?? 'Client',
+        nom: clientData['nom'] ?? 'sales_customer'.tr,
         telephone: clientData['telephone'],
         adresse: clientData['adresse'],
         nui: clientData['nui'],
@@ -993,11 +993,11 @@ class PrintingService {
       companyProfile ??= CompanyProfile(
         id: 0,
         name: 'LOGESCO SARL',
-        address: 'Adresse non configurée',
-        location: 'Localisation non configurée',
-        phone: 'Téléphone non configuré',
+        address: 'printing_adresse_non_configuree'.tr,
+        location: 'printing_localisation_non_configuree'.tr,
+        phone: 'printing_telephone_non_configure'.tr,
         email: 'email@logesco.com',
-        nuiRccm: 'NUI non configuré',
+        nuiRccm: 'printing_nui_non_configure'.tr,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

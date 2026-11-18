@@ -267,7 +267,7 @@ class ProductFormController extends GetxController {
   void _validateReference() {
     final reference = referenceController.text.trim();
     if (reference.isEmpty) {
-      referenceError.value = 'La référence est obligatoire';
+      referenceError.value = 'financialmovements_reference_est_obligatoire'.tr;
     } else {
       referenceError.value = '';
     }
@@ -277,9 +277,9 @@ class ProductFormController extends GetxController {
   void _validateNom() {
     final nom = nomController.text.trim();
     if (nom.isEmpty) {
-      nomError.value = 'Le nom est obligatoire';
+      nomError.value = 'categories_name_required'.tr;
     } else if (nom.length < 2) {
-      nomError.value = 'Le nom doit contenir au moins 2 caractères';
+      nomError.value = 'roles_name_min_length'.tr;
     } else {
       nomError.value = '';
     }
@@ -289,13 +289,13 @@ class ProductFormController extends GetxController {
   void _validatePrix() {
     final prixText = prixUnitaireController.text.trim();
     if (prixText.isEmpty) {
-      prixError.value = 'Le prix est obligatoire';
+      prixError.value = 'products_prix_est_obligatoire'.tr;
     } else {
       final prix = double.tryParse(prixText);
       if (prix == null) {
-        prixError.value = 'Le prix doit être un nombre valide';
+        prixError.value = 'products_prix_doit_etre_nombre_valide'.tr;
       } else if (prix <= 0) {
-        prixError.value = 'Le prix doit être positif';
+        prixError.value = 'products_prix_doit_etre_positif'.tr;
       } else {
         prixError.value = '';
       }
@@ -309,7 +309,7 @@ class ProductFormController extends GetxController {
     final perte = Product.perteParUnite(vente: vente, achat: achat, estService: estService.value);
     avertissementPrix.value = perte > 0
         ? "Attention : le prix de vente (${CurrencyConstants.formatAmount(vente!)}) est inférieur au prix d'achat (${CurrencyConstants.formatAmount(achat!)}). "
-            "Chaque vente fera perdre ${CurrencyConstants.formatAmount(perte)} par unité. Vérifiez qu'il ne s'agit pas d'une erreur de saisie."
+            'products_chaque_vente_fera_perdre_par_unite'.trParams({'formatAmount': '${CurrencyConstants.formatAmount(perte)}'})
         : '';
   }
 
@@ -319,9 +319,9 @@ class ProductFormController extends GetxController {
     if (prixAchatText.isNotEmpty) {
       final prixAchat = double.tryParse(prixAchatText);
       if (prixAchat == null) {
-        prixAchatError.value = 'Le prix d\'achat doit être un nombre valide';
+        prixAchatError.value = 'products_prix_achat_doit_etre_nombre_valide'.tr;
       } else if (prixAchat < 0) {
-        prixAchatError.value = 'Le prix d\'achat ne peut pas être négatif';
+        prixAchatError.value = 'products_prix_achat_ne_peut_pas_etre'.tr;
       } else {
         prixAchatError.value = '';
       }
@@ -334,13 +334,13 @@ class ProductFormController extends GetxController {
   void _validateSeuil() {
     final seuilText = seuilStockController.text.trim();
     if (seuilText.isEmpty) {
-      seuilError.value = 'Le seuil de stock est obligatoire';
+      seuilError.value = 'products_seuil_stock_est_obligatoire'.tr;
     } else {
       final seuil = int.tryParse(seuilText);
       if (seuil == null) {
-        seuilError.value = 'Le seuil doit être un nombre entier';
+        seuilError.value = 'products_seuil_doit_etre_nombre_entier'.tr;
       } else if (seuil < 0) {
-        seuilError.value = 'Le seuil ne peut pas être négatif';
+        seuilError.value = 'products_seuil_ne_peut_pas_etre_negatif'.tr;
       } else {
         seuilError.value = '';
       }
@@ -356,9 +356,9 @@ class ProductFormController extends GetxController {
     } else {
       final remise = double.tryParse(remiseText);
       if (remise == null) {
-        remiseMaxError.value = 'La remise doit être un nombre valide';
+        remiseMaxError.value = 'products_remise_doit_etre_nombre_valide'.tr;
       } else if (remise < 0) {
-        remiseMaxError.value = 'La remise ne peut pas être négative';
+        remiseMaxError.value = 'sales_discount_negative'.tr;
       } else {
         remiseMaxError.value = '';
       }
@@ -496,7 +496,7 @@ class ProductFormController extends GetxController {
         });
       }
     } catch (e) {
-      referenceError.value = 'Erreur lors de la génération de la référence';
+      referenceError.value = 'products_erreur_lors_generation_reference'.tr;
     } finally {
       isGeneratingReference.value = false;
     }
@@ -530,7 +530,7 @@ class ProductFormController extends GetxController {
       );
 
       if (!isUnique) {
-        referenceError.value = 'Cette référence existe déjà';
+        referenceError.value = 'products_reference_existe_deja'.tr;
         return false;
       }
 
@@ -544,7 +544,7 @@ class ProductFormController extends GetxController {
         }
       }
 
-      referenceError.value = 'Erreur lors de la vérification de la référence';
+      referenceError.value = 'products_erreur_lors_verification_reference'.tr;
       return false;
     }
   }
@@ -567,7 +567,7 @@ class ProductFormController extends GetxController {
       if (isEditing.value && editingProduct.value != null) {
         final currentReference = referenceController.text.trim();
         if (currentReference != editingProduct.value!.reference) {
-          referenceError.value = 'La référence ne peut pas être modifiée en mode édition';
+          referenceError.value = 'products_reference_ne_peut_pas_etre_modifiee'.tr;
           Future.delayed(const Duration(milliseconds: 100), () {
             if (Get.isRegistered<ProductFormController>()) {
               SnackbarHelper.error('product_form_reference_not_editable'.tr);
@@ -600,10 +600,10 @@ class ProductFormController extends GetxController {
           editingProduct.value!.id,
           productForm,
         );
-        successMessage = 'Produit modifié avec succès';
+        successMessage = 'products_produit_modifie_avec_succes'.tr;
       } else {
         savedProduct = await _productService.createProduct(productForm);
-        successMessage = 'Produit créé avec succès';
+        successMessage = 'products_produit_cree_avec_succes'.tr;
       }
 
       // Retourner à la liste des produits AVANT d'afficher le snackbar
@@ -614,7 +614,7 @@ class ProductFormController extends GetxController {
         SnackbarHelper.success(successMessage, duration: const Duration(seconds: 2));
       });
     } catch (e) {
-      String message = 'Erreur lors de la sauvegarde du produit';
+      String message = 'products_erreur_lors_sauvegarde_produit'.tr;
       if (e is ApiException) {
         message = e.message;
       }

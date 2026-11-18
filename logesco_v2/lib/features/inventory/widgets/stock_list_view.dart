@@ -54,7 +54,7 @@ class _StockListViewState extends State<StockListView> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Erreur: ${controller.error}',
+                  'inventory_erreur_4'.trParams({'error': '${controller.error}'}),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -68,7 +68,7 @@ class _StockListViewState extends State<StockListView> {
         }
 
         if (controller.stocks.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -79,12 +79,12 @@ class _StockListViewState extends State<StockListView> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Aucun stock trouvé',
+                  'inventory_no_results'.tr,
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Aucun produit ne correspond aux critères',
+                  'stock_stock_no_match'.tr,
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
@@ -166,7 +166,7 @@ class StockListItem extends StatelessWidget {
           ],
         ),
         title: Text(
-          product?.nom ?? 'Produit inconnu',
+          product?.nom ?? 'pdf_unknown_product'.tr,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
@@ -174,7 +174,7 @@ class StockListItem extends StatelessWidget {
           children: [
             if (product?.reference != null)
               Text(
-                'Réf: ${product!.reference}',
+                'inventory_ref_2'.trParams({'reference': '${product!.reference}'}),
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 12,
@@ -190,7 +190,7 @@ class StockListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Disponible: ${stock.quantiteDisponible}',
+                  'inventory_disponible'.trParams({'quantiteDisponible': '${stock.quantiteDisponible}'}),
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12,
@@ -205,7 +205,7 @@ class StockListItem extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Réservé: ${stock.quantiteReservee}',
+                    'inventory_reserve'.trParams({'quantiteReservee': '${stock.quantiteReservee}'}),
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,

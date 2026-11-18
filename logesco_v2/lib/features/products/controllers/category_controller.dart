@@ -45,7 +45,7 @@ class CategoryController extends GetxController {
       categories.assignAll(result);
       print(' ${categories.length} catégories chargées');
     } catch (e) {
-      error.value = 'Erreur lors du chargement: ${e.toString()}';
+      error.value = 'products_erreur_lors_chargement'.trParams({'toString': '${e.toString()}'});
       print(' Erreur chargement catégories: $e');
     } finally {
       isLoading.value = false;
@@ -59,13 +59,13 @@ class CategoryController extends GetxController {
       error.value = '';
 
       if (nom.trim().isEmpty) {
-        error.value = 'Le nom de la catégorie ne peut pas être vide';
+        error.value = 'products_nom_categorie_ne_peut_pas_etre'.tr;
         return false;
       }
 
       // Vérifier si la catégorie existe déjà
       if (categories.any((cat) => cat.nom.toLowerCase() == nom.trim().toLowerCase())) {
-        error.value = 'Une catégorie avec ce nom existe déjà';
+        error.value = 'products_categorie_avec_nom_existe_deja'.tr;
         return false;
       }
 
@@ -81,7 +81,7 @@ class CategoryController extends GetxController {
       print(' Catégorie créée avec succès: ${createdCategory.nom}');
       return true;
     } catch (e) {
-      error.value = 'Erreur lors de la création: ${e.toString()}';
+      error.value = 'products_erreur_lors_creation'.trParams({'toString': '${e.toString()}'});
       print(' Erreur création catégorie: $e');
       return false;
     } finally {
@@ -96,13 +96,13 @@ class CategoryController extends GetxController {
       error.value = '';
 
       if (newNom.trim().isEmpty) {
-        error.value = 'Le nom de la catégorie ne peut pas être vide';
+        error.value = 'products_nom_categorie_ne_peut_pas_etre'.tr;
         return false;
       }
 
       // Vérifier si le nouveau nom existe déjà (sauf pour la catégorie actuelle)
       if (categories.any((cat) => cat.id != category.id && cat.nom.toLowerCase() == newNom.trim().toLowerCase())) {
-        error.value = 'Une catégorie avec ce nom existe déjà';
+        error.value = 'products_categorie_avec_nom_existe_deja'.tr;
         return false;
       }
 
@@ -123,7 +123,7 @@ class CategoryController extends GetxController {
       print(' Catégorie mise à jour avec succès');
       return true;
     } catch (e) {
-      error.value = 'Erreur lors de la mise à jour: ${e.toString()}';
+      error.value = 'products_erreur_lors_mise_jour'.trParams({'toString': '${e.toString()}'});
       print(' Erreur mise à jour catégorie: $e');
       return false;
     } finally {
@@ -138,7 +138,7 @@ class CategoryController extends GetxController {
       error.value = '';
 
       if (category.id == null) {
-        error.value = 'ID de catégorie invalide';
+        error.value = 'products_id_categorie_invalide'.tr;
         return false;
       }
 
@@ -155,7 +155,7 @@ class CategoryController extends GetxController {
       print(' Catégorie supprimée avec succès');
       return true;
     } catch (e) {
-      error.value = 'Erreur lors de la suppression: ${e.toString()}';
+      error.value = 'products_erreur_lors_suppression'.trParams({'toString': '${e.toString()}'});
       print(' Erreur suppression catégorie: $e');
       return false;
     } finally {

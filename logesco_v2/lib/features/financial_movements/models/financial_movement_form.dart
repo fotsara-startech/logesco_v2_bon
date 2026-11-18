@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'financial_movement.dart';
 
 /// Modèle de formulaire pour créer/modifier un mouvement financier
@@ -35,27 +36,27 @@ class FinancialMovementForm {
     final errors = <String>[];
 
     if (reference.trim().isEmpty) {
-      errors.add('La référence est obligatoire');
+      errors.add('financialmovements_reference_est_obligatoire'.tr);
     }
 
     if (montant <= 0) {
-      errors.add('Le montant doit être positif');
+      errors.add('financial_movements_form_amount_positive'.tr);
     }
 
     if (categorieId <= 0) {
-      errors.add('Une catégorie doit être sélectionnée');
+      errors.add('financialmovements_categorie_doit_etre_selectionnee'.tr);
     }
 
     if (description.trim().isEmpty) {
-      errors.add('La description est obligatoire');
+      errors.add('financial_movements_form_description_required'.tr);
     }
 
     if (description.trim().length < 3) {
-      errors.add('La description doit contenir au moins 3 caractères');
+      errors.add('financialmovements_description_doit_contenir_moins_3_caracteres'.tr);
     }
 
     if (date.isAfter(DateTime.now().add(const Duration(days: 1)))) {
-      errors.add('La date ne peut pas être dans le futur');
+      errors.add('financial_movements_form_date_future'.tr);
     }
 
     return errors;

@@ -1,4 +1,5 @@
-﻿import 'dart:typed_data';
+﻿import 'package:get/get.dart';
+import 'dart:typed_data';
 
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
@@ -35,7 +36,7 @@ class ReceiptGenerationService {
           companyInfo: companyInfo,
           format: format,
         ),
-        error: 'Erreur lors de la génération du reçu: $e',
+        error: 'printing_erreur_lors_generation_recu_3'.trParams({'e': '${e}'}),
       );
     }
   }
@@ -81,7 +82,7 @@ class ReceiptGenerationService {
           note: note,
           format: format,
         ),
-        error: 'Erreur lors de la génération du reçu d\'approvisionnement: $e',
+        error: 'printing_erreur_lors_generation_recu_approvisionnement'.trParams({'e': '${e}'}),
       );
     }
   }
@@ -96,7 +97,7 @@ class ReceiptGenerationService {
       if (!_validateReceiptData(receipt)) {
         return ReceiptGenerationResponse.error(
           receipt: receipt,
-          error: 'Données du reçu invalides',
+          error: 'printing_donnees_recu_invalides'.tr,
         );
       }
 
@@ -112,7 +113,7 @@ class ReceiptGenerationService {
     } catch (e) {
       return ReceiptGenerationResponse.error(
         receipt: receipt,
-        error: 'Erreur lors de la génération: $e',
+        error: 'printing_erreur_lors_generation'.trParams({'e': '${e}'}),
       );
     }
   }
@@ -134,7 +135,7 @@ class ReceiptGenerationService {
     } catch (e) {
       return ReceiptGenerationResponse.error(
         receipt: receipt,
-        error: 'Erreur génération PDF: $e',
+        error: 'printing_erreur_generation_pdf'.trParams({'e': '${e}'}),
       );
     }
   }
@@ -155,7 +156,7 @@ class ReceiptGenerationService {
     } catch (e) {
       return ReceiptGenerationResponse.error(
         receipt: receipt,
-        error: 'Erreur génération thermique: $e',
+        error: 'printing_erreur_generation_thermique'.trParams({'e': '${e}'}),
       );
     }
   }
@@ -206,11 +207,11 @@ class ReceiptGenerationService {
     if (receipt.saleNumber.startsWith('DEP-')) {
       buffer.writeln('RECU D\'APPROVISIONNEMENT');
     } else if (receipt.saleNumber.startsWith('SUI-')) {
-      buffer.writeln('RECU DE SUIVI DE COMPTE');
+      buffer.writeln('printing_recu_suivi_compte_2'.tr);
     } else if (receipt.isProforma) {
       buffer.writeln('FACTURE PROFORMA');
     } else {
-      buffer.writeln('RECU DE VENTE');
+      buffer.writeln('printing_recu_vente_2'.tr);
     }
     buffer.writeln('\x1B\x21\x00'); // Taille normale
 
@@ -225,11 +226,11 @@ class ReceiptGenerationService {
     buffer.writeln('\x1B\x61\x00'); // Aligner à gauche
     // Afficher le numéro selon le type de reçu
     if (receipt.saleNumber.startsWith('DEP-')) {
-      buffer.writeln('N° Dépôt:${receipt.saleNumber}');
+      buffer.writeln('printing_n_depot_2'.trParams({'saleNumber': '${receipt.saleNumber}'}));
     } else if (receipt.saleNumber.startsWith('SUI-')) {
       buffer.writeln('N° Suivi:${receipt.saleNumber}');
     } else {
-      buffer.writeln('N° Vente:${receipt.saleNumber}');
+      buffer.writeln('printing_n_vente_2'.trParams({'saleNumber': '${receipt.saleNumber}'}));
     }
     buffer.writeln('Date:${receipt.saleDate.day.toString().padLeft(2, '0')}/'
         '${receipt.saleDate.month.toString().padLeft(2, '0')}/'
@@ -240,7 +241,7 @@ class ReceiptGenerationService {
     if (receipt.customer != null) {
       // Tronquer le nom du client à 15 caractères comme dans l'aperçu
       final customerName = receipt.customer!.nom.length > 15 ? '${receipt.customer!.nom.substring(0, 12)}...' : receipt.customer!.nom;
-      buffer.writeln('Client:$customerName');
+      buffer.writeln('printing_client_2'.trParams({'customerName': '${customerName}'}));
 
       // Afficher NUI si renseigné
       if (receipt.customer!.nui?.isNotEmpty == true) {
@@ -307,12 +308,12 @@ class ReceiptGenerationService {
     if (receipt.saleNumber.startsWith('DEP-')) {
       // Pour les approvisionnements
       buffer.writeln('\x1B\x21\x10'); // Double hauteur
-      buffer.writeln('MONTANT VERSE: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
+      buffer.writeln('printing_montant_verse_fcfa'.trParams({'toStringAsFixed': '${receipt.totalAmount.toStringAsFixed(0)}'}));
       buffer.writeln('\x1B\x21\x00'); // Taille normale
     } else if (receipt.saleNumber.startsWith('SUI-')) {
       // Pour les suivis de compte
       buffer.writeln('\x1B\x21\x10'); // Double hauteur
-      buffer.writeln('MONTANT UTILISE: ${receipt.totalAmount.toStringAsFixed(0)} FCFA');
+      buffer.writeln('printing_montant_utilise_fcfa'.trParams({'toStringAsFixed': '${receipt.totalAmount.toStringAsFixed(0)}'}));
       buffer.writeln('\x1B\x21\x00'); // Taille normale
     } else {
       // Pour les ventes normales
@@ -352,7 +353,7 @@ class ReceiptGenerationService {
     // Pied de page
     buffer.writeln('\x1B\x61\x01'); // Centrer
     buffer.writeln('\x1B\x21\x10'); // Double hauteur
-    buffer.writeln('Merci pour votre confiance !');
+    buffer.writeln('printing_merci_votre_confiance'.tr);
     buffer.writeln('\x1B\x21\x00'); // Taille normale
 
     // Informations de réimpression
@@ -363,7 +364,7 @@ class ReceiptGenerationService {
           '${receipt.lastReprintDate!.year}');
 
       if (receipt.reprintBy?.isNotEmpty == true) {
-        buffer.writeln('par ${receipt.reprintBy}');
+        buffer.writeln('printing_par'.trParams({'reprintBy': '${receipt.reprintBy}'}));
       }
     }
 

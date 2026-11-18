@@ -120,21 +120,21 @@ class FinancialMovementException extends ApiException {
   String get userFriendlyMessage {
     switch (errorType) {
       case FinancialErrorType.networkError:
-        return 'Problème de connexion. Vérifiez votre réseau et réessayez.';
+        return 'financialmovements_probleme_connexion_verifiez_votre_reseau_reessayez'.tr;
       case FinancialErrorType.authenticationError:
-        return 'Session expirée. Veuillez vous reconnecter.';
+        return 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr;
       case FinancialErrorType.validationError:
         return message; // Le message de validation est déjà user-friendly
       case FinancialErrorType.permissionError:
-        return 'Vous n\'avez pas les permissions nécessaires pour cette action.';
+        return 'financialmovements_vous_n_avez_pas_permissions_necessaires'.tr;
       case FinancialErrorType.notFoundError:
-        return 'L\'élément demandé n\'a pas été trouvé.';
+        return 'financialmovements_element_demande_n_pas_ete_trouve'.tr;
       case FinancialErrorType.serverError:
-        return 'Erreur du serveur. Veuillez réessayer dans quelques instants.';
+        return 'financialmovements_erreur_serveur_veuillez_reessayer_dans_quelques'.tr;
       case FinancialErrorType.timeoutError:
-        return 'L\'opération a pris trop de temps. Veuillez réessayer.';
+        return 'financialmovements_operation_pris_trop_temps_veuillez_reessayer'.tr;
       case FinancialErrorType.unknownError:
-        return 'Une erreur inattendue s\'est produite. Veuillez réessayer.';
+        return 'financialmovements_erreur_inattendue_s_est_produite_veuillez'.tr;
     }
   }
 }
@@ -271,15 +271,15 @@ class FinancialErrorHandler {
   static String? getRecoveryAction(FinancialMovementException error) {
     switch (error.errorType) {
       case FinancialErrorType.networkError:
-        return 'Vérifiez votre connexion internet et réessayez';
+        return 'financialmovements_verifiez_votre_connexion_internet_reessayez'.tr;
       case FinancialErrorType.timeoutError:
-        return 'Réessayez dans quelques instants';
+        return 'financialmovements_reessayez_dans_quelques_instants'.tr;
       case FinancialErrorType.authenticationError:
-        return 'Reconnectez-vous à votre compte';
+        return 'financialmovements_reconnectez_vous_votre_compte'.tr;
       case FinancialErrorType.permissionError:
-        return 'Contactez votre administrateur pour obtenir les permissions nécessaires';
+        return 'financialmovements_contactez_votre_administrateur_obtenir_permissions_necessaires'.tr;
       case FinancialErrorType.serverError:
-        return 'Le service est temporairement indisponible, réessayez plus tard';
+        return 'financialmovements_service_est_temporairement_indisponible_reessayez_plus'.tr;
       default:
         return null;
     }

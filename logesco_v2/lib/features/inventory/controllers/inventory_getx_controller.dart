@@ -180,7 +180,7 @@ class InventoryGetxController extends GetxController {
     } catch (e) {
       print(' Erreur lors du chargement complet: $e');
       stocksError.value = FriendlyError.message(e);
-      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger les stocks'));
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'inventory_impossible_charger_stocks'.tr));
     } finally {
       isLoading.value = false;
     }
@@ -196,7 +196,7 @@ class InventoryGetxController extends GetxController {
       summary.value = result;
     } catch (e) {
       summaryError.value = FriendlyError.message(e);
-      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger le résumé des stocks'));
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'inventory_impossible_charger_resume_stocks'.tr));
     } finally {
       isLoadingSummary.value = false;
     }
@@ -279,7 +279,7 @@ class InventoryGetxController extends GetxController {
       hasMoreAlerts.value = false;
     } catch (e) {
       alertsError.value = FriendlyError.message(e);
-      SnackbarHelper.error(FriendlyError.message(e, contexte: 'Impossible de charger les alertes'));
+      SnackbarHelper.error(FriendlyError.message(e, contexte: 'products_impossible_charger_alertes'.tr));
     } finally {
       isLoadingAlerts.value = false;
     }

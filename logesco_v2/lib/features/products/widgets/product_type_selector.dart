@@ -37,14 +37,14 @@ class ProductTypeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          enEdition ? 'Type' : '1. Quel type de produit ?',
+          enEdition ? 'Type' : 'products_1_quel_type_produit'.tr,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
         ),
         const SizedBox(height: 4),
         Text(
           choisi
-              ? (enEdition ? 'Changer le type a des conséquences sur le stock : une explication vous sera présentée.' : 'Vous pouvez encore changer avant de continuer.')
-              : 'Choisissez d\'abord : ce choix détermine les champs à remplir et la gestion du stock.',
+              ? (enEdition ? 'Changer le type a des conséquences sur le stock : une explication vous sera présentée.' : 'products_vous_pouvez_encore_changer_avant_continuer'.tr)
+              : 'products_choisissez_abord_choix_determine_champs_remplir'.tr,
           style: TextStyle(fontSize: 12, color: choisi ? Colors.grey.shade700 : Colors.orange.shade800),
         ),
         const SizedBox(height: 12),
@@ -55,8 +55,8 @@ class ProductTypeSelector extends StatelessWidget {
             service: false,
             icone: Icons.inventory_2,
             couleur: Colors.orange,
-            titre: 'Produit',
-            description: 'Article en stock : le stock est suivi, avec prix d\'achat, seuil minimum et péremption.',
+            titre: 'quick_billing_product'.tr,
+            description: 'products_article_stock_stock_est_suivi_avec'.tr,
           );
           final carteService = _carte(
             context,
@@ -65,7 +65,7 @@ class ProductTypeSelector extends StatelessWidget {
             icone: Icons.design_services,
             couleur: Colors.blue,
             titre: 'Service',
-            description: 'Prestation sans stock (livraison, installation, main-d\'œuvre…).',
+            description: 'products_prestation_sans_stock_livraison_installation_main'.tr,
           );
           // Côte à côte si la place le permet, sinon l'un sous l'autre (téléphone)
           if (c.maxWidth >= 520) {
@@ -131,17 +131,17 @@ class ProductTypeSelector extends StatelessWidget {
 /// Retourne true si la personne confirme. Le changement n'est enregistré qu'à la sauvegarde du formulaire.
 Future<bool?> confirmerChangementDeType(BuildContext context, {required bool versService}) {
   final points = versService
-      ? const [
+      ? [
           'Le stock n\'est plus suivi : les ventes ne diminuent plus aucune quantité, et les réceptions de commande, inventaires et ajustements ne pourront plus y ajouter de stock.',
-          'Le stock déjà enregistré pour ce produit n\'est plus mis à jour ni utilisé.',
+          'products_stock_deja_enregistre_produit_n_est'.tr,
           'Le prix d\'achat, le seuil de stock minimum et la gestion de péremption ne s\'appliquent plus (ils seront vidés).',
-          'Les ventes déjà faites ne changent pas.',
+          'products_ventes_deja_faites_ne_changent_pas'.tr,
         ]
-      : const [
+      : [
           'Le produit sera géré en stock : chaque vente diminuera sa quantité, et il apparaîtra dans les réceptions, inventaires et alertes de stock.',
           'Son stock de départ est probablement à 0 : enregistrez une réception ou un inventaire avant de le vendre.',
-          'Vous pourrez renseigner le prix d\'achat, le seuil de stock minimum et la péremption.',
-          'Les ventes déjà faites ne changent pas.',
+          'products_vous_pourrez_renseigner_prix_achat_seuil'.tr,
+          'products_ventes_deja_faites_ne_changent_pas'.tr,
         ];
   final avertissement = versService
       ? 'À faire seulement pour une vraie prestation (livraison, installation, main-d\'œuvre…). Un article que vous stockez ne doit jamais être un service : ses ventes ne diminueraient plus le stock.'
@@ -150,7 +150,7 @@ Future<bool?> confirmerChangementDeType(BuildContext context, {required bool ver
   return showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(versService ? 'Passer ce produit en SERVICE ?' : 'Passer ce service en PRODUIT (stock suivi) ?'),
+      title: Text(versService ? 'Passer ce produit en SERVICE ?' : 'products_passer_service_produit_stock_suivi'.tr),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -180,7 +180,7 @@ Future<bool?> confirmerChangementDeType(BuildContext context, {required bool ver
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
-        ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(versService ? 'Passer en service' : 'Passer en produit')),
+        ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(versService ? 'Passer en service' : 'products_passer_produit'.tr)),
       ],
     ),
   );

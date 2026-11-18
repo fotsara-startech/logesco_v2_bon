@@ -32,7 +32,7 @@ class InventoryErrorWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Erreur de chargement',
+              'roles_loading_error'.tr,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.red[700],
                     fontWeight: FontWeight.bold,

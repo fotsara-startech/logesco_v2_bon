@@ -31,7 +31,7 @@ class BulkStockAdjustmentPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cette fonctionnalité sera bientôt disponible',
+              'inventory_fonctionnalite_sera_bientot_disponible'.tr,
               style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 16,

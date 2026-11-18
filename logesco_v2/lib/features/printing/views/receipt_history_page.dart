@@ -193,7 +193,7 @@ class ReceiptHistoryPage extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              '${controller.totalReceipts} reçu(s) trouvé(s)',
+              'printing_recu_s_trouve_s'.trParams({'totalReceipts': '${controller.totalReceipts}'}),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -202,7 +202,7 @@ class ReceiptHistoryPage extends StatelessWidget {
             const Spacer(),
             if (controller.totalPages > 1) ...[
               Text(
-                'Page ${controller.currentPage} sur ${controller.totalPages}',
+                'printing_page_sur'.trParams({'currentPage': '${controller.currentPage}', 'totalPages': '${controller.totalPages}'}),
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -418,7 +418,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            controller.hasActiveFilters ? 'Aucun reçu trouvé avec ces critères' : 'Aucun reçu disponible',
+            controller.hasActiveFilters ? 'Aucun reçu trouvé avec ces critères' : 'printing_aucun_recu_disponible'.tr,
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[600],
@@ -427,7 +427,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.hasActiveFilters ? 'Essayez de modifier vos critères de recherche' : 'Les reçus apparaîtront ici après les ventes',
+            controller.hasActiveFilters ? 'Essayez de modifier vos critères de recherche' : 'printing_recus_apparaitront_ici_apres_ventes'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],

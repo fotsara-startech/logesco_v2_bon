@@ -130,7 +130,7 @@ class ReceiptDetailPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Reçu N° ${receipt.saleNumber}',
+                        'printing_recu_n'.trParams({'saleNumber': '${receipt.saleNumber}'}),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -194,7 +194,7 @@ class ReceiptDetailPage extends StatelessWidget {
                 Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
-                  'Créé le ${_formatDateTime(receipt.saleDate)}',
+                  'printing_cree'.trParams({'saleDate': '${_formatDateTime(receipt.saleDate)}'}),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[700],
@@ -221,8 +221,8 @@ class ReceiptDetailPage extends StatelessWidget {
               children: [
                 Icon(Icons.business, color: Colors.blue[600]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations de l\'entreprise',
+                Text(
+                  'company_settings_company_info'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -231,10 +231,10 @@ class ReceiptDetailPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Nom', company.name),
+            _buildInfoRow('suppliers_name'.tr, company.name),
             _buildInfoRow('Adresse', company.address),
             if (company.location?.isNotEmpty == true) _buildInfoRow('Localisation', company.location!),
-            if (company.phone?.isNotEmpty == true) _buildInfoRow('Téléphone', company.phone!),
+            if (company.phone?.isNotEmpty == true) _buildInfoRow('suppliers_phone'.tr, company.phone!),
             if (company.email?.isNotEmpty == true) _buildInfoRow('Email', company.email!),
             if (company.nuiRccm?.isNotEmpty == true) _buildInfoRow('NUI RCCM', company.nuiRccm!),
           ],
@@ -254,8 +254,8 @@ class ReceiptDetailPage extends StatelessWidget {
               children: [
                 Icon(Icons.shopping_cart, color: Colors.green[600]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations de la vente',
+                Text(
+                  'printing_informations_vente'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -264,14 +264,14 @@ class ReceiptDetailPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('ID de vente', receipt.saleId),
-            _buildInfoRow('Numéro de vente', receipt.saleNumber),
-            _buildInfoRow('Date de vente', _formatDateTime(receipt.saleDate)),
-            _buildInfoRow('Mode de paiement', receipt.paymentMethod),
+            _buildInfoRow('printing_id_vente'.tr, receipt.saleId),
+            _buildInfoRow('printing_numero_vente'.tr, receipt.saleNumber),
+            _buildInfoRow('sales_date'.tr, _formatDateTime(receipt.saleDate)),
+            _buildInfoRow('suppliers_payment_method'.tr, receipt.paymentMethod),
             Row(
               children: [
-                const Text(
-                  'Statut de paiement:',
+                Text(
+                  'printing_statut_paiement'.tr,
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(width: 8),
@@ -311,8 +311,8 @@ class ReceiptDetailPage extends StatelessWidget {
               children: [
                 Icon(Icons.person, color: Colors.purple[600]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations du client',
+                Text(
+                  'printing_informations_client'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -321,8 +321,8 @@ class ReceiptDetailPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Nom', customer.nom),
-            if (customer.telephone?.isNotEmpty == true) _buildInfoRow('Téléphone', customer.telephone!),
+            _buildInfoRow('suppliers_name'.tr, customer.nom),
+            if (customer.telephone?.isNotEmpty == true) _buildInfoRow('suppliers_phone'.tr, customer.telephone!),
             if (customer.adresse?.isNotEmpty == true) _buildInfoRow('Adresse', customer.adresse!),
             if (customer.nui?.isNotEmpty == true) _buildInfoRow('NUI', customer.nui!),
             if (customer.rccm?.isNotEmpty == true) _buildInfoRow('RCCM', customer.rccm!),
@@ -397,7 +397,7 @@ class ReceiptDetailPage extends StatelessWidget {
                           if (item.productReference.isNotEmpty) ...[
                             const SizedBox(height: 2),
                             Text(
-                              'Réf: ${item.productReference}',
+                              'printing_ref'.trParams({'productReference': '${item.productReference}'}),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -458,8 +458,8 @@ class ReceiptDetailPage extends StatelessWidget {
             if (receipt.tvaAmount > 0) _buildTotalRow('TVA (${receipt.tvaRate % 1 == 0 ? receipt.tvaRate.toStringAsFixed(0) : receipt.tvaRate.toStringAsFixed(2)}%)', receipt.tvaAmount),
             const Divider(),
             _buildTotalRow(receipt.tvaAmount > 0 ? 'Total TTC' : 'Total', receipt.totalAmount, isTotal: true),
-            _buildTotalRow('Montant payé', receipt.paidAmount, isPaid: true),
-            if (receipt.remainingAmount > 0) _buildTotalRow('Montant restant', receipt.remainingAmount, isRemaining: true),
+            _buildTotalRow('sales_amount_paid'.tr, receipt.paidAmount, isPaid: true),
+            if (receipt.remainingAmount > 0) _buildTotalRow('printing_montant_restant'.tr, receipt.remainingAmount, isRemaining: true),
           ],
         ),
       ),
@@ -478,8 +478,8 @@ class ReceiptDetailPage extends StatelessWidget {
               children: [
                 Icon(Icons.content_copy, color: Colors.orange[600]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Informations de réimpression',
+                Text(
+                  'printing_informations_reimpression'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -488,9 +488,9 @@ class ReceiptDetailPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Nombre de réimpressions', receipt.reprintCount.toString()),
-            if (receipt.lastReprintDate != null) _buildInfoRow('Dernière réimpression', _formatDateTime(receipt.lastReprintDate!)),
-            if (receipt.reprintBy?.isNotEmpty == true) _buildInfoRow('Réimprimé par', receipt.reprintBy!),
+            _buildInfoRow('printing_nombre_reimpressions'.tr, receipt.reprintCount.toString()),
+            if (receipt.lastReprintDate != null) _buildInfoRow('printing_derniere_reimpression'.tr, _formatDateTime(receipt.lastReprintDate!)),
+            if (receipt.reprintBy?.isNotEmpty == true) _buildInfoRow('printing_reimprime_par'.tr, receipt.reprintBy!),
           ],
         ),
       ),
@@ -533,7 +533,7 @@ class ReceiptDetailPage extends StatelessWidget {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.print),
-                      label: Text(controller.isReprinting ? 'Impression...' : 'Réimprimer'),
+                      label: Text(controller.isReprinting ? 'Impression...' : 'receipts_reprint'.tr),
                     ),
                   ),
               ],

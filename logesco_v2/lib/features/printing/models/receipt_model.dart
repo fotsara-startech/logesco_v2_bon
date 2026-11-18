@@ -1,4 +1,5 @@
-﻿import 'package:json_annotation/json_annotation.dart';
+﻿import 'package:get/get.dart';
+import 'package:json_annotation/json_annotation.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../sales/models/sale.dart';
 import '../../customers/models/customer.dart';
@@ -78,7 +79,7 @@ class Receipt {
     final depositNumber = 'DEP-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch % 10000}';
 
     // Créer une description détaillée avec les soldes
-    final description = note?.isNotEmpty == true ? 'Approvisionnement de compte\n$note' : 'Approvisionnement de compte';
+    final description = note?.isNotEmpty == true ? 'Approvisionnement de compte\n$note' : 'printing_approvisionnement_compte'.tr;
 
     return Receipt(
       id: 'deposit_${clientId}_${now.millisecondsSinceEpoch}',
@@ -88,7 +89,7 @@ class Receipt {
       items: [
         ReceiptItem(
           productId: 'deposit',
-          productName: 'Approvisionnement de compte',
+          productName: 'printing_approvisionnement_compte'.tr,
           productReference: description,
           quantity: 1,
           unitPrice: depositAmount,
@@ -106,7 +107,7 @@ class Receipt {
       totalAmount: depositAmount,
       paidAmount: depositAmount,
       remainingAmount: 0.0,
-      paymentMethod: 'Espèces',
+      paymentMethod: 'sales_payment_cash'.tr,
       saleDate: now,
       customer: customer,
       format: format,
@@ -137,7 +138,7 @@ class Receipt {
         ReceiptItem(
           productId: 'account_usage',
           productName: 'Utilisation avance compte',
-          productReference: 'Vente: $saleReference',
+          productReference: 'printing_vente'.trParams({'saleReference': '${saleReference}'}),
           quantity: 1,
           unitPrice: usedAmount,
           totalPrice: usedAmount,
@@ -171,7 +172,7 @@ class Receipt {
     final items = (proforma.items as List).map((detail) {
       return ReceiptItem(
         productId: detail.produitId.toString(),
-        productName: detail.produitNom ?? 'Produit ${detail.produitId}',
+        productName: detail.produitNom ?? 'printing_produit'.trParams({'produitId': '${detail.produitId}'}),
         productReference: detail.produitReference ?? '',
         quantity: detail.quantite as int,
         unitPrice: detail.prixUnitaire as double,
@@ -339,9 +340,9 @@ class Receipt {
 
   /// Texte du statut de paiement
   String get paymentStatus {
-    if (isFullyPaid) return 'Payé';
-    if (paidAmount > 0) return 'Partiellement payé';
-    return 'Non payé';
+    if (isFullyPaid) return 'sales_paid'.tr;
+    if (paidAmount > 0) return 'printing_partiellement_paye'.tr;
+    return 'printing_non_paye'.tr;
   }
 
   /// Texte d'indication de réimpression
@@ -454,7 +455,7 @@ class ReceiptItem {
 
     return ReceiptItem(
       productId: detail.produitId.toString(),
-      productName: detail.produit?.nom ?? 'Produit inconnu',
+      productName: detail.produit?.nom ?? 'pdf_unknown_product'.tr,
       productReference: detail.produit?.reference ?? '',
       quantity: detail.quantite,
       unitPrice: detail.prixUnitaire,

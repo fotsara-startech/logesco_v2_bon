@@ -115,7 +115,7 @@ class ProductFormView extends StatelessWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildSectionTitle('Image du produit'),
+                          _buildSectionTitle('products_image_produit'.tr),
                           const SizedBox(height: 16),
                           ProductImagePicker(
                             imageUrl: controller.currentImageUrl.value.isEmpty ? null : controller.currentImageUrl.value,

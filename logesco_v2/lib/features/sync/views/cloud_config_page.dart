@@ -94,7 +94,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
       _erreurSaisie = null;
       _test = null;
       _occupe = true;
-      _etape = 'Test de la connexion...';
+      _etape = 'sync_test_connexion'.tr;
     });
     try {
       final r = await _service.tester(_lien.text.trim());
@@ -116,10 +116,10 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('sync_enregistrer_redemarrer_serveur'.tr),
-        content: const Text(
+        content: Text(
           "Le lien sera enregistré, puis le serveur de LOGESCO redémarrera pour utiliser le cloud. "
           "Cela prend environ une minute : les autres postes du réseau perdront la connexion un instant.\n\n"
-          "Faites-le en dehors des heures de vente si possible.",
+          'sync_faites_dehors_heures_vente_si_possible'.tr,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
@@ -132,19 +132,19 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
     setState(() {
       _occupe = true;
       _erreurSaisie = null;
-      _etape = 'Vérification et enregistrement du lien...';
+      _etape = 'sync_verification_enregistrement_lien'.tr;
     });
     try {
       await _service.enregistrer(_lien.text.trim());
       // Le mot de passe n'a plus de raison de rester à l'écran
       _lien.clear();
-      if (mounted) setState(() => _etape = 'Redémarrage du serveur...');
+      if (mounted) setState(() => _etape = 'sync_redemarrage_serveur'.tr);
       final backend = BackendService();
       final relance = await backend.restart();
       final pret = relance && await backend.waitUntilReady(maxSeconds: 90);
       if (!pret) {
         if (mounted) {
-          setState(() => _erreurSaisie = "Le lien est enregistré, mais le serveur n'a pas redémarré. Fermez puis rouvrez LOGESCO : il utilisera le cloud au prochain démarrage.");
+          setState(() => _erreurSaisie = 'sync_lien_est_enregistre_mais_serveur_n'.tr);
         }
         return;
       }
@@ -181,7 +181,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
               Icon(c.active ? Icons.cloud_done : Icons.computer, color: c.active ? Colors.green.shade700 : Colors.blueGrey),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(c.active ? 'Connecté au cloud (Neon)' : 'Mode 100 % local : pas de cloud', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                child: Text(c.active ? 'Connecté au cloud (Neon)' : 'sync_mode_100_local_pas_cloud'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ),
             ]),
             if (c.active && c.infoActive != null) ...[
@@ -190,10 +190,10 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
               Text('Base : ${c.infoActive!.base}', style: const TextStyle(fontSize: 12)),
             ],
             if (!c.active)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  "Vos données restent sur cet ordinateur. Pour synchroniser plusieurs postes ou sauvegarder dans le cloud, saisissez le lien de votre base Neon ci-dessous.",
+                  'sync_vos_donnees_restent_sur_cet_ordinateur'.tr,
                   style: TextStyle(fontSize: 12),
                 ),
               ),
@@ -205,9 +205,9 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
                 child: Row(children: [
                   Icon(Icons.restart_alt, color: Colors.amber.shade900),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "Un lien est enregistré mais le serveur n'en tient pas encore compte : fermez puis rouvrez LOGESCO pour l'activer.",
+                      'sync_lien_est_enregistre_mais_serveur_n_2'.tr,
                       style: TextStyle(fontSize: 12),
                     ),
                   ),
@@ -237,7 +237,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
       lignes.add(Padding(
         padding: const EdgeInsets.only(top: 6),
         child: Text(
-          "Il manque : ${t.tablesManquantes.join(', ')}. Demandez à votre prestataire d'installer le schéma LOGESCO dans cette base, puis recommencez.",
+          'sync_il_manque_demandez_votre_prestataire_installer'.trParams({'join': '${t.tablesManquantes.join(', ')}'}),
           style: const TextStyle(fontSize: 12),
         ),
       ));
@@ -249,8 +249,8 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
         child: Text(
           t.cloudDejaRempli
               ? "Ce cloud contient déjà des données (${d['produits']} produit(s), ${d['clients']} client(s), ${d['ventes']} vente(s)). "
-                  "Les données déjà présentes sur cet ordinateur ne seront PAS envoyées par-dessus : celles du cloud sont conservées."
-              : "Ce cloud est vide : les données de cet ordinateur lui seront envoyées automatiquement.",
+                  'sync_donnees_deja_presentes_sur_cet_ordinateur'.tr
+              : 'sync_cloud_est_vide_donnees_cet_ordinateur'.tr,
           style: const TextStyle(fontSize: 12),
         ),
       ));
@@ -283,10 +283,10 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
           children: [
             _carteEtat(),
             const SizedBox(height: 16),
-            Text(_config?.active == true ? 'Changer de base cloud' : 'Connecter une base cloud', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(_config?.active == true ? 'Changer de base cloud' : 'sync_connecter_base_cloud'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 4),
             Text(
-              "Dans la console Neon, ouvrez votre projet, cliquez sur « Connect » et copiez la « Connection string ». Elle commence par postgresql://",
+              'sync_dans_console_neon_ouvrez_votre_projet'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
             const SizedBox(height: 10),

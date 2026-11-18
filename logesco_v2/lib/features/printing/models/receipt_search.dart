@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'receipt_model.dart';
 
@@ -146,15 +147,15 @@ extension ReceiptSortFieldExtension on ReceiptSortField {
   String get displayName {
     switch (this) {
       case ReceiptSortField.saleDate:
-        return 'Date de vente';
+        return 'sales_date'.tr;
       case ReceiptSortField.saleNumber:
-        return 'Numéro de vente';
+        return 'printing_numero_vente'.tr;
       case ReceiptSortField.totalAmount:
-        return 'Montant total';
+        return 'sales_total_amount'.tr;
       case ReceiptSortField.customerName:
-        return 'Nom du client';
+        return 'customers_name'.tr;
       case ReceiptSortField.paymentMethod:
-        return 'Mode de paiement';
+        return 'suppliers_payment_method'.tr;
     }
   }
 }
@@ -166,7 +167,7 @@ extension SortDirectionExtension on SortDirection {
       case SortDirection.ascending:
         return 'Croissant';
       case SortDirection.descending:
-        return 'Décroissant';
+        return 'sales_sort_descending'.tr;
     }
   }
 }

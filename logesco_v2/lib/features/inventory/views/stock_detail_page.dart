@@ -391,7 +391,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
                 child: Icon(_movementIcon(movement.typeMouvement), color: Colors.white, size: 20),
               ),
               title: Text(
-                stock.produit?.nom ?? 'Produit inconnu',
+                stock.produit?.nom ?? 'pdf_unknown_product'.tr,
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               subtitle: Column(
@@ -485,7 +485,7 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
       case 'achat':
         return 'Achat';
       case 'vente':
-        return 'Vente';
+        return 'inventory_movement_sale'.tr;
       case 'ajustement':
         return 'Ajustement';
       case 'retour':

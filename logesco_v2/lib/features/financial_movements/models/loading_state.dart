@@ -58,7 +58,7 @@ class LoadingState {
   static LoadingState loadingMore({String? message, String? operation}) {
     return LoadingState(
       type: LoadingStateType.loadingMore,
-      message: message ?? 'Chargement de plus d\'éléments...',
+      message: message ?? 'financialmovements_chargement_plus_elements'.tr,
       operation: operation,
     );
   }
@@ -67,7 +67,7 @@ class LoadingState {
   static LoadingState creating({String? message, String? operation}) {
     return LoadingState(
       type: LoadingStateType.creating,
-      message: message ?? 'Création en cours...',
+      message: message ?? 'financialmovements_creation_cours'.tr,
       operation: operation,
     );
   }
@@ -76,7 +76,7 @@ class LoadingState {
   static LoadingState updating({String? message, String? operation}) {
     return LoadingState(
       type: LoadingStateType.updating,
-      message: message ?? 'Mise à jour en cours...',
+      message: message ?? 'financialmovements_mise_jour_cours'.tr,
       operation: operation,
     );
   }
@@ -104,7 +104,7 @@ class LoadingState {
   static LoadingState generating({String? message, String? operation, double? progress}) {
     return LoadingState(
       type: LoadingStateType.generating,
-      message: message ?? 'Génération en cours...',
+      message: message ?? 'financialmovements_generation_cours'.tr,
       operation: operation,
       progress: progress,
     );
@@ -114,7 +114,7 @@ class LoadingState {
   static LoadingState error({String? message, String? operation, Map<String, dynamic>? metadata}) {
     return LoadingState(
       type: LoadingStateType.error,
-      message: message ?? 'Une erreur s\'est produite',
+      message: message ?? 'financialmovements_erreur_s_est_produite'.tr,
       operation: operation,
       metadata: metadata,
     );
@@ -124,7 +124,7 @@ class LoadingState {
   static LoadingState success({String? message, String? operation, Map<String, dynamic>? metadata}) {
     return LoadingState(
       type: LoadingStateType.success,
-      message: message ?? 'Opération réussie',
+      message: message ?? 'financialmovements_operation_reussie'.tr,
       operation: operation,
       metadata: metadata,
     );
@@ -312,7 +312,7 @@ mixin LoadingStateMixin {
       return result;
     } catch (e) {
       setError(
-        message: errorMessage ?? 'Une erreur s\'est produite: ${e.toString()}',
+        message: errorMessage ?? 'financialmovements_erreur_s_est_produite_2'.trParams({'toString': '${e.toString()}'}),
         operation: loadingState.operation,
         metadata: {'error': e.toString()},
       );

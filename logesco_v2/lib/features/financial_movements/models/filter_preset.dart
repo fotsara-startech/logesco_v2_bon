@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Helper pour parser les doubles de manière sûre
 double _parseDouble(dynamic value, {double? defaultValue}) {
   if (value == null) return defaultValue ?? 0.0;
@@ -117,7 +118,7 @@ class FilterPreset {
 
     if (startDate != null || endDate != null) {
       if (startDate != null && endDate != null) {
-        filters.add('Période: ${_formatDate(startDate!)} - ${_formatDate(endDate!)}');
+        filters.add('financialmovements_periode'.trParams({'formatDate': '${_formatDate(startDate!)}', 'formatDate2': '${_formatDate(endDate!)}'}));
       } else if (startDate != null) {
         filters.add('Depuis: ${_formatDate(startDate!)}');
       } else if (endDate != null) {
@@ -126,7 +127,7 @@ class FilterPreset {
     }
 
     if (categoryId != null) {
-      filters.add('Catégorie: $categoryId');
+      filters.add('financialmovements_categorie_2'.trParams({'categoryId': '${categoryId}'}));
     }
 
     if (searchQuery != null && searchQuery!.isNotEmpty) {
@@ -135,7 +136,7 @@ class FilterPreset {
 
     if (minAmount != null || maxAmount != null) {
       if (minAmount != null && maxAmount != null) {
-        filters.add('Montant: ${minAmount!.toStringAsFixed(0)} - ${maxAmount!.toStringAsFixed(0)} FCFA');
+        filters.add('financialmovements_montant_fcfa'.trParams({'toStringAsFixed': '${minAmount!.toStringAsFixed(0)}', 'toStringAsFixed2': '${maxAmount!.toStringAsFixed(0)}'}));
       } else if (minAmount != null) {
         filters.add('Min: ${minAmount!.toStringAsFixed(0)} FCFA');
       } else if (maxAmount != null) {

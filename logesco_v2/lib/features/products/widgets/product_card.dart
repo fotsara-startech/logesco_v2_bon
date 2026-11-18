@@ -270,7 +270,7 @@ class ProductCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              "Prix de vente inférieur au prix d'achat : perte de ${CurrencyConstants.formatAmount(product.perteUnitaire)} par unité vendue",
+              'products_prix_vente_inferieur_prix_achat_perte'.trParams({'perteUnitaire': '${CurrencyConstants.formatAmount(product.perteUnitaire)}'}),
               style: TextStyle(fontSize: 12, color: Colors.red.shade800, fontWeight: FontWeight.w600),
             ),
           ),

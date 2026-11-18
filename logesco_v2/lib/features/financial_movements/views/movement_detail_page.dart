@@ -108,12 +108,12 @@ class MovementDetailPage extends StatelessWidget {
 
             // Informations système
             _buildInfoCard(
-              'Informations système',
+              'suppliers_system_info'.tr,
               Icons.schedule,
               [
-                _buildInfoRow('Créé le', _formatDateTime(movement.dateCreation)),
-                _buildInfoRow('Modifié le', _formatDateTime(movement.dateModification)),
-                if (movement.utilisateurNom != null) _buildInfoRow('Créé par', movement.utilisateurNom!),
+                _buildInfoRow('suppliers_created_at'.tr, _formatDateTime(movement.dateCreation)),
+                _buildInfoRow('suppliers_updated_at'.tr, _formatDateTime(movement.dateModification)),
+                if (movement.utilisateurNom != null) _buildInfoRow('inventory_created_by'.tr, movement.utilisateurNom!),
                 _buildInfoRow('ID Utilisateur', '#${movement.utilisateurId}'),
               ],
             ),
@@ -421,8 +421,8 @@ class MovementDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Cette action est irréversible.',
+            Text(
+              'roles_delete_irreversible'.tr,
               style: TextStyle(
                 color: Colors.red,
                 fontSize: 12,
@@ -446,7 +446,7 @@ class MovementDetailPage extends StatelessWidget {
                           Get.back(); // Retourne à la liste
                           Get.snackbar(
                             'success'.tr,
-                            'Mouvement supprimé avec succès',
+                            'financial_movements_form_delete_success'.tr,
                             snackPosition: SnackPosition.BOTTOM,
                             backgroundColor: Colors.green.shade100,
                             colorText: Colors.green.shade800,
@@ -502,8 +502,8 @@ class MovementDetailPage extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Impossible d\'afficher les détails du mouvement.',
+            Text(
+              'financialmovements_impossible_afficher_details_mouvement'.tr,
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),

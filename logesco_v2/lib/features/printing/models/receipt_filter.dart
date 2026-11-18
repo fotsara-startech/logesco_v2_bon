@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'print_format.dart';
 
@@ -28,42 +29,42 @@ extension ReceiptFilterPresetExtension on ReceiptFilterPreset {
   String get displayName {
     switch (this) {
       case ReceiptFilterPreset.all:
-        return 'Tous les reçus';
+        return 'printing_tous_recus'.tr;
       case ReceiptFilterPreset.today:
         return 'Aujourd\'hui';
       case ReceiptFilterPreset.thisWeek:
-        return 'Cette semaine';
+        return 'sales_this_week'.tr;
       case ReceiptFilterPreset.thisMonth:
-        return 'Ce mois';
+        return 'analytics_this_month'.tr;
       case ReceiptFilterPreset.reprints:
-        return 'Réimpressions';
+        return 'printing_reimpressions'.tr;
       case ReceiptFilterPreset.cash:
         return 'Paiements cash';
       case ReceiptFilterPreset.credit:
-        return 'Paiements crédit';
+        return 'printing_paiements_credit'.tr;
       case ReceiptFilterPreset.highValue:
-        return 'Montants élevés';
+        return 'financial_movements_filter_large_amounts'.tr;
     }
   }
 
   String get description {
     switch (this) {
       case ReceiptFilterPreset.all:
-        return 'Affiche tous les reçus disponibles';
+        return 'printing_affiche_tous_recus_disponibles'.tr;
       case ReceiptFilterPreset.today:
-        return 'Reçus émis aujourd\'hui';
+        return 'printing_recus_emis_aujourd_hui'.tr;
       case ReceiptFilterPreset.thisWeek:
-        return 'Reçus de cette semaine';
+        return 'printing_recus_semaine'.tr;
       case ReceiptFilterPreset.thisMonth:
-        return 'Reçus de ce mois';
+        return 'printing_recus_mois'.tr;
       case ReceiptFilterPreset.reprints:
-        return 'Reçus qui ont été réimprimés';
+        return 'printing_recus_qui_ont_ete_reimprimes'.tr;
       case ReceiptFilterPreset.cash:
-        return 'Ventes payées en espèces';
+        return 'printing_ventes_payees_especes'.tr;
       case ReceiptFilterPreset.credit:
-        return 'Ventes à crédit';
+        return 'customers_credit_sales_button'.tr;
       case ReceiptFilterPreset.highValue:
-        return 'Ventes de montant élevé (>100,000 FCFA)';
+        return 'printing_ventes_montant_eleve_100_000_fcfa'.tr;
     }
   }
 
@@ -139,7 +140,7 @@ extension ReprintStatusExtension on ReprintStatus {
       case ReprintStatus.originalsOnly:
         return 'Originaux seulement';
       case ReprintStatus.reprintsOnly:
-        return 'Réimpressions seulement';
+        return 'printing_reimpressions_seulement'.tr;
     }
   }
 }

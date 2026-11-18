@@ -68,14 +68,14 @@ class ExpirationDateController extends GetxController {
       }
     } catch (e) {
       // Gestion d'erreur améliorée
-      String errorMessage = 'Impossible de charger les alertes';
+      String errorMessage = 'products_impossible_charger_alertes'.tr;
 
       if (e.toString().contains('401') || e.toString().contains('Non autorisé')) {
-        errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+        errorMessage = 'financialmovements_session_expiree_veuillez_vous_reconnecter'.tr;
       } else if (e.toString().contains('connexion')) {
-        errorMessage = 'Problème de connexion au serveur';
+        errorMessage = 'products_probleme_connexion_serveur'.tr;
       } else {
-        errorMessage = 'Impossible de charger les alertes: $e';
+        errorMessage = 'products_impossible_charger_alertes_2'.trParams({'e': '${e}'});
       }
 
       SnackbarHelper.error(errorMessage);

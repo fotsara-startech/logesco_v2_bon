@@ -288,7 +288,7 @@ class _ExpirationTabViewState extends State<ExpirationTabView> {
                 ),
               ),
               Text(
-                'Réf: ${date.produit!.reference}',
+                'inventory_ref_2'.trParams({'reference': '${date.produit!.reference}'}),
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey.shade600,

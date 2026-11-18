@@ -168,7 +168,7 @@ class InventoryFilterBar extends StatelessWidget {
       case 'achat':
         return 'Achat';
       case 'vente':
-        return 'Vente';
+        return 'inventory_movement_sale'.tr;
       case 'ajustement':
         return 'Ajustement';
       case 'retour':
@@ -189,7 +189,7 @@ class InventoryFilterBar extends StatelessWidget {
     } else if (fin != null) {
       return 'Jusqu\'au ${_formatDate(fin)}';
     }
-    return 'Période personnalisée';
+    return 'sales_custom_period'.tr;
   }
 
   /// Formate une date

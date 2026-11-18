@@ -1,4 +1,5 @@
-﻿import 'dart:typed_data';
+﻿import 'package:get/get.dart';
+import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -48,13 +49,13 @@ class ExcelService {
 
       // Définir les en-têtes
       List<String> headers = [
-        'Référence',
-        'Nom',
+        'suppliers_payment_reference'.tr,
+        'suppliers_name'.tr,
         'Description',
         'Prix Unitaire',
         'Prix Achat',
         'Code Barre',
-        'Catégorie',
+        'products_category'.tr,
         'Seuil Stock Minimum',
         'Remise Max Autorisée',
         'Est Actif',
@@ -121,7 +122,7 @@ class ExcelService {
   /// Partage le fichier Excel exporté
   Future<void> shareExcelFile(String filePath) async {
     try {
-      await Share.shareXFiles([XFile(filePath)], text: 'Export des produits');
+      await Share.shareXFiles([XFile(filePath)], text: 'excel_export_section'.tr);
     } catch (e) {
       print('Erreur lors du partage: $e');
     }
@@ -321,13 +322,13 @@ class ExcelService {
       // Définir les en-têtes avec des exemples
       List<List<String>> templateData = [
         [
-          'Référence',
-          'Nom',
+          'suppliers_payment_reference'.tr,
+          'suppliers_name'.tr,
           'Description',
           'Prix Unitaire',
           'Prix Achat',
           'Code Barre',
-          'Catégorie',
+          'products_category'.tr,
           'Seuil Stock Minimum',
           'Remise Max Autorisée',
           'Est Actif',

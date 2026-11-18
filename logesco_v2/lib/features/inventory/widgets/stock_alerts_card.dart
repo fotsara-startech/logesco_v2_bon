@@ -13,7 +13,7 @@ class StockAlertsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (alerts.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -24,12 +24,12 @@ class StockAlertsCard extends StatelessWidget {
             ),
             SizedBox(height: 16),
             Text(
-              'Aucune alerte de stock',
+              'stock_no_alerts'.tr,
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 8),
             Text(
-              'Tous les produits ont un stock suffisant',
+              'stock_all_stocks_ok'.tr,
               style: TextStyle(color: Colors.grey),
             ),
           ],
@@ -75,7 +75,7 @@ class StockAlertItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          product?.nom ?? 'Produit inconnu',
+          product?.nom ?? 'pdf_unknown_product'.tr,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
@@ -83,7 +83,7 @@ class StockAlertItem extends StatelessWidget {
           children: [
             if (product?.reference != null)
               Text(
-                'Réf: ${product!.reference}',
+                'inventory_ref_2'.trParams({'reference': '${product!.reference}'}),
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 12,
@@ -99,7 +99,7 @@ class StockAlertItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Stock actuel: ${stock.quantiteDisponible}',
+                  'inventory_stock_actuel_2'.trParams({'quantiteDisponible': '${stock.quantiteDisponible}'}),
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12,
@@ -191,19 +191,19 @@ class StockAlertItem extends StatelessWidget {
 
     switch (urgency) {
       case AlertUrgency.critical:
-        label = 'CRITIQUE - Rupture de stock';
+        label = 'inventory_critique_rupture_stock'.tr;
         color = Colors.red;
         break;
       case AlertUrgency.high:
-        label = 'URGENT - Stock très faible';
+        label = 'inventory_urgent_stock_tres_faible'.tr;
         color = Colors.orange;
         break;
       case AlertUrgency.medium:
-        label = 'ATTENTION - Stock faible';
+        label = 'inventory_attention_stock_faible'.tr;
         color = Colors.yellow[700]!;
         break;
       case AlertUrgency.low:
-        label = 'INFO - Approche du seuil';
+        label = 'inventory_info_approche_seuil'.tr;
         color = Colors.blue;
         break;
     }
@@ -277,7 +277,7 @@ class StockActionSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            stock.produit?.nom ?? 'Produit',
+            stock.produit?.nom ?? 'quick_billing_product'.tr,
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),

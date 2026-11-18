@@ -149,7 +149,7 @@ class PrintingController extends GetxController {
         _hasMoreData.value = searchResponse.hasNextPage;
         _totalReceipts.value = searchResponse.totalCount;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la recherche des reçus');
+        SnackbarUtils.showError(response.message ?? 'printing_erreur_lors_recherche_recus_2'.tr);
       }
     } catch (e) {
       print(' Erreur recherche reçus: $e');
@@ -184,7 +184,7 @@ class PrintingController extends GetxController {
       if (response.success && response.data != null) {
         _currentReceipt.value = response.data;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la récupération du reçu');
+        SnackbarUtils.showError(response.message ?? 'printing_erreur_lors_recuperation_recu'.tr);
       }
     } catch (e) {
       SnackbarUtils.showError('printing_erreur_lors_recuperation_recu'.tr);
@@ -203,7 +203,7 @@ class PrintingController extends GetxController {
       if (response.success && response.data != null) {
         _currentReceipt.value = response.data;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Aucun reçu trouvé pour cette vente');
+        SnackbarUtils.showError(response.message ?? 'printing_aucun_recu_trouve_vente'.tr);
       }
     } catch (e) {
       SnackbarUtils.showError('printing_erreur_lors_recuperation_recu'.tr);
@@ -248,7 +248,7 @@ class PrintingController extends GetxController {
 
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la génération du reçu');
+        SnackbarUtils.showError(response.message ?? 'printing_erreur_lors_generation_recu'.tr);
         return false;
       }
     } catch (e) {
@@ -393,7 +393,7 @@ class PrintingController extends GetxController {
       // Afficher la boîte de dialogue d'impression et imprimer
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf,
-        name: 'Reçu ${receipt.saleNumber}',
+        name: 'printing_recu'.trParams({'saleNumber': '${receipt.saleNumber}'}),
       );
 
       print(' Impression lancée');
@@ -465,10 +465,10 @@ class PrintingController extends GetxController {
                 receipt.saleNumber.startsWith('DEP-')
                     ? 'Recu d\'approvisionnement'
                     : receipt.saleNumber.startsWith('SUI-')
-                        ? 'Recu de suivi de compte'
+                        ? 'printing_recu_suivi_compte'.tr
                         : receipt.isProforma
                             ? 'Facture proforma'
-                            : 'Recu de vente',
+                            : 'printing_recu_vente'.tr,
                 style: pw.TextStyle(
                   fontSize: 11,
                   fontWeight: pw.FontWeight.bold,
@@ -482,10 +482,10 @@ class PrintingController extends GetxController {
                 children: [
                   pw.Text(
                     receipt.saleNumber.startsWith('DEP-')
-                        ? 'N° Dépôt: ${receipt.saleNumber}'
+                        ? 'printing_n_depot'.trParams({'saleNumber': '${receipt.saleNumber}'})
                         : receipt.saleNumber.startsWith('SUI-')
                             ? 'N° Suivi: ${receipt.saleNumber}'
-                            : 'N° Vente: ${receipt.saleNumber}',
+                            : 'printing_n_vente'.trParams({'saleNumber': '${receipt.saleNumber}'}),
                     style: pw.TextStyle(fontSize: 9),
                   ),
                   pw.Text('inventory_date'.trParams({'date': '${receipt.saleDate.day.toString().padLeft(2, '0')}/${receipt.saleDate.month.toString().padLeft(2, '0')}/${receipt.saleDate.year}'}), style: pw.TextStyle(fontSize: 9)),

@@ -33,7 +33,7 @@ class StockSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Erreur: ${controller.summaryError}',
+                    'inventory_erreur_6'.trParams({'summaryError': '${controller.summaryError}'}),
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.red),
                   ),
@@ -50,11 +50,11 @@ class StockSummaryCard extends StatelessWidget {
 
         final summary = controller.summary;
         if (summary == null) {
-          return const Card(
+          return Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(
-                'Aucune donnée disponible',
+                'analytics_no_data'.tr,
                 textAlign: TextAlign.center,
               ),
             ),
@@ -76,7 +76,7 @@ class StockSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Résumé du Stock',
+                      'stock_summary_title'.tr,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -159,7 +159,7 @@ class StockSummaryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Valeur Totale du Stock',
+                        'stock_summary_total_value'.tr,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).primaryColor,
                             ),

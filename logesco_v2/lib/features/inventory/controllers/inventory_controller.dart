@@ -268,7 +268,7 @@ class InventoryController extends GetxController with SubscriptionVerificationMi
     String? notes,
   }) async {
     // Vérifier l'abonnement avant d'ajuster le stock
-    final canAdjustStock = await verifySubscriptionForWrite(actionName: 'Ajuster le stock');
+    final canAdjustStock = await verifySubscriptionForWrite(actionName: 'inventory_detail_adjust'.tr);
     if (!canAdjustStock) {
       return false;
     }

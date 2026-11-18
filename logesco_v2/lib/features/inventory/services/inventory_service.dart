@@ -131,7 +131,7 @@ class InventoryService {
       } else {
         final errorData = json.decode(response.body);
         print('❌ Erreur API: ${errorData['message']}');
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du stock');
+        return ApiResponse.error(message: errorData['message'] ?? 'inventory_erreur_lors_recuperation_stock'.tr);
       }
     } catch (e) {
       print('💥 Erreur de connexion: $e');
@@ -221,7 +221,7 @@ class InventoryService {
         return ApiResponse.error(message: 'Token d\'authentification invalide');
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du stock');
+        return ApiResponse.error(message: errorData['message'] ?? 'inventory_erreur_lors_recuperation_stock'.tr);
       }
     } catch (e) {
       print('💥 Erreur de connexion pour produit $productId: $e');
@@ -492,7 +492,7 @@ class InventoryService {
         produit: Product(
           id: produitId,
           reference: 'REF$produitId',
-          nom: 'Produit $produitId',
+          nom: 'inventory_produit_2'.trParams({'produitId': '${produitId}'}),
           seuilStockMinimum: 10,
           estActif: true,
         ),

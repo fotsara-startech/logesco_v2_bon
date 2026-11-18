@@ -30,7 +30,7 @@ class CategoryStatsCard extends GetView<ProductController> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Répartition par catégorie',
+                    'financial_movements_category_distribution'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -39,8 +39,8 @@ class CategoryStatsCard extends GetView<ProductController> {
               ),
               const SizedBox(height: 16),
               if (categoryStats.isEmpty)
-                const Text(
-                  'Aucune catégorie définie',
+                Text(
+                  'products_aucune_categorie_definie'.tr,
                   style: TextStyle(color: Colors.grey),
                 )
               else

@@ -45,7 +45,7 @@ class SyncController extends GetxController {
         _staleWarned = true;
         SnackbarHelper.warning(
           '${result.pendingCount} opération(s) ne sont pas synchronisées depuis ${result.pendingAgeLabel}. '
-          'Vérifiez la connexion internet (menu Synchronisation).',
+          'sync_verifiez_connexion_internet_menu_synchronisation'.tr,
           duration: const Duration(seconds: 10),
         );
       }
@@ -56,7 +56,7 @@ class SyncController extends GetxController {
         _driftWarned = true;
         SnackbarHelper.warning(
           '${result.driftAnciens} élément(s) diffèrent entre ce poste et le cloud depuis plus d\'un jour. '
-          'Voir le menu Synchronisation.',
+          'sync_voir_menu_synchronisation'.tr,
           duration: const Duration(seconds: 10),
         );
       }

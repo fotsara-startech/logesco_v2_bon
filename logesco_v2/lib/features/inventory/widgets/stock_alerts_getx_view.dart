@@ -26,7 +26,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Erreur: ${controller.alertsError.value}',
+                'inventory_erreur_3'.trParams({'value': '${controller.alertsError.value}'}),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -40,7 +40,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
       }
 
       if (controller.stockAlerts.isEmpty) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -51,12 +51,12 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
               ),
               SizedBox(height: 16),
               Text(
-                'Aucune alerte de stock',
+                'stock_no_alerts'.tr,
                 style: TextStyle(fontSize: 18),
               ),
               SizedBox(height: 8),
               Text(
-                'Tous les produits ont un stock suffisant',
+                'stock_all_stocks_ok'.tr,
                 style: TextStyle(color: Colors.grey),
               ),
             ],
@@ -103,7 +103,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
           ),
         ),
         title: Text(
-          product?.nom ?? 'Produit ${stock.produitId}',
+          product?.nom ?? 'inventory_produit_2'.trParams({'produitId': '${stock.produitId}'}),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Column(
@@ -113,7 +113,7 @@ class StockAlertsGetxView extends GetView<InventoryGetxController> {
             Text('inventory_stock_actuel'.trParams({'quantiteDisponible': '${stock.quantiteDisponible}'})),
             Text('Seuil minimum: $seuilMinimum'),
             Text(
-              isOutOfStock ? 'RUPTURE DE STOCK' : 'STOCK FAIBLE',
+              isOutOfStock ? 'RUPTURE DE STOCK' : 'stock_alerts_low'.tr,
               style: TextStyle(
                 color: isOutOfStock ? Colors.red[700] : Colors.orange[700],
                 fontWeight: FontWeight.bold,

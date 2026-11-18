@@ -90,14 +90,14 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _selectedStock!.produit?.nom ?? 'Produit',
+                                    _selectedStock!.produit?.nom ?? 'quick_billing_product'.tr,
                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
                                   if (_selectedStock!.produit?.reference != null)
                                     Text(
-                                      'Réf: ${_selectedStock!.produit!.reference}',
+                                      'inventory_ref_2'.trParams({'reference': '${_selectedStock!.produit!.reference}'}),
                                       style: TextStyle(color: Colors.grey[600]),
                                     ),
                                 ],
@@ -223,14 +223,14 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                           ],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez saisir une quantité';
+                              return 'stock_movement_quantity_required'.tr;
                             }
                             final quantity = int.tryParse(value);
                             if (quantity == null || quantity <= 0) {
-                              return 'Veuillez saisir une quantité valide';
+                              return 'sales_invalid_quantity'.tr;
                             }
                             if (!_isIncrement && quantity > _selectedStock!.quantiteDisponible) {
-                              return 'Quantité supérieure au stock disponible';
+                              return 'stock_movement_quantity_exceeds'.tr;
                             }
                             return null;
                           },
@@ -256,7 +256,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Nouveau stock: ${_calculateNewStock()}',
+                                  'inventory_nouveau_stock'.trParams({'calculateNewStock': '${_calculateNewStock()}'}),
                                   style: TextStyle(
                                     color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.w500,
@@ -404,7 +404,7 @@ class _StockAdjustmentPageState extends State<StockAdjustmentPage> {
         SnackbarHelper.success('stock_adjustment_success'.tr, duration: const Duration(seconds: 2));
         Get.back();
       } else {
-        SnackbarHelper.error(controller.error ?? 'Erreur lors de l\'ajustement', duration: const Duration(seconds: 3));
+        SnackbarHelper.error(controller.error ?? 'inventory_adjustment_error'.tr, duration: const Duration(seconds: 3));
       }
     } catch (e) {
       SnackbarHelper.error('inventory_erreur'.trParams({'e': '${e}'}), duration: const Duration(seconds: 3));

@@ -142,7 +142,7 @@ class _StockListViewState extends State<StockListGetxView> {
           ],
         ),
         title: Text(
-          product?.nom ?? 'Produit ${stock.produitId}',
+          product?.nom ?? 'inventory_produit_2'.trParams({'produitId': '${stock.produitId}'}),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Column(

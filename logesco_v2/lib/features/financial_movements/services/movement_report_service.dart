@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -820,11 +821,11 @@ class PeriodComparison {
   /// Résumé textuel de la comparaison
   String get comparisonSummary {
     if (hasStableExpenses) {
-      return 'Dépenses stables entre les deux périodes';
+      return 'financialmovements_depenses_stables_entre_deux_periodes'.tr;
     } else if (hasIncreasedExpenses) {
-      return 'Augmentation de ${totalAmountVariationPercent.toStringAsFixed(1)}% des dépenses';
+      return 'financialmovements_augmentation_depenses'.trParams({'toStringAsFixed': '${totalAmountVariationPercent.toStringAsFixed(1)}'});
     } else {
-      return 'Diminution de ${totalAmountVariationPercent.abs().toStringAsFixed(1)}% des dépenses';
+      return 'financialmovements_diminution_depenses'.trParams({'toStringAsFixed': '${totalAmountVariationPercent.abs().toStringAsFixed(1)}'});
     }
   }
 }

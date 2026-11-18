@@ -299,7 +299,7 @@ class FinancialReportPdfService {
                         if (telephone.isNotEmpty) ...[
                           pw.SizedBox(height: 2),
                           pw.Text(
-                            'Tél: $telephone',
+                            'financialmovements_tel'.trParams({'telephone': '${telephone}'}),
                             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
                           ),
                         ],
@@ -332,7 +332,7 @@ class FinancialReportPdfService {
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
             pw.Text(
-              'RAPPORT DES MOUVEMENTS',
+              'financialmovements_rapport_mouvements'.tr,
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
@@ -351,7 +351,7 @@ class FinancialReportPdfService {
             ),
             pw.SizedBox(height: 4),
             pw.Text(
-              'Période: ${_formatDate(startDate)} au ${_formatDate(endDate)}',
+              'financialmovements_periode_2'.trParams({'formatDate': '${_formatDate(startDate)}', 'formatDate2': '${_formatDate(endDate)}'}),
               style: const pw.TextStyle(
                 fontSize: 10,
                 color: PdfColors.grey800,
@@ -367,7 +367,7 @@ class FinancialReportPdfService {
           mainAxisAlignment: pw.MainAxisAlignment.end,
           children: [
             pw.Text(
-              'Généré le ${_formatDateTime(DateTime.now())}',
+              'financialmovements_genere'.trParams({'now': '${_formatDateTime(DateTime.now())}'}),
               style: const pw.TextStyle(
                 fontSize: 8,
                 color: PdfColors.grey600,
@@ -391,7 +391,7 @@ class FinancialReportPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'RÉSUMÉ GÉNÉRAL',
+            'financialmovements_resume_general'.tr,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -403,17 +403,17 @@ class FinancialReportPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               _buildSummaryCard(
-                'Total des dépenses',
+                'expenses_total'.tr,
                 summary.totalAmountFormatted,
                 PdfColors.red700,
               ),
               _buildSummaryCard(
-                'Nombre de mouvements',
+                'financial_movements_movement_count_label'.tr,
                 '${summary.totalCount}',
                 PdfColors.blue700,
               ),
               _buildSummaryCard(
-                'Montant moyen',
+                'financial_movements_average_amount_label'.tr,
                 summary.averageAmountFormatted,
                 PdfColors.green700,
               ),
@@ -424,7 +424,7 @@ class FinancialReportPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               _buildSummaryCard(
-                'Durée de la période',
+                'financialmovements_duree_periode'.tr,
                 '$periodDays jour${periodDays > 1 ? 's' : ''}',
                 PdfColors.purple700,
               ),
@@ -434,7 +434,7 @@ class FinancialReportPdfService {
                 PdfColors.orange700,
               ),
               _buildSummaryCard(
-                'Montant max',
+                'financialmovements_montant_max'.tr,
                 '${_formatAmount(summary.maxAmount)} FCFA',
                 PdfColors.pink700,
               ),
@@ -494,7 +494,7 @@ class FinancialReportPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'TOP 5 DES CATÉGORIES',
+            'financialmovements_top_5_categories'.tr,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -577,7 +577,7 @@ class FinancialReportPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'DÉTAIL PAR CATÉGORIE',
+            'financialmovements_detail_par_categorie'.tr,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -598,8 +598,8 @@ class FinancialReportPdfService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey300),
                 children: [
-                  _buildTableCell('Catégorie', isHeader: true),
-                  _buildTableCell('Montant', isHeader: true),
+                  _buildTableCell('products_category'.tr, isHeader: true),
+                  _buildTableCell('suppliers_transaction_amount'.tr, isHeader: true),
                   _buildTableCell('Nombre', isHeader: true),
                   _buildTableCell('Pourcentage', isHeader: true),
                 ],
@@ -651,7 +651,7 @@ class FinancialReportPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'ÉVOLUTION QUOTIDIENNE (10 derniers jours)',
+            'financialmovements_evolution_quotidienne_10_derniers_jours'.tr,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -671,8 +671,8 @@ class FinancialReportPdfService {
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey300),
                 children: [
-                  _buildTableCell('Date', isHeader: true),
-                  _buildTableCell('Montant', isHeader: true),
+                  _buildTableCell('suppliers_transaction_date'.tr, isHeader: true),
+                  _buildTableCell('suppliers_transaction_amount'.tr, isHeader: true),
                   _buildTableCell('Nombre', isHeader: true),
                 ],
               ),
@@ -712,15 +712,15 @@ class FinancialReportPdfService {
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            '- Ce rapport presente l\'ensemble des mouvements financiers (depenses) pour la periode selectionnee.',
+            'financialmovements_rapport_presente_ensemble_mouvements_financiers_depenses'.tr,
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
           ),
           pw.Text(
-            '- Les montants sont exprimes en FCFA (Franc CFA).',
+            'financialmovements_montants_sont_exprimes_fcfa_franc_cfa'.tr,
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
           ),
           pw.Text(
-            '- Document genere automatiquement par le systeme LOGESCO.',
+            'financialmovements_document_genere_automatiquement_par_systeme_logesco'.tr,
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
           ),
         ],

@@ -122,7 +122,7 @@ class CloudConfigService {
 
   Future<CloudConfig> lire() async {
     final r = await _appeler(() => http.get(Uri.parse('$_baseUrl/sync/cloud-config'), headers: _headers()).timeout(const Duration(seconds: 10)));
-    return CloudConfig.fromJson((_lire(r, 'Impossible de lire la connexion au cloud')['data'] as Map).cast<String, dynamic>());
+    return CloudConfig.fromJson((_lire(r, 'sync_impossible_lire_connexion_cloud'.tr)['data'] as Map).cast<String, dynamic>());
   }
 
   /// Teste le lien sans rien enregistrer
@@ -130,7 +130,7 @@ class CloudConfigService {
     final r = await _appeler(() => http
         .post(Uri.parse('$_baseUrl/sync/cloud-config/test'), headers: _headers(), body: jsonEncode({'url': url}))
         .timeout(const Duration(seconds: 40)));
-    return CloudTestResult.fromJson((_lire(r, 'Le test de connexion a échoué')['data'] as Map).cast<String, dynamic>());
+    return CloudTestResult.fromJson((_lire(r, 'sync_test_connexion_echoue'.tr)['data'] as Map).cast<String, dynamic>());
   }
 
   /// Teste puis enregistre le lien. Le serveur doit ensuite redémarrer pour l'utiliser.
@@ -138,7 +138,7 @@ class CloudConfigService {
     final r = await _appeler(() => http
         .post(Uri.parse('$_baseUrl/sync/cloud-config'), headers: _headers(), body: jsonEncode({'url': url}))
         .timeout(const Duration(seconds: 40)));
-    return CloudConfig.fromJson((_lire(r, "Le lien n'a pas pu être enregistré")['data'] as Map).cast<String, dynamic>());
+    return CloudConfig.fromJson((_lire(r, 'sync_lien_n_pas_pu_etre_enregistre'.tr)['data'] as Map).cast<String, dynamic>());
   }
 }
 
@@ -146,27 +146,25 @@ class CloudConfigService {
 /// Renvoie le message à afficher, ou null si le lien paraît correct.
 String? verifierLienNeon(String saisie) {
   final lien = saisie.trim();
-  if (lien.isEmpty) return 'Collez le lien de connexion de la base Neon.';
+  if (lien.isEmpty) return 'sync_collez_lien_connexion_base_neon'.tr;
   // Espace ou caractère de contrôle (<= 32), guillemet double (34), apostrophe (39), accent grave (96), antislash (92)
   if (lien.runes.any((c) => c <= 32 || c == 34 || c == 39 || c == 96 || c == 92)) {
-    return "Le lien contient des espaces ou des guillemets : recopiez-le tel que Neon l'affiche, sur une seule ligne.";
+    return 'sync_lien_contient_espaces_guillemets_recopiez_tel'.tr;
   }
   if (!RegExp(r'^postgres(ql)?://', caseSensitive: false).hasMatch(lien)) {
-    return 'Le lien doit commencer par postgresql:// (copiez « Connection string » dans la console Neon).';
+    return 'sync_lien_doit_commencer_par_postgresql_copiez'.tr;
   }
   final uri = Uri.tryParse(lien);
-  if (uri == null || uri.host.isEmpty) return "Le lien n'est pas valide : vérifiez qu'il est complet.";
+  if (uri == null || uri.host.isEmpty) return 'sync_lien_n_est_pas_valide_verifiez'.tr;
   if (uri.userInfo.isEmpty || !uri.userInfo.contains(':') || uri.userInfo.endsWith(':')) {
-    return "Le lien ne contient pas le nom d'utilisateur et le mot de passe.";
+    return 'sync_lien_ne_contient_pas_nom_utilisateur'.tr;
   }
-  if (uri.path.length <= 1) return "Le lien ne contient pas le nom de la base de données (à la fin, après l'adresse).";
+  if (uri.path.length <= 1) return 'sync_lien_ne_contient_pas_nom_base'.tr;
   return null;
 }
 
 /// Message affiché quand le serveur installé sur cet ordinateur est une ancienne version (la route n'existe pas)
-const String messageServeurTropAncien =
-    "Le serveur LOGESCO installé sur cet ordinateur est une ancienne version : il ne gère pas encore la connexion au cloud depuis l'application. "
-    "Mettez LOGESCO à jour (installez la dernière version), puis réessayez.";
+String get messageServeurTropAncien => 'sync_server_too_old_message'.tr;
 
 /// Lit la réponse d'une route de connexion au cloud. Lève une exception avec un message clair, jamais un code technique.
 Map<String, dynamic> lireReponseCloud(int statut, String corps, String repli) {

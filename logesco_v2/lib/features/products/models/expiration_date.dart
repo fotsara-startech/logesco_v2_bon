@@ -1,4 +1,5 @@
-﻿/// Modèle pour les dates de péremption des produits
+﻿import 'package:get/get.dart';
+/// Modèle pour les dates de péremption des produits
 class ExpirationDate {
   final int id;
   final int produitId;
@@ -102,7 +103,7 @@ class ExpirationDate {
   String getAlertLabel() {
     switch (niveauAlerte) {
       case 'perime':
-        return 'Périmé';
+        return 'products_expired'.tr;
       case 'critique':
         return 'Critique';
       case 'avertissement':
@@ -120,7 +121,7 @@ class ExpirationDate {
       return 'puisé';
     }
     if (estPerime) {
-      return 'Périmé depuis ${joursRestants.abs()} jour(s)';
+      return 'products_perime_depuis_jour_s'.trParams({'abs': '${joursRestants.abs()}'});
     }
     if (joursRestants == 0) {
       return 'Expire aujourd\'hui';
@@ -128,7 +129,7 @@ class ExpirationDate {
     if (joursRestants == 1) {
       return 'Expire demain';
     }
-    return 'Expire dans $joursRestants jour(s)';
+    return 'products_expire_dans_jour_s'.trParams({'joursRestants': '${joursRestants}'});
   }
 
   ExpirationDate copyWith({

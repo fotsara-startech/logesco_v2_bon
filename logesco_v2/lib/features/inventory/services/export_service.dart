@@ -44,17 +44,17 @@ class ExportService {
 
       // Définir les en-têtes
       List<String> headers = [
-        'Référence',
-        'Nom du produit',
-        'Quantité disponible',
-        'Quantité réservée',
+        'suppliers_payment_reference'.tr,
+        'products_name'.tr,
+        'inventory_detail_available_quantity'.tr,
+        'inventory_detail_reserved_quantity'.tr,
         'Seuil minimum',
-        'Prix unitaire',
-        'Prix d\'achat',
-        'Valeur stock (vente)',
-        'Valeur stock (achat)',
+        'sales_unit_price'.tr,
+        'products_purchase_price'.tr,
+        'inventory_valeur_stock_vente'.tr,
+        'inventory_valeur_stock_achat'.tr,
         'Statut',
-        'Dernière MAJ',
+        'accounts_last_update'.tr,
       ];
 
       // Ajouter les en-têtes
@@ -152,13 +152,13 @@ class ExportService {
 
       // Définir les en-têtes
       List<String> headers = [
-        'Date',
-        'Référence produit',
-        'Nom du produit',
-        'Type de mouvement',
-        'Changement quantité',
-        'Type référence',
-        'ID référence',
+        'suppliers_transaction_date'.tr,
+        'inventory_reference_produit'.tr,
+        'products_name'.tr,
+        'inventory_movement_type'.tr,
+        'inventory_changement_quantite'.tr,
+        'inventory_type_reference'.tr,
+        'inventory_id_reference'.tr,
         'Notes',
       ];
 

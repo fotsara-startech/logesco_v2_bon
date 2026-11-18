@@ -436,9 +436,9 @@ class SyncStatusService {
           .timeout(const Duration(seconds: 150));
       final json = jsonDecode(response.body);
       if (response.statusCode == 200 && json['success'] == true) return null;
-      return (json['message'] as String?) ?? 'Échec de la synchronisation';
+      return (json['message'] as String?) ?? 'sync_failed'.tr;
     } catch (_) {
-      return 'Le serveur local ne répond pas';
+      return 'sync_serveur_local_ne_repond_pas'.tr;
     }
   }
 }

@@ -188,7 +188,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'Fichier téléchargé: $filename',
+            'inventory_fichier_telecharge'.trParams({'filename': '${filename}'}),
             title: 'stock_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -242,7 +242,7 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
         if (kIsWeb) {
           // Sur le web, le fichier est automatiquement téléchargé par le navigateur
           SnackbarHelper.success(
-            'Fichier téléchargé: $filename',
+            'inventory_fichier_telecharge'.trParams({'filename': '${filename}'}),
             title: 'stock_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -500,7 +500,7 @@ class StockAlertsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Erreur: ${controller.alertsError}',
+                  'inventory_erreur_2'.trParams({'alertsError': '${controller.alertsError}'}),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -514,7 +514,7 @@ class StockAlertsView extends StatelessWidget {
         }
 
         if (controller.stockAlerts.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -525,12 +525,12 @@ class StockAlertsView extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Aucune alerte de stock',
+                  'stock_no_alerts'.tr,
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Tous les produits ont un stock suffisant',
+                  'stock_all_stocks_ok'.tr,
                   style: TextStyle(color: Colors.grey),
                 ),
               ],

@@ -55,7 +55,7 @@ class SyncDoublonsCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${groupes.length} doublon(s) probable(s) de fiches',
+                    'sync_doublon_s_probable_s_fiches'.trParams({'length': '${groupes.length}'}),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
@@ -72,7 +72,7 @@ class SyncDoublonsCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Ces fiches semblent désigner la même personne ou la même boutique, saisies sur deux postes. '
-              'L\'application ne les fusionne pas toute seule : vérifiez-les, puis gardez la bonne fiche.',
+              'sync_application_ne_fusionne_pas_toute_seule'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
             ),
             const SizedBox(height: 10),
@@ -98,7 +98,7 @@ class SyncDoublonsCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
-                          'Les deux fiches ont un solde : ne supprimez aucune fiche avant d\'avoir regroupé les montants (total ${montant(g.soldeTotal!)}).',
+                          'sync_deux_fiches_ont_solde_ne_supprimez'.trParams({'soldeTotal': '${montant(g.soldeTotal!)}'}),
                           style: TextStyle(fontSize: 12, color: Colors.orange.shade900, fontWeight: FontWeight.w600),
                         ),
                       ),

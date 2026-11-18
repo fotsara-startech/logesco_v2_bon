@@ -119,7 +119,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                widget.expirationDate == null ? 'Ajouter une date de péremption' : 'Modifier la date de péremption',
+                widget.expirationDate == null ? 'Ajouter une date de péremption' : 'expiration_dialog_edit_title'.tr,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
@@ -136,7 +136,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
                 onTap: _selectDate,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Date requise';
+                    return 'expiration_dialog_date_required'.tr;
                   }
                   return null;
                 },
@@ -156,11 +156,11 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Quantité requise';
+                    return 'procurement_quantity_required'.tr;
                   }
                   final qty = int.tryParse(value);
                   if (qty == null || qty <= 0) {
-                    return 'Quantité invalide';
+                    return 'expiration_dialog_quantity_invalid'.tr;
                   }
                   return null;
                 },
@@ -211,7 +211,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(widget.expirationDate == null ? 'Ajouter' : 'Modifier'),
+                        : Text(widget.expirationDate == null ? 'Ajouter' : 'roles_modify'.tr),
                   ),
                 ],
               ),

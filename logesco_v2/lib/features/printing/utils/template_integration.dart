@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../../company_settings/models/company_profile.dart';
 import '../../sales/models/sale.dart';
@@ -182,19 +183,19 @@ class TemplateIntegration {
       // Vérifier la longueur des noms de produits
       for (final detail in sale.details) {
         if ((detail.produit?.nom.length ?? 0) > 25) {
-          warnings.add('Le nom du produit "${detail.produit?.nom}" sera tronqué');
+          warnings.add('printing_nom_produit_sera_tronque'.trParams({'nom': '${detail.produit?.nom}'}));
         }
       }
 
       // Vérifier la longueur du nom de l'entreprise
       if (company.name.length > 30) {
-        warnings.add('Le nom de l\'entreprise sera affiché sur plusieurs lignes');
+        warnings.add('printing_nom_entreprise_sera_affiche_sur_plusieurs'.tr);
       }
     }
 
     // Vérifications générales
     if (!validateSaleForReceipt(sale)) {
-      errors.add('Données de vente invalides');
+      errors.add('printing_donnees_vente_invalides'.tr);
     }
 
     if (!validateCompanyProfileForReceipt(company)) {

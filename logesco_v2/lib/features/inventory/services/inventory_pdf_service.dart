@@ -76,7 +76,7 @@ class InventoryPdfService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(24),
-          header: (_) => _buildCompanyHeader(company, logo, 'Rapport de stock', _shortDate.format(now), boutiqueName: activeBoutiqueName),
+          header: (_) => _buildCompanyHeader(company, logo, 'inventory_rapport_stock'.tr, _shortDate.format(now), boutiqueName: activeBoutiqueName),
           footer: (ctx) => _buildFooter(ctx),
           build: (_) => [
             pw.SizedBox(height: 12),
@@ -106,7 +106,7 @@ class InventoryPdfService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(24),
-          header: (_) => _buildCompanyHeader(company, logo, 'Rapport des mouvements de stock', _shortDate.format(now), boutiqueName: activeBoutiqueName),
+          header: (_) => _buildCompanyHeader(company, logo, 'inventory_rapport_mouvements_stock'.tr, _shortDate.format(now), boutiqueName: activeBoutiqueName),
           footer: (ctx) => _buildFooter(ctx),
           build: (_) => [
             pw.SizedBox(height: 12),
@@ -275,7 +275,7 @@ class InventoryPdfService {
     return pw.Row(children: [
       _summaryCard('Total produits', total.toString(), _cardBlue, _cardBlueBg),
       pw.SizedBox(width: 8),
-      _summaryCard('Stock OK', ok.toString(), _cardGreen, _cardGreenBg),
+      _summaryCard('inventory_stock_ok'.tr, ok.toString(), _cardGreen, _cardGreenBg),
       pw.SizedBox(width: 8),
       _summaryCard('En alerte', alerte.toString(), _cardOrange, _cardOrangeBg),
       pw.SizedBox(width: 8),
@@ -292,7 +292,7 @@ class InventoryPdfService {
     return pw.Row(children: [
       _summaryCard('Total mouvements', total.toString(), _cardBlue, _cardBlueBg),
       pw.SizedBox(width: 8),
-      _summaryCard('Entrées', entrees.toString(), _cardGreen, _cardGreenBg),
+      _summaryCard('reports_financial_income'.tr, entrees.toString(), _cardGreen, _cardGreenBg),
       pw.SizedBox(width: 8),
       _summaryCard('Sorties', sorties.toString(), _cardRed, _cardRedBg),
       pw.SizedBox(width: 8),
@@ -341,13 +341,13 @@ class InventoryPdfService {
         pw.TableRow(
           decoration: pw.BoxDecoration(color: _primary),
           children: [
-            _cell('Référence', style: headerStyle),
-            _cell('Produit', style: headerStyle),
+            _cell('suppliers_payment_reference'.tr, style: headerStyle),
+            _cell('quick_billing_product'.tr, style: headerStyle),
             _cell('Disponible', style: headerStyle, align: pw.TextAlign.center),
-            _cell('Réservé', style: headerStyle, align: pw.TextAlign.center),
+            _cell('sales_product_reserved'.tr, style: headerStyle, align: pw.TextAlign.center),
             _cell('Seuil min.', style: headerStyle, align: pw.TextAlign.center),
             _cell('Statut', style: headerStyle, align: pw.TextAlign.center),
-            _cell('Dernière MAJ', style: headerStyle),
+            _cell('accounts_last_update'.tr, style: headerStyle),
           ],
         ),
         ...stocks.asMap().entries.map((e) {
@@ -377,7 +377,7 @@ class InventoryPdfService {
             decoration: pw.BoxDecoration(color: rowBg),
             children: [
               _cell(s.produit?.reference ?? '-'),
-              _cell(s.produit?.nom ?? 'Produit #${s.produitId}'),
+              _cell(s.produit?.nom ?? 'inventory_produit'.trParams({'produitId': '${s.produitId}'})),
               _cell(_numberFormat.format(s.quantiteDisponible),
                   align: pw.TextAlign.center, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: isRupture ? _cardRed : PdfColors.black, fontSize: 9)),
               _cell(_numberFormat.format(s.quantiteReservee), align: pw.TextAlign.center),
@@ -409,11 +409,11 @@ class InventoryPdfService {
         pw.TableRow(
           decoration: headerBg,
           children: [
-            _cell('Date', style: headerStyle),
-            _cell('Référence', style: headerStyle),
-            _cell('Produit', style: headerStyle),
+            _cell('suppliers_transaction_date'.tr, style: headerStyle),
+            _cell('suppliers_payment_reference'.tr, style: headerStyle),
+            _cell('quick_billing_product'.tr, style: headerStyle),
             _cell('Type', style: headerStyle, align: pw.TextAlign.center),
-            _cell('Qté', style: headerStyle, align: pw.TextAlign.center),
+            _cell('quick_billing_col_qty'.tr, style: headerStyle, align: pw.TextAlign.center),
             _cell('Notes', style: headerStyle),
           ],
         ),
@@ -426,7 +426,7 @@ class InventoryPdfService {
             children: [
               _cell(_dateFormat.format(m.dateMouvement)),
               _cell(m.produit?.reference ?? '-'),
-              _cell(m.produit?.nom ?? 'Produit #${m.produitId}'),
+              _cell(m.produit?.nom ?? 'inventory_produit'.trParams({'produitId': '${m.produitId}'})),
               _cell(_movementLabel(m.typeMouvement), align: pw.TextAlign.center),
               _cell('${isPos ? '+' : ''}${m.changementQuantite}', align: pw.TextAlign.center, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: isPos ? _cardGreen : _cardRed, fontSize: 9)),
               _cell(m.notes ?? '-', style: pw.TextStyle(fontSize: 8, color: _grey)),
@@ -451,7 +451,7 @@ class InventoryPdfService {
       case 'achat':
         return 'Achat';
       case 'vente':
-        return 'Vente';
+        return 'inventory_movement_sale'.tr;
       case 'ajustement':
         return 'Ajustement';
       case 'retour':

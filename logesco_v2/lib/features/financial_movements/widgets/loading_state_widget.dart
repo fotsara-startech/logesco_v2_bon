@@ -153,7 +153,7 @@ class LoadingStateWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Erreur',
+            'suppliers_error'.tr,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.red[700],
                   fontWeight: FontWeight.bold,
@@ -304,21 +304,21 @@ class LoadingStateBar extends StatelessWidget {
       case LoadingStateType.refreshing:
         return 'Actualisation...';
       case LoadingStateType.loadingMore:
-        return 'Chargement de plus d\'éléments...';
+        return 'financialmovements_chargement_plus_elements'.tr;
       case LoadingStateType.creating:
-        return 'Création en cours...';
+        return 'financialmovements_creation_cours'.tr;
       case LoadingStateType.updating:
-        return 'Mise à jour en cours...';
+        return 'financialmovements_mise_jour_cours'.tr;
       case LoadingStateType.deleting:
         return 'Suppression en cours...';
       case LoadingStateType.exporting:
         return 'Export en cours...';
       case LoadingStateType.generating:
-        return 'Génération en cours...';
+        return 'financialmovements_generation_cours'.tr;
       case LoadingStateType.error:
-        return 'Une erreur s\'est produite';
+        return 'financialmovements_erreur_s_est_produite'.tr;
       case LoadingStateType.success:
-        return 'Opération réussie';
+        return 'financialmovements_operation_reussie'.tr;
       default:
         return '';
     }

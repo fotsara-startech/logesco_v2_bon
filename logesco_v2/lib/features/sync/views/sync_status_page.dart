@@ -188,9 +188,9 @@ class SyncStatusPage extends StatelessWidget {
               Text('sync_element_s'.trParams({'tableLabel': '${g.tableLabel}', 'nombre': '${g.nombre}'}), style: const TextStyle(fontWeight: FontWeight.w600)),
               ...g.exemples.take(4).map((e) => Text('• ${e.resume}', style: const TextStyle(fontSize: 12))),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "Il ne sera plus signalé tant qu'il existe, mais rien n'est corrigé : les deux côtés resteront différents. "
-                "Il réapparaîtra si vous cliquez sur « Réafficher ».",
+                'sync_il_reapparaitra_si_vous_cliquez_sur'.tr,
                 style: TextStyle(fontSize: 12),
               ),
               const SizedBox(height: 10),
@@ -229,14 +229,14 @@ class SyncStatusPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Synchronisation bloquée depuis ${s.pendingAgeLabel}',
+                    'sync_synchronisation_bloquee_depuis'.trParams({'pendingAgeLabel': '${s.pendingAgeLabel}'}),
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.red.shade800),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     "${s.pendingCount} opération(s) n'ont pas encore été envoyées vers le cloud. "
                     'Vos données sont conservées sur ce poste, mais les autres postes ne les voient pas. '
-                    'Vérifiez la connexion internet puis appuyez sur « Synchroniser maintenant ».',
+                    'sync_verifiez_connexion_internet_puis_appuyez_sur'.tr,
                     style: TextStyle(fontSize: 13, color: Colors.red.shade900),
                   ),
                 ],
@@ -308,7 +308,7 @@ class SyncStatusPage extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Dernière erreur de connexion : ${s.lastErrorMessage}',
+                      'sync_derniere_erreur_connexion'.trParams({'lastErrorMessage': '${s.lastErrorMessage}'}),
                       style: TextStyle(fontSize: 12, color: Colors.red[700]),
                     ),
                   ),
@@ -356,7 +356,7 @@ class SyncStatusPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Détail de ce qui n\'est pas synchronisé (${items.length})',
+                    'sync_detail_qui_n_est_pas_synchronise'.trParams({'length': '${items.length}'}),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
@@ -375,7 +375,7 @@ class SyncStatusPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 8),
                 child: Text(
-                  '$erreurs élément(s) refusé(s) par le cloud. Touchez un élément pour voir pourquoi et que faire.',
+                  'sync_element_s_refuse_s_par_cloud'.trParams({'erreurs': '${erreurs}'}),
                   style: TextStyle(fontSize: 12, color: Colors.red.shade800),
                 ),
               ),
@@ -471,22 +471,22 @@ class SyncStatusPage extends StatelessWidget {
   }
 
   String _tableLabel(String table) {
-    const labels = {
+    final labels = {
       'produits': 'Produits',
       'ventes': 'Ventes',
-      'details_ventes': 'Détails ventes',
+      'details_ventes': 'sync_details_ventes'.tr,
       'clients': 'Clients',
       'fournisseurs': 'Fournisseurs',
-      'stock': 'Stock',
-      'stock_boutiques': 'Stock boutiques',
-      'cash_sessions': 'Sessions caisse',
-      'cash_movements': 'Mouvements caisse',
+      'stock': 'products_stock'.tr,
+      'stock_boutiques': 'sync_stock_boutiques'.tr,
+      'cash_sessions': 'sync_sessions_caisse'.tr,
+      'cash_movements': 'sync_mouvements_caisse'.tr,
       'financial_movements': 'Mouvements financiers',
       'commandes_approvisionnement': 'Commandes appro.',
-      'details_commandes_approvisionnement': 'Détails commandes',
-      'mouvements_stock': 'Mouvements stock',
+      'details_commandes_approvisionnement': 'sync_details_commandes'.tr,
+      'mouvements_stock': 'sync_mouvements_stock'.tr,
       'utilisateurs': 'Utilisateurs',
-      'categories': 'Catégories',
+      'categories': 'categories_title'.tr,
       'boutiques': 'Boutiques',
     };
     return labels[table] ?? table;
@@ -513,7 +513,7 @@ class _SyncDetailTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = item.isFailed ? Colors.red : Colors.orange;
-    final statut = item.isFailed ? (item.isReception ? 'Non appliqué' : 'Refusé') : 'En attente';
+    final statut = item.isFailed ? (item.isReception ? 'Non appliqué' : 'sync_refuse'.tr) : 'En attente';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

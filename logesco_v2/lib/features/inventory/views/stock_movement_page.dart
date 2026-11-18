@@ -97,7 +97,7 @@ class _StockMovementPageState extends State<StockMovementPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _selectedStock!.produit?.nom ?? 'Produit',
+                                    _selectedStock!.produit?.nom ?? 'quick_billing_product'.tr,
                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
                                         ),

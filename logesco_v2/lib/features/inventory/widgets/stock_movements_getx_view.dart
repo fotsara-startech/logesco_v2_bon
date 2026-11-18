@@ -58,7 +58,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Erreur: ${controller.movementsError.value}',
+                      'inventory_erreur_3'.trParams({'value': '${controller.movementsError.value}'}),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -72,7 +72,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
             }
 
             if (controller.movements.isEmpty) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -83,12 +83,12 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
                     ),
                     SizedBox(height: 16),
                     Text(
-                      'Aucun mouvement de stock',
+                      'stock_movements_no_found'.tr,
                       style: TextStyle(fontSize: 18),
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'L\'historique des mouvements apparaîtra ici',
+                      'stock_movements_history'.tr,
                       style: TextStyle(color: Colors.grey),
                     ),
                   ],
@@ -154,7 +154,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
           ),
         ),
         title: Text(
-          movement.produit?.nom ?? 'Produit ${movement.produitId}',
+          movement.produit?.nom ?? 'inventory_produit_2'.trParams({'produitId': '${movement.produitId}'}),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Column(
@@ -168,7 +168,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
             Row(
               children: [
                 Text(
-                  'Stock: ',
+                  'inventory_stock_3'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[700],
@@ -230,7 +230,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
               ),
             ),
             Text(
-              'Qté: ${movement.changementQuantite.abs()}',
+              'inventory_qte'.trParams({'abs': '${movement.changementQuantite.abs()}'}),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -287,7 +287,7 @@ class StockMovementsGetxView extends GetView<InventoryGetxController> {
       case 'approvisionnement':
         return 'Approvisionnement';
       case 'vente':
-        return 'Vente';
+        return 'inventory_movement_sale'.tr;
       case 'ajustement':
         return 'Ajustement';
       case 'retour':

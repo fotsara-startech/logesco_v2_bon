@@ -52,7 +52,7 @@ class MovementCategoryController extends GetxController with LoadingStateMixin {
               operation: 'loadCategories',
             ),
       successMessage: null, // Pas de message de succès pour éviter le spam
-      errorMessage: 'Erreur lors du chargement des catégories',
+      errorMessage: 'financialmovements_erreur_lors_chargement_categories'.tr,
       autoResetAfterSuccess: true,
     ).catchError((e) {
       isLoading.value = false;
@@ -60,7 +60,7 @@ class MovementCategoryController extends GetxController with LoadingStateMixin {
       if (e is FinancialMovementException) {
         error.value = e.userFriendlyMessage;
         FinancialErrorHandler.logError(e, operation: 'loadCategories');
-        FinancialErrorHandler.showErrorToUser(e, context: 'Chargement des catégories');
+        FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_chargement_categories'.tr);
 
         // Exécute une action spéciale si nécessaire
         if (FinancialErrorHandler.requiresSpecialAction(e)) {

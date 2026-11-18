@@ -168,7 +168,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       );
 
       FinancialErrorHandler.logError(e, operation: 'loadMovements');
-      FinancialErrorHandler.showErrorToUser(e, context: 'Chargement des mouvements');
+      FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_chargement_mouvements'.tr);
 
       // Exécute une action spéciale si nécessaire
       if (FinancialErrorHandler.requiresSpecialAction(e)) {
@@ -176,7 +176,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       }
     } on TypeError catch (e) {
       // Gestion spécifique des erreurs de cast de type
-      final errorMessage = 'Erreur de format des données reçues du serveur';
+      final errorMessage = 'financialmovements_erreur_format_donnees_recues_serveur'.tr;
       print(' [loadMovements] Erreur de cast de type: $e');
 
       error.value = errorMessage;
@@ -196,11 +196,11 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       );
 
       FinancialErrorHandler.logError(financialError, operation: 'loadMovements');
-      FinancialErrorHandler.showErrorToUser(financialError, context: 'Chargement des mouvements');
+      FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_chargement_mouvements'.tr);
     } catch (e) {
       // Vérification spéciale pour les erreurs de cast
       if (e.toString().contains('type \'Null\' is not a subtype of type \'num\'') || e.toString().contains('is not a subtype of type')) {
-        final errorMessage = 'Erreur de format des données reçues du serveur';
+        final errorMessage = 'financialmovements_erreur_format_donnees_recues_serveur'.tr;
         print(' [loadMovements] Erreur de cast détectée: $e');
 
         error.value = errorMessage;
@@ -220,7 +220,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         );
 
         FinancialErrorHandler.logError(financialError, operation: 'loadMovements');
-        FinancialErrorHandler.showErrorToUser(financialError, context: 'Chargement des mouvements');
+        FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_chargement_mouvements'.tr);
       } else {
         final financialError = FinancialErrorHandler.handleError(e, operation: 'loadMovements');
         error.value = financialError.userFriendlyMessage;
@@ -231,7 +231,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         );
 
         FinancialErrorHandler.logError(financialError, operation: 'loadMovements');
-        FinancialErrorHandler.showErrorToUser(financialError, context: 'Chargement des mouvements');
+        FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_chargement_mouvements'.tr);
       }
     } finally {
       isLoading.value = false;
@@ -447,17 +447,17 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
   Future<void> filterByDateRange(DateTime? start, DateTime? end) async {
     // Validation des dates
     if (start != null && end != null && start.isAfter(end)) {
-      error.value = 'La date de début ne peut pas être postérieure à la date de fin';
+      error.value = 'financialmovements_date_debut_ne_peut_pas_etre'.tr;
       return;
     }
 
     if (start != null && start.isAfter(DateTime.now())) {
-      error.value = 'La date de début ne peut pas être dans le futur';
+      error.value = 'financialmovements_date_debut_ne_peut_pas_etre_2'.tr;
       return;
     }
 
     if (end != null && end.isAfter(DateTime.now())) {
-      error.value = 'La date de fin ne peut pas être dans le futur';
+      error.value = 'financialmovements_date_fin_ne_peut_pas_etre'.tr;
       return;
     }
 
@@ -471,17 +471,17 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
   Future<void> filterByAmountRange(double? min, double? max) async {
     // Validation des montants
     if (min != null && min < 0) {
-      error.value = 'Le montant minimum ne peut pas être négatif';
+      error.value = 'financialmovements_montant_minimum_ne_peut_pas_etre'.tr;
       return;
     }
 
     if (max != null && max < 0) {
-      error.value = 'Le montant maximum ne peut pas être négatif';
+      error.value = 'financialmovements_montant_maximum_ne_peut_pas_etre'.tr;
       return;
     }
 
     if (min != null && max != null && min > max) {
-      error.value = 'Le montant minimum ne peut pas être supérieur au montant maximum';
+      error.value = 'financialmovements_montant_minimum_ne_peut_pas_etre_2'.tr;
       return;
     }
 
@@ -579,15 +579,15 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         message: 'financialmovements_creation_mouvement_cours'.tr,
         operation: 'createMovement',
       ),
-      successMessage: 'Mouvement créé avec succès',
-      errorMessage: 'Erreur lors de la création du mouvement',
+      successMessage: 'financial_movements_form_success_create'.tr,
+      errorMessage: 'financialmovements_erreur_lors_creation_mouvement'.tr,
     ).catchError((e) {
       isCreating.value = false;
 
       if (e is FinancialMovementException) {
         error.value = e.userFriendlyMessage;
         FinancialErrorHandler.logError(e, operation: 'createMovement');
-        FinancialErrorHandler.showErrorToUser(e, context: 'Création du mouvement');
+        FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_creation_mouvement'.tr);
 
         // Exécute une action spéciale si nécessaire
         if (FinancialErrorHandler.requiresSpecialAction(e)) {
@@ -597,7 +597,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         final financialError = FinancialErrorHandler.handleError(e, operation: 'createMovement');
         error.value = financialError.userFriendlyMessage;
         FinancialErrorHandler.logError(financialError, operation: 'createMovement');
-        FinancialErrorHandler.showErrorToUser(financialError, context: 'Création du mouvement');
+        FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_creation_mouvement'.tr);
       }
 
       return false;
@@ -622,15 +622,15 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         message: 'financialmovements_mise_jour_mouvement_cours'.tr,
         operation: 'updateMovement',
       ),
-      successMessage: 'Mouvement mis à jour avec succès',
-      errorMessage: 'Erreur lors de la mise à jour du mouvement',
+      successMessage: 'financialmovements_mouvement_mis_jour_avec_succes'.tr,
+      errorMessage: 'financialmovements_erreur_lors_mise_jour_mouvement'.tr,
     ).catchError((e) {
       isUpdating.value = false;
 
       if (e is FinancialMovementException) {
         error.value = e.userFriendlyMessage;
         FinancialErrorHandler.logError(e, operation: 'updateMovement', context: {'movementId': id});
-        FinancialErrorHandler.showErrorToUser(e, context: 'Mise à jour du mouvement');
+        FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_mise_jour_mouvement_2'.tr);
 
         // Exécute une action spéciale si nécessaire
         if (FinancialErrorHandler.requiresSpecialAction(e)) {
@@ -640,7 +640,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         final financialError = FinancialErrorHandler.handleError(e, operation: 'updateMovement');
         error.value = financialError.userFriendlyMessage;
         FinancialErrorHandler.logError(financialError, operation: 'updateMovement', context: {'movementId': id});
-        FinancialErrorHandler.showErrorToUser(financialError, context: 'Mise à jour du mouvement');
+        FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_mise_jour_mouvement_2'.tr);
       }
 
       return false;
@@ -665,15 +665,15 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         message: 'financialmovements_suppression_mouvement_cours'.tr,
         operation: 'deleteMovement',
       ),
-      successMessage: 'Mouvement supprimé avec succès',
-      errorMessage: 'Erreur lors de la suppression du mouvement',
+      successMessage: 'financial_movements_form_delete_success'.tr,
+      errorMessage: 'financialmovements_erreur_lors_suppression_mouvement'.tr,
     ).catchError((e) {
       isDeleting.value = false;
 
       if (e is FinancialMovementException) {
         error.value = e.userFriendlyMessage;
         FinancialErrorHandler.logError(e, operation: 'deleteMovement', context: {'movementId': id});
-        FinancialErrorHandler.showErrorToUser(e, context: 'Suppression du mouvement');
+        FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_suppression_mouvement_2'.tr);
 
         // Exécute une action spéciale si nécessaire
         if (FinancialErrorHandler.requiresSpecialAction(e)) {
@@ -683,7 +683,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         final financialError = FinancialErrorHandler.handleError(e, operation: 'deleteMovement');
         error.value = financialError.userFriendlyMessage;
         FinancialErrorHandler.logError(financialError, operation: 'deleteMovement', context: {'movementId': id});
-        FinancialErrorHandler.showErrorToUser(financialError, context: 'Suppression du mouvement');
+        FinancialErrorHandler.showErrorToUser(financialError, context: 'financialmovements_suppression_mouvement_2'.tr);
       }
 
       return false;
@@ -699,7 +699,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
 
       // Pour la récupération d'un mouvement spécifique, on peut montrer l'erreur si c'est critique
       if (e.errorType == FinancialErrorType.authenticationError || e.errorType == FinancialErrorType.permissionError) {
-        FinancialErrorHandler.showErrorToUser(e, context: 'Récupération du mouvement');
+        FinancialErrorHandler.showErrorToUser(e, context: 'financialmovements_recuperation_mouvement'.tr);
 
         if (FinancialErrorHandler.requiresSpecialAction(e)) {
           await FinancialErrorHandler.executeSpecialAction(e);
@@ -787,7 +787,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       } catch (e) {
         category = null;
       }
-      filters['category'] = category?.displayName ?? 'Catégorie ${selectedCategoryId.value}';
+      filters['category'] = category?.displayName ?? 'financialmovements_categorie'.trParams({'value': '${selectedCategoryId.value}'});
     }
     if (startDate.value != null) {
       filters['startDate'] = startDate.value;
@@ -945,13 +945,13 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
   /// Sauvegarde les filtres actuels comme preset
   Future<void> saveCurrentFiltersAsPreset(String name, {String? description}) async {
     if (name.trim().isEmpty) {
-      error.value = 'Le nom du preset ne peut pas être vide';
+      error.value = 'financialmovements_nom_preset_ne_peut_pas_etre'.tr;
       return;
     }
 
     // Vérifie si un preset avec ce nom existe déjà
     if (savedFilterPresets.any((preset) => preset.name.toLowerCase() == name.toLowerCase())) {
-      error.value = 'Un preset avec ce nom existe déjà';
+      error.value = 'financialmovements_preset_avec_nom_existe_deja'.tr;
       return;
     }
 
@@ -974,8 +974,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     // await _savePresetsToStorage();
 
     Get.snackbar(
-      'Succès',
-      'Preset "$name" sauvegardé avec succès',
+      'success'.tr,
+      'financialmovements_preset_sauvegarde_avec_succes'.trParams({'name': '${name}'}),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green.shade100,
       colorText: Colors.green.shade800,
@@ -995,8 +995,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     await loadMovements();
 
     Get.snackbar(
-      'Preset appliqué',
-      'Filtres "${preset.name}" appliqués',
+      'financialmovements_preset_applique'.tr,
+      'financialmovements_filtres_appliques'.trParams({'name': '${preset.name}'}),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.blue.shade100,
       colorText: Colors.blue.shade800,
@@ -1009,7 +1009,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     if (preset == null) return;
 
     if (preset.isDefault) {
-      error.value = 'Impossible de supprimer un preset par défaut';
+      error.value = 'financialmovements_impossible_supprimer_preset_par_defaut'.tr;
       return;
     }
 
@@ -1019,8 +1019,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     // await _savePresetsToStorage();
 
     Get.snackbar(
-      'Preset supprimé',
-      'Preset "${preset.name}" supprimé',
+      'financialmovements_preset_supprime'.tr,
+      'financialmovements_preset_supprime_2'.trParams({'name': '${preset.name}'}),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.orange.shade100,
       colorText: Colors.orange.shade800,
@@ -1039,7 +1039,7 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
 
     final currentPreset = savedFilterPresets[index];
     if (currentPreset.isDefault) {
-      error.value = 'Impossible de modifier un preset par défaut';
+      error.value = 'financialmovements_impossible_modifier_preset_par_defaut'.tr;
       return;
     }
 
@@ -1060,8 +1060,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
     // await _savePresetsToStorage();
 
     Get.snackbar(
-      'Preset mis à jour',
-      'Preset "${updatedPreset.name}" mis à jour',
+      'financialmovements_preset_mis_jour'.tr,
+      'financialmovements_preset_mis_jour_2'.trParams({'name': '${updatedPreset.name}'}),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.blue.shade100,
       colorText: Colors.blue.shade800,
@@ -1163,8 +1163,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
         if (category != null) {
           suggestions.add({
             'type': 'category',
-            'title': 'Catégorie populaire',
-            'description': 'Filtrer par "${category.displayName}" (${mostFrequent.value} mouvements)',
+            'title': 'financialmovements_categorie_populaire'.tr,
+            'description': 'financialmovements_filtrer_par_mouvements'.trParams({'displayName': '${category.displayName}', 'value': '${mostFrequent.value}'}),
             'action': () => filterByCategory(category.id),
           });
         }
@@ -1176,8 +1176,8 @@ class FinancialMovementController extends GetxController with LoadingStateMixin 
       if (recentHighAmounts > 0) {
         suggestions.add({
           'type': 'amount',
-          'title': 'Montants élevés récents',
-          'description': '$recentHighAmounts mouvements > 10 000 FCFA cette semaine',
+          'title': 'financialmovements_montants_eleves_recents'.tr,
+          'description': 'financialmovements_mouvements_10_000_fcfa_semaine'.trParams({'recentHighAmounts': '${recentHighAmounts}'}),
           'action': () => applySmartFilter('recent_large_amounts'),
         });
       }

@@ -57,7 +57,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Charge le résumé pour la période sélectionnée
   Future<void> loadSummary({bool forceRefresh = false}) async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       setError(
         message: 'financialmovements_veuillez_selectionner_periode'.tr,
         operation: 'loadSummary',
@@ -85,7 +85,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         operation: 'loadSummary',
       ),
       successMessage: null, // Pas de message de succès pour éviter le spam
-      errorMessage: 'Erreur lors du chargement du résumé',
+      errorMessage: 'financialmovements_erreur_lors_chargement_resume'.tr,
       autoResetAfterSuccess: true,
     ).catchError((e) {
       isLoadingSummary.value = false;
@@ -94,7 +94,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       if (e is Exception) {
         error.value = e.toString().replaceFirst('Exception: ', '');
       } else {
-        error.value = 'Erreur lors du chargement du résumé';
+        error.value = 'financialmovements_erreur_lors_chargement_resume'.tr;
       }
 
       FinancialErrorHandler.logError(
@@ -113,7 +113,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Charge les statistiques par catégorie
   Future<void> loadCategorySummaries({bool forceRefresh = false}) async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       return;
     }
 
@@ -141,7 +141,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
       print(' Erreur chargement résumés catégories: ${error.value}');
     } catch (e) {
-      error.value = 'Erreur lors du chargement des statistiques par catégorie';
+      error.value = 'financialmovements_erreur_lors_chargement_statistiques_par_categorie'.tr;
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: e.toString(),
@@ -160,7 +160,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Charge les statistiques quotidiennes
   Future<void> loadDailySummaries({bool forceRefresh = false}) async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       return;
     }
 
@@ -188,7 +188,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
       print(' Erreur chargement résumés quotidiens: ${error.value}');
     } catch (e) {
-      error.value = 'Erreur lors du chargement des statistiques quotidiennes';
+      error.value = 'financialmovements_erreur_lors_chargement_statistiques_quotidiennes'.tr;
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: e.toString(),
@@ -207,7 +207,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Génère un rapport complet
   Future<void> generateCompleteReport() async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       return;
     }
 
@@ -241,7 +241,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       );
       print(' Erreur génération rapport: ${error.value}');
     } catch (e) {
-      error.value = 'Erreur lors de la génération du rapport';
+      error.value = 'financialmovements_erreur_lors_generation_rapport'.tr;
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: e.toString(),
@@ -260,7 +260,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Exporte le rapport au format PDF (génération locale)
   Future<String?> exportToPdf({String? customTitle}) async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       setError(
         message: 'financialmovements_veuillez_selectionner_periode'.tr,
         operation: 'exportToPdf',
@@ -305,7 +305,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       return filePath;
     } catch (e) {
       isExporting.value = false;
-      error.value = 'Erreur lors de la génération du PDF: $e';
+      error.value = 'financialmovements_erreur_lors_generation_pdf'.trParams({'e': '${e}'});
 
       FinancialErrorHandler.logError(
         FinancialMovementException(
@@ -325,7 +325,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Exporte le rapport au format Excel
   Future<String?> exportToExcel({String? customTitle}) async {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez sélectionner une période';
+      error.value = 'financialmovements_veuillez_selectionner_periode'.tr;
       return null;
     }
 
@@ -371,7 +371,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       print(' Erreur export Excel: ${error.value}');
       return null;
     } catch (e) {
-      error.value = 'Erreur lors de l\'export Excel';
+      error.value = 'financialmovements_erreur_lors_export_excel'.tr;
       FinancialErrorHandler.logError(
         FinancialMovementException(
           message: e.toString(),
@@ -489,7 +489,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Compare deux périodes
   Future<void> comparePeriods() async {
     if (startDate.value == null || endDate.value == null || comparisonStartDate.value == null || comparisonEndDate.value == null) {
-      error.value = 'Veuillez sélectionner les deux périodes à comparer';
+      error.value = 'financialmovements_veuillez_selectionner_deux_periodes_comparer'.tr;
       setError(
         message: 'financialmovements_veuillez_selectionner_deux_periodes_comparer'.tr,
         operation: 'comparePeriods',
@@ -516,8 +516,8 @@ class MovementReportController extends GetxController with LoadingStateMixin {
         message: 'financialmovements_comparaison_periodes_cours'.tr,
         operation: 'comparePeriods',
       ),
-      successMessage: 'Comparaison générée avec succès',
-      errorMessage: 'Erreur lors de la comparaison des périodes',
+      successMessage: 'financialmovements_comparaison_generee_avec_succes'.tr,
+      errorMessage: 'financialmovements_erreur_lors_comparaison_periodes'.tr,
       autoResetAfterSuccess: true,
     ).catchError((e) {
       isLoadingComparison.value = false;
@@ -525,7 +525,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
       if (e is Exception) {
         error.value = e.toString().replaceFirst('Exception: ', '');
       } else {
-        error.value = 'Erreur lors de la comparaison des périodes';
+        error.value = 'financialmovements_erreur_lors_comparaison_periodes'.tr;
       }
 
       FinancialErrorHandler.logError(
@@ -553,7 +553,7 @@ class MovementReportController extends GetxController with LoadingStateMixin {
   /// Définit une période de comparaison prédéfinie basée sur la période principale
   void setComparisonPredefinedPeriod(String period) {
     if (startDate.value == null || endDate.value == null) {
-      error.value = 'Veuillez d\'abord sélectionner la période principale';
+      error.value = 'financialmovements_veuillez_abord_selectionner_periode_principale'.tr;
       return;
     }
 
