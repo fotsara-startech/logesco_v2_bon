@@ -366,11 +366,6 @@ const venteSchemas = {
     statut: Joi.string().valid('terminee', 'annulee')
   }).min(1),
 
-  paiement: Joi.object({
-    montantPaye: baseSchemas.montant.min(0.01).required(),
-    description: Joi.string().max(500).allow('', null)
-  }),
-
   search: Joi.object({
     clientId: baseSchemas.id,
     vendeurId: baseSchemas.id,
@@ -390,6 +385,18 @@ const venteSchemas = {
     categorieId: baseSchemas.id,
     limit: Joi.number().integer().min(1).max(200).default(50),
     includeServices: Joi.string().valid('true', 'false').default('true')
+  }),
+
+  cancelItems: Joi.object({
+    detailIds: Joi.array().items(baseSchemas.id).min(1).required()
+  }),
+
+  replaceItem: Joi.object({
+    detailId: baseSchemas.id.required(),
+    produitId: baseSchemas.id.required(),
+    quantite: Joi.number().integer().min(1).required(),
+    remiseAppliquee: baseSchemas.montant.default(0),
+    montantVerse: baseSchemas.montant.default(0)
   })
 };
 

@@ -2,6 +2,8 @@
  * Service pour la gestion des catégories de mouvements financiers
  */
 
+const { appliquerFiltreDate } = require('../utils/filtre-date');
+
 class MovementCategoryService {
   constructor(prisma) {
     this.prisma = prisma;
@@ -217,15 +219,11 @@ class MovementCategoryService {
       // Construction des filtres pour les mouvements
       const where = {};
 
-      if (startDate || endDate) {
-        where.date = {};
-        if (startDate) {
-          where.date.gte = new Date(startDate);
-        }
-        if (endDate) {
-          where.date.lte = new Date(endDate);
-        }
-      }
+      // (filtre fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+      await appliquerFiltreDate(this.prisma, where, { table: 'financial_movements', colonne: 'date', champ: 'date' }, {
+        gte: startDate ? new Date(startDate) : undefined,
+        lte: endDate ? new Date(endDate) : undefined,
+      });
 
       // Récupérer toutes les catégories actives
       const categories = await this.getCategories();

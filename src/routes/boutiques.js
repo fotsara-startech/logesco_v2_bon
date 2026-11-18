@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO } = require('../dto');
 
@@ -599,18 +600,18 @@ function createBoutiquesRouter({ prisma, authService, syncService }) {
       const { dateDebut, dateFin } = req.query;
 
       const venteWhere = { boutiqueId, statut: { not: 'annulee' } };
-      if (dateDebut || dateFin) {
-        venteWhere.dateVente = {};
-        if (dateDebut) venteWhere.dateVente.gte = new Date(dateDebut);
-        if (dateFin) venteWhere.dateVente.lte = new Date(dateFin);
-      }
+      // Filtres de période fiables (dates stockées en texte dans SQLite : voir utils/filtre-date.js)
+      const bornes = { gte: dateDebut ? new Date(dateDebut) : undefined, lte: dateFin ? new Date(dateFin) : undefined };
+      await appliquerFiltreDate(prisma, venteWhere, { table: 'ventes', colonne: 'date_vente', champ: 'dateVente' }, bornes);
+      const mouvementWhere = { boutiqueId, statut: { not: 'annule' } };
+      await appliquerFiltreDate(prisma, mouvementWhere, { table: 'financial_movements', colonne: 'date', champ: 'date' }, bornes);
 
       const [boutique, ventesAgg, nbVentes, mouvementsAgg, stockFaible, caisses] = await Promise.all([
         prisma.boutique.findUnique({ where: { id: boutiqueId } }),
         prisma.vente.aggregate({ where: venteWhere, _sum: { montantTotal: true, montantPaye: true } }),
         prisma.vente.count({ where: venteWhere }),
         prisma.financialMovement.aggregate({
-          where: { boutiqueId, statut: { not: 'annule' }, ...(venteWhere.dateVente ? { date: venteWhere.dateVente } : {}) },
+          where: mouvementWhere,
           _sum: { montant: true }
         }),
         prisma.stockBoutique.count({

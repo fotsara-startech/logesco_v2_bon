@@ -7,11 +7,37 @@ const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const installation = require('../utils/installation');
 const { computeDrift } = require('./sync-health');
+const stockDifference = require('./stock-difference');
+const syncGraine = require('./sync-graine');
+const syncFusion = require('./sync-fusion');
+const { trouverDoublons } = require('./sync-doublons');
+const { versMillisecondes } = require('./dates-sqlite');
+const { protegerConnexions } = require('./cloud-pool-garde');
 
 // Fréquence du contrôle d'écart avec le cloud
-const DRIFT_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
+const DRIFT_CHECK_INTERVAL_MS = parseInt(process.env.SYNC_DRIFT_INTERVAL_MS, 10) || 3 * 60 * 60 * 1000;
+// Délais réglables par l'environnement (campagne de tests : cycles rapides) ; valeurs d'exploitation par défaut
+const SYNC_CYCLE_INTERVAL_MS = parseInt(process.env.SYNC_INTERVAL_MS, 10) || 30000;
+const DRIFT_FIRST_CHECK_DELAY_MS = parseInt(process.env.SYNC_DRIFT_FIRST_DELAY_MS, 10) || 2 * 60 * 1000;
 
 // Tables à synchroniser depuis Neon vers local (dans l'ordre des dépendances FK)
+/** Tables d'historique : une ligne n'est jamais modifiée après sa création (voir _rattraperHistoriqueNonJournalise) */
+const TABLES_HISTORIQUE = ['mouvements_stock', 'details_ventes', 'transactions_comptes', 'cash_movements', 'historique_prix_achat'];
+
+/**
+ * Tables PARENTES (caisses, sessions) dont une ligne jamais journalisée bloque
+ * indéfiniment tout enfant qui la référence (cash_movements.session_id,
+ * ventes.session_id...) — violation de clé étrangère en boucle à chaque
+ * tentative de replay, sans jamais se résoudre toute seule. Contrairement aux
+ * tables d'historique, ces tables SONT modifiables (une session est mise à
+ * jour à sa fermeture) ; mais le rattrapage ci-dessous ne regarde que
+ * l'ABSENCE TOTALE d'entrée dans le journal (jamais, aucun statut) — donc le
+ * cloud n'a jamais reçu cette ligne, et journaliser son état actuel ne risque
+ * jamais d'écraser une version plus récente côté Neon. Voir
+ * _rattraperParentsNonJournalises.
+ */
+const TABLES_PARENTS_SESSION = ['cash_registers', 'cash_sessions'];
+
 const PULL_TABLES = [
   'user_roles', 'utilisateurs', 'boutiques', 'user_boutique_assignments',
   'categories', 'produits', 'historique_prix_achat', 'stock', 'stock_boutiques',
@@ -100,9 +126,12 @@ class SyncServiceV2 {
     this.lastSuccessfulSyncAt = null;
     this.syncStartedAt = null;
     this._modColumnCache = {};
+    this._dateColumnCache = {};
     this.driftReport = null;
+    this.doublons = [];
     this.lastDriftError = null;
     this._driftEnCours = false;
+    this._calculerEcart = computeDrift; // remplaçable dans les tests
     // Lignes reçues du cloud mais laissées de côté parce qu'une écriture locale était en attente (table → ids)
     this._protegees = new Map();
   }
@@ -112,15 +141,23 @@ class SyncServiceV2 {
    * et garde le rapport. Voir sync-health.js. Lecture seule : ne modifie ni les données ni les envois.
    * @returns {Promise<Object|null>} le dernier rapport (celui-ci, ou le précédent si le cloud est injoignable)
    */
-  async checkDrift() {
+  async checkDrift({ attendre = false } = {}) {
     if (!this.cloudUrl || !this.cloudPool || !this.localPrisma || !this.isCloudAvailable) return this.driftReport;
-    if (this._driftEnCours) return this.driftReport;
+    if (this._driftEnCours) {
+      // Appel périodique : on ne s'empile pas, on garde le dernier rapport. Demande EXPLICITE de rafraîchissement
+      // (écran, ?refresh=1) : on attend la fin du contrôle en cours puis on en relance un NOUVEAU. Le contrôle en cours a
+      // peut-être commencé avant ce que l'utilisateur vient de corriger : lui renvoyer son résultat serait un rapport périmé.
+      if (!attendre) return this.driftReport;
+      const attenteMax = Date.now() + 120000;
+      while (this._driftEnCours && Date.now() < attenteMax) await new Promise((r) => setTimeout(r, 250));
+      if (this._driftEnCours) return this.driftReport; // toujours en cours après 2 minutes : on ne bloque pas davantage
+    }
     this._driftEnCours = true;
     let client = null;
     let perdue = false;
     try {
       client = await this.cloudPool.connect();
-      this.driftReport = await computeDrift({
+      this.driftReport = await this._calculerEcart({
         prisma: this.localPrisma,
         client,
         tables: PULL_TABLES,
@@ -132,7 +169,7 @@ class SyncServiceV2 {
       // Rattrapage : des lignes du cloud jamais reçues ici sont récupérées, puis le rapport est refait
       const recuperes = await this._recupererManquants(client, this.driftReport);
       if (recuperes > 0) {
-        this.driftReport = await computeDrift({
+        this.driftReport = await this._calculerEcart({
           prisma: this.localPrisma,
           client,
           tables: PULL_TABLES,
@@ -140,6 +177,15 @@ class SyncServiceV2 {
           avecRenvoi: true,
         });
         this.driftReport.recuperes = recuperes;
+      }
+      // Doublons probables (même client / fournisseur / boutique saisi sur deux postes) : rendus VISIBLES, jamais fusionnés seuls
+      try {
+        this.doublons = await trouverDoublons(this.localPrisma);
+        if (this.doublons.length > 0) {
+          console.warn(`⚠️  ${this.doublons.length} doublon(s) probable(s) de fiches : ${this.doublons.map((d) => `${d.libelle} « ${d.fiches[0].libelle} » ×${d.nombre}`).join(' ; ')}`);
+        }
+      } catch (e) {
+        console.warn('⚠️  Détection des doublons impossible:', e.message);
       }
       const r = this.driftReport.resume;
       if (r.inexpliques > 0) {
@@ -191,9 +237,9 @@ class SyncServiceV2 {
       console.log('📥 [V2] Pull delta depuis Neon...');
       await this._pullDeltaFromNeon();
     }
-    this.syncInterval = setInterval(() => this._syncCycle(), 30000);
+    this.syncInterval = setInterval(() => this._syncCycle(), SYNC_CYCLE_INTERVAL_MS);
     // Contrôle d'écart avec le cloud : peu après le démarrage (le temps du premier pull), puis périodiquement
-    this.driftTimeout = setTimeout(() => this.checkDrift(), 2 * 60 * 1000);
+    this.driftTimeout = setTimeout(() => this.checkDrift(), DRIFT_FIRST_CHECK_DELAY_MS);
     this.driftInterval = setInterval(() => this.checkDrift(), DRIFT_CHECK_INTERVAL_MS);
     console.log('✅ SyncService V2 démarré (Event Sourcing + Hybrid Mode)');
   }
@@ -217,6 +263,8 @@ class SyncServiceV2 {
     });
     // Sans ce handler, une coupure sur une connexion inactive fait tomber le processus
     pool.on('error', (e) => console.warn('⚠️  Neon: connexion inactive perdue —', e.message));
+    // Idem pour une connexion EN COURS d'utilisation : sans écouteur, une coupure en pleine synchro arrêtait le serveur
+    protegerConnexions(pool);
     return pool;
   }
 
@@ -370,8 +418,142 @@ class SyncServiceV2 {
    * NOUVEAU: Replay des opérations non-synchronisées
    * C'est le cœur du Event Sourcing
    */
+  /**
+   * Stock modifié en local mais jamais journalisé (le poste s'est arrêté entre la réponse HTTP et l'écriture différée
+   * dans le journal : les routes journalisent APRÈS avoir répondu). Grâce à la base de référence, c'est détectable :
+   * (quantité locale − base) est exactement ce qui n'a pas encore été envoyé. Écart non nul et aucune opération en
+   * attente pour la ligne => écriture perdue : on la journalise maintenant.
+   *
+   * Sans risque de doublon : si l'écriture différée arrive après coup, logOperation fusionne dans l'opération en attente.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperStockNonJournalise() {
+    let total = 0;
+    for (const table of stockDifference.TABLES_STOCK) {
+      let lignes;
+      try {
+        lignes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT s.id AS id FROM "${table}" s
+             JOIN "sync_stock_base" b ON b."table_name" = ? AND b."record_id" = s.id
+            WHERE s."quantite_disponible" <> b."quantite"
+              AND NOT EXISTS (SELECT 1 FROM operation_log o
+                               WHERE o.table_name = ? AND o.record_id = s.id AND o.status IN ('pending', 'failed'))`,
+          table, table
+        );
+      } catch (_) {
+        continue; // table de base ou table de stock absente : rien à rattraper
+      }
+      for (const l of lignes) {
+        const id = Number(typeof l.id === 'bigint' ? Number(l.id) : l.id);
+        const lignesStock = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignesStock.length) continue;
+        await this.logOperation(table, 'UPDATE', lignesStock[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Stock : ${total} modification(s) locale(s) non journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
+  /**
+   * Lignes d'HISTORIQUE créées par CE poste mais jamais journalisées (mouvement de stock, ligne de vente, écriture de
+   * compte...). Même cause que le stock : arrêt du poste entre la réponse HTTP et l'écriture différée dans le journal.
+   *
+   * Détection sûre : le journal n'est jamais purgé, et les identifiants d'un poste viennent de SON bloc réservé
+   * (les lignes reçues d'un autre poste ont des identifiants d'un autre bloc). Une ligne de notre bloc sans aucune
+   * entrée de journal n'a donc jamais été envoyée. Seules les tables d'historique (jamais modifiées après création) sont
+   * traitées : renvoyer une ligne identique au cloud est sans effet, alors qu'une table modifiable pourrait écraser une
+   * version plus récente.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperHistoriqueNonJournalise() {
+    const idPoste = installation.getInstallationId();
+    if (!idPoste) return 0;
+    const debut = installation.blockStartFor(idPoste);
+    const fin = debut + installation.ID_BLOCK_SIZE;
+    let total = 0;
+    for (const table of TABLES_HISTORIQUE) {
+      let manquantes;
+      try {
+        manquantes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT t.id AS id FROM "${table}" t
+            WHERE t.id >= ? AND t.id < ?
+              AND NOT EXISTS (SELECT 1 FROM operation_log o WHERE o.table_name = ? AND o.record_id = t.id)
+            ORDER BY t.id LIMIT 500`,
+          debut, fin, table
+        );
+      } catch (_) {
+        continue; // table absente sur ce poste
+      }
+      for (const m of manquantes) {
+        const id = Number(typeof m.id === 'bigint' ? Number(m.id) : m.id);
+        const lignes = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignes.length) continue;
+        await this.logOperation(table, 'INSERT', lignes[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Historique : ${total} ligne(s) locale(s) jamais journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
+  /**
+   * Même rattrapage que _rattraperHistoriqueNonJournalise, mais pour les
+   * tables PARENTES de TABLES_PARENTS_SESSION (caisses, sessions) : une ligne
+   * jamais journalisée y bloque indéfiniment tout enfant qui la référence
+   * (violation de clé étrangère en boucle à chaque replay — cash_movements
+   * et ventes ne pourront jamais être acceptés par Neon tant que la session
+   * qu'ils référencent n'y existe pas).
+   *
+   * Sûr même si la table est modifiable (contrairement aux tables
+   * d'historique) : on ne regarde que l'ABSENCE TOTALE d'entrée de journal,
+   * jamais un statut précis — donc Neon n'a par définition jamais reçu cette
+   * ligne, et journaliser son état actuel ne peut pas écraser une version
+   * plus récente côté cloud.
+   * @returns {Promise<number>} nombre de lignes rattrapées
+   */
+  async _rattraperParentsNonJournalises() {
+    const idPoste = installation.getInstallationId();
+    if (!idPoste) return 0;
+    const debut = installation.blockStartFor(idPoste);
+    const fin = debut + installation.ID_BLOCK_SIZE;
+    let total = 0;
+    for (const table of TABLES_PARENTS_SESSION) {
+      let manquantes;
+      try {
+        manquantes = await this.localPrisma.$queryRawUnsafe(
+          `SELECT t.id AS id FROM "${table}" t
+            WHERE t.id >= ? AND t.id < ?
+              AND NOT EXISTS (SELECT 1 FROM operation_log o WHERE o.table_name = ? AND o.record_id = t.id)
+            ORDER BY t.id LIMIT 500`,
+          debut, fin, table
+        );
+      } catch (_) {
+        continue; // table absente sur ce poste
+      }
+      for (const m of manquantes) {
+        const id = Number(typeof m.id === 'bigint' ? Number(m.id) : m.id);
+        const lignes = await this.localPrisma.$queryRawUnsafe(`SELECT * FROM "${table}" WHERE id = ?`, id);
+        if (!lignes.length) continue;
+        await this.logOperation(table, 'INSERT', lignes[0]);
+        total++;
+      }
+    }
+    if (total > 0) console.log(`🩹 Caisses/sessions : ${total} ligne(s) locale(s) jamais journalisée(s) retrouvée(s) et remise(s) en file d'envoi`);
+    return total;
+  }
+
   async _replayPendingOperations() {
     try {
+      // Avant d'envoyer : récupérer les écritures locales que le journal n'a jamais reçues (stock, historique)
+      try {
+        await this._rattraperStockNonJournalise();
+        await this._rattraperHistoriqueNonJournalise();
+        await this._rattraperParentsNonJournalises();
+      } catch (e) {
+        console.warn('⚠️  Rattrapage des écritures non journalisées:', e.message);
+      }
+
       // Avant d'envoyer : une fiche déjà présente sur Neon sous un autre identifiant est
       // alignée tout de suite, au lieu d'être refusée puis réparée plus tard.
       try {
@@ -446,7 +628,7 @@ class SyncServiceV2 {
           
           const data = typeof op.data === 'string' ? JSON.parse(op.data) : op.data;
           // Retracer l'opération (INSERT/UPDATE/DELETE)
-          await this._applyToCloud(client, op.table_name, op.operation_type, data);
+          await this._applyToCloud(client, op.table_name, op.operation_type, data, { operationId: op.operation_id });
 
           // Marquer comme synced
           await this.localPrisma.$executeRawUnsafe(
@@ -645,6 +827,8 @@ class SyncServiceV2 {
 
     const client = await this.cloudPool.connect();
     try {
+      // Registre des opérations de stock déjà appliquées par différence (voir stock-difference.js)
+      await stockDifference.creerRegistreCloud(client);
       await client.query(`
         CREATE OR REPLACE FUNCTION update_date_modification()
         RETURNS TRIGGER AS $f$
@@ -775,6 +959,9 @@ class SyncServiceV2 {
           console.warn(`⚠️  Ajout colonne ${table}.${colonne}: ${e.message}`);
         }
       }
+      // Dates d'édition des fiches (table à part : aucune colonne ajoutée aux tables de fiches, les postes pas encore
+      // mis à jour continuent de les lire sans différence)
+      try { await syncFusion.creerEditionCloud(client); } catch (e) { console.warn(`⚠️  Table sync_edition: ${e.message}`); }
     } finally {
       client.release();
     }
@@ -1163,6 +1350,8 @@ class SyncServiceV2 {
         `CREATE UNIQUE INDEX IF NOT EXISTS "idx_sync_pull_retry_unique"
          ON "sync_pull_retry"("table_name", "record_id")`
       );
+      await stockDifference.creerBaseLocale(this.localPrisma);
+      await syncFusion.creerBaseLocale(this.localPrisma);
       console.log('✅ Tables de suivi du pull prêtes (sync_pull_state, sync_pull_retry)');
     } catch (e) {
       console.warn('⚠️  Erreur création tables de suivi du pull:', e.message);
@@ -1192,6 +1381,12 @@ class SyncServiceV2 {
     // les timestamps dont les microsecondes ne sont pas nulles.
     const micros = frac.padEnd(6, '0').slice(0, 6);
     return `${datePart}T${hms}.${micros}Z`;
+  }
+
+  /** ISO + 1 minute (tolérance entre deux lectures de l'heure du cloud) */
+  _plusUneMinute(iso) {
+    const t = Date.parse(iso);
+    return Number.isFinite(t) ? new Date(t + 60000).toISOString() : iso;
   }
 
   /**
@@ -1252,29 +1447,83 @@ class SyncServiceV2 {
     return found;
   }
 
+  /** Colonnes de type date de la table locale (mises en cache) */
+  async _colonnesDateLocales(table) {
+    if (this._dateColumnCache[table]) return this._dateColumnCache[table];
+    let colonnes = new Set();
+    try {
+      const rows = await this.localPrisma.$queryRawUnsafe(
+        `SELECT name FROM pragma_table_info('${String(table).replace(/[^a-zA-Z0-9_]/g, '')}') WHERE upper(type) LIKE 'DATETIME%' OR upper(type) LIKE 'TIMESTAMP%'`,
+      );
+      colonnes = new Set(rows.map(r => r.name));
+    } catch (_) { /* table inconnue : aucune conversion */ }
+    this._dateColumnCache[table] = colonnes;
+    return colonnes;
+  }
+
   /**
    * Applique une ligne distante dans la base locale (insert ou update).
    */
   async _mergeRemoteRow(table, row) {
+    const fusion = syncFusion.TABLES_FUSION.includes(table);
+    // La date d'édition est une colonne du cloud seulement : les tables locales ne l'ont pas
+    if (fusion && 'derniere_edition' in row) { row = { ...row }; delete row.derniere_edition; }
     const keys = Object.keys(row).filter(k => row[k] !== null && row[k] !== undefined);
     if (keys.length === 0) return;
 
     const cols = keys.map(k => `"${k}"`).join(', ');
     const placeholders = keys.map(() => '?').join(', ');
     const updateKeys = keys.filter(k => k !== 'id');
+    // Dates : stockées en NOMBRE (millisecondes), comme l'application les écrit. Écrites en texte, elles mélangeaient
+    // deux formats dans la même colonne et faussaient filtres et tris par date (voir services/dates-sqlite.js).
+    const colonnesDate = await this._colonnesDateLocales(table);
     const vals = keys.map(k => {
       const val = row[k];
+      if (colonnesDate.has(k)) {
+        const ms = versMillisecondes(val);
+        if (ms !== null) return ms;
+      }
       if (val instanceof Date) return val.toISOString();
       if (typeof val === 'bigint') return Number(val);
       return val;
     });
 
+    // Stock : la valeur du cloud est RELATIVE à ce que le poste a déjà envoyé. Une vente faite ici et pas encore envoyée
+    // (écart entre la quantité locale et la base de référence) est conservée au lieu d'être écrasée, y compris si la
+    // vente tombe pendant la réception. Sans base connue, l'écart est nul : la valeur du cloud est reprise telle quelle.
+    const relatif = stockDifference.TABLES_STOCK.includes(table) && updateKeys.includes('quantite_disponible') && row.id !== undefined;
+    const paramsRelatif = [];
+    const affectation = (k) => {
+      if (relatif && k === 'quantite_disponible') {
+        paramsRelatif.push(table, Number(row.id));
+        return `"${k}" = excluded."${k}" + ("${table}"."${k}" - COALESCE((SELECT "quantite" FROM "sync_stock_base" WHERE "table_name" = ? AND "record_id" = ?), "${table}"."${k}"))`;
+      }
+      return `"${k}" = excluded."${k}"`;
+    };
+
     const sql = updateKeys.length > 0
       ? `INSERT INTO "${table}" (${cols}) VALUES (${placeholders})
-         ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(k => `"${k}" = excluded."${k}"`).join(', ')}`
+         ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(affectation).join(', ')}`
       : `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO NOTHING`;
 
-    await this.localPrisma.$executeRawUnsafe(sql, ...vals);
+    try {
+      await this.localPrisma.$executeRawUnsafe(sql, ...vals, ...paramsRelatif);
+    } catch (e) {
+      // Table de base absente (ancienne installation non migrée) : reprise de la valeur du cloud telle quelle
+      if (!relatif || !/sync_stock_base/.test(e.message)) throw e;
+      await this.localPrisma.$executeRawUnsafe(
+        `INSERT INTO "${table}" (${cols}) VALUES (${placeholders}) ON CONFLICT(id) DO UPDATE SET ${updateKeys.map(k => `"${k}" = excluded."${k}"`).join(', ')}`,
+        ...vals
+      );
+    }
+
+    // Fiche fusionnable : la version reçue devient la base de référence du poste (voir sync-fusion.js)
+    if (fusion && row.id !== undefined) await syncFusion.ecrireBase(this.localPrisma, table, row.id, row);
+
+    // Le poste vient de prendre la valeur du cloud pour cette ligne de stock : c'est sa nouvelle base de référence
+    if (stockDifference.TABLES_STOCK.includes(table) && row.id !== undefined && row.quantite_disponible !== undefined && row.quantite_disponible !== null) {
+      await stockDifference.ecrireBase(this.localPrisma, table, row.id, row.quantite_disponible);
+    }
   }
 
   /**
@@ -1443,6 +1692,12 @@ class SyncServiceV2 {
       // Écriture locale pas encore poussée : elle fait foi, on ne l'écrase pas, mais on se souvient de la ligne
       if (ctx.idsEnAttente.has(Number(row.id))) { protegees.push(Number(row.id)); continue; }
 
+      // Écriture locale TOUTE RÉCENTE dont l'envoi n'est pas encore journalisé : les routes journalisent après avoir
+      // répondu, donc pendant quelques instants la ligne est déjà modifiée mais sans opération en attente. Sans cette
+      // protection, une réception qui tombe dans ce créneau remettait l'ancienne valeur du cloud par-dessus (un
+      // paiement client enregistré juste après une vente à crédit était ainsi annulé).
+      if (await this._localeModifieeRecemment(table, Number(row.id))) { protegees.push(Number(row.id)); continue; }
+
       try {
         await this._mergeRemoteRow(table, row);
         applied++;
@@ -1464,6 +1719,24 @@ class SyncServiceV2 {
     return { applied, deferred, conflits, protegees: protegees.length, maxSeen };
   }
 
+  /**
+   * La ligne locale existe et a été modifiée il y a moins de `secondes` secondes (d'après sa propre date de
+   * modification). Tables sans date exploitable : jamais « récente » (comportement inchangé).
+   */
+  async _localeModifieeRecemment(table, id, secondes = 60) {
+    const colonnes = ['date_modification', 'date_derniere_maj', 'derniere_maj'];
+    for (const col of colonnes) {
+      try {
+        const r = await this.localPrisma.$queryRawUnsafe(`SELECT "${col}" AS m FROM "${table}" WHERE id = ? LIMIT 1`, id);
+        if (!r.length || r[0].m === null || r[0].m === undefined) continue;
+        const v = r[0].m;
+        const ms = typeof v === 'number' || typeof v === 'bigint' ? Number(v) : Date.parse(String(v).includes('T') ? String(v) : String(v).replace(' ', 'T') + 'Z');
+        if (Number.isFinite(ms) && ms > 0) return Date.now() - ms < secondes * 1000 && ms <= Date.now() + 5 * 60 * 1000;
+      } catch (_) { /* colonne absente : on essaie la suivante */ }
+    }
+    return false;
+  }
+
   /** Redemande au cloud les lignes laissées de côté (écriture locale en attente) dont l'envoi est maintenant parti */
   async _reprendreProtegees(client, table) {
     const memo = this._protegees.get(table);
@@ -1472,8 +1745,10 @@ class SyncServiceV2 {
     const libres = [...memo].filter((id) => !ctx.idsEnAttente.has(id));
     if (libres.length === 0) return 0;
     const res = await client.query(`SELECT * FROM "${table}" WHERE id = ANY($1::bigint[])`, [libres]);
-    const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
+    // On retire les identifiants AVANT la réapplication : si une ligne est encore « modifiée récemment », elle est
+    // remémorisée par _appliquerLignesDistantes et sera reprise au cycle suivant (l'effacer après l'oubliait pour toujours)
     for (const id of libres) memo.delete(id);
+    const st = await this._appliquerLignesDistantes(table, res.rows, '', ctx);
     if (st.applied > 0) console.log(`  📥 ${table}: ${st.applied} ligne(s) laissée(s) de côté reprise(s) après l'envoi local`);
     return st.applied;
   }
@@ -1539,12 +1814,30 @@ class SyncServiceV2 {
       await this._applyRemoteDeletions(client);
 
       // ── Étape 2 : Pull delta des données nouvelles/modifiées ──────────────
+      // Heure du cloud, dans le même référentiel que les colonnes de date de modification (timestamp sans fuseau).
+      // Plafond du curseur : une ligne poussée par un poste à l'horloge AVANCÉE porte une date de modification dans le
+      // futur ; sans plafond, le curseur sautait à cette date et toutes les mises à jour suivantes (datées de l'heure
+      // du cloud) restaient en dessous : plus rien n'était reçu tant que cette date n'était pas passée.
+      let plafond = null;
+      try {
+        const h = await client.query('SELECT LOCALTIMESTAMP::text AS maintenant');
+        plafond = this._rawTimestampToIso(h.rows[0] && h.rows[0].maintenant);
+      } catch (_) { /* pas de plafond ce cycle : comportement habituel */ }
+
       for (const table of PULL_TABLES) {
         try {
           const modCol = await this._resolveModificationColumn(client, table);
           if (!modCol) continue;
 
-          const since = await this._getPullWatermark(table);
+          let since = await this._getPullWatermark(table);
+          // Curseur DÉJÀ dans le futur (poste touché avant ce correctif) : on repart de zéro pour cette table. Le pull
+          // complet est sans risque (les lignes sont appliquées avec les mêmes protections) et rattrape tout ce qui a
+          // été manqué pendant le blocage.
+          if (plafond && since > this._plusUneMinute(plafond)) {
+            console.warn(`⚠️  Curseur de ${table} dans le futur (${since}, heure du cloud ${plafond}) : réception reprise depuis le début`);
+            since = '1970-01-01T00:00:00.000Z';
+            await this._setPullWatermark(table, since);
+          }
 
           // "${modCol}"::text : le pilote pg réinterprète un timestamp SANS
           // fuseau (colonne "date_modification") selon le fuseau LOCAL du
@@ -1569,7 +1862,8 @@ class SyncServiceV2 {
           const st = await this._appliquerLignesDistantes(table, result.rows, since, ctx);
           pulled += st.applied;
 
-          if (st.maxSeen !== since) await this._setPullWatermark(table, st.maxSeen);
+          const nouveauCurseur = plafond && st.maxSeen > plafond ? plafond : st.maxSeen;
+          if (nouveauCurseur !== since) await this._setPullWatermark(table, nouveauCurseur);
 
           const details = [
             st.deferred ? `${st.deferred} différée(s)` : null,
@@ -1690,6 +1984,33 @@ class SyncServiceV2 {
     }
   }
 
+  /**
+   * Données locales jamais envoyées (données de base du premier poste, historique d'un poste resté sans cloud) :
+   * envoyées par table, une seule fois, si le cloud n'a aucune ligne dans cette table (voir sync-graine.js). Sans effet
+   * sur une table du cloud qui contient déjà des données.
+   */
+  async _envoyerGraineSiCloudNeuf() {
+    if (!this.cloudPool) return;
+    let client;
+    try {
+      // Vérification locale d'abord : une fois la graine traitée, aucune connexion au cloud n'est ouverte pour ça
+      if (!(await syncGraine.resteAFaire(this.localPrisma, PULL_TABLES))) return;
+      client = await this.cloudPool.connect();
+      await syncGraine.pousserGraineSiCloudVide({
+        prisma: this.localPrisma,
+        client,
+        enqueue: (table, operation, data) => this.logOperation(table, operation, data),
+        log: (m) => console.log(m),
+        tables: PULL_TABLES, // toutes les tables métier, parents avant enfants : base de départ ET historique d'un poste resté sans cloud
+      });
+    } catch (e) {
+      if (this._isConnectionError(e)) { this.isCloudAvailable = false; return; }
+      console.warn('⚠️  Données de base (graine) :', e.message);
+    } finally {
+      if (client) client.release();
+    }
+  }
+
   async _syncCycle() {
     // Garde-fou : un cycle resté bloqué (liaison gelée) ne doit pas empêcher
     // toutes les synchros suivantes. Au-delà de 5 min on le déclare mort.
@@ -1708,6 +2029,8 @@ class SyncServiceV2 {
     try {
       const available = await this._checkCloudConnection();
       if (!available) return;
+      await this._envoyerGraineSiCloudNeuf();
+      if (!this.isCloudAvailable) return;
       await this._replayPendingOperations();
       // Liaison perdue pendant l'envoi : on laisse le reste en attente
       if (!this.isCloudAvailable) return;
@@ -1758,7 +2081,91 @@ class SyncServiceV2 {
     return result;
   }
 
-  async _applyToCloud(client, tableName, operation, data) {
+  /**
+   * Envoi d'une opération vers le cloud. Les lignes de STOCK sont envoyées par différence (voir stock-difference.js) ;
+   * tout le reste suit le chemin habituel.
+   */
+  async _applyToCloud(client, tableName, operation, data, options = {}) {
+    if (options.operationId && operation !== 'DELETE' && stockDifference.TABLES_STOCK.includes(tableName)) {
+      const ligne = this._toSnakeCase(data);
+      // La quantité de l'opération journalisée peut être PÉRIMÉE : les routes journalisent après avoir répondu, dans un
+      // ordre qui n'est pas toujours celui des ventes, et la fusion des opérations en attente garde la dernière arrivée
+      // (une vente ancienne pouvait ainsi masquer la quantité de la plus récente). L'envoi se fait donc avec la quantité
+      // ACTUELLE de la ligne locale ; la base de référence garantit qu'elle n'est jamais comptée deux fois.
+      if (ligne.id !== undefined && ligne.id !== null) {
+        try {
+          const courant = await this.localPrisma.$queryRawUnsafe(`SELECT CAST("quantite_disponible" AS TEXT) AS q FROM "${tableName}" WHERE id = ?`, Number(ligne.id));
+          const q = courant.length ? Number(courant[0].q) : NaN;
+          if (Number.isFinite(q)) {
+            ligne.quantite_disponible = q;
+            data = { ...data };
+            if ('quantiteDisponible' in data) data.quantiteDisponible = q;
+            if ('quantite_disponible' in data) data.quantite_disponible = q;
+          }
+        } catch (_) { /* on garde la quantité de l'opération */ }
+      }
+      const quantite = Number(typeof ligne.quantite_disponible === 'bigint' ? Number(ligne.quantite_disponible) : ligne.quantite_disponible);
+      if (ligne.id !== undefined && ligne.id !== null && Number.isFinite(quantite)) {
+        // Registre des opérations déjà appliquées : créé ici AU BESOIN (une fois par exécution), et pas seulement au
+        // démarrage. Si le cloud ne répondait pas à ce moment-là, la table n'existait jamais et chaque envoi de stock
+        // échouait ensuite sans fin (« relation sync_applied_ops does not exist »).
+        if (!this._registreCloudPret) {
+          await stockDifference.creerRegistreCloud(client);
+          this._registreCloudPret = true;
+        }
+        const r = await stockDifference.appliquerParDifference({
+          client, prisma: this.localPrisma, table: tableName, row: ligne, operationId: options.operationId,
+        });
+        if (r.traite) return;
+        // Pas de base connue ou ligne absente du cloud : envoi de la valeur totale, puis la base est établie
+        await this._applyToCloudBrut(client, tableName, operation, data);
+        await stockDifference.ecrireBase(this.localPrisma, tableName, ligne.id, quantite);
+        return;
+      }
+    }
+    // Soldes de comptes : même risque de quantité périmée que pour le stock (une vente à crédit puis un paiement
+    // journalisés dans le désordre, le plus ancien l'emportant à la fusion). On envoie le solde ACTUEL de la ligne locale.
+    if (operation === 'UPDATE' && (tableName === 'comptes_clients' || tableName === 'comptes_fournisseurs') && data && data.id !== undefined) {
+      try {
+        const courant = await this.localPrisma.$queryRawUnsafe(`SELECT CAST("solde_actuel" AS TEXT) AS s FROM "${tableName}" WHERE id = ?`, Number(data.id));
+        const s = courant.length ? Number(courant[0].s) : NaN;
+        if (Number.isFinite(s)) {
+          data = { ...data };
+          if ('soldeActuel' in data) data.soldeActuel = s;
+          if ('solde_actuel' in data) data.solde_actuel = s;
+        }
+      } catch (_) { /* on garde le solde de l'opération */ }
+    }
+    return this._applyToCloudBrut(client, tableName, operation, data);
+  }
+
+  /**
+   * Table des dates d'édition des fiches fusionnables, créée AU BESOIN (une fois par exécution) et pas seulement au
+   * démarrage : un cloud injoignable à ce moment-là la laissait absente et chaque envoi de fiche échouait ensuite.
+   */
+  async _assurerColonneEdition(client) {
+    if (this._colonneEditionPrete) return;
+    await syncFusion.creerEditionCloud(client);
+    this._colonneEditionPrete = true;
+  }
+
+  /** Colonnes réelles d'une table du cloud (mises en cache : le schéma ne change pas en cours d'exécution) ; null si inconnues */
+  async _colonnesCloud(client, table) {
+    this._cacheColonnesCloud = this._cacheColonnesCloud || new Map();
+    if (this._cacheColonnesCloud.has(table)) return this._cacheColonnesCloud.get(table);
+    try {
+      const r = await client.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1", [table]
+      );
+      const ensemble = r.rows.length ? new Set(r.rows.map((x) => x.column_name)) : null;
+      if (ensemble) this._cacheColonnesCloud.set(table, ensemble);
+      return ensemble;
+    } catch (_) {
+      return null; // pas de filtre ce coup-ci
+    }
+  }
+
+  async _applyToCloudBrut(client, tableName, operation, data) {
     const row = this._toSnakeCase(data);
 
     // Ensure timestamp fields are proper ISO strings for PostgreSQL
@@ -1872,29 +2279,63 @@ class SyncServiceV2 {
     });
     const values = keys.map(k => row[k]);
 
+    // Produits : une modification ordinaire ne peut PAS réactiver un produit désactivé dans le cloud. Un poste qui n'a
+    // pas encore reçu la désactivation renvoie sa ligne entière avec est_actif = vrai : sans cette règle, il annulait la
+    // désactivation faite ailleurs (le produit ressuscitait partout). Seule une réactivation explicite, marquée par la
+    // route (clé __reactivation), passe. Désactiver reste toujours possible.
+    const fusion = syncFusion.TABLES_FUSION.includes(tableName);
+    if (fusion && operation !== 'DELETE') await this._assurerColonneEdition(client);
+    const actifCollant = tableName === 'produits' && keys.includes('est_actif') && !row.__reactivation;
+    const affecterActif = (k, cible) => (actifCollant && k === 'est_actif'
+      ? `"${k}" = COALESCE(${cible}"${k}", TRUE) AND EXCLUDED."${k}"`
+      : `"${k}" = EXCLUDED."${k}"`);
+
     if (operation === 'INSERT') {
       const cols = keys.map(k => `"${k}"`).join(', ');
       const placeholders = keys.map((_, i) => '$' + (i + 1)).join(', ');
       const updateKeys = keys.filter(k => k !== 'id');
 
+      // Fiche fusionnable : la date d'édition est enregistrée dans la MÊME requête (un seul aller-retour)
+      const envoyerInsertion = async (query) => {
+        let sql = query;
+        let params = values;
+        const idPos = keys.indexOf('id') + 1;
+        if (fusion && idPos > 0) {
+          params = [...values, syncFusion.dateEdition(row)];
+          sql = syncFusion.envelopperEcriture({ sql: query, table: tableName, pId: `$${idPos}`, pEdition: `$${params.length}` });
+        }
+        try {
+          await client.query(sql, params);
+        } catch (queryErr) {
+          console.error(`❌ Erreur SQL INSERT ${tableName}:`, queryErr.message);
+          throw queryErr;
+        }
+      };
+
       if (updateKeys.length === 0) {
-        const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`;
-        try {
-          await client.query(query, values);
-        } catch (queryErr) {
-          console.error(`❌ Erreur SQL INSERT ${tableName}:`, queryErr.message);
-          throw queryErr;
-        }
+        await envoyerInsertion(`INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`);
       } else {
-        const updates = updateKeys.map(k => `"${k}" = EXCLUDED."${k}"`).join(', ');
-        const query = `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`;
-        try {
-          await client.query(query, values);
-        } catch (queryErr) {
-          console.error(`❌ Erreur SQL INSERT ${tableName}:`, queryErr.message);
-          throw queryErr;
-        }
+        const updates = updateKeys.map(k => affecterActif(k, `"${tableName}".`)).join(', ');
+        await envoyerInsertion(`INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updates}`);
       }
+      if (fusion) await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, row);
+    } else if (operation === 'UPDATE' && fusion) {
+      // Fiche : seules les colonnes modifiées partent, et une colonne n'est écrasée que si elle n'a pas changé depuis la
+      // base du poste ou si cette modification est plus récente (voir sync-fusion.js)
+      const base = await syncFusion.lireBase(this.localPrisma, tableName, row.id);
+      const colonnes = await this._colonnesCloud(client, tableName);
+      const m = syncFusion.construireMiseAJour({ table: tableName, ligne: syncFusion.limiterAuxColonnes(row, colonnes), base, reactivation: !!row.__reactivation });
+      if (!m) return; // rien n'a changé par rapport à la base
+      // Mise à jour + date d'édition dans UNE requête (un seul aller-retour, atomique : la date n'avance pas sans la mise à jour)
+      try {
+        const result = await client.query(m.sql, m.params);
+        if (result.rowCount === 0) console.log(`  Info: ${tableName} (id=${row.id}) pas encore dans Neon`);
+      } catch (queryErr) {
+        console.error(`❌ Erreur SQL UPDATE ${tableName}:`, queryErr.message);
+        throw queryErr;
+      }
+      await syncFusion.ecrireBase(this.localPrisma, tableName, row.id, { ...(base || {}), ...syncFusion.instantane(row) });
+      return;
     } else if (operation === 'UPDATE') {
       // Tables qui utilisent des upserts localement → doivent faire UPSERT dans Neon
       const UPSERT_TABLES = ['stock_boutiques', 'mouvements_stock'];
@@ -1919,7 +2360,9 @@ class SyncServiceV2 {
         // UPDATE pur : ne crée pas l'enregistrement s'il n'existe pas
         const nonIdKeys = keys.filter(k => k !== 'id');
         if (nonIdKeys.length === 0) return;
-        const sets = nonIdKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        const sets = nonIdKeys.map((k, i) => (actifCollant && k === 'est_actif'
+          ? `"${k}" = COALESCE("${k}", TRUE) AND $${i + 1}`
+          : `"${k}" = $${i + 1}`)).join(', ');
         const vals = nonIdKeys.map(k => row[k]);
         vals.push(row.id);
         const whereId = '$' + vals.length;
@@ -1942,7 +2385,7 @@ class SyncServiceV2 {
    * NOUVEAU: logOperation - Log une opération dans le journal des événements
    * C'est LA méthode que les routes doivent appeler
    */
-  async logOperation(tableName, operation, data, userId = null) {
+  async logOperation(tableName, operation, data, userId = null, tentative = 1) {
     if (!this.cloudUrl) return; // Pas de sync en mode local-only
 
     const operationId = uuidv4();
@@ -2046,7 +2489,13 @@ class SyncServiceV2 {
         setImmediate(() => this._syncCycle());
       }
     } catch (e) {
-      console.warn('⚠️  Erreur logOperation:', e.message);
+      // Base locale occupée (une vente écrit en même temps) : l'opération n'était PAS journalisée et disparaissait
+      // pour toujours, sans trace (lignes de vente jamais envoyées). On réessaie avec une attente croissante.
+      if (tentative < 8 && /locked|busy|SQLITE_BUSY|timed out/i.test(String(e.message))) {
+        await new Promise((r) => setTimeout(r, 80 * tentative + Math.floor(Math.random() * 80)));
+        return this.logOperation(tableName, operation, data, userId, tentative + 1);
+      }
+      console.warn(`⚠️  Erreur logOperation (${tableName} id=${data && data.id}, ${tentative} tentative(s)):`, e.message);
       // Don't throw - let operations continue even if sync fails
     }
   }

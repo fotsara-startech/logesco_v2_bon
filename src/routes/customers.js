@@ -482,6 +482,7 @@ function createCustomerRouter(models) {
           transactions: transactions.map(t => ({
             id: t.id,
             typeTransaction: t.typeTransaction,
+            typeTransactionDetail: t.typeTransactionDetail,
             montant: parseFloat(t.montant),
             description: t.description,
             referenceType: t.referenceType,

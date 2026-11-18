@@ -4,7 +4,9 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { messageProduitService } = require('../utils/service-guard');
+const installation = require('../utils/installation');
 const { validate } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { commandeApprovisionnementSchemas, idParamSchema } = require('../validation/schemas');
@@ -44,11 +46,11 @@ function createProcurementRouter(services) {
         const where = {};
         if (fournisseurId) where.fournisseurId = parseInt(fournisseurId);
         if (statut) where.statut = statut;
-        if (dateDebut || dateFin) {
-          where.dateCommande = {};
-          if (dateDebut) where.dateCommande.gte = new Date(dateDebut);
-          if (dateFin) where.dateCommande.lte = new Date(dateFin);
-        }
+        // (filtre fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+        await appliquerFiltreDate(prisma, where, { table: 'commandes_approvisionnement', colonne: 'date_commande', champ: 'dateCommande' }, {
+          gte: dateDebut ? new Date(dateDebut) : undefined,
+          lte: dateFin ? new Date(dateFin) : undefined,
+        });
 
         // Recherche par numéro de commande ou nom de fournisseur
         if (search && search.trim()) {
@@ -1283,11 +1285,14 @@ async function generateNumeroCommande(prisma) {
 
   let sequence = 1;
   if (lastOrder) {
-    const lastSequence = parseInt(lastOrder.numeroCommande.slice(-3));
-    sequence = lastSequence + 1;
+    // « CMD20261012003 » ou « CMD20261012003-P15 » : la séquence est les 3 chiffres qui suivent la date
+    const m = /^CMD\d{8}(\d{3})/.exec(lastOrder.numeroCommande);
+    if (m) sequence = parseInt(m[1], 10) + 1;
   }
 
-  return `${prefix}${String(sequence).padStart(3, '0')}`;
+  // Suffixe de poste (-P15, absent pour le poste 1) : deux postes qui n'ont pas encore synchronisé généraient le même
+  // numéro, et le second n'arrivait jamais au cloud (numéro unique)
+  return `${prefix}${String(sequence).padStart(3, '0')}${installation.documentSuffix()}`;
 }
 
 module.exports = { createProcurementRouter };

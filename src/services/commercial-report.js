@@ -17,6 +17,8 @@
  * n'a pas ce problème.
  */
 
+const { appliquerFiltreDate } = require('../utils/filtre-date');
+
 class CommercialReportService {
   constructor(prisma) {
     this.prisma = prisma;
@@ -30,9 +32,13 @@ class CommercialReportService {
     const where = {
       commercialId: { not: null },
       statut: { not: 'annulee' },
-      dateVente: { gte: new Date(startDate), lte: new Date(endDate) },
       ...(boutiqueId ? { boutiqueId } : {}),
     };
+    // Période fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js
+    await appliquerFiltreDate(this.prisma, where, { table: 'ventes', colonne: 'date_vente', champ: 'dateVente' }, {
+      gte: new Date(startDate),
+      lte: new Date(endDate),
+    });
 
     const rows = await this.prisma.vente.groupBy({
       by: ['commercialId', 'zoneId'],
@@ -94,9 +100,13 @@ class CommercialReportService {
     const where = {
       commercialId: { not: null },
       statut: { not: 'annulee' },
-      dateVente: { gte: new Date(startDate), lte: new Date(endDate) },
       ...(boutiqueId ? { boutiqueId } : {}),
     };
+    // Période fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js
+    await appliquerFiltreDate(this.prisma, where, { table: 'ventes', colonne: 'date_vente', champ: 'dateVente' }, {
+      gte: new Date(startDate),
+      lte: new Date(endDate),
+    });
 
     const agg = await this.prisma.vente.aggregate({
       where,

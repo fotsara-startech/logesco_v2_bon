@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { appliquerFiltreDate, clauseDate } = require('../utils/filtre-date');
 const { validate, validateId } = require('../middleware/validation');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO, PaginatedResponseDTO, DatePeremptionDTO } = require('../dto');
@@ -182,22 +183,20 @@ function createExpirationDatesRouter(models) {
           where.boutiqueId = parseInt(boutiqueId);
         }
 
-        // Filtrer par date de péremption
+        // Filtrer par date de péremption (filtre fiable : dates stockées en texte dans SQLite, voir utils/filtre-date.js)
+        let bornesPeremption = null;
         if (estPerime !== undefined) {
           const isPerime = estPerime === 'true' || estPerime === true;
-          if (isPerime) {
-            where.datePeremption = { lt: new Date() };
-          } else {
-            where.datePeremption = { gte: new Date() };
-          }
+          bornesPeremption = isPerime ? { lt: new Date() } : { gte: new Date() };
         }
 
         if (joursRestants !== undefined) {
           const jours = parseInt(joursRestants);
           const dateLimite = new Date();
           dateLimite.setDate(dateLimite.getDate() + jours);
-          where.datePeremption = { lte: dateLimite };
+          bornesPeremption = { lte: dateLimite };
         }
+        if (bornesPeremption) await appliquerFiltreDate(models.prisma, where, { table: 'dates_peremption', colonne: 'date_peremption', champ: 'datePeremption' }, bornesPeremption);
 
         const [datesPeremption, total] = await Promise.all([
           models.prisma.datePeremption.findMany({
@@ -261,10 +260,8 @@ function createExpirationDatesRouter(models) {
         const dateLimite = new Date();
         dateLimite.setDate(dateLimite.getDate() + parseInt(joursMax));
 
-        const where = {
-          estEpuise: false,
-          datePeremption: { lte: dateLimite }
-        };
+        const where = { estEpuise: false };
+        let bornesPeremption = { lte: dateLimite }; // (filtre fiable : voir utils/filtre-date.js)
 
         // Filtrage par boutique
         if (boutiqueId) {
@@ -275,25 +272,27 @@ function createExpirationDatesRouter(models) {
         if (niveauAlerte) {
           switch (niveauAlerte) {
             case 'perime':
-              where.datePeremption = { lt: now };
+              bornesPeremption = { lt: now };
               break;
             case 'critique':
               const dateCritique = new Date();
               dateCritique.setDate(dateCritique.getDate() + 7);
-              where.datePeremption = { gte: now, lte: dateCritique };
+              bornesPeremption = { gte: now, lte: dateCritique };
               break;
             case 'avertissement':
               const dateAvertissement = new Date();
               dateAvertissement.setDate(dateAvertissement.getDate() + 30);
-              where.datePeremption = { gte: now, lte: dateAvertissement };
+              bornesPeremption = { gte: now, lte: dateAvertissement };
               break;
             case 'attention':
               const dateAttention = new Date();
               dateAttention.setDate(dateAttention.getDate() + 90);
-              where.datePeremption = { gte: now, lte: dateAttention };
+              bornesPeremption = { gte: now, lte: dateAttention };
               break;
           }
         }
+
+        await appliquerFiltreDate(models.prisma, where, { table: 'dates_peremption', colonne: 'date_peremption', champ: 'datePeremption' }, bornesPeremption);
 
         const [alertes, total] = await Promise.all([
           models.prisma.datePeremption.findMany({
