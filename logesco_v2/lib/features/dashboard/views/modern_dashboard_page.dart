@@ -233,7 +233,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('reports', 'READ')) _buildMenuItem(Icons.bar_chart, 'menu_product_analytics'.tr, Colors.blue, () => Get.toNamed(AppRoutes.productAnalytics)),
                     // Fonctionnalité optionnelle : n'apparaît que si des commerciaux existent (voir _checkHasCommerciaux)
                     if (_hasPermission('reports', 'READ') && _hasCommerciaux)
-                      _buildMenuItem(Icons.badge_outlined, 'Ventes par commercial', Colors.brown, () => Get.toNamed(AppRoutes.commercialReport)),
+                      _buildMenuItem(Icons.badge_outlined, 'commercials_ventes_par_commercial'.tr, Colors.brown, () => Get.toNamed(AppRoutes.commercialReport)),
                   ]),
                   _buildMenuSection('menu_administration'.tr, [
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'users_title'.tr, Colors.grey, () => Get.toNamed(AppRoutes.users)),
@@ -241,7 +241,7 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'menu_company'.tr, Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.store, 'Boutiques', Colors.teal, () => Get.to(() => const BoutiquesManagementPage())),
                     if (_hasPermission('commercials', 'READ')) _buildMenuItem(Icons.badge_outlined, 'Commerciaux', Colors.brown, () => Get.toNamed(AppRoutes.commercials)),
-                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'Dashboard consolidé', Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
+                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'boutiques_dashboard_consolide'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
                     // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
                     // Connexion au cloud (lien Neon) : administrateur, sur le poste qui héberge le serveur. Visible aussi pour un
                     // client 100 % local : c'est ce qui lui permet d'activer le cloud sans modifier le .env à la main.

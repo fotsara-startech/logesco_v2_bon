@@ -20,7 +20,7 @@ class DashboardStatsWidgets {
   static Widget buildSalesStats() {
     final controller = _getController();
     if (controller == null) {
-      return _buildFallbackWidget('Ventes du jour', '0 FCFA', '0 transactions', Icons.point_of_sale, Colors.green);
+      return _buildFallbackWidget('dashboard_today_sales'.tr, '0 FCFA', '0 transactions', Icons.point_of_sale, Colors.green);
     }
 
     return Obx(() {
@@ -41,7 +41,7 @@ class DashboardStatsWidgets {
   static Widget buildProductsStats() {
     final controller = _getController();
     if (controller == null) {
-      return _buildFallbackWidget('Produits en stock', '0', '0 catégories', Icons.inventory_2, Colors.blue);
+      return _buildFallbackWidget('dashboard_produits_stock'.tr, '0', '0 catégories', Icons.inventory_2, Colors.blue);
     }
 
     return Obx(() {
@@ -63,7 +63,7 @@ class DashboardStatsWidgets {
     return _buildStatWidget(
       'Clients actifs',
       (controller) => controller.activeCustomers.value,
-      (controller) => '${controller.newCustomersThisMonth.value} nouveaux ce mois',
+      (controller) => 'dashboard_nouveaux_mois'.trParams({'value': '${controller.newCustomersThisMonth.value}'}),
       Icons.people,
       Colors.orange,
       (controller) => controller.customersTrend.value,
@@ -74,7 +74,7 @@ class DashboardStatsWidgets {
   /// Widget de statistiques financières
   static Widget buildFinancialStats() {
     return _buildStatWidget(
-      'Dépenses du mois',
+      'dashboard_depenses_mois'.tr,
       (controller) => '${controller.monthlyExpenses.value} FCFA',
       (controller) => '${controller.monthlyExpensesCount.value} mouvements',
       Icons.account_balance_wallet,
@@ -87,7 +87,7 @@ class DashboardStatsWidgets {
   /// Widget de statistiques du stock
   static Widget buildStockStats() {
     return _buildStatWidget(
-      'Valeur du stock',
+      'dashboard_valeur_stock'.tr,
       (controller) => '${controller.stockValue.value} FCFA',
       (controller) => 'Valorisation totale',
       Icons.warehouse,
@@ -113,9 +113,9 @@ class DashboardStatsWidgets {
   /// Widget de statistiques des comptes
   static Widget buildAccountsStats() {
     return _buildStatWidget(
-      'Créances clients',
+      'dashboard_creances_clients'.tr,
       (controller) => '${controller.clientCredits.value} FCFA',
-      (controller) => 'À recouvrer',
+      (controller) => 'dashboard_recouvrer'.tr,
       Icons.account_balance,
       Colors.deepOrange,
       (controller) => controller.creditsTrend.value,

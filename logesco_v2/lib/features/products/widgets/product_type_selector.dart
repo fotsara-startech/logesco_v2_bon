@@ -132,19 +132,19 @@ class ProductTypeSelector extends StatelessWidget {
 Future<bool?> confirmerChangementDeType(BuildContext context, {required bool versService}) {
   final points = versService
       ? [
-          'Le stock n\'est plus suivi : les ventes ne diminuent plus aucune quantité, et les réceptions de commande, inventaires et ajustements ne pourront plus y ajouter de stock.',
+          'products_stock_n_est_plus_suivi_ventes'.tr,
           'products_stock_deja_enregistre_produit_n_est'.tr,
-          'Le prix d\'achat, le seuil de stock minimum et la gestion de péremption ne s\'appliquent plus (ils seront vidés).',
+          'products_prix_achat_seuil_stock_minimum_gestion'.tr,
           'products_ventes_deja_faites_ne_changent_pas'.tr,
         ]
       : [
-          'Le produit sera géré en stock : chaque vente diminuera sa quantité, et il apparaîtra dans les réceptions, inventaires et alertes de stock.',
+          'products_produit_sera_gere_stock_chaque_vente'.tr,
           'Son stock de départ est probablement à 0 : enregistrez une réception ou un inventaire avant de le vendre.',
           'products_vous_pourrez_renseigner_prix_achat_seuil'.tr,
           'products_ventes_deja_faites_ne_changent_pas'.tr,
         ];
   final avertissement = versService
-      ? 'À faire seulement pour une vraie prestation (livraison, installation, main-d\'œuvre…). Un article que vous stockez ne doit jamais être un service : ses ventes ne diminueraient plus le stock.'
+      ? 'products_faire_seulement_vraie_prestation_livraison_installation'.tr
       : null;
 
   return showDialog<bool>(

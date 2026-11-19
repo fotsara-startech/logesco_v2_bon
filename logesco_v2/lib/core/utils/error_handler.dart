@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:logesco_v2/core/utils/snackbar_helper.dart';
@@ -23,7 +24,7 @@ class ErrorHandler {
       userMessage = error.message;
       logMessage = 'Stock Error: ${error.message}';
     } else {
-      userMessage = 'Une erreur inattendue s\'est produite';
+      userMessage = 'core_erreur_inattendue_s_est_produite'.tr;
       logMessage = 'Unexpected Error: ${error.toString()}';
     }
 
@@ -41,23 +42,23 @@ class ErrorHandler {
         // le watchdog le relancera et affichera "Service restauré"
         return '';
       case 'NO_INTERNET':
-        return 'Vérifiez votre connexion internet';
+        return 'core_verifiez_votre_connexion_internet'.tr;
       case 'AUTHENTICATION_REQUIRED':
-        return 'Veuillez vous reconnecter';
+        return 'core_veuillez_vous_reconnecter'.tr;
       case 'ACCESS_DENIED':
-        return 'Vous n\'avez pas les permissions nécessaires';
+        return 'core_vous_n_avez_pas_permissions_necessaires_2'.tr;
       case 'RESOURCE_NOT_FOUND':
-        return 'Ressource non trouvée';
+        return 'error_not_found'.tr;
       case 'VALIDATION_ERROR':
-        return 'Données invalides: ${error.message}';
+        return 'core_donnees_invalides'.trParams({'message': '${error.message}'});
       case 'INSUFFICIENT_STOCK':
         return error.message;
       case 'CREDIT_LIMIT_EXCEEDED':
         return error.message;
       case 'DUPLICATE_PRODUCT_REFERENCE':
-        return 'Cette référence produit existe déjà';
+        return 'core_reference_produit_existe_deja'.tr;
       case 'DELETE_CONSTRAINT_VIOLATION':
-        return 'Impossible de supprimer: élément lié à d\'autres données';
+        return 'core_impossible_supprimer_element_lie_autres_donnees'.tr;
       case 'INVALID_TRANSACTION':
         return 'Transaction invalide: ${error.message}';
       case 'ORDER_ALREADY_PROCESSED':
@@ -65,16 +66,16 @@ class ErrorHandler {
       case 'SALE_ALREADY_CANCELLED':
         return error.message;
       case 'DATABASE_ERROR':
-        return 'Erreur de base de données. Veuillez réessayer';
+        return 'core_erreur_base_donnees_veuillez_reessayer'.tr;
       case 'CONFIGURATION_ERROR':
-        return 'Erreur de configuration. Contactez l\'administrateur';
+        return 'core_erreur_configuration_contactez_administrateur'.tr;
       default:
         if (error.statusCode >= 500) {
-          return 'Erreur serveur. Veuillez réessayer plus tard';
+          return 'core_erreur_serveur_veuillez_reessayer_plus_tard'.tr;
         } else if (error.statusCode == 429) {
-          return 'Trop de requêtes. Veuillez patienter';
+          return 'core_trop_requetes_veuillez_patienter'.tr;
         } else {
-          return error.message.isNotEmpty ? error.message : 'Erreur inconnue';
+          return error.message.isNotEmpty ? error.message : 'error_unknown'.tr;
         }
     }
   }

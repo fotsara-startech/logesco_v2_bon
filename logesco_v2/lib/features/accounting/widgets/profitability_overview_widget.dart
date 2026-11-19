@@ -64,7 +64,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Rentabilité du mois',
+                            'accounting_rentabilite_mois'.tr,
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey.shade600,
@@ -91,7 +91,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildMetricCard(
-                        'Bénéfice Net',
+                        'dashboard_net_profit'.tr,
                         '${netProfit.toStringAsFixed(0)} FCFA',
                         isProfitable ? Icons.arrow_upward : Icons.arrow_downward,
                         isProfitable ? Colors.green : Colors.red,
@@ -124,7 +124,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildMetricCard(
-                        'Dépenses',
+                        'accounting_expenses'.tr,
                         '${totalExpenses.toStringAsFixed(0)} FCFA',
                         Icons.money_off,
                         Colors.red.shade600,
@@ -195,7 +195,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Indicateur de rentabilité',
+              'accounting_indicateur_rentabilite'.tr,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,

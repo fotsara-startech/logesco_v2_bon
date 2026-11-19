@@ -311,7 +311,7 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Appliquer la TVA',
+                  'proforma_appliquer_tva'.tr,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -319,7 +319,7 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
                   ),
                 ),
                 Text(
-                  'Taux configuré : ${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%',
+                  'proforma_taux_configure'.trParams({'toStringAsFixed': '${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}'}),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],

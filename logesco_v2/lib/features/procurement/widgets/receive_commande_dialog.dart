@@ -150,7 +150,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                   children: [
                                     // Nom du produit
                                     Text(
-                                      detail.produit?.nom ?? 'Produit inconnu',
+                                      detail.produit?.nom ?? 'pdf_unknown_product'.tr,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
@@ -176,11 +176,11 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                       spacing: 12,
                                       children: [
                                         Text(
-                                          'Commandé: ${detail.quantiteCommandee}',
+                                          'procurement_commande_2'.trParams({'quantiteCommandee': '${detail.quantiteCommandee}'}),
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         Text(
-                                          'Déjà reçu: ${detail.quantiteRecue}',
+                                          'procurement_deja_recu'.trParams({'quantiteRecue': '${detail.quantiteRecue}'}),
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         Text(

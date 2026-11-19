@@ -1,4 +1,5 @@
-﻿class CustomerTransaction {
+﻿import 'package:get/get.dart';
+class CustomerTransaction {
   final int id;
   final String typeTransaction;
   final double montant;
@@ -86,16 +87,16 @@
       case 'paiement':
         return 'Paiement';
       case 'credit':
-        return 'Crédit';
+        return 'sales_payment_credit'.tr;
       case 'debit':
-        return 'Débit';
+        return 'customers_debit'.tr;
       case 'achat':
         return 'Achat';
       // Anciens types pour compatibilité
       case 'paiement_dette':
         return 'Paiement dette';
       case 'achat_credit':
-        return 'Achat à crédit';
+        return 'customers_credit_purchase'.tr;
       case 'achat_comptant':
         return 'Achat comptant';
       case 'credit_manuel':

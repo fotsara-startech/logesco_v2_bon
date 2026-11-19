@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -23,19 +24,19 @@ class SalesExcelService {
 
       final headers = [
         'N° Vente',
-        'Date',
-        'Client',
+        'suppliers_transaction_date'.tr,
+        'sales_customer'.tr,
         'Vendeur',
-        'Mode de paiement',
+        'suppliers_payment_method'.tr,
         'Statut',
         'Sous-total',
         'Remise',
         'TVA',
-        'Montant total',
-        'Montant payé',
-        'Montant restant',
-        'Avance utilisée',
-        'Bénéfice',
+        'sales_total_amount'.tr,
+        'sales_amount_paid'.tr,
+        'printing_montant_restant'.tr,
+        'sales_advance_used_label'.tr,
+        'accounting_profit'.tr,
       ];
 
       for (int i = 0; i < headers.length; i++) {
@@ -55,7 +56,7 @@ class SalesExcelService {
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row)).value = TextCellValue(sale.numeroVente);
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row)).value = TextCellValue(_dateFormat.format(sale.dateCreation));
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row)).value =
-            TextCellValue(sale.client != null ? '${sale.client!.nom} ${sale.client!.prenom ?? ''}'.trim() : 'Client de passage');
+            TextCellValue(sale.client != null ? '${sale.client!.nom} ${sale.client!.prenom ?? ''}'.trim() : 'sales_walk_in'.tr);
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row)).value = TextCellValue(sale.vendeur?.nomUtilisateur ?? '');
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row)).value = TextCellValue(sale.modePaiement);
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row)).value = TextCellValue(sale.statut);

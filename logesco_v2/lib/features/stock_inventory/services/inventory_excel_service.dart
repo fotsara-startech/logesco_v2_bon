@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:io';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,7 +28,7 @@ class InventoryExcelService {
         CellIndex.indexByString('F1'),
       );
       final titleCell = sheet.cell(CellIndex.indexByString('A1'));
-      titleCell.value = TextCellValue('FICHE DE COMPTAGE D\'INVENTAIRE');
+      titleCell.value = TextCellValue('stockinventory_fiche_comptage_inventaire'.tr);
       titleCell.cellStyle = CellStyle(
         bold: true,
         fontSize: 14,
@@ -39,17 +40,17 @@ class InventoryExcelService {
       sheet.cell(CellIndex.indexByString('B3')).value = TextCellValue(inventory.nom);
       sheet.cell(CellIndex.indexByString('A4')).value = TextCellValue('Type:');
       sheet.cell(CellIndex.indexByString('B4')).value = TextCellValue(inventory.type.displayName);
-      sheet.cell(CellIndex.indexByString('A5')).value = TextCellValue('Date:');
+      sheet.cell(CellIndex.indexByString('A5')).value = TextCellValue('stock_movements_date'.tr);
       sheet.cell(CellIndex.indexByString('B5')).value = TextCellValue(DateTime.now().toString().substring(0, 10));
 
       // === EN-TÊTES DES COLONNES ===
-      const headers = [
+      final headers = [
         'Code',
-        'Produit',
-        'Catégorie',
+        'quick_billing_product'.tr,
+        'products_category'.tr,
         'Stock Système',
-        'Qté Comptée',
-        'Écart',
+        'inventory_count_qty_counted'.tr,
+        'cash_session_history_variance'.tr,
         'Commentaire',
       ];
 

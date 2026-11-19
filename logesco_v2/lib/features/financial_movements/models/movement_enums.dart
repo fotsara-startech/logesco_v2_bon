@@ -1,18 +1,19 @@
+import 'package:get/get.dart';
 /// Enums pour le module des mouvements financiers
 
 /// Types de mouvements financiers
 enum MovementType {
   /// Sortie d'argent (dépense)
-  expense('expense', 'Dépense', 'Sortie d\'argent'),
+  expense('expense', 'financialmovements_depense'.tr, 'Sortie d\'argent'),
 
   /// Remboursement
-  refund('refund', 'Remboursement', 'Remboursement de dépense'),
+  refund('refund', 'Remboursement', 'financialmovements_remboursement_depense'.tr),
 
   /// Avance
-  advance('advance', 'Avance', 'Avance sur salaire ou dépense'),
+  advance('advance', 'Avance', 'financialmovements_avance_sur_salaire_depense'.tr),
 
   /// Autre type de mouvement
-  other('other', 'Autre', 'Autre type de mouvement');
+  other('other', 'Autre', 'financialmovements_autre_type_mouvement'.tr);
 
   const MovementType(this.code, this.label, this.description);
 
@@ -38,19 +39,19 @@ enum MovementType {
 /// Statuts des mouvements financiers
 enum MovementStatus {
   /// Mouvement en attente de validation
-  pending('pending', 'En attente', 'En attente de validation'),
+  pending('pending', 'En attente', 'financialmovements_attente_validation'.tr),
 
   /// Mouvement validé
-  validated('validated', 'Validé', 'Mouvement validé et approuvé'),
+  validated('validated', 'financialmovements_valide'.tr, 'financialmovements_mouvement_valide_approuve'.tr),
 
   /// Mouvement rejeté
-  rejected('rejected', 'Rejeté', 'Mouvement rejeté'),
+  rejected('rejected', 'financialmovements_rejete'.tr, 'financialmovements_mouvement_rejete'.tr),
 
   /// Mouvement annulé
-  cancelled('cancelled', 'Annulé', 'Mouvement annulé'),
+  cancelled('cancelled', 'suppliers_annule'.tr, 'financialmovements_mouvement_annule'.tr),
 
   /// Mouvement en cours de traitement
-  processing('processing', 'En cours', 'En cours de traitement');
+  processing('processing', 'En cours', 'financialmovements_cours_traitement'.tr);
 
   const MovementStatus(this.code, this.label, this.description);
 
@@ -101,27 +102,27 @@ enum ReportPeriod {
   today('today', 'Aujourd\'hui', 'Mouvements d\'aujourd\'hui'),
 
   /// Cette semaine
-  thisWeek('this_week', 'Cette semaine', 'Mouvements de cette semaine'),
+  thisWeek('this_week', 'sales_this_week'.tr, 'financial_movements_filter_this_week_desc'.tr),
 
   /// Ce mois
-  thisMonth('this_month', 'Ce mois', 'Mouvements de ce mois'),
+  thisMonth('this_month', 'analytics_this_month'.tr, 'financial_movements_filter_this_month_desc'.tr),
 
   /// Cette année
-  thisYear('this_year', 'Cette année', 'Mouvements de cette année'),
+  thisYear('this_year', 'analytics_this_year'.tr, 'financialmovements_mouvements_annee'.tr),
 
   /// 7 derniers jours
-  last7Days('last_7_days', '7 derniers jours', 'Mouvements des 7 derniers jours'),
+  last7Days('last_7_days', '7 derniers jours', 'financialmovements_mouvements_7_derniers_jours'.tr),
 
   /// 30 derniers jours
-  last30Days('last_30_days', '30 derniers jours', 'Mouvements des 30 derniers jours'),
+  last30Days('last_30_days', '30 derniers jours', 'financialmovements_mouvements_30_derniers_jours'.tr),
 
   /// 3 derniers mois
-  last3Months('last_3_months', '3 derniers mois', 'Mouvements des 3 derniers mois'),
+  last3Months('last_3_months', '3 derniers mois', 'financialmovements_mouvements_3_derniers_mois'.tr),
 
   /// Période personnalisée
-  custom('custom', 'Période personnalisée', 'Période définie par l\'utilisateur');
+  custom('custom', 'sales_custom_period'.tr, 'financialmovements_periode_definie_par_utilisateur'.tr);
 
-  const ReportPeriod(this.code, this.label, this.description);
+  ReportPeriod(this.code, this.label, this.description);
 
   final String code;
   final String label;
@@ -198,18 +199,18 @@ enum ReportPeriod {
 /// Niveaux de priorité pour les mouvements
 enum MovementPriority {
   /// Priorité basse
-  low('low', 'Basse', 'Priorité basse'),
+  low('low', 'Basse', 'financialmovements_priorite_basse'.tr),
 
   /// Priorité normale
-  normal('normal', 'Normale', 'Priorité normale'),
+  normal('normal', 'Normale', 'financialmovements_priorite_normale'.tr),
 
   /// Priorité haute
-  high('high', 'Haute', 'Priorité haute'),
+  high('high', 'Haute', 'financialmovements_priorite_haute'.tr),
 
   /// Priorité urgente
-  urgent('urgent', 'Urgente', 'Priorité urgente');
+  urgent('urgent', 'Urgente', 'financialmovements_priorite_urgente'.tr);
 
-  const MovementPriority(this.code, this.label, this.description);
+  MovementPriority(this.code, this.label, this.description);
 
   final String code;
   final String label;
@@ -258,25 +259,25 @@ enum MovementPriority {
 /// Types d'actions pour l'audit
 enum AuditAction {
   /// Création d'un mouvement
-  create('create', 'Création', 'Création d\'un nouveau mouvement'),
+  create('create', 'roles_priv_create'.tr, 'financialmovements_creation_nouveau_mouvement_2'.tr),
 
   /// Modification d'un mouvement
-  update('update', 'Modification', 'Modification d\'un mouvement existant'),
+  update('update', 'Modification', 'financialmovements_modification_mouvement_existant'.tr),
 
   /// Suppression d'un mouvement
-  delete('delete', 'Suppression', 'Suppression d\'un mouvement'),
+  delete('delete', 'Suppression', 'financialmovements_suppression_mouvement_3'.tr),
 
   /// Validation d'un mouvement
-  validate('validate', 'Validation', 'Validation d\'un mouvement'),
+  validate('validate', 'Validation', 'financialmovements_validation_mouvement'.tr),
 
   /// Rejet d'un mouvement
-  reject('reject', 'Rejet', 'Rejet d\'un mouvement'),
+  reject('reject', 'Rejet', 'financialmovements_rejet_mouvement'.tr),
 
   /// Annulation d'un mouvement
-  cancel('cancel', 'Annulation', 'Annulation d\'un mouvement'),
+  cancel('cancel', 'Annulation', 'financialmovements_annulation_mouvement'.tr),
 
   /// Consultation d'un mouvement
-  view('view', 'Consultation', 'Consultation d\'un mouvement');
+  view('view', 'Consultation', 'financialmovements_consultation_mouvement'.tr);
 
   const AuditAction(this.code, this.label, this.description);
 

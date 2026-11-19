@@ -305,7 +305,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
             const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              _selectedPeriod == PeriodFilter.all ? 'customers_no_transactions'.tr : 'Aucune transaction pour cette période',
+              _selectedPeriod == PeriodFilter.all ? 'customers_no_transactions'.tr : 'customers_aucune_transaction_periode'.tr,
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
@@ -378,17 +378,17 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
       case 'achat_comptant':
         return 'Achat comptant';
       case 'achat_credit':
-        return 'Achat à crédit';
+        return 'customers_credit_purchase'.tr;
       case 'paiement':
         return 'Paiement';
       case 'paiement_dette':
-        return 'Paiement de dette';
+        return 'customers_debt_payment'.tr;
       case 'depot':
         return 'Approvisionnement';
       case 'credit':
-        return 'Crédit';
+        return 'sales_payment_credit'.tr;
       case 'debit':
-        return 'Débit';
+        return 'customers_debit'.tr;
       default:
         return type;
     }
@@ -914,7 +914,7 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
     }
 
     final bool aDette = solde < 0;
-    final String soldeText = solde < 0 ? 'Dette: ${(-solde).toStringAsFixed(0)} FCFA' : 'Crédit: ${solde.toStringAsFixed(0)} FCFA';
+    final String soldeText = solde < 0 ? 'Dette: ${(-solde).toStringAsFixed(0)} FCFA' : 'customers_credit_fcfa'.trParams({'toStringAsFixed': '${solde.toStringAsFixed(0)}'});
 
     await showDialog(
       context: context,

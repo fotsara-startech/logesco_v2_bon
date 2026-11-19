@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Modèle pour la gestion des caisses
 class CashRegister {
   final int? id;
@@ -109,8 +110,8 @@ class CashRegister {
   String get status {
     if (!isActive) return 'Inactive';
     if (isOpen) return 'Ouverte';
-    if (isClosed) return 'Fermée';
-    return 'Prête';
+    if (isClosed) return 'cash_register_status_closed'.tr;
+    return 'cashregisters_prete'.tr;
   }
 
   @override

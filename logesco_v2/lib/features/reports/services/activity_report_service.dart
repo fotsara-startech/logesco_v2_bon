@@ -237,11 +237,11 @@ class ActivityReportService {
     return CompanyProfile(
       id: 1,
       name: 'LOGESCO ENTERPRISE',
-      address: 'Adresse non configurée',
+      address: 'printing_adresse_non_configuree'.tr,
       location: 'Cameroun, CMR',
-      phone: 'Téléphone non configuré',
+      phone: 'printing_telephone_non_configure'.tr,
       email: 'email@logesco.com',
-      nuiRccm: 'NUI RCCM non configuré',
+      nuiRccm: 'reports_nui_rccm_non_configure'.tr,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -627,7 +627,7 @@ class ActivityReportService {
       statusMessage = 'Bonne performance';
       statusColor = '#34D399';
     } else if (profitData.netProfit > 0) {
-      overallStatus = 'Modéré';
+      overallStatus = 'reports_modere'.tr;
       statusMessage = 'Performance acceptable';
       statusColor = '#FBBF24';
     } else if (profitData.netProfit > -salesData.totalRevenue * 0.05) {
@@ -636,7 +636,7 @@ class ActivityReportService {
       statusColor = '#F59E0B';
     } else {
       overallStatus = 'Critique';
-      statusMessage = 'Action immédiate requise';
+      statusMessage = 'reports_action_immediate_requise'.tr;
       statusColor = '#EF4444';
     }
 
@@ -650,14 +650,14 @@ class ActivityReportService {
         color: '#3B82F6',
       ),
       KeyMetric(
-        name: 'Bénéfice net',
+        name: 'reports_pdf_net_profit'.tr,
         value: CurrencyFormatter.formatNumber(profitData.netProfit),
         unit: 'FCFA',
         trend: profitData.isProfitable ? 'up' : 'down',
         color: profitData.isProfitable ? '#10B981' : '#EF4444',
       ),
       KeyMetric(
-        name: 'Marge de profit',
+        name: 'reports_pdf_profit_margin'.tr,
         value: profitData.profitMargin.toStringAsFixed(1),
         unit: '%',
         trend: profitData.profitMargin > 10 ? 'up' : 'down',
@@ -800,7 +800,7 @@ class ActivityReportService {
         totalItems++;
 
         // Récupérer la catégorie du produit
-        String categoryName = 'Non catégorisé';
+        String categoryName = 'reports_non_categorise'.tr;
 
         // D'abord, essayer de récupérer depuis le cache
         if (productCategories.containsKey(detail.produitId)) {
@@ -894,7 +894,7 @@ class ActivityReportService {
 
     for (final sale in sales) {
       for (final detail in sale.details.where((d) => !d.annule)) {
-        final productName = detail.produit?.nom ?? 'Produit inconnu';
+        final productName = detail.produit?.nom ?? 'pdf_unknown_product'.tr;
         final quantity = detail.quantite;
         final revenue = detail.prixUnitaire * detail.quantite;
 
@@ -955,7 +955,7 @@ class ActivityReportService {
     final Map<String, bool> categoryTypes = {};
 
     for (final movement in movements) {
-      final categoryName = movement.categorie?.name ?? 'Non catégorisé';
+      final categoryName = movement.categorie?.name ?? 'reports_non_categorise'.tr;
       final amount = movement.montant.abs();
       // CORRECTION: Tous les mouvements financiers sont des sorties (dépenses)
       final isIncome = false; // Toujours false car ce sont des dépenses

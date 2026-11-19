@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'exceptions.dart';
 
 /// Traduit les erreurs techniques en messages compréhensibles par l'utilisateur.
@@ -58,7 +59,7 @@ class FriendlyError {
     } else {
       propre = nettoyer(erreur?.toString() ?? '');
     }
-    if (propre.isEmpty) propre = 'Une erreur est survenue. Réessayez dans un instant.';
+    if (propre.isEmpty) propre = 'core_erreur_est_survenue_reessayez_dans_instant'.tr;
     return contexte == null || contexte.isEmpty ? propre : '$contexte. $propre';
   }
 

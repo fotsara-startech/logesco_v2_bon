@@ -101,14 +101,14 @@ class SubscriptionProtectedAction extends StatelessWidget {
     String message;
 
     if (status == null || (!status.isActive && !status.isInGracePeriod)) {
-      title = 'Abonnement expiré';
-      message = 'Cette fonctionnalité nécessite un abonnement actif.';
+      title = 'subscription_expired_title'.tr;
+      message = 'subscription_fonctionnalite_necessite_abonnement_actif'.tr;
     } else if (status.isInGracePeriod) {
-      title = 'Période de grâce';
-      message = 'Vous êtes en période de grâce. Cette action nécessite un abonnement actif.';
+      title = 'subscription_grace_period'.tr;
+      message = 'subscription_vous_etes_periode_grace_action_necessite'.tr;
     } else {
-      title = 'Accès restreint';
-      message = restrictionMessage ?? 'Cette fonctionnalité nécessite un abonnement actif.';
+      title = 'subscription_acces_restreint'.tr;
+      message = restrictionMessage ?? 'subscription_fonctionnalite_necessite_abonnement_actif'.tr;
     }
 
     showDialog(
@@ -169,11 +169,11 @@ mixin SubscriptionAwarePage<T extends StatefulWidget> on State<T> {
     final status = _subscriptionController.currentStatus;
     String message;
     if (status == null || (!status.isActive && !status.isInGracePeriod)) {
-      message = 'Cette fonctionnalité nécessite un abonnement actif.';
+      message = 'subscription_fonctionnalite_necessite_abonnement_actif'.tr;
     } else if (status.isInGracePeriod) {
-      message = 'Action non autorisée en période de grâce.';
+      message = 'subscription_action_non_autorisee_periode_grace'.tr;
     } else {
-      message = customMessage ?? 'Action non autorisée.';
+      message = customMessage ?? 'subscription_action_non_autorisee'.tr;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(

@@ -29,10 +29,10 @@ class ExpenseCategoryController extends GetxController {
         categories.assignAll(response.data!);
         _applyFilter();
       } else {
-        _showError('Erreur de chargement', response.message);
+        _showError('roles_loading_error'.tr, response.message);
       }
     } catch (e) {
-      _showError('Erreur de chargement', e.toString());
+      _showError('roles_loading_error'.tr, e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -71,14 +71,14 @@ class ExpenseCategoryController extends GetxController {
       if (response.success && response.data != null) {
         categories.add(response.data!);
         _applyFilter();
-        _showSuccess('Catégorie créée avec succès');
+        _showSuccess('categories_created_success'.tr);
         return true;
       } else {
-        _showError('Erreur de création', response.message);
+        _showError('expenses_erreur_creation'.tr, response.message);
         return false;
       }
     } catch (e) {
-      _showError('Erreur de création', e.toString());
+      _showError('expenses_erreur_creation'.tr, e.toString());
       return false;
     } finally {
       isCreating.value = false;
@@ -96,14 +96,14 @@ class ExpenseCategoryController extends GetxController {
           categories[index] = response.data!;
           _applyFilter();
         }
-        _showSuccess('Catégorie mise à jour avec succès');
+        _showSuccess('expenses_categorie_mise_jour_avec_succes'.tr);
         return true;
       } else {
-        _showError('Erreur de mise à jour', response.message);
+        _showError('expenses_erreur_mise_jour'.tr, response.message);
         return false;
       }
     } catch (e) {
-      _showError('Erreur de mise à jour', e.toString());
+      _showError('expenses_erreur_mise_jour'.tr, e.toString());
       return false;
     }
   }
@@ -116,14 +116,14 @@ class ExpenseCategoryController extends GetxController {
       if (response.success) {
         categories.removeWhere((cat) => cat.id == id);
         _applyFilter();
-        _showSuccess('Catégorie supprimée avec succès');
+        _showSuccess('categories_delete_success'.tr);
         return true;
       } else {
-        _showError('Erreur de suppression', response.message);
+        _showError('expenses_erreur_suppression'.tr, response.message);
         return false;
       }
     } catch (e) {
-      _showError('Erreur de suppression', e.toString());
+      _showError('expenses_erreur_suppression'.tr, e.toString());
       return false;
     }
   }
@@ -131,7 +131,7 @@ class ExpenseCategoryController extends GetxController {
   /// Affiche un message d'erreur
   void _showError(String title, String? message) {
     SnackbarHelper.error(
-      message ?? 'Une erreur est survenue',
+      message ?? 'roles_error_occurred'.tr,
       title: title,
     );
   }

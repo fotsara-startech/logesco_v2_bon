@@ -77,7 +77,7 @@ class ProformaService {
         return ApiResponse.success(proformas, pagination: pagination);
       } else {
         final err = jsonDecode(response.body);
-        return ApiResponse.error(message: err['message'] ?? 'Erreur lors du chargement des proformas');
+        return ApiResponse.error(message: err['message'] ?? 'proforma_erreur_lors_chargement_proformas'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
@@ -129,7 +129,7 @@ class ProformaService {
         );
       } else {
         final err = jsonDecode(response.body);
-        return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la création de la proforma');
+        return ApiResponse.error(message: err['message'] ?? 'proforma_erreur_lors_creation_proforma'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
@@ -160,7 +160,7 @@ class ProformaService {
         );
       } else {
         final err = jsonDecode(response.body);
-        return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la mise à jour');
+        return ApiResponse.error(message: err['message'] ?? 'proforma_erreur_lors_mise_jour'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
@@ -186,7 +186,7 @@ class ProformaService {
         );
       } else {
         final err = jsonDecode(response.body);
-        return ApiResponse.error(message: err['message'] ?? 'Erreur lors de la validation');
+        return ApiResponse.error(message: err['message'] ?? 'proforma_erreur_lors_validation'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));
@@ -203,7 +203,7 @@ class ProformaService {
         return ApiResponse.success(null, message: 'proforma_proforma_annulee'.tr);
       } else {
         final err = jsonDecode(response.body);
-        return ApiResponse.error(message: err['message'] ?? 'Erreur lors de l\'annulation');
+        return ApiResponse.error(message: err['message'] ?? 'proforma_erreur_lors_annulation'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'proforma_erreur_connexion'.trParams({'e': '${e}'}));

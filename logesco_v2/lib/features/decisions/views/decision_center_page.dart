@@ -116,7 +116,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
             ],
             const SizedBox(height: 8),
             Text(
-              'Un mouvement de correction sera enregistré avec cette décision ; l\'historique n\'est pas modifié.',
+              'decisions_mouvement_correction_sera_enregistre_avec_decision'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ],
@@ -151,7 +151,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     setState(() => _working.add(c.key));
     try {
       await _service.apply(caseKey: c.key, optionId: optionId, stockVu: c.stockAffiche, cible: cible);
-      SnackbarHelper.success(optionId == 'ignorer' ? 'Cas laissé tel quel' : 'Décision appliquée : « ${c.produitNom} »');
+      SnackbarHelper.success(optionId == 'ignorer' ? 'Cas laissé tel quel' : 'decisions_decision_appliquee_2'.trParams({'produitNom': '${c.produitNom}'}));
       _choix.remove(c.key);
       await _load();
     } catch (e) {
@@ -236,10 +236,10 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Pour chacun : les faits, des options avec leur résultat chiffré, et c\'est vous qui décidez. '
                   'Le choix est appliqué par un mouvement de correction ; l\'historique n\'est jamais réécrit. '
-                  'Idéalement, appuyez-vous sur un comptage physique.',
+                  'decisions_idealement_appuyez_vous_sur_comptage_physique'.tr,
                   style: TextStyle(fontSize: 13),
                 ),
                 if (!peutDecider) ...[
@@ -275,7 +275,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
             child: Text(
-              'Les conflits de synchronisation ne peuvent pas être vérifiés : le cloud est injoignable pour le moment.',
+              'decisions_conflits_synchronisation_ne_peuvent_pas_etre'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ),
@@ -322,10 +322,10 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     ],
                   ),
                 )),
-            if (c.ventes.isNotEmpty) _faits('Ventes sans mouvement de stock', c.ventes.map((v) => '${v.numeroVente}${v.date != null ? ' (${_date(v.date!)})' : ''} : ${v.quantite} unité(s)').toList()),
+            if (c.ventes.isNotEmpty) _faits('decisions_ventes_sans_mouvement_stock'.tr, c.ventes.map((v) => '${v.numeroVente}${v.date != null ? ' (${_date(v.date!)})' : ''} : ${v.quantite} unité(s)').toList()),
             if (c.doublons.isNotEmpty)
               _faits(
-                'Réceptions suspectes',
+                'decisions_receptions_suspectes'.tr,
                 c.doublons.map((d) => '${d.quantite} unité(s) reçues le ${d.date != null ? _date(d.date!) : '?'}, déjà reçues le ${d.dateOriginal != null ? _date(d.dateOriginal!) : '?'} sans lien entre les deux saisies').toList(),
               ),
             if (c.dernierMouvementStock != null) _faits('Historique', ['Le dernier mouvement indique un stock de ${c.dernierMouvementStock}']),

@@ -1090,7 +1090,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
 
   Future<bool> createSale() async {
     // Vérifier l'abonnement avant de créer une vente
-    final canCreateSale = await verifySubscriptionForWrite(actionName: 'Créer une vente');
+    final canCreateSale = await verifySubscriptionForWrite(actionName: 'sales_create'.tr);
     if (!canCreateSale) {
       return false;
     }
@@ -1241,7 +1241,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   /// (liste des proformas en brouillon), ce qui transforme la commande en
   /// vraie vente au moment du paiement.
   Future<bool> createPendingOrder() async {
-    final canCreateSale = await verifySubscriptionForWrite(actionName: 'Créer une commande');
+    final canCreateSale = await verifySubscriptionForWrite(actionName: 'sales_creer_commande'.tr);
     if (!canCreateSale) return false;
 
     if (_cartItems.isEmpty) {
@@ -1568,7 +1568,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   // Annulation
   Future<bool> cancelSale(int saleId) async {
     // Vérifier l'abonnement avant d'annuler une vente
-    final canCancelSale = await verifySubscriptionForWrite(actionName: 'Annuler une vente');
+    final canCancelSale = await verifySubscriptionForWrite(actionName: 'sales_annuler_vente'.tr);
     if (!canCancelSale) {
       return false;
     }
@@ -1603,7 +1603,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
   /// Annule certains articles d'une vente (la vente reste, avec un total réduit).
   /// Si ce sont les derniers articles actifs, la vente entière est annulée.
   Future<bool> cancelSaleItems(int saleId, List<int> detailIds) async {
-    final canCancel = await verifySubscriptionForWrite(actionName: 'Annuler un article de vente');
+    final canCancel = await verifySubscriptionForWrite(actionName: 'sales_annuler_article_vente'.tr);
     if (!canCancel) {
       return false;
     }
@@ -1639,7 +1639,7 @@ class SalesController extends GetxController with SubscriptionVerificationMixin 
     required int quantite,
     double montantVerse = 0,
   }) async {
-    final canReplace = await verifySubscriptionForWrite(actionName: 'Remplacer un article de vente');
+    final canReplace = await verifySubscriptionForWrite(actionName: 'sales_remplacer_article_vente'.tr);
     if (!canReplace) {
       return false;
     }

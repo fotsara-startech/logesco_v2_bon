@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
@@ -87,7 +88,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Résultat Net',
+                          'accounting_resultat_net'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
@@ -131,9 +132,9 @@ class FinancialBalanceWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildDetailCard(
-                    'Coût Marchandises',
+                    'accounting_cout_marchandises'.tr,
                     balance.totalCostOfGoodsFormatted,
-                    'CUMP (moy. pondérée)',
+                    'accounting_cump_moy_ponderee'.tr,
                     Icons.shopping_basket,
                     Colors.orange.shade600,
                   ),
@@ -157,9 +158,9 @@ class FinancialBalanceWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildDetailCard(
-                    'Dépenses Opérat.',
+                    'accounting_depenses_operat'.tr,
                     balance.totalExpensesFormatted,
-                    '${balance.totalExpenseItems} dépenses',
+                    'accounting_depenses'.trParams({'totalExpenseItems': '${balance.totalExpenseItems}'}),
                     Icons.money_off,
                     Colors.red.shade600,
                   ),
@@ -173,9 +174,9 @@ class FinancialBalanceWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildDetailCard(
-                    'Vente Moyenne',
+                    'reports_sales_average'.tr,
                     balance.averageSaleAmountFormatted,
-                    'Par transaction',
+                    'accounting_par_transaction'.tr,
                     Icons.shopping_cart,
                     Colors.blue.shade600,
                   ),
@@ -183,7 +184,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildDetailCard(
-                    'Bénéfice/Jour',
+                    'accounting_benefice_jour'.tr,
                     balance.averageDailyProfitFormatted,
                     '${balance.periodDays} jours',
                     Icons.calendar_today,

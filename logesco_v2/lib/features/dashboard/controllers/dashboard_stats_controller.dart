@@ -54,7 +54,7 @@ class DashboardStatsController extends GetxController {
         _loadCashStats(),
       ]);
     } catch (e) {
-      error.value = 'Erreur lors du chargement des statistiques: $e';
+      error.value = 'dashboard_erreur_lors_chargement_statistiques'.trParams({'e': '${e}'});
       print(' Erreur dashboard stats: $e');
     } finally {
       isLoading.value = false;

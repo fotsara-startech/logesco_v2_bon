@@ -88,7 +88,7 @@ class CommercialReportView extends StatelessWidget {
       children: [
         Expanded(
           child: _statCard(
-            'Ventes attribuées',
+            'commercials_ventes_attribuees'.tr,
             fmt(summary?.totalAmount ?? 0),
             Icons.point_of_sale,
             Colors.blue,
@@ -97,7 +97,7 @@ class CommercialReportView extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _statCard(
-            'Nombre de ventes',
+            'reports_pdf_sales_count'.tr,
             '${summary?.totalCount ?? 0}',
             Icons.receipt_long,
             Colors.green,

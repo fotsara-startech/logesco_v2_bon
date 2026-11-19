@@ -26,7 +26,7 @@ class ApiException implements Exception {
       final body = json.decode(response.body);
 
       // Gestion des différents formats de réponse d'erreur
-      String message = 'Erreur inconnue';
+      String message = 'error_unknown'.tr;
       String code = 'UNKNOWN_ERROR';
 
       if (body is Map<String, dynamic>) {
@@ -62,7 +62,7 @@ class ApiException implements Exception {
     } catch (e) {
       // Réponse qui n'est pas du JSON (texte brut d'un proxy ou d'un limiteur de débit, page d'erreur HTML...)
       return ApiException(
-        message: FriendlyError.pourStatut(response.statusCode) ?? 'Erreur de communication avec le serveur (${response.statusCode})',
+        message: FriendlyError.pourStatut(response.statusCode) ?? 'core_erreur_communication_avec_serveur'.trParams({'statusCode': '${response.statusCode}'}),
         code: response.statusCode == 429 ? 'RATE_LIMITED' : 'COMMUNICATION_ERROR',
         statusCode: response.statusCode,
         retryAfterSeconds: retryAfter,

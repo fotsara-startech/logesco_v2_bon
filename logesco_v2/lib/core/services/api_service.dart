@@ -65,7 +65,7 @@ class ApiService {
       } else {
         return ApiResponse<dynamic>(
           success: false,
-          message: jsonData['message'] ?? 'Erreur ${response.statusCode}',
+          message: jsonData['message'] ?? 'core_erreur'.trParams({'statusCode': '${response.statusCode}'}),
           errors: jsonData['errors'] != null ? (jsonData['errors'] as List).map((e) => ApiError.fromJson(e)).toList() : null,
           timestamp: jsonData['timestamp'] ?? DateTime.now().toIso8601String(),
         );
@@ -84,13 +84,13 @@ class ApiService {
     String message;
 
     if (error is SocketException) {
-      message = 'Erreur de connexion réseau';
+      message = 'error_network'.tr;
     } else if (error is HttpException) {
-      message = 'Erreur HTTP: ${error.message}';
+      message = 'core_erreur_http'.trParams({'message': '${error.message}'});
     } else if (error is FormatException) {
-      message = 'Erreur de format de données';
+      message = 'core_erreur_format_donnees'.tr;
     } else {
-      message = 'Erreur inconnue: $error';
+      message = 'core_erreur_inconnue'.trParams({'error': '${error}'});
     }
 
     return ApiResponse<dynamic>(

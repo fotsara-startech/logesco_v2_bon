@@ -28,7 +28,7 @@ class InventoryPrintService {
             _buildInventoryInfo(inventory),
             pw.SizedBox(height: 20),
             pw.Text(
-              'ARTICLES À COMPTER',
+              'stockinventory_articles_compter'.tr,
               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 8),
@@ -67,7 +67,7 @@ class InventoryPrintService {
             _buildStatistics(inventory, items),
             pw.SizedBox(height: 20),
             pw.Text(
-              'DÉTAIL DES ARTICLES',
+              'stockinventory_detail_articles'.tr,
               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 8),
@@ -116,8 +116,8 @@ class InventoryPrintService {
 
     // Retourner un profil par défaut si échec
     return CompanyProfile(
-      name: 'VOTRE ENTREPRISE',
-      address: 'Adresse de votre entreprise',
+      name: 'stockinventory_votre_entreprise'.tr,
+      address: 'stockinventory_adresse_votre_entreprise'.tr,
       location: 'Ville, Pays',
       phone: '+XXX XX XX XX XX',
       email: 'contact@votre-entreprise.com',
@@ -159,7 +159,7 @@ class InventoryPrintService {
                   ],
                   if (companyProfile?.phone != null) ...[
                     pw.Text(
-                      'Tél: ${companyProfile!.phone}',
+                      'stockinventory_tel'.trParams({'phone': '${companyProfile!.phone}'}),
                       style: const pw.TextStyle(fontSize: 10),
                     ),
                   ],
@@ -176,14 +176,14 @@ class InventoryPrintService {
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
                 pw.Text(
-                  isReport ? 'RAPPORT D\'INVENTAIRE' : 'FEUILLE DE COMPTAGE',
+                  isReport ? 'RAPPORT D\'INVENTAIRE' : 'stockinventory_feuille_comptage'.tr,
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
                 pw.Text(
-                  'Date: ${_formatDate(DateTime.now())}',
+                  'stockinventory_date'.trParams({'now': '${_formatDate(DateTime.now())}'}),
                   style: const pw.TextStyle(fontSize: 10),
                 ),
               ],
@@ -217,7 +217,7 @@ class InventoryPrintService {
           pw.Row(
             children: [
               pw.Expanded(
-                child: _buildInfoRow('Nom:', inventory.nom),
+                child: _buildInfoRow('stockinventory_nom'.tr, inventory.nom),
               ),
               pw.Expanded(
                 child: _buildInfoRow('ID:', '#${inventory.id}'),
@@ -241,16 +241,16 @@ class InventoryPrintService {
           ],
           if (inventory.nomCategorie != null) ...[
             pw.SizedBox(height: 4),
-            _buildInfoRow('Catégorie:', inventory.nomCategorie!),
+            _buildInfoRow('stock_filter_category_label'.tr, inventory.nomCategorie!),
           ],
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
               pw.Expanded(
-                child: _buildInfoRow('Créé par:', inventory.nomUtilisateur),
+                child: _buildInfoRow('stockinventory_cree_par'.tr, inventory.nomUtilisateur),
               ),
               pw.Expanded(
-                child: _buildInfoRow('Date création:', _formatDate(inventory.dateCreation)),
+                child: _buildInfoRow('stockinventory_date_creation'.tr, _formatDate(inventory.dateCreation)),
               ),
             ],
           ),
@@ -308,13 +308,13 @@ class InventoryPrintService {
           pw.Row(
             children: [
               pw.Expanded(child: _buildStatItem('Articles total:', '$totalItems')),
-              pw.Expanded(child: _buildStatItem('Articles comptés:', '$countedItems')),
+              pw.Expanded(child: _buildStatItem('stockinventory_articles_comptes'.tr, '$countedItems')),
             ],
           ),
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Écarts détectés:', '$itemsWithVariance')),
+              pw.Expanded(child: _buildStatItem('stockinventory_ecarts_detectes'.tr, '$itemsWithVariance')),
               pw.Expanded(child: _buildStatItem('Progression:', '${progress.toStringAsFixed(1)}%')),
             ],
           ),
@@ -329,14 +329,14 @@ class InventoryPrintService {
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Valeur système:', '${_calculateTotalSystemValue(items).toStringAsFixed(0)} FCFA')),
-              pw.Expanded(child: _buildStatItem('Valeur comptée:', '${_calculateTotalCountedValue(items).toStringAsFixed(0)} FCFA')),
+              pw.Expanded(child: _buildStatItem('stockinventory_valeur_systeme'.tr, '${_calculateTotalSystemValue(items).toStringAsFixed(0)} FCFA')),
+              pw.Expanded(child: _buildStatItem('stockinventory_valeur_comptee'.tr, '${_calculateTotalCountedValue(items).toStringAsFixed(0)} FCFA')),
             ],
           ),
           pw.SizedBox(height: 4),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Écart de valeur:', '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
+              pw.Expanded(child: _buildStatItem('stockinventory_ecart_valeur'.tr, '${_calculateTotalValueVariance(items).toStringAsFixed(0)} FCFA')),
               pw.Expanded(child: pw.Container()),
             ],
           ),
@@ -380,7 +380,7 @@ class InventoryPrintService {
         4: pw.Alignment.centerLeft,
       },
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Observations'],
+      headers: ['Produit', 'Code', 'stockinventory_qte_sys'.tr, 'inventory_count_qty_counted'.tr, 'Observations'],
       data: items
           .map((item) => [
                 item.nomProduit,
@@ -414,7 +414,7 @@ class InventoryPrintService {
         7: pw.Alignment.center,
       },
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headers: ['Produit', 'Code', 'Qté Sys.', 'Qté Comptée', 'Écart', 'Valeur Sys.', 'Écart Val.', 'Statut'],
+      headers: ['Produit', 'Code', 'stockinventory_qte_sys'.tr, 'inventory_count_qty_counted'.tr, 'cash_session_history_variance'.tr, 'Valeur Sys.', 'stockinventory_ecart_val'.tr, 'Statut'],
       data: items
           .map((item) => [
                 item.nomProduit,
@@ -424,7 +424,7 @@ class InventoryPrintService {
                 item.isCounted ? item.calculatedEcart.toStringAsFixed(0) : '-',
                 item.valeurSysteme.toStringAsFixed(0),
                 item.isCounted ? item.ecartValeur.toStringAsFixed(0) : '-',
-                item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'À COMPTER',
+                item.isCounted ? (item.hasVariance ? 'ÉCART' : 'OK') : 'stockinventory_compter'.tr,
               ])
           .toList(),
     );
@@ -458,7 +458,7 @@ class InventoryPrintService {
               style: const pw.TextStyle(fontSize: 10),
             ),
             pw.Text(
-              'Date: ____________________',
+              'stockinventory_date_2'.tr,
               style: const pw.TextStyle(fontSize: 10),
             ),
           ],

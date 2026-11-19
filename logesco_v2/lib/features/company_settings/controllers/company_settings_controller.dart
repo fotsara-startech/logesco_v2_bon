@@ -187,7 +187,7 @@ class CompanySettingsController extends GetxController {
           _companyProfile.value = null;
           _clearForm();
         } else {
-          SnackbarUtils.showError(response.message ?? 'Erreur lors du chargement du profil');
+          SnackbarUtils.showError(response.message ?? 'companysettings_erreur_lors_chargement_profil'.tr);
         }
       }
     } catch (e) {
@@ -413,14 +413,14 @@ class CompanySettingsController extends GetxController {
         PrintingService.setCompanyProfile(response.data);
         print('✅ Profil d\'entreprise mis à jour dans le service d\'impression');
 
-        SnackbarUtils.showSuccess(response.message ?? 'Profil sauvegardé avec succès');
+        SnackbarUtils.showSuccess(response.message ?? 'companysettings_profil_sauvegarde_avec_succes'.tr);
       } else {
         if (response.errors != null && response.errors!.isNotEmpty) {
           for (final error in response.errors!) {
             _validationErrors[error.field] = error.message;
           }
         }
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la sauvegarde');
+        SnackbarUtils.showError(response.message ?? 'companysettings_erreur_lors_sauvegarde_2'.tr);
       }
     } catch (e) {
       SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
@@ -440,9 +440,9 @@ class CompanySettingsController extends GetxController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: Text('users_delete_confirm_title'.tr),
-        content: const Text(
+        content: Text(
           'Êtestes-vous sûr de vouloir supprimer le profil d\'entreprise ? '
-          'Cette action est irréversible.',
+          'roles_delete_irreversible'.tr,
         ),
         actions: [
           TextButton(
@@ -468,9 +468,9 @@ class CompanySettingsController extends GetxController {
       if (response.success) {
         _companyProfile.value = null;
         _clearForm();
-        SnackbarUtils.showSuccess(response.message ?? 'Profil supprimé avec succès');
+        SnackbarUtils.showSuccess(response.message ?? 'company_settings_delete_success'.tr);
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la suppression');
+        SnackbarUtils.showError(response.message ?? 'suppliers_delete_error'.tr);
       }
     } catch (e) {
       SnackbarUtils.showError('companysettings_erreur_connexion'.trParams({'e': '${e}'}));
@@ -514,9 +514,9 @@ class CompanySettingsController extends GetxController {
     final result = await Get.dialog<bool>(
       AlertDialog(
         title: Text('company_settings_unsaved_changes'.tr),
-        content: const Text(
+        content: Text(
           'Vous avez des modifications non sauvegardées. '
-          'Voulez-vous les abandonner ?',
+          'companysettings_voulez_vous_abandonner'.tr,
         ),
         actions: [
           TextButton(
@@ -621,7 +621,7 @@ class CompanySettingsController extends GetxController {
           PrintingService.setCompanyProfile(response.data);
           SnackbarUtils.showSuccess('companysettings_logo_supprime_avec_succes'.tr);
         } else {
-          SnackbarUtils.showError(response.message ?? 'Erreur lors de la suppression du logo');
+          SnackbarUtils.showError(response.message ?? 'companysettings_erreur_lors_suppression_logo'.tr);
         }
       } catch (e) {
         SnackbarUtils.showError('suppliers_erreur'.trParams({'e': '${e}'}));

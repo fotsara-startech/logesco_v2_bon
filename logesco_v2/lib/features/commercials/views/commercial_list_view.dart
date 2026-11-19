@@ -63,7 +63,7 @@ class CommercialListView extends StatelessWidget {
                             Icon(Icons.badge_outlined, size: 64, color: Colors.grey[400]),
                             const SizedBox(height: 16),
                             Text(
-                              'Aucun commercial pour le moment',
+                              'commercials_aucun_commercial_moment'.tr,
                               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                             ),
                           ],

@@ -315,7 +315,7 @@ class ProcurementController extends GetxController {
 
       if (kIsWeb) {
         SnackbarHelper.success(
-          'Commande exportée en PDF: $filename',
+          'procurement_commande_exportee_pdf_2'.trParams({'filename': '${filename}'}),
           title: 'customers_export_success'.tr,
           duration: const Duration(seconds: 3),
         );

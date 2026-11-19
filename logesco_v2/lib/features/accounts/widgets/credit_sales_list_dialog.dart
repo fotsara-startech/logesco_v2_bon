@@ -55,7 +55,7 @@ class _CreditSalesListDialogState extends State<CreditSalesListDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Impossible de charger les ventes à crédit: $e';
+          _errorMessage = 'accounts_impossible_charger_ventes_credit'.trParams({'e': '${e}'});
         });
       }
     }

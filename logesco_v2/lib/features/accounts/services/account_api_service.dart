@@ -48,7 +48,7 @@ class AccountApiService implements AccountService {
         return comptesJson.map((json) => CompteClient.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la récupération des comptes clients',
+          message: response.message ?? 'accounts_erreur_lors_recuperation_comptes_clients'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -103,7 +103,7 @@ class AccountApiService implements AccountService {
         return comptesJson.map((json) => CompteFournisseur.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la récupération des comptes fournisseurs',
+          message: response.message ?? 'accounts_erreur_lors_recuperation_comptes_fournisseurs'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -176,7 +176,7 @@ class AccountApiService implements AccountService {
         return CompteClient.fromJson(data['data'] as Map<String, dynamic>);
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la création de la transaction client',
+          message: response.message ?? 'accounts_erreur_lors_creation_transaction_client'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -202,7 +202,7 @@ class AccountApiService implements AccountService {
         return ventesData.map((v) => UnpaidSale.fromJson(v as Map<String, dynamic>)).toList();
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la récupération des ventes impayées',
+          message: response.message ?? 'accounts_erreur_lors_recuperation_ventes_impayees'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -245,7 +245,7 @@ class AccountApiService implements AccountService {
         return CompteClient.fromJson(data['data'] as Map<String, dynamic>);
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la création de la transaction',
+          message: response.message ?? 'accounts_erreur_lors_creation_transaction'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -276,7 +276,7 @@ class AccountApiService implements AccountService {
         return CompteFournisseur.fromJson(data['data'] as Map<String, dynamic>);
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la création de la transaction fournisseur',
+          message: response.message ?? 'accounts_erreur_lors_creation_transaction_fournisseur'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -313,7 +313,7 @@ class AccountApiService implements AccountService {
         return transactionsJson.map((json) => TransactionCompte.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la récupération des transactions client',
+          message: response.message ?? 'accounts_erreur_lors_recuperation_transactions_client'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -350,7 +350,7 @@ class AccountApiService implements AccountService {
         return transactionsJson.map((json) => TransactionCompte.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la récupération des transactions fournisseur',
+          message: response.message ?? 'accounts_erreur_lors_recuperation_transactions_fournisseur'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -381,7 +381,7 @@ class AccountApiService implements AccountService {
         return CompteClient.fromJson(data['data'] as Map<String, dynamic>);
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la mise à jour de la limite de crédit client',
+          message: response.message ?? 'accounts_erreur_lors_mise_jour_limite_credit'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );
@@ -412,7 +412,7 @@ class AccountApiService implements AccountService {
         return CompteFournisseur.fromJson(data['data'] as Map<String, dynamic>);
       } else {
         throw ApiException(
-          message: response.message ?? 'Erreur lors de la mise à jour de la limite de crédit fournisseur',
+          message: response.message ?? 'accounts_erreur_lors_mise_jour_limite_credit_2'.tr,
           code: response.errorCode ?? 'API_ERROR',
           statusCode: 500,
         );

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
@@ -17,7 +18,7 @@ class CategoryBreakdownWidget extends StatelessWidget {
         // Répartition des revenus
         if (balance.revenueByCategory.isNotEmpty)
           _buildCategorySection(
-            'Répartition des Revenus',
+            'accounting_repartition_revenus'.tr,
             balance.revenueByCategory,
             Icons.attach_money,
             Colors.green.shade600,
@@ -28,7 +29,7 @@ class CategoryBreakdownWidget extends StatelessWidget {
         // Répartition des dépenses
         if (balance.expensesByCategory.isNotEmpty)
           _buildCategorySection(
-            'Répartition des Dépenses',
+            'accounting_repartition_depenses'.tr,
             balance.expensesByCategory,
             Icons.money_off,
             Colors.red.shade600,

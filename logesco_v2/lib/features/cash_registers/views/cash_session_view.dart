@@ -420,7 +420,7 @@ class CashSessionView extends StatelessWidget {
                 final cashRegister = controller.availableCashRegisters[index];
                 return ListTile(
                   leading: const Icon(Icons.point_of_sale),
-                  title: Text(cashRegister['nom'] ?? 'Caisse'),
+                  title: Text(cashRegister['nom'] ?? 'cash_register_title'.tr),
                   subtitle: Text('${'common_balance'.tr}: ${CurrencyUtils.formatAmount(cashRegister['soldeActuel']?.toDouble() ?? 0.0)}'),
                   trailing: const Icon(Icons.check_circle, color: Colors.green),
                 );

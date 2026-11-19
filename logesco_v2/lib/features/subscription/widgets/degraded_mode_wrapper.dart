@@ -46,12 +46,12 @@ class DegradedModeWrapper extends StatelessWidget {
     IconData icon;
 
     if (status?.isInGracePeriod == true) {
-      message = 'Période de grâce active - Renouvelez votre abonnement';
+      message = 'subscription_periode_grace_active_renouvelez_votre_abonnement'.tr;
       backgroundColor = Colors.red.shade100;
       textColor = Colors.red.shade800;
       icon = Icons.error;
     } else {
-      message = restrictionMessage ?? 'Mode dégradé - Fonctionnalités limitées';
+      message = restrictionMessage ?? 'subscription_mode_degrade_fonctionnalites_limitees'.tr;
       backgroundColor = Colors.orange.shade100;
       textColor = Colors.orange.shade800;
       icon = Icons.warning;
@@ -160,7 +160,7 @@ class ReadOnlyOverlay extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        message ?? 'Fonctionnalité verrouillée',
+                        message ?? 'subscription_fonctionnalite_verrouillee'.tr,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -168,7 +168,7 @@ class ReadOnlyOverlay extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Activez une licence pour débloquer cette fonctionnalité',
+                        'subscription_activez_licence_debloquer_fonctionnalite'.tr,
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),

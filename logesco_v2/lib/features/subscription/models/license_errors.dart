@@ -1,4 +1,5 @@
-﻿/// Types d'erreurs liées aux licences
+﻿import 'package:get/get.dart';
+/// Types d'erreurs liées aux licences
 enum LicenseError {
   /// Clé d'activation invalide ou malformée
   invalidKey,
@@ -59,27 +60,27 @@ class LicenseException implements Exception {
   String get localizedMessage {
     switch (error) {
       case LicenseError.invalidKey:
-        return 'Clé d\'activation invalide. Veuillez vérifier la clé saisie.';
+        return 'subscription_cle_activation_invalide_veuillez_verifier_cle'.tr;
       case LicenseError.expiredLicense:
-        return 'Votre abonnement a expiré. Veuillez renouveler votre licence.';
+        return 'subscription_votre_abonnement_expire_veuillez_renouveler_votre'.tr;
       case LicenseError.deviceMismatch:
-        return 'Cette licence est liée à un autre appareil. Contactez le support pour un transfert.';
+        return 'subscription_licence_est_liee_autre_appareil_contactez'.tr;
       case LicenseError.tamperingDetected:
-        return 'Tentative de manipulation détectée. L\'application va se fermer.';
+        return 'subscription_tentative_manipulation_detectee_application_va_se'.tr;
       case LicenseError.timeManipulation:
-        return 'Manipulation de l\'horloge système détectée. Veuillez restaurer la date et l\'heure correctes.';
+        return 'subscription_manipulation_horloge_systeme_detectee_veuillez_restaurer'.tr;
       case LicenseError.cryptographicFailure:
-        return 'Erreur de validation de sécurité. Veuillez réinstaller l\'application.';
+        return 'subscription_erreur_validation_securite_veuillez_reinstaller_application'.tr;
       case LicenseError.storageError:
-        return 'Erreur de stockage des données de licence. Vérifiez l\'espace disponible.';
+        return 'subscription_erreur_stockage_donnees_licence_verifiez_espace'.tr;
       case LicenseError.networkError:
-        return 'Erreur de connexion réseau. Vérifiez votre connexion internet.';
+        return 'financialmovements_erreur_connexion_reseau_verifiez_votre_connexion'.tr;
       case LicenseError.licenseAlreadyUsed:
-        return 'Cette licence est déjà utilisée sur un autre appareil.';
+        return 'subscription_licence_est_deja_utilisee_sur_autre'.tr;
       case LicenseError.licenseRevoked:
-        return 'Cette licence a été révoquée. Contactez le support.';
+        return 'subscription_licence_ete_revoquee_contactez_support'.tr;
       case LicenseError.unsupportedKeyFormat:
-        return 'Format de clé non supporté. Utilisez une clé récente.';
+        return 'subscription_format_cle_non_supporte_utilisez_cle'.tr;
     }
   }
 

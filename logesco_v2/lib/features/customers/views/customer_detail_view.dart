@@ -150,7 +150,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                                     Icons.attach_money,
                                     Colors.green),
                                 const SizedBox(height: 12),
-                                _buildStatCard('Nombre de ventes', _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue),
+                                _buildStatCard('reports_pdf_sales_count'.tr, _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue),
                               ],
                             );
                           }
@@ -163,7 +163,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                                       Icons.attach_money,
                                       Colors.green)),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildStatCard('Nombre de ventes', _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue)),
+                              Expanded(child: _buildStatCard('reports_pdf_sales_count'.tr, _totalSales?.toString() ?? '0', Icons.shopping_cart, Colors.blue)),
                             ],
                           );
                         },

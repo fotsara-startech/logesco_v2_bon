@@ -83,13 +83,13 @@ class CommercialFormController extends GetxController {
 
   String? validateNom(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Le nom du commercial est obligatoire';
+      return 'commercials_nom_commercial_est_obligatoire'.tr;
     }
     return null;
   }
 
   String? validateZone(Zone? value) {
-    if (value == null) return 'La zone est obligatoire';
+    if (value == null) return 'commercials_zone_est_obligatoire'.tr;
     return null;
   }
 
@@ -126,7 +126,7 @@ class CommercialFormController extends GetxController {
       _commercialController.onCommercialSaved(saved, isEdit: isEditing.value);
       Get.back(result: saved);
     } catch (e) {
-      String message = 'Erreur lors de la sauvegarde du commercial';
+      String message = 'commercials_erreur_lors_sauvegarde_commercial'.tr;
       if (e is ApiException) message = e.message;
       SnackbarHelper.error(message, duration: const Duration(seconds: 5));
     } finally {

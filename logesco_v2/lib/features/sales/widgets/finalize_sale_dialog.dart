@@ -246,7 +246,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
       } else {
         color = Colors.green;
         icon = Icons.check_circle_outline;
-        label = 'Solde à jour';
+        label = 'sales_solde_jour'.tr;
       }
 
       return Container(
@@ -364,7 +364,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               const SizedBox(height: 8),
 
               // 1. Montant HT (sans TVA : simple "Montant")
-              _summaryLine(tvaEnabled ? 'Montant HT' : 'Montant', fmt(montantHT), size: 16),
+              _summaryLine(tvaEnabled ? 'Montant HT' : 'suppliers_transaction_amount'.tr, fmt(montantHT), size: 16),
 
               // 2. Remise
               if (remise > 0) ...[
@@ -402,12 +402,12 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
               // Avance du client utilisée pour cette vente
               if (_advance > 0) ...[
                 const Divider(height: 20),
-                _summaryLine('Avance du client', fmt(_advance), color: Colors.green[700], icon: Icons.savings_outlined, size: 16),
+                _summaryLine('sales_avance_client'.tr, fmt(_advance), color: Colors.green[700], icon: Icons.savings_outlined, size: 16),
                 if (_settlement.avanceUtilisee > 0) ...[
                   const SizedBox(height: 8),
-                  _summaryLine('Avance utilisée', '-${_settlement.avanceUtilisee.toStringAsFixed(0)} FCFA', color: Colors.green[700], size: 16),
+                  _summaryLine('sales_advance_used_label'.tr, '-${_settlement.avanceUtilisee.toStringAsFixed(0)} FCFA', color: Colors.green[700], size: 16),
                   const SizedBox(height: 8),
-                  _summaryLine('Reste à encaisser', fmt(net - _settlement.avanceUtilisee), color: Colors.blue, strong: true, size: 20),
+                  _summaryLine('sales_reste_encaisser'.tr, fmt(net - _settlement.avanceUtilisee), color: Colors.blue, strong: true, size: 20),
                 ],
               ],
 
@@ -454,7 +454,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Appliquer la TVA',
+                    'proforma_appliquer_tva'.tr,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -462,7 +462,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                     ),
                   ),
                   Text(
-                    'Taux configuré : ${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}%',
+                    'proforma_taux_configure'.trParams({'toStringAsFixed': '${tvaRate % 1 == 0 ? tvaRate.toStringAsFixed(0) : tvaRate.toStringAsFixed(2)}'}),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
@@ -510,7 +510,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Utiliser l'avance du client",
+                      'sales_utiliser_avance_client'.tr,
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _useAdvance ? Colors.green[800] : Colors.grey[700]),
                     ),
                     Text(
@@ -556,7 +556,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excédent de ${s.excedent.toStringAsFixed(0)} FCFA',
+                'sales_excedent_fcfa'.trParams({'toStringAsFixed': '${s.excedent.toStringAsFixed(0)}'}),
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[800]),
               ),
               const SizedBox(height: 8),
@@ -645,7 +645,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
             // Avance mise de côté : le client doit alors payer la vente en espèces
             final vente = salesController.cartTotalTTC;
             if (!_useAdvance && _advance > 0 && amount < vente) {
-              return "Sans l'avance, le client doit payer au moins ${vente.toStringAsFixed(0)} FCFA";
+              return 'sales_sans_avance_client_doit_payer_moins'.trParams({'toStringAsFixed': '${vente.toStringAsFixed(0)}'});
             }
             return null;
           },
@@ -674,7 +674,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
         icon = Icons.warning_amber_rounded;
         color = Colors.orange;
       } else if (r.ajouteAuSolde > 0) {
-        label = 'Ajouté au solde du client';
+        label = 'sales_ajoute_solde_client'.tr;
         amount = r.ajouteAuSolde.toStringAsFixed(0);
         icon = Icons.savings_outlined;
         color = Colors.green;

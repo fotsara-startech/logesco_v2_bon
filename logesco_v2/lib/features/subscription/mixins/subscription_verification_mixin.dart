@@ -28,35 +28,35 @@ mixin SubscriptionVerificationMixin {
       final status = subscriptionController.currentStatus;
 
       if (status == null) {
-        _showSubscriptionError('Statut d\'abonnement non disponible', 'Impossible de vérifier votre abonnement.');
+        _showSubscriptionError('Statut d\'abonnement non disponible', 'subscription_impossible_verifier_votre_abonnement'.tr);
         return false;
       }
 
       if (!status.isActive && !status.isInGracePeriod) {
         _showSubscriptionError(
           'Abonnement expir',
-          actionName != null ? 'L\'action "$actionName" nécessite un abonnement actif.' : 'Cette action nécessite un abonnement actif.',
+          actionName != null ? 'L\'action "$actionName" nécessite un abonnement actif.' : 'subscription_action_necessite_abonnement_actif_2'.tr,
         );
         return false;
       }
 
       if (status.isInGracePeriod && !allowGracePeriod && requireActiveSubscription) {
         _showSubscriptionError(
-          'Période de grâce',
-          actionName != null ? 'L\'action "$actionName" n\'est pas autorise en Période de grâce.' : 'Cette action n\'est pas autorise en Période de grâce.',
+          'subscription_grace_period'.tr,
+          actionName != null ? 'L\'action "$actionName" n\'est pas autorise en Période de grâce.' : 'subscription_action_n_est_pas_autorise_periode'.tr,
         );
         return false;
       }
 
       final shouldBlock = await subscriptionController.shouldBlockApplication();
       if (shouldBlock) {
-        _showSubscriptionError('AccÊtes BLOQUÉ', 'L\'application est temporairement BLOQUÉe. Activez une licence pour continuer.');
+        _showSubscriptionError('subscription_accetes_bloque'.tr, 'subscription_application_est_temporairement_bloquee_activez_licence'.tr);
         return false;
       }
 
       return true;
     } catch (e) {
-      _showSubscriptionError('Erreur de vrification', 'Impossible de vérifier votre abonnement.');
+      _showSubscriptionError('subscription_erreur_vrification'.tr, 'subscription_impossible_verifier_votre_abonnement'.tr);
       return false;
     }
   }
@@ -79,7 +79,7 @@ mixin SubscriptionVerificationMixin {
     if (status?.type == SubscriptionType.trial) {
       _showSubscriptionError(
         'Fonctionnalit premium',
-        featureName != null ? 'La fonctionnalit "$featureName" nécessite un abonnement payant.' : 'Cette fonctionnalit nécessite un abonnement payant.',
+        featureName != null ? 'La fonctionnalit "$featureName" nécessite un abonnement payant.' : 'subscription_fonctionnalit_necessite_abonnement_payant'.tr,
       );
       return false;
     }

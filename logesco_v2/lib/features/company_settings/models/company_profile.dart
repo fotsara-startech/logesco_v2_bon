@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'company_profile.g.dart';
@@ -96,32 +97,32 @@ class CompanyProfile {
     final errors = <String, String>{};
 
     if (name.trim().isEmpty) {
-      errors['name'] = 'Le nom de l\'entreprise est requis';
+      errors['name'] = 'companysettings_nom_entreprise_est_requis'.tr;
     } else if (name.trim().length < 2) {
-      errors['name'] = 'Le nom de l\'entreprise doit contenir au moins 2 caractères';
+      errors['name'] = 'companysettings_nom_entreprise_doit_contenir_moins_2'.tr;
     }
 
     // Adresse est optionnelle
     if (address.trim().isNotEmpty && address.trim().length < 5) {
-      errors['address'] = 'L\'adresse doit contenir au moins 5 caractères';
+      errors['address'] = 'companysettings_adresse_doit_contenir_moins_5_caracteres'.tr;
     }
 
     if (location?.trim().isEmpty ?? true) {
-      errors['location'] = 'La localisation est requise';
+      errors['location'] = 'companysettings_localisation_est_requise'.tr;
     }
 
     if (phone?.trim().isEmpty ?? true) {
-      errors['phone'] = 'Le numéro de téléphone est requis';
+      errors['phone'] = 'companysettings_numero_telephone_est_requis'.tr;
     }
     // Validation du format supprimée - l'utilisateur peut entrer le numéro comme du texte
 
     if (email != null && email!.trim().isNotEmpty && !_isValidEmail(email!)) {
-      errors['email'] = 'L\'adresse email n\'est pas valide';
+      errors['email'] = 'companysettings_adresse_email_n_est_pas_valide'.tr;
     }
 
     // NUI RCCM est optionnel
     if (nuiRccm != null && nuiRccm!.trim().isNotEmpty && nuiRccm!.trim().length < 5) {
-      errors['nuiRccm'] = 'Le NUI RCCM doit contenir au moins 5 caractères';
+      errors['nuiRccm'] = 'companysettings_nui_rccm_doit_contenir_moins_5'.tr;
     }
 
     return errors;

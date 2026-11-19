@@ -70,10 +70,10 @@ class SupplierFormController extends GetxController {
   /// Valide le nom du fournisseur
   String? validateNom(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Le nom du fournisseur est obligatoire';
+      return 'suppliers_nom_fournisseur_est_obligatoire'.tr;
     }
     if (value.trim().length < 2) {
-      return 'Le nom doit contenir au moins 2 caractères';
+      return 'roles_name_min_length'.tr;
     }
     return null;
   }
@@ -84,10 +84,10 @@ class SupplierFormController extends GetxController {
       // Regex simple pour valider un numéro de téléphone
       final phoneRegex = RegExp(r'^[\d\s\-\+\(\)]+$');
       if (!phoneRegex.hasMatch(value.trim())) {
-        return 'Format de téléphone invalide';
+        return 'customers_format_telephone_invalide'.tr;
       }
       if (value.trim().length < 8) {
-        return 'Le numéro de téléphone est trop court';
+        return 'customers_numero_telephone_est_trop_court'.tr;
       }
     }
     return null;
@@ -181,7 +181,7 @@ class SupplierFormController extends GetxController {
     } catch (e) {
       print('❌ Erreur lors de la sauvegarde: $e');
 
-      String message = 'Erreur lors de la sauvegarde du fournisseur';
+      String message = 'suppliers_erreur_lors_sauvegarde_fournisseur'.tr;
 
       if (e is ApiException) {
         message = e.message;
@@ -189,7 +189,7 @@ class SupplierFormController extends GetxController {
         // Gestion spécifique des erreurs de validation
         if (e.statusCode == 409) {
           if (e.message.toLowerCase().contains('email')) {
-            message = 'Cette adresse email est déjà utilisée par un autre fournisseur';
+            message = 'suppliers_adresse_email_est_deja_utilisee_par'.tr;
           }
         }
       }

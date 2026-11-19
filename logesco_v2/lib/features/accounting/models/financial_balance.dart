@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Modèle de bilan financier simple pour analyser la rentabilité
 class FinancialBalance {
   final DateTime startDate;
@@ -68,13 +69,13 @@ class FinancialBalance {
   String get statusMessage {
     switch (profitabilityStatus) {
       case ProfitabilityStatus.excellent:
-        return 'Excellente rentabilité';
+        return 'accounting_excellente_rentabilite'.tr;
       case ProfitabilityStatus.good:
-        return 'Bonne rentabilité';
+        return 'accounting_bonne_rentabilite'.tr;
       case ProfitabilityStatus.moderate:
-        return 'Rentabilité modérée';
+        return 'accounting_rentabilite_moderee'.tr;
       case ProfitabilityStatus.warning:
-        return 'Attention aux dépenses';
+        return 'accounting_attention_depenses'.tr;
       case ProfitabilityStatus.critical:
         return 'Situation critique';
     }

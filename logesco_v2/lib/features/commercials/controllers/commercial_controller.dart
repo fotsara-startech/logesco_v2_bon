@@ -154,10 +154,10 @@ class CommercialController extends GetxController {
         SnackbarHelper.error('commercials_suppression_echoue'.tr);
       }
     } catch (e) {
-      String message = 'Erreur lors de la suppression';
+      String message = 'suppliers_delete_error'.tr;
       if (e is ApiException && e.statusCode == 409) {
         message = 'Impossible de supprimer : des ventes sont attribuées à ce commercial. '
-            'Désactivez-le plutôt que de le supprimer.';
+            'commercials_desactivez_plutot_que_supprimer'.tr;
       }
       SnackbarHelper.error(message, duration: const Duration(seconds: 5));
     }

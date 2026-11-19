@@ -721,7 +721,7 @@ class _CreateSalePageState extends State<CreateSalePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    customer.nom ?? 'Client',
+                    customer.nom ?? 'sales_customer'.tr,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

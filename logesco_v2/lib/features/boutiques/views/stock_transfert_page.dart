@@ -39,8 +39,8 @@ class _StockTransfertPageState extends State<StockTransfertPage> with SingleTick
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(icon: Icon(Icons.swap_horiz), text: 'Nouveau transfert'),
+          tabs: [
+            Tab(icon: Icon(Icons.swap_horiz), text: 'boutiques_nouveau_transfert'.tr),
             Tab(icon: Icon(Icons.history), text: 'Historique'),
           ],
         ),
@@ -162,7 +162,7 @@ class _TransfertFormState extends State<_TransfertForm> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.controller.errorMessage.value.isNotEmpty ? widget.controller.errorMessage.value : 'Erreur lors du transfert'),
+          content: Text(widget.controller.errorMessage.value.isNotEmpty ? widget.controller.errorMessage.value : 'boutiques_erreur_lors_transfert'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -317,10 +317,10 @@ class _TransfertFormState extends State<_TransfertForm> {
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Requis';
                   final n = int.tryParse(v);
-                  if (n == null || n <= 0) return 'Quantité invalide';
+                  if (n == null || n <= 0) return 'expiration_dialog_quantity_invalid'.tr;
                   if (_selectedProduit != null) {
                     final dispo = _selectedProduit!['quantiteDisponible'] as int? ?? 0;
-                    if (n > dispo) return 'Stock insuffisant (max: $dispo)';
+                    if (n > dispo) return 'boutiques_stock_insuffisant_max'.trParams({'dispo': '${dispo}'});
                   }
                   return null;
                 },
@@ -411,7 +411,7 @@ class _TransfertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final srcNom = transfert.sourceBoutique?['nom'] as String? ?? '#${transfert.sourceBoutiqueId}';
     final dstNom = transfert.destBoutique?['nom'] as String? ?? '#${transfert.destBoutiqueId}';
-    final produitNom = transfert.produit?['nom'] as String? ?? 'Produit #${transfert.produitId}';
+    final produitNom = transfert.produit?['nom'] as String? ?? 'boutiques_produit'.trParams({'produitId': '${transfert.produitId}'});
     final userNom = transfert.utilisateur?['nomUtilisateur'] as String? ?? '';
 
     return Card(

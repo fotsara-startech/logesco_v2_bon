@@ -137,13 +137,13 @@ class AppInitializationService extends GetxService {
   String _getSubscriptionTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
-        return 'Période d\'essai';
+        return 'subscription_type_trial'.tr;
       case SubscriptionType.monthly:
         return 'Mensuel';
       case SubscriptionType.annual:
         return 'Annuel';
       case SubscriptionType.lifetime:
-        return 'Vie entière';
+        return 'subscription_type_lifetime'.tr;
       default:
         return 'Inconnu';
     }

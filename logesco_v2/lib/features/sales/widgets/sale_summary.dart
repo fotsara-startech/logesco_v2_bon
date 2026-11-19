@@ -128,7 +128,7 @@ class SaleSummary extends StatelessWidget {
                       '${salesController.cartTotal.toStringAsFixed(0)} FCFA',
                       isTotal: true,
                     ),
-                    _buildSummaryRow('Montant payé:', '${salesController.amountPaid.toStringAsFixed(0)} FCFA'),
+                    _buildSummaryRow('sales_summary_paid'.tr, '${salesController.amountPaid.toStringAsFixed(0)} FCFA'),
                     if (salesController.remainingAmount != 0) ...[
                       _buildSummaryRow(
                         salesController.remainingAmount > 0 ? 'Restant:' : 'Rendu:',
@@ -155,7 +155,7 @@ class SaleSummary extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.point_of_sale),
-                label: Text(salesController.isCreating ? 'Création...' : 'Finaliser la vente'),
+                label: Text(salesController.isCreating ? 'Création...' : 'sales_finalize_sale'.tr),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -165,16 +165,16 @@ class SaleSummary extends StatelessWidget {
             // Validation des erreurs
             if (salesController.cartItems.isEmpty) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Ajoutez des produits au panier pour continuer',
+              Text(
+                'sales_add_products_to_continue'.tr,
                 style: TextStyle(color: Colors.red, fontSize: 12),
               ),
             ],
 
             if (salesController.paymentMode == 'credit' && salesController.selectedCustomer == null) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Sélectionnez un client pour une vente à crédit',
+              Text(
+                'sales_select_customer_for_credit'.tr,
                 style: TextStyle(color: Colors.orange, fontSize: 12),
               ),
             ],

@@ -37,7 +37,7 @@ class BoutiqueContextIndicator extends StatelessWidget {
               Icon(Icons.warning, size: 16, color: Colors.orange),
               const SizedBox(width: 4),
               Text(
-                'Aucune boutique active',
+                'boutiques_aucune_boutique_active'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.orange[800],

@@ -131,7 +131,7 @@ class DashboardStatsService extends GetxService {
           final m = Map<String, dynamic>.from(item as Map);
           return {
             'categoryId': (m['categoryId'] as num? ?? 0).toInt(),
-            'categoryName': m['categoryName']?.toString() ?? 'Sans catégorie',
+            'categoryName': m['categoryName']?.toString() ?? 'dashboard_category_unknown'.tr,
             'revenue': (m['revenue'] as num? ?? 0.0).toDouble(),
             'quantity': (m['quantity'] as num? ?? 0).toInt(),
           };
@@ -182,8 +182,8 @@ class DashboardStatsService extends GetxService {
       {
         'id': 1,
         'type': 'system',
-        'title': 'Système initialisé',
-        'description': 'L\'application a été configurée avec succès',
+        'title': 'dashboard_activity_system'.tr,
+        'description': 'dashboard_application_ete_configuree_avec_succes'.tr,
         'timestamp': DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String(),
         'icon': 'system',
         'color': 'blue',
@@ -191,8 +191,8 @@ class DashboardStatsService extends GetxService {
       {
         'id': 2,
         'type': 'user',
-        'title': 'Utilisateur admin créé',
-        'description': 'Compte administrateur configuré automatiquement',
+        'title': 'dashboard_utilisateur_admin_cree'.tr,
+        'description': 'dashboard_compte_administrateur_configure_automatiquement'.tr,
         'timestamp': DateTime.now().subtract(const Duration(minutes: 10)).toIso8601String(),
         'icon': 'user',
         'color': 'green',

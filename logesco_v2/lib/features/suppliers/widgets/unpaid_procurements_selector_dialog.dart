@@ -55,7 +55,7 @@ class _UnpaidProcurementsSelectorDialogState extends State<UnpaidProcurementsSel
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Impossible de charger les commandes impayées: $e';
+          _errorMessage = 'suppliers_impossible_charger_commandes_impayees'.trParams({'e': '${e}'});
         });
       }
     }

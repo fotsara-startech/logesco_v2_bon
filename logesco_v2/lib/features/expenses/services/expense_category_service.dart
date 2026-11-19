@@ -34,7 +34,7 @@ class ExpenseCategoryService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la récupération des catégories',
+          message: errorData['message'] ?? 'expenses_erreur_lors_recuperation_categories'.tr,
         );
       }
     } catch (e) {
@@ -66,7 +66,7 @@ class ExpenseCategoryService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la création de la catégorie',
+          message: errorData['message'] ?? 'expenses_erreur_lors_creation_categorie'.tr,
         );
       }
     } catch (e) {
@@ -98,7 +98,7 @@ class ExpenseCategoryService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la mise à jour de la catégorie',
+          message: errorData['message'] ?? 'expenses_erreur_lors_mise_jour_categorie'.tr,
         );
       }
     } catch (e) {
@@ -127,7 +127,7 @@ class ExpenseCategoryService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la suppression de la catégorie',
+          message: errorData['message'] ?? 'expenses_erreur_lors_suppression_categorie'.tr,
         );
       }
     } catch (e) {

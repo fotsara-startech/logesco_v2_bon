@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
@@ -22,8 +23,8 @@ class RevenueExpensesChartWidget extends StatelessWidget {
               children: [
                 Icon(Icons.bar_chart, color: Colors.indigo.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Revenus vs Dépenses',
+                Text(
+                  'accounting_revenus_vs_depenses'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -42,8 +43,8 @@ class RevenueExpensesChartWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildLegendItem('Revenus', Colors.green.shade600, balance.totalRevenueFormatted),
-                _buildLegendItem('Dépenses', Colors.red.shade600, balance.totalExpensesFormatted),
-                _buildLegendItem('Bénéfice', balance.isProfitable ? Colors.blue.shade600 : Colors.orange.shade600, balance.netProfitFormatted),
+                _buildLegendItem('accounting_expenses'.tr, Colors.red.shade600, balance.totalExpensesFormatted),
+                _buildLegendItem('accounting_profit'.tr, balance.isProfitable ? Colors.blue.shade600 : Colors.orange.shade600, balance.netProfitFormatted),
               ],
             ),
           ],
@@ -65,9 +66,9 @@ class RevenueExpensesChartWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildBar('Revenus', revenueHeight, Colors.green.shade600),
-          _buildBar('Dépenses', expensesHeight, Colors.red.shade600),
+          _buildBar('accounting_expenses'.tr, expensesHeight, Colors.red.shade600),
           _buildBar(
-            'Bénéfice',
+            'accounting_profit'.tr,
             balance.netProfit > 0 ? (balance.netProfit / maxAmount) * 100 : 0.0, // Réduit de 120 à 100
             balance.isProfitable ? Colors.blue.shade600 : Colors.orange.shade600,
           ),

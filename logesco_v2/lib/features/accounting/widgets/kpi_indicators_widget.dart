@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
@@ -22,8 +23,8 @@ class KPIIndicatorsWidget extends StatelessWidget {
               children: [
                 Icon(Icons.analytics, color: Colors.purple.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Indicateurs Clés (KPI)',
+                Text(
+                  'accounting_indicateurs_cles_kpi'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -40,7 +41,7 @@ class KPIIndicatorsWidget extends StatelessWidget {
                   child: _buildKPICard(
                     'ROI',
                     kpis.roiFormatted,
-                    'Retour sur investissement',
+                    'accounting_retour_sur_investissement'.tr,
                     Icons.trending_up,
                     _getROIColor(kpis.returnOnInvestment),
                   ),
@@ -48,9 +49,9 @@ class KPIIndicatorsWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildKPICard(
-                    'Seuil de Rentabilité',
+                    'accounting_seuil_rentabilite'.tr,
                     kpis.breakEvenPointFormatted,
-                    'Point d\'équilibre',
+                    'accounting_point_equilibre'.tr,
                     Icons.balance,
                     Colors.orange.shade600,
                   ),
@@ -64,7 +65,7 @@ class KPIIndicatorsWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildKPICard(
-                    'Flux de Trésorerie',
+                    'accounting_flux_tresorerie'.tr,
                     kpis.cashFlowFormatted,
                     'Cash-flow',
                     Icons.account_balance_wallet,
@@ -76,7 +77,7 @@ class KPIIndicatorsWidget extends StatelessWidget {
                   child: _buildKPICard(
                     'Jours au Seuil',
                     kpis.daysToBreakEven > 0 ? '${kpis.daysToBreakEven} jours' : 'N/A',
-                    'Temps pour équilibre',
+                    'accounting_temps_equilibre'.tr,
                     Icons.schedule,
                     Colors.blue.shade600,
                   ),

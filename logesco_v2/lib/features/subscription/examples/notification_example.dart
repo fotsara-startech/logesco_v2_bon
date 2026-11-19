@@ -202,7 +202,7 @@ class _NotificationUsageExampleState extends State<NotificationUsageExample> wit
               if (status != null) ...[
                 _buildInfoRow('Actif', status.isActive ? 'Oui' : 'Non'),
                 _buildInfoRow('Type', _getTypeLabel(status.type)),
-                _buildInfoRow('Période de grâce', status.isInGracePeriod ? 'Oui' : 'Non'),
+                _buildInfoRow('subscription_grace_period'.tr, status.isInGracePeriod ? 'Oui' : 'Non'),
                 if (status.remainingDays != null) _buildInfoRow('Jours restants', '${status.remainingDays}'),
                 _buildInfoRow('Mode dégradé', controller.isInDegradedMode() ? 'Oui' : 'Non'),
               ] else

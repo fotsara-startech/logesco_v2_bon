@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import '../utils/currency_formatter.dart';
 import '../../company_settings/models/company_profile.dart';
 
@@ -655,11 +656,11 @@ class CompanyInfo {
   factory CompanyInfo.defaultInfo() {
     return CompanyInfo(
       name: 'LOGESCO ENTERPRISE',
-      address: 'Adresse non configurée',
+      address: 'printing_adresse_non_configuree'.tr,
       location: 'Cameroun, CMR',
-      phone: 'Téléphone non configuré',
+      phone: 'printing_telephone_non_configure'.tr,
       email: 'email@logesco.com',
-      nuiRccm: 'NUI RCCM non configuré',
+      nuiRccm: 'reports_nui_rccm_non_configure'.tr,
       logoPath: '',
     );
   }

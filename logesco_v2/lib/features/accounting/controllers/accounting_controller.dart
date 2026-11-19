@@ -231,7 +231,7 @@ class AccountingController extends GetxController {
 
   /// Formate la période sélectionnée
   String get periodFormatted {
-    if (!hasPeriodSelected) return 'Aucune période sélectionnée';
+    if (!hasPeriodSelected) return 'accounting_aucune_periode_selectionnee'.tr;
 
     final start = startDate.value!;
     final end = endDate.value!;
@@ -279,17 +279,17 @@ extension PredefinedPeriodExtension on PredefinedPeriod {
       case PredefinedPeriod.yesterday:
         return 'Hier';
       case PredefinedPeriod.thisWeek:
-        return 'Cette semaine';
+        return 'sales_this_week'.tr;
       case PredefinedPeriod.lastWeek:
-        return 'Semaine dernière';
+        return 'sales_last_week'.tr;
       case PredefinedPeriod.thisMonth:
-        return 'Ce mois';
+        return 'analytics_this_month'.tr;
       case PredefinedPeriod.lastMonth:
         return 'Mois dernier';
       case PredefinedPeriod.thisQuarter:
-        return 'Ce trimestre';
+        return 'reports_period_this_quarter'.tr;
       case PredefinedPeriod.thisYear:
-        return 'Cette année';
+        return 'analytics_this_year'.tr;
     }
   }
 }

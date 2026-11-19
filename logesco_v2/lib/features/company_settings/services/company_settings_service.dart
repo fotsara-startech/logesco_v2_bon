@@ -98,7 +98,7 @@ class CompanySettingsService {
         // Mettre en cache le profil
         await _cacheProfile(profile);
 
-        return ApiResponse.success(profile, message: jsonData['message'] ?? 'Profil récupéré avec succès');
+        return ApiResponse.success(profile, message: jsonData['message'] ?? 'companysettings_profil_recupere_avec_succes'.tr);
       } else if (response.statusCode == 401) {
         // Erreur d'authentification, essayer l'endpoint public
         print('🔄 [INFO] Erreur d\'authentification, utilisation de l\'endpoint public...');
@@ -107,7 +107,7 @@ class CompanySettingsService {
         return ApiResponse.error(message: 'companysettings_profil_entreprise_non_trouve'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération du profil');
+        return ApiResponse.error(message: errorData['message'] ?? 'companysettings_erreur_lors_recuperation_profil'.tr);
       }
     } catch (e) {
       print(' Error getting company profile: $e');
@@ -198,7 +198,7 @@ class CompanySettingsService {
     final testProfile = CompanyProfile(
       id: 1,
       name: 'Mon Entreprise',
-      address: 'Adresse de l\'entreprise',
+      address: 'companysettings_adresse_entreprise'.tr,
       location: 'Ville, Pays',
       phone: '+237 682471185 / +237 6 58 96 2546',
       email: 'contact@monentreprise.com',
@@ -325,10 +325,10 @@ class CompanySettingsService {
         // Mettre en cache le nouveau profil
         await _cacheProfile(profile);
 
-        return ApiResponse.success(profile, message: jsonData['message'] ?? 'Profil créé avec succès');
+        return ApiResponse.success(profile, message: jsonData['message'] ?? 'companysettings_profil_cree_avec_succes'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la création du profil');
+        return ApiResponse.error(message: errorData['message'] ?? 'companysettings_erreur_lors_creation_profil'.tr);
       }
     } catch (e) {
       print(' Error creating company profile: $e');
@@ -422,10 +422,10 @@ class CompanySettingsService {
         // Mettre à jour le cache
         await _cacheProfile(profile);
 
-        return ApiResponse.success(profile, message: jsonData['message'] ?? 'Profil mis à jour avec succès');
+        return ApiResponse.success(profile, message: jsonData['message'] ?? 'companysettings_profil_mis_jour_avec_succes'.tr);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la mise à jour du profil');
+        return ApiResponse.error(message: errorData['message'] ?? 'companysettings_erreur_lors_mise_jour_profil'.tr);
       }
     } catch (e) {
       print(' Error updating company profile: $e');
@@ -468,7 +468,7 @@ class CompanySettingsService {
         return ApiResponse.success(null, message: jsonData['message']);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la suppression du profil');
+        return ApiResponse.error(message: errorData['message'] ?? 'companysettings_erreur_lors_suppression_profil'.tr);
       }
     } catch (e) {
       print(' Error deleting company profile: $e');

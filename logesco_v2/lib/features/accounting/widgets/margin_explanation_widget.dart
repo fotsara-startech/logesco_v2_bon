@@ -23,8 +23,8 @@ class MarginExplanationWidget extends StatelessWidget {
               children: [
                 Icon(Icons.calculate, color: Colors.indigo.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Calcul de la Rentabilité',
+                Text(
+                  'accounting_calcul_rentabilite'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -42,7 +42,7 @@ class MarginExplanationWidget extends StatelessWidget {
 
             // tapes du calcul
             _buildCalculationStep(
-              '1. Revenus des Ventes',
+              'accounting_1_revenus_ventes'.tr,
               balance.totalRevenueFormatted,
               'Prix de vente  Quantités vendues',
               Colors.green.shade600,
@@ -51,9 +51,9 @@ class MarginExplanationWidget extends StatelessWidget {
             const SizedBox(height: 8),
 
             _buildCalculationStep(
-              '2. Coût des Marchandises',
+              'accounting_2_cout_marchandises'.tr,
               '- ${balance.totalCostOfGoodsFormatted}',
-              'CUMP × Quantités vendues',
+              'accounting_cump_quantites_vendues'.tr,
               Colors.orange.shade600,
               Icons.shopping_basket,
             ),
@@ -69,16 +69,16 @@ class MarginExplanationWidget extends StatelessWidget {
             _buildCalculationStep(
               '= Marge Brute',
               balance.grossProfitFormatted,
-              'Revenus - Coût marchandises (${balance.grossMarginFormatted})',
+              'accounting_revenus_cout_marchandises'.trParams({'grossMarginFormatted': '${balance.grossMarginFormatted}'}),
               Colors.blue.shade600,
               Icons.trending_up,
             ),
             const SizedBox(height: 8),
 
             _buildCalculationStep(
-              '3. Dépenses Opérationnelles',
+              'accounting_3_depenses_operationnelles'.tr,
               '- ${balance.totalExpensesFormatted}',
-              'Frais généraux, salaires, etc.',
+              'accounting_frais_generaux_salaires_etc'.tr,
               Colors.red.shade600,
               Icons.money_off,
             ),
@@ -92,9 +92,9 @@ class MarginExplanationWidget extends StatelessWidget {
             const SizedBox(height: 8),
 
             _buildCalculationStep(
-              '= Bénéfice Net',
+              'accounting_benefice_net'.tr,
               balance.netProfitFormatted,
-              'Marge brute - Dépenses (${balance.profitMarginFormatted})',
+              'accounting_marge_brute_depenses'.trParams({'profitMarginFormatted': '${balance.profitMarginFormatted}'}),
               balance.isProfitable ? Colors.green.shade700 : Colors.red.shade700,
               balance.isProfitable ? Icons.check_circle : Icons.warning,
               isResult: true,
@@ -178,29 +178,29 @@ class MarginExplanationWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildExplanationSection(
-                'Coût Unitaire Moyen Pondéré (CUMP)',
-                'Le CUMP est calculé à partir de l\'historique de tous les approvisionnements reçus pour chaque produit. Il reflète le coût moyen réel, même si le prix d\'achat a changé entre deux livraisons.',
-                'Formule: Σ(Qté reçue × Prix achat) / Σ(Qté reçue)',
+                'accounting_cout_unitaire_moyen_pondere_cump'.tr,
+                'accounting_cump_est_calcule_partir_historique_tous'.tr,
+                'accounting_formule_qte_recue_prix_achat_qte'.tr,
                 Colors.orange.shade600,
               ),
               const SizedBox(height: 16),
               _buildExplanationSection(
                 'Marge Brute',
-                'La marge brute représente le bénéfice réalisé sur la vente des produits, avant déduction des frais généraux.',
-                'Formule: Prix de Vente - CUMP',
+                'accounting_marge_brute_represente_benefice_realise_sur'.tr,
+                'accounting_formule_prix_vente_cump'.tr,
                 Colors.blue.shade600,
               ),
               const SizedBox(height: 16),
               _buildExplanationSection(
-                'Bénéfice Net',
-                'Le bénéfice net est le résultat final après déduction de toutes les charges (salaires, loyer, électricité, etc.).',
-                'Formule: Marge Brute - Dépenses Opérationnelles',
+                'dashboard_net_profit'.tr,
+                'accounting_benefice_net_est_resultat_final_apres'.tr,
+                'accounting_formule_marge_brute_depenses_operationnelles'.tr,
                 Colors.green.shade600,
               ),
               const SizedBox(height: 16),
               _buildExplanationSection(
                 'Marge en %',
-                'La marge en pourcentage permet de comparer la rentabilité sur différentes périodes.',
+                'accounting_marge_pourcentage_permet_comparer_rentabilite_sur'.tr,
                 'Formule: (Bénéfice / Chiffre d\'Affaires)  100',
                 Colors.purple.shade600,
               ),

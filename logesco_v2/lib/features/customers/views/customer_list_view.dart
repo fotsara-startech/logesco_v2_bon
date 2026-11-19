@@ -131,10 +131,10 @@ class _CustomerListViewState extends State<CustomerListView> {
             child: Obx(() => Wrap(
                   spacing: 8,
                   children: [
-                    for (final f in const [
+                    for (final f in [
                       ['all', 'Tous', Icons.people_outline],
-                      ['debt', 'Avec dette', Icons.warning_amber_rounded],
-                      ['nodebt', 'Sans dette', Icons.check_circle_outline],
+                      ['debt', 'customers_avec_dette'.tr, Icons.warning_amber_rounded],
+                      ['nodebt', 'customers_sans_dette'.tr, Icons.check_circle_outline],
                     ])
                       ChoiceChip(
                         avatar: Icon(f[2] as IconData, size: 18),
@@ -184,7 +184,7 @@ class _CustomerListViewState extends State<CustomerListView> {
               if (controller.customers.isEmpty && controller.debtFilter.value != 'all') {
                 return Center(
                   child: Text(
-                    controller.debtFilter.value == 'debt' ? 'Aucun client avec dette' : 'Aucun client sans dette',
+                    controller.debtFilter.value == 'debt' ? 'Aucun client avec dette' : 'customers_aucun_client_sans_dette'.tr,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                   ),
                 );

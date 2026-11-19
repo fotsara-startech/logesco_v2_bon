@@ -474,14 +474,14 @@ class _UserFormViewState extends State<UserFormView> {
                 Icon(Icons.store, color: Colors.teal.shade600),
                 const SizedBox(width: 8),
                 Text(
-                  'Boutiques assignées',
+                  'users_boutiques_assignees'.tr,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Sélectionnez les boutiques auxquelles cet utilisateur a accès. Les admins ont accès à toutes les boutiques.',
+              'users_selectionnez_boutiques_auxquelles_cet_utilisateur_acces'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 12),

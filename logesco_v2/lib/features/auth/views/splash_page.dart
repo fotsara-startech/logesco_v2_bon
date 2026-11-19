@@ -48,7 +48,7 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     // MODE SERVEUR — attendre que le backend local soit prêt
-    _setStatus('Démarrage du serveur...');
+    _setStatus('auth_starting_server'.tr);
     _setProgress(0.1);
 
     final backend = BackendService();
@@ -61,7 +61,7 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     _setProgress(0.9);
-    _setStatus('Vérification de la session...');
+    _setStatus('auth_verification_session'.tr);
     await Future.delayed(const Duration(milliseconds: 300));
 
     try {
@@ -94,13 +94,13 @@ class _SplashPageState extends State<SplashPage> {
     while (DateTime.now().isBefore(deadline)) {
       // Messages progressifs selon le temps écoulé
       if (elapsed < 5) {
-        _setStatus('Démarrage du serveur...');
+        _setStatus('auth_starting_server'.tr);
       } else if (elapsed < 20) {
         _setStatus('Chargement en cours...');
       } else if (elapsed < 50) {
-        _setStatus('Initialisation de la base de données...');
+        _setStatus('auth_initialisation_base_donnees'.tr);
       } else if (elapsed < 80) {
-        _setStatus('Première installation — préparation des données...');
+        _setStatus('auth_premiere_installation_preparation_donnees'.tr);
       } else {
         _setStatus('Finalisation, encore quelques instants...');
       }

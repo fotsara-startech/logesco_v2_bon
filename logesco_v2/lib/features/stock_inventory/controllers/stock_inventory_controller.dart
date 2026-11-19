@@ -348,8 +348,8 @@ class StockInventoryController extends GetxController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: Text('cash_session_confirm_close'.tr),
-        content: const Text(
-          'La clôture va ajuster le stock de la boutique selon les écarts constatés. Cette action est irréversible.',
+        content: Text(
+          'stockinventory_cloture_va_ajuster_stock_boutique_selon'.tr,
         ),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: Text('suppliers_form_cancel'.tr)),
@@ -414,7 +414,7 @@ class StockInventoryController extends GetxController {
 
         if (kIsWeb) {
           SnackbarHelper.success(
-            'Feuille de comptage téléchargée: $filename',
+            'stockinventory_feuille_comptage_telechargee'.trParams({'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -447,7 +447,7 @@ class StockInventoryController extends GetxController {
 
         if (kIsWeb) {
           SnackbarHelper.success(
-            'Rapport d\'inventaire téléchargé: $filename',
+            'stockinventory_rapport_inventaire_telecharge'.trParams({'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 3),
           );
@@ -597,13 +597,13 @@ class StockInventoryController extends GetxController {
       if (!kIsWeb) {
         await Share.shareXFiles(
           [XFile(filePath)],
-          subject: 'Fiche de comptage - ${inventory.nom}',
-          text: 'Fiche de comptage Excel à remplir et réimporter',
+          subject: 'stockinventory_fiche_comptage'.trParams({'nom': '${inventory.nom}'}),
+          text: 'stockinventory_fiche_comptage_excel_remplir_reimporter'.tr,
         );
       }
 
       SnackbarHelper.success(
-        'Fiche de comptage exportée avec succès',
+        'stockinventory_fiche_comptage_exportee_avec_succes'.tr,
         title: 'Export Excel',
         duration: const Duration(seconds: 3),
       );
@@ -620,7 +620,7 @@ class StockInventoryController extends GetxController {
     try {
       isLoading.value = true;
       isImporting.value = true;
-      importStatus.value = 'Lecture du fichier Excel...';
+      importStatus.value = 'stockinventory_lecture_fichier_excel'.tr;
 
       // Importer depuis Excel
       final imports = await InventoryExcelService.importCountingSheet();
@@ -682,12 +682,12 @@ class StockInventoryController extends GetxController {
 
       // Afficher le résultat
       if (updatedCount > 0) {
-        String message = '$updatedCount comptage(s) importé(s) avec succès';
+        String message = 'stockinventory_comptage_s_importe_s_avec_succes'.trParams({'updatedCount': '${updatedCount}'});
         if (notFoundCount > 0) {
-          message += '\n$notFoundCount produit(s) non trouvé(s)';
+          message += 'stockinventory_n_produit_s_non_trouve_s'.trParams({'notFoundCount': '${notFoundCount}'});
         }
         if (errors.isNotEmpty) {
-          message += '\n${errors.length} erreur(s)';
+          message += 'stockinventory_n_erreur_s'.trParams({'length': '${errors.length}'});
         }
 
         SnackbarHelper.success(

@@ -280,7 +280,7 @@ class _SupplierAccountViewState extends State<SupplierAccountView> {
             const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              _selectedPeriod == PeriodFilter.all ? 'suppliers_no_transactions'.tr : 'Aucune transaction pour cette période',
+              _selectedPeriod == PeriodFilter.all ? 'suppliers_no_transactions'.tr : 'customers_aucune_transaction_periode'.tr,
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],

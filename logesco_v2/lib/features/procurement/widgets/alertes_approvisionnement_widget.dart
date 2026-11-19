@@ -214,7 +214,7 @@ class AlertesApprovisionnementWidget extends StatelessWidget {
           child: Icon(iconeAlerte, color: couleurAlerte),
         ),
         title: Text(
-          produit['nom'] ?? 'Produit inconnu',
+          produit['nom'] ?? 'pdf_unknown_product'.tr,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(

@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Sur web ou en mode client, le backend est toujours "prêt" (serveur distant)
   bool _backendReady = AppConfig.isClientMode || kIsWeb;
-  String _backendStatus = (AppConfig.isClientMode || kIsWeb) ? '' : 'Démarrage du serveur...';
+  String _backendStatus = (AppConfig.isClientMode || kIsWeb) ? '' : 'auth_starting_server'.tr;
 
   @override
   void initState() {
@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _restartBackend() async {
     setState(() {
       _backendReady = false;
-      _backendStatus = 'Redémarrage du serveur...';
+      _backendStatus = 'sync_redemarrage_serveur'.tr;
     });
     final backend = BackendService();
     await backend.stop();
@@ -62,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
     if (mounted) {
       setState(() {
         _backendReady = ready;
-        _backendStatus = ready ? '' : 'Échec du démarrage. Vérifiez l\'installation.';
+        _backendStatus = ready ? '' : 'auth_echec_demarrage_verifiez_installation'.tr;
       });
     }
   }
@@ -261,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      _backendReady ? 'auth_login_button'.tr : 'Démarrage...',
+                      _backendReady ? 'auth_login_button'.tr : 'auth_demarrage'.tr,
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),

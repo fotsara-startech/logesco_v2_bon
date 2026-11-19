@@ -116,7 +116,7 @@ class SalesService {
       } else {
         final errorData = json.decode(response.body);
         print('❌ [DIAGNOSTIC API] Erreur ${response.statusCode}: ${errorData['message']}');
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération des ventes');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_fetch_error'.tr);
       }
     } catch (e) {
       print('❌ [DIAGNOSTIC API] Exception: $e');
@@ -145,7 +145,7 @@ class SalesService {
         return ApiResponse.success(sale);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la récupération de la vente');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_erreur_lors_recuperation_vente'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
@@ -191,7 +191,7 @@ class SalesService {
         );
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la création de la vente');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_create_error'.tr);
       }
     } catch (e) {
       print('Error creating sale: $e');
@@ -229,7 +229,7 @@ class SalesService {
         );
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de la modification de la vente');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_erreur_lors_modification_vente'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
@@ -259,7 +259,7 @@ class SalesService {
         );
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'annulation de la vente');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_cancel_error'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
@@ -290,7 +290,7 @@ class SalesService {
         );
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors de l\'annulation des articles');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_erreur_lors_annulation_articles'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));
@@ -329,7 +329,7 @@ class SalesService {
         return ApiResponse.success(null, message: jsonData['message']);
       } else {
         final errorData = json.decode(response.body);
-        return ApiResponse.error(message: errorData['message'] ?? 'Erreur lors du remplacement de l\'article');
+        return ApiResponse.error(message: errorData['message'] ?? 'sales_replace_item_error'.tr);
       }
     } catch (e) {
       return ApiResponse.error(message: 'reports_erreur_connexion'.trParams({'e': '${e}'}));

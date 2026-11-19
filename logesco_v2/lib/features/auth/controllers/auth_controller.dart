@@ -213,7 +213,7 @@ class AuthController extends GetxController {
       errorMessage.value = e.message;
       SnackbarHelper.error(e.message, title: 'shared_erreur_connexion'.tr);
     } catch (e) {
-      errorMessage.value = 'Erreur inattendue lors de la connexion';
+      errorMessage.value = 'auth_erreur_inattendue_lors_connexion'.tr;
       SnackbarHelper.error('auth_erreur_inattendue_lors_connexion'.tr);
     } finally {
       isLoading.value = false;

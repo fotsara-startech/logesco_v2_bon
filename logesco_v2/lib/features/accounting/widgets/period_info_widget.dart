@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 /// Widget d'information sur la période sélectionnée
@@ -32,7 +33,7 @@ class PeriodInfoWidget extends StatelessWidget {
                 Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Période Analysée',
+                  'accounting_periode_analysee'.tr,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -46,14 +47,14 @@ class PeriodInfoWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildInfoItem(
-                    'Période',
+                    'analytics_period'.tr,
                     _formatPeriod(),
                     Icons.date_range,
                   ),
                 ),
                 Expanded(
                   child: _buildInfoItem(
-                    'Durée',
+                    'cash_session_duration'.tr,
                     '$periodDays jour${periodDays > 1 ? 's' : ''}',
                     Icons.schedule,
                   ),

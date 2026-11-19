@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import '../models/financial_balance.dart';
 
 /// Widget de graphique de l'évolution quotidienne
@@ -58,7 +59,7 @@ class DailyBalanceChartWidget extends StatelessWidget {
         height: 100,
         alignment: Alignment.center,
         child: Text(
-          'Bénéfice constant: ${dailyBalances.first.profitFormatted}',
+          'accounting_benefice_constant'.trParams({'profitFormatted': '${dailyBalances.first.profitFormatted}'}),
           style: TextStyle(color: Colors.grey.shade600),
         ),
       );

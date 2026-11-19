@@ -61,25 +61,25 @@ class _DiscountDialogState extends State<DiscountDialog> {
     final discount = double.tryParse(discountText);
     if (discount == null) {
       isValid.value = false;
-      errorMessage.value = 'Montant invalide';
+      errorMessage.value = 'proforma_amount_invalid'.tr;
       return;
     }
 
     if (discount < 0) {
       isValid.value = false;
-      errorMessage.value = 'La remise ne peut pas être négative';
+      errorMessage.value = 'sales_discount_negative'.tr;
       return;
     }
 
     if (discount > widget.cartItem.originalPrice) {
       isValid.value = false;
-      errorMessage.value = 'La remise ne peut pas dépasser le prix du produit';
+      errorMessage.value = 'sales_discount_exceeds_price'.tr;
       return;
     }
 
     if (discount > widget.cartItem.maxDiscountAllowed) {
       isValid.value = false;
-      errorMessage.value = 'Remise non autorisée. Maximum: ${widget.cartItem.maxDiscountAllowed.toStringAsFixed(0)} ${CurrencyConstants.defaultCurrency}';
+      errorMessage.value = 'sales_remise_non_autorisee_maximum'.trParams({'toStringAsFixed': '${widget.cartItem.maxDiscountAllowed.toStringAsFixed(0)}', 'defaultCurrency': '${CurrencyConstants.defaultCurrency}'});
       return;
     }
 
@@ -230,7 +230,7 @@ class _DiscountDialogState extends State<DiscountDialog> {
                       Row(
                         children: [
                           Text(
-                            'Prix final:',
+                            'sales_prix_final'.tr,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.green.shade700,

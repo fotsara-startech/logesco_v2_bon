@@ -60,7 +60,7 @@ class TopProductsCard extends StatelessWidget {
           ...List.generate(products.length, (index) {
             final product = products[index];
             final rank = index + 1;
-            final name = product['nom'] ?? 'Produit inconnu';
+            final name = product['nom'] ?? 'pdf_unknown_product'.tr;
             final quantity = (product['quantite'] ?? product['count'] ?? 0) as int;
             final revenue = (product['revenue'] ?? 0.0) as double;
 

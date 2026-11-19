@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:json_annotation/json_annotation.dart';
 import 'license_data.dart';
@@ -380,7 +381,7 @@ class LicenseKeyUtils {
   static LicenseKeyValidationResult validateLicenseKey(String licenseKey) {
     // Vérifier le format
     if (!isValidKeyFormat(licenseKey)) {
-      return LicenseKeyValidationResult.invalid('Format de clé invalide');
+      return LicenseKeyValidationResult.invalid('subscription_license_key_invalid_format'.tr);
     }
 
     // Décoder le payload

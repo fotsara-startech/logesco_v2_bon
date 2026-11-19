@@ -46,14 +46,14 @@ class ErrorService extends GetxService {
         if (!authController.isLoggingOut) {
           print('🔒 [ErrorService] Navigation vers /login...');
           Get.offAllNamed('/login');
-          ErrorHandler.showWarning('Session expirée. Veuillez vous reconnecter.');
+          ErrorHandler.showWarning('financialmovements_session_expiree_veuillez_vous_reconnecter'.tr);
         } else {
           print('🔒 [ErrorService] Déconnexion en cours, navigation ignorée');
         }
       } catch (_) {
         print('🔒 [ErrorService] AuthController non trouvé, navigation directe vers /login');
         Get.offAllNamed('/login');
-        ErrorHandler.showWarning('Session expirée. Veuillez vous reconnecter.');
+        ErrorHandler.showWarning('financialmovements_session_expiree_veuillez_vous_reconnecter'.tr);
       }
     }
 
@@ -128,7 +128,7 @@ class ErrorService extends GetxService {
   void checkConnectivity(dynamic error) {
     if (ErrorHandler.isNetworkError(error)) {
       ErrorHandler.showWarning(
-        'Vérifiez votre connexion internet',
+        'core_verifiez_votre_connexion_internet'.tr,
         title: 'Connexion',
       );
     }

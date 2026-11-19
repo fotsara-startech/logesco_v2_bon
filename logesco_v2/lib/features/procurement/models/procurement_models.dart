@@ -10,8 +10,8 @@ import 'package:get/get.dart';
 enum CommandeStatut {
   enAttente('en_attente', 'En attente'),
   partielle('partielle', 'Partiellement reçue'),
-  terminee('terminee', 'Terminée'),
-  annulee('annulee', 'Annulée');
+  terminee('terminee', 'sales_status_completed'.tr),
+  annulee('annulee', 'proforma_status_cancelled'.tr);
 
   const CommandeStatut(this.value, this.label);
   final String value;

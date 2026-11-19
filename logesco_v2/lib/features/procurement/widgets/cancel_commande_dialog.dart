@@ -46,7 +46,7 @@ class CancelCommandeDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Commande: ${commande.numeroCommande}',
+                    'procurement_commande'.trParams({'numeroCommande': '${commande.numeroCommande}'}),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -57,7 +57,7 @@ class CancelCommandeDialog extends StatelessWidget {
                   Text('procurement_date_2'.trParams({'dateCommande': '${_formatDate(commande.dateCommande)}'})),
                   if (commande.montantTotal != null)
                     Text(
-                      'Montant: ${commande.montantTotal!.toStringAsFixed(0)} FCFA',
+                      'procurement_montant_fcfa'.trParams({'toStringAsFixed': '${commande.montantTotal!.toStringAsFixed(0)}'}),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                 ],
@@ -80,7 +80,7 @@ class CancelCommandeDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Attention: Cette action est irréversible',
+                      'procurement_attention_action_est_irreversible'.tr,
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -92,7 +92,7 @@ class CancelCommandeDialog extends StatelessWidget {
 
             // Conséquences de l'annulation
             const Text(
-              'Conséquences de l\'annulation:',
+              'procurement_consequences_annulation'.tr,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -102,12 +102,12 @@ class CancelCommandeDialog extends StatelessWidget {
 
             _buildConsequenceItem(
               Icons.block,
-              'La commande ne pourra plus être modifiée',
+              'procurement_commande_ne_pourra_plus_etre_modifiee'.tr,
               Colors.red,
             ),
             _buildConsequenceItem(
               Icons.inventory_2_outlined,
-              'Aucune réception ne sera possible',
+              'procurement_aucune_reception_ne_sera_possible'.tr,
               Colors.red,
             ),
 
@@ -126,7 +126,7 @@ class CancelCommandeDialog extends StatelessWidget {
                     const SizedBox(width: 6),
                     const Expanded(
                       child: Text(
-                        'Cette commande a déjà des réceptions partielles. Les stocks déjà reçus ne seront pas affectés.',
+                        'procurement_commande_deja_receptions_partielles_stocks_deja'.tr,
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
@@ -137,8 +137,8 @@ class CancelCommandeDialog extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            const Text(
-              'Êtestes-vous sûr de vouloir annuler cette commande ?',
+            Text(
+              'procurement_etestes_vous_sur_vouloir_annuler_commande'.tr,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -211,8 +211,8 @@ class CancelCommandeDialog extends StatelessWidget {
     final finalConfirm = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Confirmation finale'),
-        content: const Text(
-          'Cette action est définitive. Voulez-vous vraiment annuler cette commande ?',
+        content: Text(
+          'procurement_action_est_definitive_voulez_vous_vraiment'.tr,
         ),
         actions: [
           TextButton(

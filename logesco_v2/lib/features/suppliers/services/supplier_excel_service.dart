@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -16,9 +17,9 @@ class SupplierExcelService {
 
       // Définir les en-têtes
       List<String> headers = [
-        'Nom',
+        'suppliers_name'.tr,
         'Personne Contact',
-        'Téléphone',
+        'suppliers_phone'.tr,
         'Email',
         'Adresse',
       ];
@@ -198,9 +199,9 @@ class SupplierExcelService {
 
       // Définir les en-têtes
       List<String> headers = [
-        'Nom',
+        'suppliers_name'.tr,
         'Personne Contact',
-        'Téléphone',
+        'suppliers_phone'.tr,
         'Email',
         'Adresse',
       ];

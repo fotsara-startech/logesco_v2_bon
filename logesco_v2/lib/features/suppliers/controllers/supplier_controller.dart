@@ -84,7 +84,7 @@ class SupplierController extends GetxController {
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement des fournisseurs';
+        errorMessage.value = 'suppliers_erreur_lors_chargement_fournisseurs'.tr;
       }
 
       SnackbarHelper.error(errorMessage.value);
@@ -200,7 +200,7 @@ class SupplierController extends GetxController {
             Text('suppliers_etes_vous_sur_vouloir_supprimer_fournisseur'.trParams({'nom': '${supplier.nom}'})),
             const SizedBox(height: 8),
             Text(
-              'Note: La suppression échouera si le fournisseur a des commandes associées.',
+              'suppliers_note_suppression_echouera_si_fournisseur_commandes'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -247,20 +247,20 @@ class SupplierController extends GetxController {
       } catch (e) {
         print('❌ Exception lors de la suppression: $e');
 
-        String message = 'Erreur lors de la suppression du fournisseur';
+        String message = 'suppliers_erreur_lors_suppression_fournisseur'.tr;
         if (e is ApiException) {
           switch (e.statusCode) {
             case 404:
-              message = 'Fournisseur non trouvé';
+              message = 'suppliers_not_found'.tr;
               break;
             case 403:
-              message = 'Vous n\'avez pas les droits pour supprimer ce fournisseur';
+              message = 'suppliers_vous_n_avez_pas_droits_supprimer'.tr;
               break;
             case 409:
-              message = 'Impossible de supprimer: le fournisseur a des commandes associées';
+              message = 'suppliers_impossible_supprimer_fournisseur_commandes_associees'.tr;
               break;
             case 500:
-              message = 'Erreur serveur. Veuillez réessayer plus tard.';
+              message = 'suppliers_erreur_serveur_veuillez_reessayer_plus_tard'.tr;
               break;
             default:
               message = e.message.isNotEmpty ? e.message : message;
@@ -302,7 +302,7 @@ class SupplierController extends GetxController {
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement des transactions';
+        errorMessage.value = 'accounts_erreur_lors_chargement_transactions'.tr;
       }
 
       print('❌ Erreur chargement transactions: $e');
@@ -338,7 +338,7 @@ class SupplierController extends GetxController {
     } catch (e) {
       print('❌ Erreur paiement fournisseur: $e');
 
-      String message = 'Erreur lors du paiement';
+      String message = 'suppliers_payment_error'.tr;
       if (e is ApiException) {
         message = e.message;
       }
@@ -378,7 +378,7 @@ class SupplierController extends GetxController {
     } catch (e) {
       print('❌ Erreur paiement commande: $e');
 
-      String message = 'Erreur lors du paiement';
+      String message = 'suppliers_payment_error'.tr;
       if (e is ApiException) {
         message = e.message;
       }
@@ -501,7 +501,7 @@ class SupplierController extends GetxController {
 
         if (kIsWeb) {
           SnackbarHelper.success(
-            'Export de ${allSuppliers.length} fournisseur(s) réussi.\nFichier: $filename',
+            'suppliers_export_fournisseur_s_reussi_nfichier'.trParams({'length': '${allSuppliers.length}', 'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 4),
           );
@@ -572,7 +572,7 @@ class SupplierController extends GetxController {
                 final data = importData[index];
                 return ListTile(
                   title: Text(data.nom),
-                  subtitle: Text(data.telephone ?? 'Pas de téléphone'),
+                  subtitle: Text(data.telephone ?? 'customers_no_phone'.tr),
                 );
               },
             ),
@@ -621,7 +621,7 @@ class SupplierController extends GetxController {
         AlertDialog(
           title: Text('customers_import_success'.tr),
           content: Text(
-            'Importés: $successCount\nErreurs: $errorCount',
+            'suppliers_importes_nerreurs'.trParams({'successCount': '${successCount}', 'errorCount': '${errorCount}'}),
           ),
           actions: [
             TextButton(

@@ -57,7 +57,7 @@ class _UnpaidSalesSelectorDialogState extends State<UnpaidSalesSelectorDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Impossible de charger les ventes impayées: $e';
+          _errorMessage = 'accounts_impossible_charger_ventes_impayees'.trParams({'e': '${e}'});
         });
       }
     }

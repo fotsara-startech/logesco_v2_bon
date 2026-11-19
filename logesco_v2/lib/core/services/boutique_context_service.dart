@@ -99,7 +99,7 @@ class BoutiqueContextService extends GetxService {
   /// Affiche un message d'erreur si aucune boutique n'est active
   void requireActiveBoutique(String operation) {
     if (!hasBoutiqueActive) {
-      final error = 'Aucune boutique active pour l\'opération: $operation';
+      final error = 'core_aucune_boutique_active_operation'.trParams({'operation': '${operation}'});
       print('❌ BoutiqueContextService: $error');
       throw Exception(error);
     }

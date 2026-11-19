@@ -75,13 +75,13 @@ class LanguageController extends GetxController {
   String get currentLanguageName {
     switch (currentLanguage.value) {
       case 'fr':
-        return 'Français';
+        return 'language_french'.tr;
       case 'en':
         return 'English';
       case 'es':
         return 'Español';
       default:
-        return 'Français';
+        return 'language_french'.tr;
     }
   }
 

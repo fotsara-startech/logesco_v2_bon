@@ -126,10 +126,10 @@ class AccountController extends GetxController {
       if (e is ApiException) {
         errorMessageClients.value = e.message;
       } else {
-        errorMessageClients.value = 'Erreur lors du chargement des comptes clients';
+        errorMessageClients.value = 'accounts_erreur_lors_chargement_comptes_clients'.tr;
       }
 
-      _safeSnackbar('Erreur', errorMessageClients.value);
+      _safeSnackbar('suppliers_error'.tr, errorMessageClients.value);
     } finally {
       isLoadingClients.value = false;
       isLoadingMoreClients.value = false;
@@ -177,10 +177,10 @@ class AccountController extends GetxController {
       if (e is ApiException) {
         errorMessageFournisseurs.value = e.message;
       } else {
-        errorMessageFournisseurs.value = 'Erreur lors du chargement des comptes fournisseurs';
+        errorMessageFournisseurs.value = 'accounts_erreur_lors_chargement_comptes_fournisseurs'.tr;
       }
 
-      _safeSnackbar('Erreur', errorMessageFournisseurs.value);
+      _safeSnackbar('suppliers_error'.tr, errorMessageFournisseurs.value);
     } finally {
       isLoadingFournisseurs.value = false;
       isLoadingMoreFournisseurs.value = false;
@@ -278,11 +278,11 @@ class AccountController extends GetxController {
         comptesClients[index] = compteUpdated;
       }
 
-      _safeSnackbar('Succès', 'Transaction client créée avec succès', isError: false);
+      _safeSnackbar('success'.tr, 'accounts_transaction_client_creee_avec_succes'.tr, isError: false);
     } catch (e) {
-      String message = 'Erreur lors de la création de la transaction';
+      String message = 'accounts_erreur_lors_creation_transaction'.tr;
       if (e is ApiException) message = e.message;
-      _safeSnackbar('Erreur', message);
+      _safeSnackbar('suppliers_error'.tr, message);
       rethrow;
     }
   }
@@ -304,11 +304,11 @@ class AccountController extends GetxController {
         comptesFournisseurs[index] = compteUpdated;
       }
 
-      _safeSnackbar('Succès', 'Transaction fournisseur créée avec succès', isError: false);
+      _safeSnackbar('success'.tr, 'accounts_transaction_fournisseur_creee_avec_succes'.tr, isError: false);
     } catch (e) {
-      String message = 'Erreur lors de la création de la transaction';
+      String message = 'accounts_erreur_lors_creation_transaction'.tr;
       if (e is ApiException) message = e.message;
-      _safeSnackbar('Erreur', message);
+      _safeSnackbar('suppliers_error'.tr, message);
       rethrow;
     }
   }
@@ -331,11 +331,11 @@ class AccountController extends GetxController {
         comptesClients[index] = compteUpdated;
       }
 
-      _safeSnackbar('Succès', 'Limite de crédit client mise à jour', isError: false);
+      _safeSnackbar('success'.tr, 'accounts_limite_credit_client_mise_jour'.tr, isError: false);
     } catch (e) {
-      String message = 'Erreur lors de la mise à jour de la limite de crédit';
+      String message = 'accounts_erreur_lors_mise_jour_limite_credit_3'.tr;
       if (e is ApiException) message = e.message;
-      _safeSnackbar('Erreur', message);
+      _safeSnackbar('suppliers_error'.tr, message);
       rethrow;
     }
   }
@@ -358,11 +358,11 @@ class AccountController extends GetxController {
         comptesFournisseurs[index] = compteUpdated;
       }
 
-      _safeSnackbar('Succès', 'Limite de crédit fournisseur mise à jour', isError: false);
+      _safeSnackbar('success'.tr, 'accounts_limite_credit_fournisseur_mise_jour'.tr, isError: false);
     } catch (e) {
-      String message = 'Erreur lors de la mise à jour de la limite de crédit';
+      String message = 'accounts_erreur_lors_mise_jour_limite_credit_3'.tr;
       if (e is ApiException) message = e.message;
-      _safeSnackbar('Erreur', message);
+      _safeSnackbar('suppliers_error'.tr, message);
       rethrow;
     }
   }
@@ -409,9 +409,9 @@ class AccountController extends GetxController {
 
       currentPageTransactions.value++;
     } catch (e) {
-      String message = 'Erreur lors du chargement des transactions';
+      String message = 'accounts_erreur_lors_chargement_transactions'.tr;
       if (e is ApiException) message = e.message;
-      _safeSnackbar('Erreur', message);
+      _safeSnackbar('suppliers_error'.tr, message);
     } finally {
       isLoadingTransactions.value = false;
       isLoadingMoreTransactions.value = false;

@@ -127,10 +127,10 @@ class AccountingExportService {
 
           // Depenses par categorie
           if (balance.expensesByCategory.isNotEmpty) ...[
-            _pdfSectionTitle('DEPENSES PAR CATEGORIE'),
+            _pdfSectionTitle('accounting_depenses_par_categorie'.tr),
             pw.SizedBox(height: 6),
             _pdfTable([
-              ['Categorie', 'Montant', 'Nb', '%'],
+              ['Categorie', 'suppliers_transaction_amount'.tr, 'Nb', '%'],
               ...balance.expensesByCategory.map((c) => [
                     c.categoryDisplayName,
                     c.amountFormatted,
@@ -162,7 +162,7 @@ class AccountingExportService {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'Genere le ${_fmt(DateTime.now())}',
+              'accounting_genere'.trParams({'now': '${_fmt(DateTime.now())}'}),
               style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
             ),
             pw.Text(
@@ -341,7 +341,7 @@ class AccountingExportService {
     row++;
     _excelCell(sheet, row, 0, 'Statut: ${balance.statusMessage}');
     row++;
-    _excelCell(sheet, row, 0, 'Genere le: ${_fmt(DateTime.now())}');
+    _excelCell(sheet, row, 0, 'accounting_genere_2'.trParams({'now': '${_fmt(DateTime.now())}'}));
     row += 2;
 
     // Colonnes
@@ -398,7 +398,7 @@ class AccountingExportService {
     int row = 0;
 
     _excelHeader(sheet, row, 0, 'Categorie');
-    _excelHeader(sheet, row, 1, 'Montant');
+    _excelHeader(sheet, row, 1, 'suppliers_transaction_amount'.tr);
     _excelHeader(sheet, row, 2, 'Nb mouvements');
     _excelHeader(sheet, row, 3, 'Pourcentage');
     row++;

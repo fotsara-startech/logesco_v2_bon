@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Modèles de données pour la gestion des comptes clients et fournisseurs
 
 /// Modèle de base pour un compte
@@ -348,9 +349,9 @@ class TransactionCompte {
   String get typeTransactionLibelle {
     switch (typeTransaction) {
       case 'debit':
-        return 'Débit';
+        return 'customers_debit'.tr;
       case 'credit':
-        return 'Crédit';
+        return 'sales_payment_credit'.tr;
       case 'paiement':
         return 'Paiement';
       case 'achat':

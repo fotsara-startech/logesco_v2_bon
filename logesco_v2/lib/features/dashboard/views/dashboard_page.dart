@@ -135,7 +135,7 @@ class DashboardPage extends StatelessWidget {
                     Row(
                       children: [
                         const Text(
-                          'Gérez votre commerce efficacement avec LOGESCO v2',
+                          'dashboard_gerez_votre_commerce_efficacement_avec_logesco'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -198,8 +198,8 @@ class DashboardPage extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Accès rapide',
+                Text(
+                  'dashboard_acces_rapide'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -232,8 +232,8 @@ class DashboardPage extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Résumé financier',
+            Text(
+              'dashboard_resume_financier'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -765,7 +765,7 @@ class DashboardPage extends StatelessWidget {
     if (!_hasPermissionForModule(authController, module)) {
       final user = authController.currentUser.value;
       Get.snackbar(
-        'Accès refusé',
+        'suppliers_access_denied'.tr,
         'Votre rôle (${user?.role.displayName ?? 'Inconnu'}) ne permet pas d\'accéder à ce module',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
@@ -798,7 +798,7 @@ class DashboardPage extends StatelessWidget {
     } else {
       Get.snackbar(
         'Module ${module.title}',
-        'Cette fonctionnalité sera implémentée dans les prochaines tâches',
+        'dashboard_fonctionnalite_sera_implementee_dans_prochaines_taches'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade800,

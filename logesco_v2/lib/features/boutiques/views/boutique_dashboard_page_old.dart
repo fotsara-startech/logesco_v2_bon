@@ -103,16 +103,16 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
       case PeriodFilter.today:
         return "Aujourd'hui";
       case PeriodFilter.week:
-        return 'Cette semaine';
+        return 'sales_this_week'.tr;
       case PeriodFilter.month:
-        return 'Ce mois';
+        return 'analytics_this_month'.tr;
       case PeriodFilter.year:
-        return 'Cette année';
+        return 'analytics_this_year'.tr;
       case PeriodFilter.custom:
         if (_customRange != null) {
           return '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}';
         }
-        return 'Personnalisée';
+        return 'boutiques_personnalisee'.tr;
     }
   }
 
@@ -192,7 +192,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
                 ),
                 const SizedBox(width: 8),
                 _PeriodChip(
-                  label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'Personnalisée',
+                  label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'boutiques_personnalisee'.tr,
                   selected: _selectedPeriod == PeriodFilter.custom,
                   icon: Icons.date_range,
                   onTap: _pickCustomRange,

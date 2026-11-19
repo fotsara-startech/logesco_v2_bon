@@ -159,7 +159,7 @@ class _SupplierDetailViewState extends State<SupplierDetailView> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildStatCard(
-                                'Nombre de commandes',
+                                'suppliers_nombre_commandes'.tr,
                                 _totalOrders?.toString() ?? '0',
                                 Icons.receipt_long,
                                 Colors.blue,

@@ -357,7 +357,7 @@ class ProductController extends GetxController {
           // Vérifier si c'est une erreur de contrainte de clé étrangère
           if (e.message.contains('Foreign key constraint') || e.message.contains('utilisé dans') || e.message.contains('désactivé')) {
             isInfo = true;
-            message = 'Ce produit ne peut pas être supprimé car il est utilisé dans des transactions. Il a été désactivé à la place.';
+            message = 'products_produit_ne_peut_pas_etre_supprime'.tr;
 
             // Rafraîchir la liste pour voir le produit désactivé
             await loadProducts();

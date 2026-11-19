@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'license_data.dart';
 import 'subscription_status.dart';
 
@@ -21,12 +22,12 @@ BlockingReason blockingReasonOf(SubscriptionStatus? status) {
 String blockingMessage(BlockingReason r) {
   switch (r) {
     case BlockingReason.suspectDate:
-      return "La date de l'ordinateur semble incorrecte. Vérifiez la date, l'heure et le fuseau horaire de Windows, puis relancez LOGESCO.";
+      return 'subscription_date_ordinateur_semble_incorrecte_verifiez_date'.tr;
     case BlockingReason.graceEnded:
-      return 'Votre licence est expirée et la période de grâce est terminée.';
+      return 'subscription_votre_licence_est_expiree_periode_grace'.tr;
     case BlockingReason.licenseExpired:
-      return 'Votre licence est arrivée à expiration.';
+      return 'subscription_votre_licence_est_arrivee_expiration'.tr;
     case BlockingReason.noValidLicense:
-      return "Aucune licence valide n'a été trouvée sur ce poste. Si vous l'avez déjà activée, ressaisissez votre clé d'activation : elle sera désormais conservée.";
+      return 'subscription_aucune_licence_valide_n_ete_trouvee'.tr;
   }
 }

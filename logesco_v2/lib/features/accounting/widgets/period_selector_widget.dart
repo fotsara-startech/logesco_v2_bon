@@ -31,8 +31,8 @@ class PeriodSelectorWidget extends StatelessWidget {
               children: [
                 Icon(Icons.date_range, color: Colors.blue.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'Période d\'analyse',
+                Text(
+                  'procurement_suggestions_period'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -59,7 +59,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                 Expanded(
                   child: _buildDateSelector(
                     context,
-                    'Date de début',
+                    'sales_start_date'.tr,
                     startDate,
                     onStartDateChanged,
                   ),
@@ -68,7 +68,7 @@ class PeriodSelectorWidget extends StatelessWidget {
                 Expanded(
                   child: _buildDateSelector(
                     context,
-                    'Date de fin',
+                    'sales_end_date'.tr,
                     endDate,
                     onEndDateChanged,
                   ),
@@ -78,8 +78,8 @@ class PeriodSelectorWidget extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Périodes prédéfinies
-            const Text(
-              'Périodes rapides',
+            Text(
+              'stock_quick_periods'.tr,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -136,7 +136,7 @@ class PeriodSelectorWidget extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              date != null ? '${date.day}/${date.month}/${date.year}' : 'Sélectionner',
+              date != null ? '${date.day}/${date.month}/${date.year}' : 'suppliers_select'.tr,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,

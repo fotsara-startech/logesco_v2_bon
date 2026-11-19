@@ -73,10 +73,10 @@ class DiscountReportController extends GetxController {
       if (response.success && response.data != null) {
         discountSummary.value = response.data;
       } else {
-        _showError('Erreur lors du chargement du résumé des remises', response.message);
+        _showError('reports_erreur_lors_chargement_resume_remises'.tr, response.message);
       }
     } catch (e) {
-      _showError('Erreur lors du chargement du résumé des remises', e.toString());
+      _showError('reports_erreur_lors_chargement_resume_remises'.tr, e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -98,10 +98,10 @@ class DiscountReportController extends GetxController {
       if (response.success && response.data != null) {
         vendorReport.value = response.data;
       } else {
-        _showError('Erreur lors du chargement du rapport par vendeur', response.message);
+        _showError('reports_erreur_lors_chargement_rapport_par_vendeur'.tr, response.message);
       }
     } catch (e) {
-      _showError('Erreur lors du chargement du rapport par vendeur', e.toString());
+      _showError('reports_erreur_lors_chargement_rapport_par_vendeur'.tr, e.toString());
     } finally {
       isLoadingVendors.value = false;
     }
@@ -120,10 +120,10 @@ class DiscountReportController extends GetxController {
       if (response.success && response.data != null) {
         topDiscounts.assignAll(response.data!);
       } else {
-        _showError('Erreur lors du chargement du top des remises', response.message);
+        _showError('reports_erreur_lors_chargement_top_remises'.tr, response.message);
       }
     } catch (e) {
-      _showError('Erreur lors du chargement du top des remises', e.toString());
+      _showError('reports_erreur_lors_chargement_top_remises'.tr, e.toString());
     } finally {
       isLoadingTopDiscounts.value = false;
     }
@@ -198,7 +198,7 @@ class DiscountReportController extends GetxController {
 
   /// Affiche un message d'erreur
   void _showError(String title, String? message) {
-    SnackbarHelper.error(message ?? 'Une erreur est survenue', duration: const Duration(seconds: 4));
+    SnackbarHelper.error(message ?? 'roles_error_occurred'.tr, duration: const Duration(seconds: 4));
   }
 
   /// Calcule les statistiques dérivées
@@ -254,12 +254,12 @@ class DiscountReportController extends GetxController {
   /// Obtient le texte de la période sélectionnée
   String get selectedPeriodText {
     if (dateDebut.value == null && dateFin.value == null) {
-      return 'Toutes les périodes';
+      return 'reports_toutes_periodes'.tr;
     }
 
-    final debut = dateDebut.value != null ? _formatDate(dateDebut.value!) : 'Début';
+    final debut = dateDebut.value != null ? _formatDate(dateDebut.value!) : 'reports_debut'.tr;
     final fin = dateFin.value != null ? _formatDate(dateFin.value!) : 'Fin';
 
-    return 'Du $debut au $fin';
+    return 'reports_du_au'.trParams({'debut': '${debut}', 'fin': '${fin}'});
   }
 }

@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+﻿import 'package:get/get.dart';
+import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../interfaces/i_subscription_manager.dart';
 import '../interfaces/i_license_service.dart';
@@ -493,15 +494,15 @@ class SubscriptionManager implements ISubscriptionManager {
           if (gracePeriodStart != null) {
             final graceDaysRemaining = _gracePeriodDays - DateTime.now().difference(gracePeriodStart).inDays;
             if (graceDaysRemaining > 0) {
-              notifications.add('Période de grâce: $graceDaysRemaining jour(s) restant(s) - Renouvelez maintenant');
+              notifications.add('subscription_periode_grace_jour_s_restant_s'.trParams({'graceDaysRemaining': '${graceDaysRemaining}'}));
             } else {
-              notifications.add('Période de grâce expirée - Activez une licence immédiatement');
+              notifications.add('subscription_periode_grace_expiree_activez_licence_immediatement'.tr);
             }
           } else {
-            notifications.add('Période de grâce active - Renouvelez votre abonnement');
+            notifications.add('subscription_periode_grace_active_renouvelez_votre_abonnement'.tr);
           }
         } else {
-          notifications.add('Abonnement expiré - Activez une licence pour continuer');
+          notifications.add('subscription_abonnement_expire_activez_licence_continuer'.tr);
         }
         return notifications;
       }
@@ -511,29 +512,29 @@ class SubscriptionManager implements ISubscriptionManager {
 
       if (remainingDays <= _urgentWarningDaysThreshold) {
         if (remainingDays == 0) {
-          notifications.add('CRITIQUE: Votre abonnement expire aujourd\'hui!');
+          notifications.add('subscription_critique_votre_abonnement_expire_aujourd_hui'.tr);
         } else {
-          notifications.add('URGENT: Votre abonnement expire dans $remainingDays jour(s)');
+          notifications.add('subscription_urgent_votre_abonnement_expire_dans_jour'.trParams({'remainingDays': '${remainingDays}'}));
         }
 
         if (expirationDate != null) {
-          notifications.add('Date d\'expiration: ${_formatDate(expirationDate)}');
+          notifications.add('subscription_date_expiration'.trParams({'formatDate': '${_formatDate(expirationDate)}'}));
         }
 
-        notifications.add('Renouvelez maintenant pour éviter l\'interruption du service');
+        notifications.add('subscription_renouvelez_maintenant_eviter_interruption_service'.tr);
       } else if (remainingDays <= _warningDaysThreshold) {
-        notifications.add('Attention: Votre abonnement expire dans $remainingDays jours');
+        notifications.add('subscription_attention_votre_abonnement_expire_dans_jours'.trParams({'remainingDays': '${remainingDays}'}));
 
         if (expirationDate != null) {
-          notifications.add('Date d\'expiration: ${_formatDate(expirationDate)}');
+          notifications.add('subscription_date_expiration'.trParams({'formatDate': '${_formatDate(expirationDate)}'}));
         }
 
-        notifications.add('Pensez à renouveler votre abonnement');
+        notifications.add('subscription_pensez_renouveler_votre_abonnement'.tr);
       }
 
       // Ajouter des notifications spécifiques au type d'abonnement
       if (status.type == SubscriptionType.trial && remainingDays <= 2) {
-        notifications.add('Fin de période d\'essai - Choisissez votre abonnement');
+        notifications.add('subscription_fin_periode_essai_choisissez_votre_abonnement'.tr);
       }
 
       return notifications;
@@ -549,12 +550,12 @@ class SubscriptionManager implements ISubscriptionManager {
       final notifications = <String>[];
 
       if (!status.isActive && !status.isInGracePeriod) {
-        notifications.add('ACCÈS BLOQUÉ: Activez une licence pour continuer');
+        notifications.add('subscription_acces_bloque_activez_licence_continuer'.tr);
         return notifications;
       }
 
       if (status.isInGracePeriod) {
-        notifications.add('PÉRIODE DE grâce: Renouvelez immédiatement');
+        notifications.add('subscription_periode_grace_renouvelez_immediatement'.tr);
         return notifications;
       }
 
@@ -969,13 +970,13 @@ class SubscriptionManager implements ISubscriptionManager {
     if (isExpired) {
       LicenseLog.log('statut', 'RÉSULTAT: licence EXPIRÉE (période de grâce=$isInGracePeriod)');
       if (isInGracePeriod) {
-        warnings.add('Période de grâce active');
+        warnings.add('subscription_grace_period_active'.tr);
         final gracePeriodStart = await _getGracePeriodStart();
         if (gracePeriodStart == null) {
           await _setGracePeriodStart(license.expiresAt);
         }
       } else {
-        warnings.add('Abonnement expiré');
+        warnings.add('subscription_expired_title'.tr);
       }
 
       return SubscriptionStatus.expired(
@@ -988,9 +989,9 @@ class SubscriptionManager implements ISubscriptionManager {
 
     LicenseLog.log('statut', 'RÉSULTAT: licence ACTIVE, $remainingDays jour(s) restant(s)');
     if (remainingDays <= _urgentWarningDaysThreshold) {
-      warnings.add('Expiration imminente dans $remainingDays jour(s)');
+      warnings.add('subscription_expiration_imminente_dans_jour_s'.trParams({'remainingDays': '${remainingDays}'}));
     } else if (remainingDays <= _warningDaysThreshold) {
-      warnings.add('Expiration dans $remainingDays jours');
+      warnings.add('subscription_expiration_dans_jours'.trParams({'remainingDays': '${remainingDays}'}));
     }
 
     final status = SubscriptionStatus.subscriptionActive(
@@ -1008,9 +1009,9 @@ class SubscriptionManager implements ISubscriptionManager {
     final warnings = <String>[];
 
     if (remainingDays <= _urgentWarningDaysThreshold) {
-      warnings.add('Période d\'essai expire dans $remainingDays jour(s)');
+      warnings.add('subscription_periode_essai_expire_dans_jour_s'.trParams({'remainingDays': '${remainingDays}'}));
     } else if (remainingDays <= _warningDaysThreshold) {
-      warnings.add('Période d\'essai expire dans $remainingDays jours');
+      warnings.add('subscription_periode_essai_expire_dans_jours'.trParams({'remainingDays': '${remainingDays}'}));
     }
 
     return warnings;

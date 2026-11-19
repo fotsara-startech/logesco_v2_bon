@@ -121,9 +121,9 @@ class _SyncConflictCardState extends State<SyncConflictCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _fiche('Sur ce poste', _c.local, Colors.blue.shade50),
+                _fiche('decisions_sur_poste'.tr, _c.local, Colors.blue.shade50),
                 const SizedBox(width: 8),
-                _fiche('Dans le cloud', _c.cloud, Colors.green.shade50),
+                _fiche('decisions_dans_cloud'.tr, _c.cloud, Colors.green.shade50),
               ],
             ),
             const Divider(),

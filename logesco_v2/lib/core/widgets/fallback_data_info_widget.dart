@@ -38,7 +38,7 @@ class FallbackDataInfoWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Données par défaut utilisées',
+                  'core_donnees_par_defaut_utilisees'.tr,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.amber.shade800,
@@ -47,7 +47,7 @@ class FallbackDataInfoWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Les $dataType par défaut sont utilisées. Vérifiez votre connexion.',
+                  'core_par_defaut_sont_utilisees_verifiez_votre'.trParams({'dataType': '${dataType}'}),
                   style: TextStyle(
                     color: Colors.amber.shade700,
                     fontSize: 12,
@@ -90,7 +90,7 @@ class RolesFallbackInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FallbackDataInfoWidget(
-      dataType: 'rôles',
+      dataType: 'core_roles'.tr,
       onRefresh: onRefresh,
     );
   }
@@ -108,7 +108,7 @@ class CategoriesFallbackInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FallbackDataInfoWidget(
-      dataType: 'catégories',
+      dataType: 'core_categories'.tr,
       onRefresh: onRefresh,
     );
   }

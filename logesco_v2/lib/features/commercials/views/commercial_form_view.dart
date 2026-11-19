@@ -20,7 +20,7 @@ class CommercialFormView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() => Text(controller.isEditing.value ? 'Modifier le commercial' : 'Nouveau commercial')),
+        title: Obx(() => Text(controller.isEditing.value ? 'Modifier le commercial' : 'commercials_nouveau_commercial'.tr)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

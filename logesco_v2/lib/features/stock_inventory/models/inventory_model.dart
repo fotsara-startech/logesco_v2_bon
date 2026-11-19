@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Modèle pour l'inventaire de stock
 class StockInventory {
   final int? id;
@@ -155,9 +156,9 @@ extension InventoryTypeExtension on InventoryType {
   String get description {
     switch (this) {
       case InventoryType.PARTIEL:
-        return 'Inventaire par catégorie sélectionnée';
+        return 'stockinventory_inventaire_par_categorie_selectionnee'.tr;
       case InventoryType.TOTAL:
-        return 'Inventaire complet de tous les produits';
+        return 'stockinventory_inventaire_complet_tous_produits'.tr;
     }
   }
 }
@@ -171,9 +172,9 @@ extension InventoryStatusExtension on InventoryStatus {
       case InventoryStatus.EN_COURS:
         return 'En cours';
       case InventoryStatus.TERMINE:
-        return 'Terminé';
+        return 'inventory_status_completed'.tr;
       case InventoryStatus.CLOTURE:
-        return 'Clôturé';
+        return 'inventory_status_closed'.tr;
     }
   }
 }

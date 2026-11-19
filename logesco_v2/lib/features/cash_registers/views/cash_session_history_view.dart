@@ -298,8 +298,8 @@ class CashSessionHistoryView extends StatelessWidget {
                 Get.back();
               } else {
                 Get.snackbar(
-                  'Erreur',
-                  'Veuillez sélectionner les deux dates',
+                  'suppliers_error'.tr,
+                  'cashregisters_veuillez_selectionner_deux_dates'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.red.shade100,
                   colorText: Colors.red.shade800,
@@ -361,7 +361,7 @@ class CashSessionHistoryView extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${sessions.length} session(s)',
+                'cashregisters_session_s_3'.trParams({'length': '${sessions.length}'}),
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],

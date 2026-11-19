@@ -187,7 +187,7 @@ class ActivityReportController extends GetxController {
       if (kIsWeb) {
         // Sur le web, le fichier est automatiquement téléchargé par le navigateur
         SnackbarHelper.success(
-          'PDF téléchargé: $filename',
+          'reports_pdf_telecharge'.trParams({'filename': '${filename}'}),
           duration: const Duration(seconds: 4),
         );
       } else {
@@ -216,7 +216,7 @@ class ActivityReportController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'PDF généré avec succès',
+              'reports_pdf_genere_avec_succes_2'.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -296,7 +296,7 @@ class ActivityReportController extends GetxController {
     try {
       await Share.shareXFiles(
         [XFile(pdfPath)],
-        text: 'Bilan comptable d\'activités - ${_currentReport.value?.reportPeriod}',
+        text: 'reports_bilan_comptable_activites'.trParams({'reportPeriod': '${_currentReport.value?.reportPeriod}'}),
         subject: 'Bilan comptable - ${_currentReport.value?.companyName}',
       );
     } catch (e) {
@@ -327,28 +327,28 @@ class ActivityReportController extends GetxController {
       case 'yesterday':
         return 'Hier';
       case 'thisWeek':
-        return 'Cette semaine';
+        return 'sales_this_week'.tr;
       case 'lastWeek':
-        return 'Semaine dernière';
+        return 'sales_last_week'.tr;
       case 'thisMonth':
-        return 'Ce mois';
+        return 'analytics_this_month'.tr;
       case 'lastMonth':
         return 'Mois dernier';
       case 'thisQuarter':
-        return 'Ce trimestre';
+        return 'reports_period_this_quarter'.tr;
       case 'thisYear':
-        return 'Cette année';
+        return 'analytics_this_year'.tr;
       case 'lastYear':
-        return 'Année dernière';
+        return 'reports_period_last_year'.tr;
       case 'custom':
         if (_selectedStartDate.value != null && _selectedEndDate.value != null) {
           final start = '${_selectedStartDate.value!.day}/${_selectedStartDate.value!.month}/${_selectedStartDate.value!.year}';
           final end = '${_selectedEndDate.value!.day}/${_selectedEndDate.value!.month}/${_selectedEndDate.value!.year}';
           return '$start - $end';
         }
-        return 'Période personnalisée';
+        return 'sales_custom_period'.tr;
       default:
-        return 'Période inconnue';
+        return 'reports_periode_inconnue'.tr;
     }
   }
 
@@ -360,7 +360,7 @@ class ActivityReportController extends GetxController {
 
   /// Obtient un résumé rapide du statut
   String get quickStatusSummary {
-    if (_currentReport.value == null) return 'Aucun bilan généré';
+    if (_currentReport.value == null) return 'reports_no_report'.tr;
 
     final report = _currentReport.value!;
     final status = report.summary.overallStatus;

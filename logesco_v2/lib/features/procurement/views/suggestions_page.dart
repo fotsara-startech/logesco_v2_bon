@@ -82,7 +82,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
       setState(() {
         _availableSuppliers.add(Supplier(
           id: 1,
-          nom: 'Fournisseur par défaut',
+          nom: 'procurement_fournisseur_par_defaut'.tr,
           dateCreation: DateTime.now(),
           dateModification: DateTime.now(),
         ));

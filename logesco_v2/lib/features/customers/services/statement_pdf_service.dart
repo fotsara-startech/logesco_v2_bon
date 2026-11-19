@@ -423,7 +423,7 @@ class StatementPdfService {
         rows.add(
           pw.TableRow(
             children: [
-              _buildTableCell('Erreur'),
+              _buildTableCell('suppliers_error'.tr),
               _buildTableCell('Erreur parsing'),
               _buildTableCell('0 F'),
               _buildTableCell('0 F'),
@@ -448,7 +448,7 @@ class StatementPdfService {
       case 'achat_comptant':
         return 'Achat comptant';
       case 'achat_credit':
-        return 'Achat à crédit';
+        return 'customers_credit_purchase'.tr;
       case 'paiement':
         return 'Paiement';
       case 'paiement_comptant':
@@ -457,15 +457,15 @@ class StatementPdfService {
         return 'Paiement dette';
       case 'depot':
       case 'depot_avance':
-        return 'Approvisionnement du compte';
+        return 'customers_approvisionnement_compte'.tr;
       case 'utilisation_avance':
-        return 'Avance utilisée';
+        return 'sales_advance_used_label'.tr;
       case 'reste_ajoute_au_solde':
-        return 'Reste ajouté au solde';
+        return 'customers_reste_ajoute_solde'.tr;
       case 'credit':
-        return 'Crédit';
+        return 'sales_payment_credit'.tr;
       case 'debit':
-        return 'Débit';
+        return 'customers_debit'.tr;
       default:
         return type;
     }

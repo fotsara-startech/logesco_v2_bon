@@ -38,7 +38,7 @@ class LanguageSelector extends StatelessWidget {
                 controller: controller,
                 languageCode: 'fr',
                 flag: '🇫🇷',
-                name: 'Français',
+                name: 'language_french'.tr,
                 isSelected: controller.currentLanguage.value == 'fr',
               ),
 

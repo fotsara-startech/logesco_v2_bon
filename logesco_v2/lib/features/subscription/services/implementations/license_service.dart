@@ -1,4 +1,5 @@
-﻿import '../interfaces/i_license_service.dart';
+﻿import 'package:get/get.dart';
+import '../interfaces/i_license_service.dart';
 import '../interfaces/i_device_service.dart';
 import '../../models/license_data.dart';
 import '../../models/license_key.dart';
@@ -77,7 +78,7 @@ class LicenseService implements ILicenseService {
         return LicenseValidationResult.failure(
           LicenseException(
             LicenseError.invalidKey,
-            keyValidation.errorMessage ?? 'Format de clé invalide',
+            keyValidation.errorMessage ?? 'subscription_license_key_invalid_format'.tr,
           ),
         );
       }

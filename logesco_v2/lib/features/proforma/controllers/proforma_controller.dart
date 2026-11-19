@@ -174,7 +174,7 @@ class ProformaController extends GetxController {
           _hasMore = false;
         }
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur chargement proformas');
+        SnackbarUtils.showError(response.message ?? 'proforma_erreur_chargement_proformas'.tr);
       }
     } catch (e) {
       SnackbarUtils.showError('proforma_erreur'.trParams({'e': '${e}'}));
@@ -255,7 +255,7 @@ class ProformaController extends GetxController {
         SnackbarUtils.showSuccess('proforma_proforma_creee'.trParams({'numeroProforma': '${response.data!.numeroProforma}'}));
         return response.data;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur création proforma');
+        SnackbarUtils.showError(response.message ?? 'proforma_erreur_creation_proforma'.tr);
         return null;
       }
     } catch (e) {
@@ -313,7 +313,7 @@ class ProformaController extends GetxController {
         SnackbarUtils.showSuccess('proforma_proforma_mise_jour'.tr);
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur mise à jour');
+        SnackbarUtils.showError(response.message ?? 'proforma_erreur_mise_jour'.tr);
         return false;
       }
     } catch (e) {
@@ -379,7 +379,7 @@ class ProformaController extends GetxController {
 
         return sale;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur lors de la validation');
+        SnackbarUtils.showError(response.message ?? 'proforma_erreur_lors_validation'.tr);
         return null;
       }
     } catch (e) {
@@ -505,7 +505,7 @@ class ProformaController extends GetxController {
         SnackbarUtils.showSuccess('proforma_proforma_annulee'.tr);
         return true;
       } else {
-        SnackbarUtils.showError(response.message ?? 'Erreur annulation');
+        SnackbarUtils.showError(response.message ?? 'proforma_erreur_annulation'.tr);
         return false;
       }
     } catch (e) {

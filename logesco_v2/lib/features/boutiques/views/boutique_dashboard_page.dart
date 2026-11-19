@@ -191,7 +191,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'Personnalisée',
+              label: _selectedPeriod == PeriodFilter.custom && _customRange != null ? '${_fmtDate(_customRange!.start)} – ${_fmtDate(_customRange!.end)}' : 'boutiques_personnalisee'.tr,
               selected: _selectedPeriod == PeriodFilter.custom,
               icon: Icons.date_range,
               onTap: _pickCustomRange,
@@ -305,8 +305,8 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Répartition du chiffre d\'affaires',
+          Text(
+            'boutiques_repartition_chiffre_affaires'.tr,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
@@ -401,8 +401,8 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Détails par boutique',
+        Text(
+          'boutiques_details_par_boutique'.tr,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),

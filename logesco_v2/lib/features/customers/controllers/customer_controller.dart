@@ -113,7 +113,7 @@ class CustomerController extends GetxController {
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement des clients';
+        errorMessage.value = 'customers_erreur_lors_chargement_clients'.tr;
       }
 
       SnackbarHelper.error(errorMessage.value);
@@ -310,7 +310,7 @@ class CustomerController extends GetxController {
           throw Exception('Échec de la suppression');
         }
       } catch (e) {
-        String message = 'Erreur lors de la suppression du client';
+        String message = 'customers_erreur_lors_suppression_client'.tr;
         if (e is ApiException) {
           message = e.message;
         }
@@ -394,7 +394,7 @@ class CustomerController extends GetxController {
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement des transactions';
+        errorMessage.value = 'accounts_erreur_lors_chargement_transactions'.tr;
       }
 
       SnackbarHelper.error(errorMessage.value);
@@ -571,7 +571,7 @@ class CustomerController extends GetxController {
 
         if (kIsWeb) {
           SnackbarHelper.success(
-            '${allCustomers.length} clients exportés.\nFichier: $filename',
+            'customers_clients_exportes_nfichier'.trParams({'length': '${allCustomers.length}', 'filename': '${filename}'}),
             title: 'customers_export_success'.tr,
             duration: const Duration(seconds: 4),
           );

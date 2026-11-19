@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 /// Modèle de données pour un fournisseur
 class Supplier {
   final int id;
@@ -256,9 +257,9 @@ class SupplierTransaction {
   String get typeTransactionDisplay {
     switch (typeTransaction.toLowerCase()) {
       case 'credit':
-        return 'Crédit';
+        return 'sales_payment_credit'.tr;
       case 'debit':
-        return 'Débit';
+        return 'customers_debit'.tr;
       case 'paiement':
         return 'Paiement';
       case 'achat':

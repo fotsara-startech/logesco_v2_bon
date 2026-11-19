@@ -377,7 +377,7 @@ class _DebtAlertsPageState extends State<DebtAlertsPage> with SingleTickerProvid
             Icon(Icons.check_circle_outline, size: 64, color: Colors.green.shade300),
             const SizedBox(height: 16),
             Text(
-              _filter == null ? 'Aucune dette en cours' : 'Aucune dette dans cet intervalle',
+              _filter == null ? 'Aucune dette en cours' : 'accounts_aucune_dette_dans_cet_intervalle'.tr,
               style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ],

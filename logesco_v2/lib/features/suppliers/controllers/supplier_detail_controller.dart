@@ -44,11 +44,11 @@ class SupplierDetailController extends GetxController {
         loadSupplier();
       } else {
         hasError.value = true;
-        errorMessage.value = 'ID de fournisseur invalide';
+        errorMessage.value = 'suppliers_id_fournisseur_invalide'.tr;
       }
     } else {
       hasError.value = true;
-      errorMessage.value = 'Aucun fournisseur spécifié';
+      errorMessage.value = 'suppliers_aucun_fournisseur_specifie'.tr;
     }
   }
 
@@ -65,14 +65,14 @@ class SupplierDetailController extends GetxController {
         supplier.value = loadedSupplier;
       } else {
         hasError.value = true;
-        errorMessage.value = 'Fournisseur non trouvé';
+        errorMessage.value = 'suppliers_not_found'.tr;
       }
     } catch (e) {
       hasError.value = true;
       if (e is ApiException) {
         errorMessage.value = e.message;
       } else {
-        errorMessage.value = 'Erreur lors du chargement du fournisseur';
+        errorMessage.value = 'suppliers_erreur_lors_chargement_fournisseur'.tr;
       }
     } finally {
       isLoading.value = false;
@@ -122,7 +122,7 @@ class SupplierDetailController extends GetxController {
       AlertDialog(
         title: Text('users_delete_confirm_title'.tr),
         content: Text(
-          'Êtes-vous sûr de vouloir supprimer le fournisseur "${supplier.value!.nom}" ?',
+          'suppliers_etes_vous_sur_vouloir_supprimer_fournisseur_2'.trParams({'nom': '${supplier.value!.nom}'}),
         ),
         actions: [
           TextButton(
@@ -163,7 +163,7 @@ class SupplierDetailController extends GetxController {
           throw Exception('Échec de la suppression');
         }
       } catch (e) {
-        String message = 'Erreur lors de la suppression du fournisseur';
+        String message = 'suppliers_erreur_lors_suppression_fournisseur'.tr;
         if (e is ApiException) {
           message = e.message;
         }

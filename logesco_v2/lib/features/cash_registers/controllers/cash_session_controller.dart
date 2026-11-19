@@ -105,7 +105,7 @@ class CashSessionController extends GetxController {
 
       final isResumed = (session as dynamic).toJson()['resumed'] == true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        SnackbarUtils.showSuccess(isResumed ? 'Session de caisse reprise' : 'Connexion à la caisse réussie');
+        SnackbarUtils.showSuccess(isResumed ? 'Session de caisse reprise' : 'cashregisters_connexion_caisse_reussie'.tr);
       });
       return true;
     } catch (e) {
@@ -208,13 +208,13 @@ class CashSessionController extends GetxController {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Caisse: ${session.nomCaisse}',
+              'cashregisters_caisse'.trParams({'nomCaisse': '${session.nomCaisse}'}),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 16),
             _buildSummaryRow('Solde d\'ouverture', '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
             _buildSummaryRow('Solde attendu', '${session.soldeAttendu?.toStringAsFixed(0) ?? '0'} FCFA'),
-            _buildSummaryRow('Solde déclaré', '${session.soldeFermeture?.toStringAsFixed(0) ?? '0'} FCFA'),
+            _buildSummaryRow('cashregisters_solde_declare'.tr, '${session.soldeFermeture?.toStringAsFixed(0) ?? '0'} FCFA'),
             const Divider(height: 24),
             Container(
               padding: const EdgeInsets.all(12),
@@ -229,7 +229,7 @@ class CashSessionController extends GetxController {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Écart:',
+                    'cash_session_history_ecart'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isPositive ? Colors.green.shade700 : Colors.orange.shade700,
@@ -249,7 +249,7 @@ class CashSessionController extends GetxController {
             if (!isPositive) ...[
               const SizedBox(height: 12),
               Text(
-                'Un écart négatif indique un manque dans la caisse.',
+                'cashregisters_ecart_negatif_indique_manque_dans_caisse'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.orange.shade700,
@@ -259,7 +259,7 @@ class CashSessionController extends GetxController {
             ],
             const SizedBox(height: 12),
             Text(
-              'Durée: ${session.formattedDuration}',
+              'cashregisters_duree'.trParams({'formattedDuration': '${session.formattedDuration}'}),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.shade600,
@@ -785,7 +785,7 @@ class CashSessionController extends GetxController {
                     return Card(
                       child: ListTile(
                         leading: const Icon(Icons.point_of_sale),
-                        title: Text(cashRegister['nom'] ?? 'Caisse'),
+                        title: Text(cashRegister['nom'] ?? 'cash_register_title'.tr),
                         subtitle: Text('ID: ${cashRegister['id']}'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {

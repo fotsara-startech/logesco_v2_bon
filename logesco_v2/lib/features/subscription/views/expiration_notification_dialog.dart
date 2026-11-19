@@ -47,7 +47,7 @@ class ExpirationNotificationDialog extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              isExpiringSoon ? 'Expiration imminente' : 'Renouvellement recommandé',
+              isExpiringSoon ? 'Expiration imminente' : 'subscription_renewal_recommended'.tr,
               style: TextStyle(
                 color: isExpiringSoon ? Colors.red : Colors.orange,
                 fontWeight: FontWeight.bold,

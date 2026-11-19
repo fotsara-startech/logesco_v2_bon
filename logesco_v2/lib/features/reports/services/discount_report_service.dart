@@ -54,7 +54,7 @@ class DiscountReportService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la récupération du résumé des remises',
+          message: errorData['message'] ?? 'reports_erreur_lors_recuperation_resume_remises'.tr,
         );
       }
     } catch (e) {
@@ -112,7 +112,7 @@ class DiscountReportService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la récupération des remises par vendeur',
+          message: errorData['message'] ?? 'reports_erreur_lors_recuperation_remises_par_vendeur'.tr,
         );
       }
     } catch (e) {
@@ -158,7 +158,7 @@ class DiscountReportService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la récupération du top des remises',
+          message: errorData['message'] ?? 'reports_erreur_lors_recuperation_top_remises'.tr,
         );
       }
     } catch (e) {
@@ -203,7 +203,7 @@ class DiscountReportService {
       } else {
         final errorData = json.decode(response.body);
         return ApiResponse.error(
-          message: errorData['message'] ?? 'Erreur lors de la validation de la remise',
+          message: errorData['message'] ?? 'reports_erreur_lors_validation_remise'.tr,
         );
       }
     } catch (e) {

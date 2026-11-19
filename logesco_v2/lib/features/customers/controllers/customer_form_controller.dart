@@ -76,10 +76,10 @@ class CustomerFormController extends GetxController {
   /// Valide le nom du client
   String? validateNom(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Le nom du client est obligatoire';
+      return 'customers_nom_client_est_obligatoire'.tr;
     }
     if (value.trim().length < 2) {
-      return 'Le nom doit contenir au moins 2 caractères';
+      return 'roles_name_min_length'.tr;
     }
     return null;
   }
@@ -90,10 +90,10 @@ class CustomerFormController extends GetxController {
       // Regex simple pour valider un numéro de téléphone
       final phoneRegex = RegExp(r'^[\d\s\-\+\(\)]+$');
       if (!phoneRegex.hasMatch(value.trim())) {
-        return 'Format de téléphone invalide';
+        return 'customers_format_telephone_invalide'.tr;
       }
       if (value.trim().length < 8) {
-        return 'Le numéro de téléphone est trop court';
+        return 'customers_numero_telephone_est_trop_court'.tr;
       }
     }
     return null;
@@ -193,7 +193,7 @@ class CustomerFormController extends GetxController {
       print('❌ Erreur lors de la sauvegarde: $e');
       print('❌ Type d\'erreur: ${e.runtimeType}');
 
-      String message = 'Erreur lors de la sauvegarde du client';
+      String message = 'customers_erreur_lors_sauvegarde_client'.tr;
 
       if (e is ApiException) {
         message = e.message;
@@ -202,11 +202,11 @@ class CustomerFormController extends GetxController {
         // Gestion spécifique des erreurs de validation
         if (e.statusCode == 409) {
           if (e.message.toLowerCase().contains('email')) {
-            message = 'Cette adresse email est déjà utilisée par un autre client';
+            message = 'customers_adresse_email_est_deja_utilisee_par'.tr;
           }
         }
       } else if (e is TypeError) {
-        message = 'Erreur de format des données reçues du serveur';
+        message = 'financialmovements_erreur_format_donnees_recues_serveur'.tr;
         print('📋 TypeError détails: $e');
       } else {
         print('📋 Erreur générique: $e');

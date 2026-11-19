@@ -147,7 +147,7 @@ class CashSession {
   /// Statut de la session (pour affichage)
   String get status {
     if (isOpen) return 'Ouverte';
-    if (isClosed) return 'Fermée';
+    if (isClosed) return 'cash_register_status_closed'.tr;
     return 'Inactive';
   }
 

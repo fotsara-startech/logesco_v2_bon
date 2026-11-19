@@ -161,13 +161,13 @@ class SubscriptionNotificationService {
   static void showActivationSuccess(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Licence activée avec succès !',
+                'subscription_licence_activee_avec_succes'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),

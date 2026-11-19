@@ -67,7 +67,7 @@ class BoutiquesManagementPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(boutique == null ? 'Nouvelle boutique' : 'Modifier la boutique'),
+        title: Text(boutique == null ? 'Nouvelle boutique' : 'boutiques_modifier_boutique'.tr),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -259,7 +259,7 @@ class _BoutiqueUsersPageState extends State<_BoutiqueUsersPage> {
                 'utilisateurId': a.utilisateurId,
                 'nom': a.utilisateur?['nomUtilisateur'] ?? 'Utilisateur #${a.utilisateurId}',
                 'email': a.utilisateur?['email'] ?? '',
-                'role': a.role?.displayName ?? 'Aucun rôle',
+                'role': a.role?.displayName ?? 'roles_no_roles'.tr,
                 'isActive': a.isActive,
               })
           .toList());

@@ -81,13 +81,13 @@ class SubscriptionController extends GetxController {
           _updateNotifications();
         },
         onError: (error) {
-          _errorMessage.value = 'Erreur de surveillance: ${error.toString()}';
+          _errorMessage.value = 'subscription_erreur_surveillance'.trParams({'toString': '${error.toString()}'});
         },
       );
 
       await refreshStatus();
     } catch (e) {
-      _errorMessage.value = 'Erreur d\'initialisation: ${e.toString()}';
+      _errorMessage.value = 'subscription_erreur_initialisation'.trParams({'toString': '${e.toString()}'});
     } finally {
       _isLoading.value = false;
       if (!_initCompleter.isCompleted) _initCompleter.complete();
@@ -106,7 +106,7 @@ class SubscriptionController extends GetxController {
       _currentStatus.value = status;
       await _updateNotifications();
     } catch (e) {
-      _errorMessage.value = 'Erreur de rafraîchissement: ${e.toString()}';
+      _errorMessage.value = 'subscription_erreur_rafraichissement'.trParams({'toString': '${e.toString()}'});
     } finally {
       _isLoading.value = false;
     }
@@ -130,7 +130,7 @@ class SubscriptionController extends GetxController {
       if (e is LicenseException) {
         _errorMessage.value = e.localizedMessage;
       } else {
-        _errorMessage.value = 'Erreur d\'activation: ${e.toString()}';
+        _errorMessage.value = 'subscription_erreur_activation'.trParams({'toString': '${e.toString()}'});
       }
       rethrow;
     } finally {
@@ -145,7 +145,7 @@ class SubscriptionController extends GetxController {
       await _subscriptionManager.startTrialPeriod();
       await refreshStatus();
     } catch (e) {
-      _errorMessage.value = 'Erreur de démarrage d\'essai: ${e.toString()}';
+      _errorMessage.value = 'subscription_erreur_demarrage_essai'.trParams({'toString': '${e.toString()}'});
       rethrow;
     } finally {
       _isLoading.value = false;
@@ -210,7 +210,7 @@ class SubscriptionController extends GetxController {
   }
 
   String getStatusMessage() {
-    if (!AppConfig.enableLicenseControl) return 'Licence à vie - accès complet';
+    if (!AppConfig.enableLicenseControl) return 'subscription_licence_vie_acces_complet'.tr;
 
     final status = _currentStatus.value;
     if (status == null) return 'Statut inconnu';
@@ -235,7 +235,7 @@ class SubscriptionController extends GetxController {
       await _subscriptionManager.performPeriodicValidation();
       await refreshStatus();
     } catch (e) {
-      _errorMessage.value = 'Erreur de validation: ${e.toString()}';
+      _errorMessage.value = 'subscription_erreur_validation'.trParams({'toString': '${e.toString()}'});
     } finally {
       _isLoading.value = false;
     }
@@ -268,13 +268,13 @@ class SubscriptionController extends GetxController {
   String _getSubscriptionTypeLabel(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.trial:
-        return 'Période d\'essai';
+        return 'subscription_type_trial'.tr;
       case SubscriptionType.monthly:
         return 'Mensuel';
       case SubscriptionType.annual:
         return 'Annuel';
       case SubscriptionType.lifetime:
-        return 'Vie entière';
+        return 'subscription_type_lifetime'.tr;
     }
   }
 
@@ -306,7 +306,7 @@ class SubscriptionController extends GetxController {
       await _subscriptionManager.resetLicenseData();
       await refreshStatus();
     } catch (e) {
-      _errorMessage.value = 'Erreur de rinitialisation: ${e.toString()}';
+      _errorMessage.value = 'subscription_erreur_rinitialisation'.trParams({'toString': '${e.toString()}'});
       rethrow;
     } finally {
       _isLoading.value = false;

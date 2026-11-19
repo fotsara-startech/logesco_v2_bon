@@ -448,7 +448,7 @@ class _ProductSelectorState extends State<ProductSelector> {
         await widget.onProductSelected(product, 1);
 
         SnackbarHelper.success(
-          'Produit ajouté: ${product.nom} (${product.reference})',
+          'sales_produit_ajoute'.trParams({'nom': '${product.nom}', 'reference': '${product.reference}'}),
           title: 'sales_ajoute_panier'.tr,
         );
       } else {
@@ -601,7 +601,7 @@ class _ProductItem extends StatelessWidget {
                               border: Border.all(color: Colors.purple, width: 1),
                             ),
                             child: Text(
-                              'Réservé: ${stock.quantiteReservee}',
+                              'sales_reserve'.trParams({'quantiteReservee': '${stock.quantiteReservee}'}),
                               style: const TextStyle(
                                 color: Colors.purple,
                                 fontSize: 10,

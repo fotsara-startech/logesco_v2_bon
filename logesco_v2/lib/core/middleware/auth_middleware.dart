@@ -23,8 +23,8 @@ class AuthMiddleware extends GetMiddleware {
       // Afficher un message d'erreur
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.snackbar(
-          'Accès refusé',
-          'Vous n\'avez pas les permissions nécessaires pour accéder à cette page',
+          'suppliers_access_denied'.tr,
+          'core_vous_n_avez_pas_permissions_necessaires'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,
@@ -59,8 +59,8 @@ class AdminMiddleware extends GetMiddleware {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.snackbar(
-          'Accès refusé',
-          'Cette page est réservée aux administrateurs',
+          'suppliers_access_denied'.tr,
+          'core_page_est_reservee_administrateurs'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade800,

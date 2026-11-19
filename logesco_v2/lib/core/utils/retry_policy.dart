@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
@@ -188,13 +189,13 @@ class RetryPolicy {
   /// Obtient un résumé de l'erreur pour les logs
   String _getErrorSummary(dynamic error) {
     if (error is SocketException) {
-      return 'Erreur réseau: ${error.message}';
+      return 'core_erreur_reseau'.trParams({'message': '${error.message}'});
     }
     if (error is TimeoutException) {
       return 'Timeout: ${error.message ?? 'Délai dépassé'}';
     }
     if (error is HttpException) {
-      return 'Erreur HTTP: ${error.message}';
+      return 'core_erreur_http'.trParams({'message': '${error.message}'});
     }
 
     final errorStr = error.toString();

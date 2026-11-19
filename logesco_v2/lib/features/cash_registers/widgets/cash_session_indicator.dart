@@ -132,7 +132,7 @@ class CashSessionDrawerHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Session de Caisse',
+                  'cash_session_title'.tr,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -144,7 +144,7 @@ class CashSessionDrawerHeader extends StatelessWidget {
             const SizedBox(height: 16),
             if (session != null) ...[
               Text(
-                'Caisse: ${session.nomCaisse}',
+                'cashregisters_caisse'.trParams({'nomCaisse': '${session.nomCaisse}'}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -152,7 +152,7 @@ class CashSessionDrawerHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Solde ouverture: ${CurrencyUtils.formatAmount(session.soldeOuverture)}',
+                'cashregisters_solde_ouverture'.trParams({'soldeOuverture': '${CurrencyUtils.formatAmount(session.soldeOuverture)}'}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -161,7 +161,7 @@ class CashSessionDrawerHeader extends StatelessWidget {
               if (controller.canViewBalance) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Solde actuel: ${CurrencyUtils.formatAmount(session.soldeAttendu ?? session.soldeOuverture)}',
+                  'cashregisters_solde_actuel'.trParams({'soldeOuverture': '${CurrencyUtils.formatAmount(session.soldeAttendu ?? session.soldeOuverture)}'}),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -185,23 +185,23 @@ class CashSessionDrawerHeader extends StatelessWidget {
               ],
               const SizedBox(height: 4),
               Text(
-                'Durée: ${session.formattedDuration}',
+                'cashregisters_duree'.trParams({'formattedDuration': '${session.formattedDuration}'}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),
               ),
             ] else ...[
-              const Text(
-                'Aucune session active',
+              Text(
+                'cash_register_no_active_session'.tr,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Connectez-vous à une caisse',
+              Text(
+                'cashregisters_connectez_vous_caisse'.tr,
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 12,

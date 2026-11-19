@@ -336,7 +336,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
         return _buildOptionsOverlay(
           itemCount: realOptions.length,
           showCreate: showCreate,
-          createLabel: 'Créer "$query"',
+          createLabel: 'sales_creer'.trParams({'query': '${query}'}),
           onCreateTap: () => _createAndSelectCustomer(query),
           itemBuilder: (context, i) {
             final c = realOptions[i];
@@ -746,7 +746,7 @@ class _QuickBillingViewState extends State<QuickBillingView> {
         ligneReste = '${'quick_billing_remaining'.tr}: ${settlement.montantRestant.toStringAsFixed(0)} FCFA';
         couleurReste = Colors.orange[700]!;
       } else if (settlement.ajouteAuSolde > 0) {
-        ligneReste = 'Ajouté au solde: ${settlement.ajouteAuSolde.toStringAsFixed(0)} FCFA';
+        ligneReste = 'sales_ajoute_solde_fcfa'.trParams({'toStringAsFixed': '${settlement.ajouteAuSolde.toStringAsFixed(0)}'});
         couleurReste = Colors.green[700]!;
       } else {
         ligneReste = '${'quick_billing_change'.tr}: ${settlement.monnaieARendre.toStringAsFixed(0)} FCFA';
@@ -944,9 +944,9 @@ class _QuickBillingViewState extends State<QuickBillingView> {
   Widget _buildShortcutBar() {
     final shortcuts = <(String, String)>[
       ('↑ ↓', 'quick_billing_shortcut_navigate'.tr),
-      ('Entrée', 'quick_billing_shortcut_validate'.tr),
+      ('inventory_movement_in'.tr, 'quick_billing_shortcut_validate'.tr),
       ('Espace', widget.includePayment ? 'quick_billing_shortcut_space_amount'.tr : 'quick_billing_shortcut_space_pay'.tr),
-      ('Échap', 'quick_billing_shortcut_back'.tr),
+      ('sales_echap'.tr, 'quick_billing_shortcut_back'.tr),
     ];
     return Container(
       width: double.infinity,
