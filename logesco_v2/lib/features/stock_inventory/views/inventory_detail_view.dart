@@ -110,7 +110,7 @@ class InventoryDetailView extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
-            _buildInfoRow('Type', inventory.type.displayName),
+            _buildInfoRow('lbl_type'.tr, inventory.type.displayName),
             if (inventory.nomCategorie != null) _buildInfoRow('inventory_form_category'.tr, inventory.nomCategorie!),
             _buildInfoRow('inventory_created_by'.tr, inventory.nomUtilisateur),
             _buildInfoRow('inventory_creation_date'.tr, _formatDate(inventory.dateCreation)),

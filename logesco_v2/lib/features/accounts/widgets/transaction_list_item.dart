@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../../../shared/constants/constants.dart';
@@ -95,7 +96,7 @@ class TransactionListItem extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        'Solde: ${CurrencyConstants.formatAmount(transaction.soldeApres)}',
+                        '${'lbl_balance'.tr}: ${CurrencyConstants.formatAmount(transaction.soldeApres)}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -118,7 +119,7 @@ class TransactionListItem extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Réf: ${transaction.referenceType} #${transaction.referenceId}',
+                            '${'lbl_ref'.tr}: ${transaction.referenceType} #${transaction.referenceId}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

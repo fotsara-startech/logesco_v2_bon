@@ -273,11 +273,11 @@ class InventoryPdfService {
     final ok = total - alerte - rupture;
 
     return pw.Row(children: [
-      _summaryCard('Total produits', total.toString(), _cardBlue, _cardBlueBg),
+      _summaryCard('lbl_total_products'.tr, total.toString(), _cardBlue, _cardBlueBg),
       pw.SizedBox(width: 8),
       _summaryCard('inventory_stock_ok'.tr, ok.toString(), _cardGreen, _cardGreenBg),
       pw.SizedBox(width: 8),
-      _summaryCard('En alerte', alerte.toString(), _cardOrange, _cardOrangeBg),
+      _summaryCard('lbl_on_alert'.tr, alerte.toString(), _cardOrange, _cardOrangeBg),
       pw.SizedBox(width: 8),
       _summaryCard('plain_out_of_stock'.tr, rupture.toString(), _cardRed, _cardRedBg),
     ]);
@@ -290,13 +290,13 @@ class InventoryPdfService {
     final net = movements.fold<int>(0, (s, m) => s + m.changementQuantite);
 
     return pw.Row(children: [
-      _summaryCard('Total mouvements', total.toString(), _cardBlue, _cardBlueBg),
+      _summaryCard('lbl_total_movements'.tr, total.toString(), _cardBlue, _cardBlueBg),
       pw.SizedBox(width: 8),
       _summaryCard('reports_financial_income'.tr, entrees.toString(), _cardGreen, _cardGreenBg),
       pw.SizedBox(width: 8),
-      _summaryCard('Sorties', sorties.toString(), _cardRed, _cardRedBg),
+      _summaryCard('lbl_outflows'.tr, sorties.toString(), _cardRed, _cardRedBg),
       pw.SizedBox(width: 8),
-      _summaryCard('Variation nette', (net >= 0 ? '+' : '') + net.toString(), net >= 0 ? _cardGreen : _cardRed, net >= 0 ? _cardGreenBg : _cardRedBg),
+      _summaryCard('lbl_net_variation'.tr, (net >= 0 ? '+' : '') + net.toString(), net >= 0 ? _cardGreen : _cardRed, net >= 0 ? _cardGreenBg : _cardRedBg),
     ]);
   }
 
@@ -343,10 +343,10 @@ class InventoryPdfService {
           children: [
             _cell('suppliers_payment_reference'.tr, style: headerStyle),
             _cell('quick_billing_product'.tr, style: headerStyle),
-            _cell('Disponible', style: headerStyle, align: pw.TextAlign.center),
+            _cell('plain_available'.tr, style: headerStyle, align: pw.TextAlign.center),
             _cell('sales_product_reserved'.tr, style: headerStyle, align: pw.TextAlign.center),
-            _cell('Seuil min.', style: headerStyle, align: pw.TextAlign.center),
-            _cell('Statut', style: headerStyle, align: pw.TextAlign.center),
+            _cell('lbl_min_threshold'.tr, style: headerStyle, align: pw.TextAlign.center),
+            _cell('lbl_status'.tr, style: headerStyle, align: pw.TextAlign.center),
             _cell('accounts_last_update'.tr, style: headerStyle),
           ],
         ),
@@ -412,9 +412,9 @@ class InventoryPdfService {
             _cell('suppliers_transaction_date'.tr, style: headerStyle),
             _cell('suppliers_payment_reference'.tr, style: headerStyle),
             _cell('quick_billing_product'.tr, style: headerStyle),
-            _cell('Type', style: headerStyle, align: pw.TextAlign.center),
+            _cell('lbl_type'.tr, style: headerStyle, align: pw.TextAlign.center),
             _cell('quick_billing_col_qty'.tr, style: headerStyle, align: pw.TextAlign.center),
-            _cell('Notes', style: headerStyle),
+            _cell('lbl_notes'.tr, style: headerStyle),
           ],
         ),
         ...movements.asMap().entries.map((e) {

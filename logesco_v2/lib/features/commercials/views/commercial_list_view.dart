@@ -20,7 +20,7 @@ class CommercialListView extends StatelessWidget {
       privilege: 'READ',
       showFallback: true,
       fallback: Scaffold(
-        appBar: AppBar(title: const Text('Commerciaux')),
+        appBar: AppBar(title: Text('menu_commercials'.tr)),
         body: Center(child: Text('suppliers_access_denied'.tr)),
       ),
       child: Scaffold(

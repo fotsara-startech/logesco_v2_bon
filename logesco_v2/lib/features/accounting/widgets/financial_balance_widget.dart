@@ -30,7 +30,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Bilan Financier',
+                  'acc_fin_balance_title'.tr.tr,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -103,7 +103,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Marge: ${balance.profitMarginFormatted}',
+                          'acc_margin_value'.trParams({'value': balance.profitMarginFormatted}).trParams({'value': balance.profitMarginFormatted}),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -122,9 +122,9 @@ class FinancialBalanceWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildDetailCard(
-                    'Revenus Totaux',
+                    'acc_total_revenue'.tr.tr,
                     balance.totalRevenueFormatted,
-                    '${balance.totalSales} ventes',
+                    'acc_sales_count'.trParams({'count': '${balance.totalSales}'}).trParams({'count': '${balance.totalSales}'}),
                     Icons.attach_money,
                     Colors.green.shade600,
                   ),
@@ -148,9 +148,9 @@ class FinancialBalanceWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildDetailCard(
-                    'Marge Brute',
+                    'acc_gross_margin'.tr.tr,
                     balance.grossProfitFormatted,
-                    'Marge: ${balance.grossMarginFormatted}',
+                    'acc_margin_value'.trParams({'value': balance.grossMarginFormatted}).trParams({'value': balance.grossMarginFormatted}),
                     Icons.trending_up,
                     Colors.blue.shade600,
                   ),
@@ -186,7 +186,7 @@ class FinancialBalanceWidget extends StatelessWidget {
                   child: _buildDetailCard(
                     'accounting_benefice_jour'.tr,
                     balance.averageDailyProfitFormatted,
-                    '${balance.periodDays} jours',
+                    'acc_days_count'.trParams({'count': '${balance.periodDays}'}).trParams({'count': '${balance.periodDays}'}),
                     Icons.calendar_today,
                     Colors.purple.shade600,
                   ),

@@ -97,7 +97,7 @@ mixin SubscriptionVerificationMixin {
       if (subscriptionController.shouldShowCriticalNotifications()) {
         final notifications = await subscriptionController.getExpirationNotifications();
         if (notifications.isNotEmpty) {
-          _showSubscriptionWarning('Attention requise', notifications.first);
+          _showSubscriptionWarning('lbl_attention_required'.tr, notifications.first);
         }
       }
     } catch (e) {

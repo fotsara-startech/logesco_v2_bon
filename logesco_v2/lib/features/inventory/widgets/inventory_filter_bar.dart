@@ -79,7 +79,7 @@ class InventoryFilterBar extends StatelessWidget {
                 // Filtre de statut de stock
                 if (controller.stockStatusFilter.value.isNotEmpty)
                   _buildFilterChip(
-                    label: 'Statut: ${_getStatusLabel(controller.stockStatusFilter.value)}',
+                    label: '${'lbl_status'.tr}: ${_getStatusLabel(controller.stockStatusFilter.value)}',
                     onRemove: () => controller.updateStockStatusFilter(''),
                   ),
 

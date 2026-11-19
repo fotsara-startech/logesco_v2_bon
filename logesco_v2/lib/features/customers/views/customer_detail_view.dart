@@ -145,7 +145,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                             return Column(
                               children: [
                                 _buildStatCard(
-                                    'Chiffre d\'affaires',
+                                    'bd_turnover'.tr,
                                     _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
                                     Icons.attach_money,
                                     Colors.green),
@@ -158,7 +158,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                             children: [
                               Expanded(
                                   child: _buildStatCard(
-                                      'Chiffre d\'affaires',
+                                      'bd_turnover'.tr,
                                       _totalRevenue != null ? '${_totalRevenue!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
                                       Icons.attach_money,
                                       Colors.green)),

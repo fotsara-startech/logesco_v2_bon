@@ -118,13 +118,13 @@ class SaleSummary extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    _buildSummaryRow('Sous-total:', '${salesController.cartSubtotal.toStringAsFixed(0)} FCFA'),
+                    _buildSummaryRow('lbl_subtotal_colon'.tr, '${salesController.cartSubtotal.toStringAsFixed(0)} FCFA'),
                     if (salesController.discount > 0) ...[
-                      _buildSummaryRow('Remise:', '-${salesController.discount.toStringAsFixed(0)} FCFA', color: Colors.green),
+                      _buildSummaryRow('lbl_discount_colon'.tr, '-${salesController.discount.toStringAsFixed(0)} FCFA', color: Colors.green),
                     ],
                     const Divider(),
                     _buildSummaryRow(
-                      'Total:',
+                      'plain_total_colon'.tr,
                       '${salesController.cartTotal.toStringAsFixed(0)} FCFA',
                       isTotal: true,
                     ),

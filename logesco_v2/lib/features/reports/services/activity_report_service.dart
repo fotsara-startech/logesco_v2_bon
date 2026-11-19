@@ -643,7 +643,7 @@ class ActivityReportService {
     // Métriques clés
     final keyMetrics = [
       KeyMetric(
-        name: 'Chiffre d\'affaires',
+        name: 'bd_turnover'.tr,
         value: CurrencyFormatter.formatNumber(salesData.totalRevenue),
         unit: 'FCFA',
         trend: profitData.profitTrend.isIncreasing ? 'up' : 'down',

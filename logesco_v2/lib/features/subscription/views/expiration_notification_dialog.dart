@@ -78,12 +78,12 @@ class ExpirationNotificationDialog extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailRow('Type', _getSubscriptionTypeLabel()),
+                _buildDetailRow('lbl_type'.tr, _getSubscriptionTypeLabel()),
                 const SizedBox(height: 8),
                 if (status.expirationDate != null) _buildDetailRow('subscription_expires_on'.tr, _formatDate(status.expirationDate!)),
                 const SizedBox(height: 8),
                 _buildDetailRow(
-                  'Jours restants',
+                  'subscription_remaining_days'.tr,
                   '$remainingDays jour${remainingDays > 1 ? 's' : ''}',
                   textColor: _getRemainingDaysColor(remainingDays),
                 ),

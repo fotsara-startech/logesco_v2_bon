@@ -75,7 +75,7 @@ class KPIIndicatorsWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildKPICard(
-                    'Jours au Seuil',
+                    'acc_break_even_days'.tr.tr,
                     kpis.daysToBreakEven > 0 ? '${kpis.daysToBreakEven} jours' : 'N/A',
                     'accounting_temps_equilibre'.tr,
                     Icons.schedule,

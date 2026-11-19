@@ -286,7 +286,7 @@ class _SalesFiltersState extends State<SalesFilters> {
                   _buildPeriodButton('sales_this_month'.tr, 'this_month', controller),
                   _buildPeriodButton('sales_last_month'.tr, 'last_month', controller),
                   _buildPeriodButton('reports_period_this_quarter'.tr, 'this_quarter', controller),
-                  _buildPeriodButton('Trimestre dernier', 'last_quarter', controller),
+                  _buildPeriodButton('lbl_last_quarter'.tr, 'last_quarter', controller),
                   _buildPeriodButton('sales_this_year'.tr, 'this_year', controller),
                   _buildPeriodButton('reports_period_last_year'.tr, 'last_year', controller),
                 ],

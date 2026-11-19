@@ -84,8 +84,8 @@ class _ValidateProformaDialogState extends State<ValidateProformaDialog> {
                   children: [
                     const Icon(Icons.payment, size: 28, color: Colors.blue),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Paiement',
+                    Text(
+                      'plain_payment'.tr,
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const Spacer(),

@@ -184,7 +184,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         Text(
-                                          'Restant: ${detail.quantiteRestante}',
+                                          '${'lbl_remaining'.tr}: ${detail.quantiteRestante}',
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,

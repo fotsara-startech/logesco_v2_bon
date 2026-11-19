@@ -143,8 +143,8 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                           children: [
                             const Icon(Icons.payment, size: 28, color: Colors.blue),
                             const SizedBox(width: 12),
-                            const Text(
-                              'Paiement',
+                            Text(
+                              'plain_payment'.tr,
                               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                             ),
                             const Spacer(),
@@ -382,7 +382,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                 // 3. Net HT (affiché seulement s'il y a une remise, sinon identique au HT)
                 if (remise > 0) ...[
                   const Divider(height: 20),
-                  _summaryLine('Net HT', fmt(netHT), strong: true, size: 16),
+                  _summaryLine('lbl_net_before_tax'.tr, fmt(netHT), strong: true, size: 16),
                 ],
                 // 4. TVA sur le net HT
                 const SizedBox(height: 8),
@@ -514,7 +514,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _useAdvance ? Colors.green[800] : Colors.grey[700]),
                     ),
                     Text(
-                      'Avance disponible : ${customer.solde.toStringAsFixed(0)} FCFA',
+                      'sales_available_advance'.trParams({'amount': customer.solde.toStringAsFixed(0)}),
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],

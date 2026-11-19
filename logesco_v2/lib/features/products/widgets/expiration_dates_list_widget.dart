@@ -361,8 +361,8 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
             children: [
               _buildStatItem('products_stock'.tr, stockDisponible.toString(), Colors.blue),
               _buildStatItem('expiration_list_stats_registered'.tr, quantiteEnregistree.toString(), Colors.green),
-              _buildStatItem('Restant', quantiteRestante.toString(), quantiteRestante > 0 ? Colors.orange : Colors.grey),
-              _buildStatItem('Couverture', '$pourcentage%', pourcentage >= 80 ? Colors.green : Colors.orange),
+              _buildStatItem('lbl_remaining'.tr, quantiteRestante.toString(), quantiteRestante > 0 ? Colors.orange : Colors.grey),
+              _buildStatItem('lbl_coverage'.tr, '$pourcentage%', pourcentage >= 80 ? Colors.green : Colors.orange),
             ],
           ),
         ],

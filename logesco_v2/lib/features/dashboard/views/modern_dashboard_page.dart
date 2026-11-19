@@ -239,14 +239,14 @@ class _ModernDashboardPageState extends State<ModernDashboardPage> {
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.people_outline, 'users_title'.tr, Colors.grey, () => Get.toNamed(AppRoutes.users)),
                     if (_hasPermission('users', 'ROLES')) _buildMenuItem(Icons.admin_panel_settings, 'roles_title'.tr, Colors.indigo, () => Get.toNamed(AppRoutes.roles)),
                     if (_hasPermission('company_settings', 'READ')) _buildMenuItem(Icons.business, 'menu_company'.tr, Colors.blueGrey, () => Get.toNamed(AppRoutes.companySettings)),
-                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.store, 'Boutiques', Colors.teal, () => Get.to(() => const BoutiquesManagementPage())),
-                    if (_hasPermission('commercials', 'READ')) _buildMenuItem(Icons.badge_outlined, 'Commerciaux', Colors.brown, () => Get.toNamed(AppRoutes.commercials)),
+                    if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.store, 'menu_shops'.tr, Colors.teal, () => Get.to(() => const BoutiquesManagementPage())),
+                    if (_hasPermission('commercials', 'READ')) _buildMenuItem(Icons.badge_outlined, 'menu_commercials'.tr, Colors.brown, () => Get.toNamed(AppRoutes.commercials)),
                     if (_hasPermission('users', 'READ')) _buildMenuItem(Icons.dashboard_customize, 'boutiques_dashboard_consolide'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.boutiqueDashboard)),
                     // if (_hasPermission('printing', 'READ')) _buildMenuItem(Icons.print, 'menu_printing'.tr, Colors.deepPurple, () => Get.toNamed(AppRoutes.printing)),
                     // Connexion au cloud (lien Neon) : administrateur, sur le poste qui héberge le serveur. Visible aussi pour un
                     // client 100 % local : c'est ce qui lui permet d'activer le cloud sans modifier le .env à la main.
                     if (CloudConfigPage.disponible)
-                      _buildMenuItem(Icons.cloud_sync_outlined, 'Connexion au cloud (Neon)', Colors.cyan, () => Get.to(() => const CloudConfigPage())),
+                      _buildMenuItem(Icons.cloud_sync_outlined, 'plain_cloud_connection_neon'.tr, Colors.cyan, () => Get.to(() => const CloudConfigPage())),
                     _buildMenuItem(Icons.card_membership, 'menu_subscription'.tr, Colors.deepOrange, () {
                       Get.to(() => const SubscriptionStatusPage());
                     }),

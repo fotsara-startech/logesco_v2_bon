@@ -150,7 +150,7 @@ class _SupplierDetailViewState extends State<SupplierDetailView> {
                           children: [
                             Expanded(
                               child: _buildStatCard(
-                                'Total achats',
+                                'lbl_total_purchases'.tr,
                                 _totalPurchases != null ? '${_totalPurchases!.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ')} FCFA' : '0 FCFA',
                                 Icons.shopping_bag,
                                 Colors.orange,

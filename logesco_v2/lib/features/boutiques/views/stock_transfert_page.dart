@@ -182,7 +182,7 @@ class _TransfertFormState extends State<_TransfertForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Boutique source
-              const _SectionTitle(title: 'Boutique source', icon: Icons.store),
+              _SectionTitle(title: 'bd_source_shop'.tr, icon: Icons.store),
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _source,
@@ -205,7 +205,7 @@ class _TransfertFormState extends State<_TransfertForm> {
               const SizedBox(height: 20),
 
               // Boutique destination
-              const _SectionTitle(title: 'Boutique destination', icon: Icons.store_mall_directory),
+              _SectionTitle(title: 'bd_destination_shop'.tr, icon: Icons.store_mall_directory),
               const SizedBox(height: 8),
               DropdownButtonFormField<Boutique>(
                 value: _destination,

@@ -73,7 +73,7 @@ class PeriodInfoWidget extends StatelessWidget {
                 ),
                 Expanded(
                   child: _buildInfoItem(
-                    'Moyenne/Jour',
+                    'acc_avg_per_day'.tr.tr,
                     '${averagePerDay.toStringAsFixed(0)} FCFA',
                     Icons.trending_up,
                   ),

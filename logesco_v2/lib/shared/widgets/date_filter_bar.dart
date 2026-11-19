@@ -36,7 +36,7 @@ class DateFilterBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: "Aujourd'hui",
+              label: 'period_today'.tr,
               selected: selectedPeriod == PeriodFilter.today,
               onTap: () => onPeriodChanged(PeriodFilter.today),
             ),

@@ -213,7 +213,7 @@ class CashSessionController extends GetxController {
             ),
             const SizedBox(height: 16),
             _buildSummaryRow('Solde d\'ouverture', '${session.soldeOuverture.toStringAsFixed(0)} FCFA'),
-            _buildSummaryRow('Solde attendu', '${session.soldeAttendu?.toStringAsFixed(0) ?? '0'} FCFA'),
+            _buildSummaryRow('lbl_expected_balance'.tr, '${session.soldeAttendu?.toStringAsFixed(0) ?? '0'} FCFA'),
             _buildSummaryRow('cashregisters_solde_declare'.tr, '${session.soldeFermeture?.toStringAsFixed(0) ?? '0'} FCFA'),
             const Divider(height: 24),
             Container(

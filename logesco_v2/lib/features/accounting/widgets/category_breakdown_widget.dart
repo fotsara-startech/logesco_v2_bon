@@ -102,14 +102,14 @@ class CategoryBreakdownWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.categoryDisplayName,
+                  (category.categoryDisplayName == 'Ventes' ? 'plain_sales'.tr : category.categoryDisplayName),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
-                  '${category.count} transactions',
+                  'acc_transactions_count'.trParams({'count': '${category.count}'}),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,

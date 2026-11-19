@@ -565,7 +565,7 @@ class DashboardPage extends StatelessWidget {
         requiredPermission: 'inventory.view',
       ),
       _ModuleItem(
-        title: 'Mouvements Financiers',
+        title: 'financial_movements_title'.tr,
         subtitle: 'dashboard_tracabilite_sorties'.tr,
         icon: Icons.account_balance_wallet,
         color: Colors.pink,

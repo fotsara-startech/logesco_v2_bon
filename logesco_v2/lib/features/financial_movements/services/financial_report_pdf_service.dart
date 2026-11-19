@@ -600,8 +600,8 @@ class FinancialReportPdfService {
                 children: [
                   _buildTableCell('products_category'.tr, isHeader: true),
                   _buildTableCell('suppliers_transaction_amount'.tr, isHeader: true),
-                  _buildTableCell('Nombre', isHeader: true),
-                  _buildTableCell('Pourcentage', isHeader: true),
+                  _buildTableCell('lbl_count'.tr, isHeader: true),
+                  _buildTableCell('lbl_percentage'.tr, isHeader: true),
                 ],
               ),
               // Lignes de données
@@ -673,7 +673,7 @@ class FinancialReportPdfService {
                 children: [
                   _buildTableCell('suppliers_transaction_date'.tr, isHeader: true),
                   _buildTableCell('suppliers_transaction_amount'.tr, isHeader: true),
-                  _buildTableCell('Nombre', isHeader: true),
+                  _buildTableCell('lbl_count'.tr, isHeader: true),
                 ],
               ),
               // Lignes de données

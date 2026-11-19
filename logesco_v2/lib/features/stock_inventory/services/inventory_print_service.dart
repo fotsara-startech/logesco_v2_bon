@@ -228,16 +228,16 @@ class InventoryPrintService {
           pw.Row(
             children: [
               pw.Expanded(
-                child: _buildInfoRow('Type:', inventory.type.displayName),
+                child: _buildInfoRow('lbl_type_colon'.tr, inventory.type.displayName),
               ),
               pw.Expanded(
-                child: _buildInfoRow('Statut:', inventory.status.displayName),
+                child: _buildInfoRow('lbl_status_colon'.tr, inventory.status.displayName),
               ),
             ],
           ),
           if (inventory.description.isNotEmpty) ...[
             pw.SizedBox(height: 4),
-            _buildInfoRow('Description:', inventory.description),
+            _buildInfoRow('lbl_description_colon'.tr, inventory.description),
           ],
           if (inventory.nomCategorie != null) ...[
             pw.SizedBox(height: 4),
@@ -307,7 +307,7 @@ class InventoryPrintService {
           pw.SizedBox(height: 8),
           pw.Row(
             children: [
-              pw.Expanded(child: _buildStatItem('Articles total:', '$totalItems')),
+              pw.Expanded(child: _buildStatItem('lbl_total_items_colon'.tr, '$totalItems')),
               pw.Expanded(child: _buildStatItem('stockinventory_articles_comptes'.tr, '$countedItems')),
             ],
           ),
@@ -315,7 +315,7 @@ class InventoryPrintService {
           pw.Row(
             children: [
               pw.Expanded(child: _buildStatItem('stockinventory_ecarts_detectes'.tr, '$itemsWithVariance')),
-              pw.Expanded(child: _buildStatItem('Progression:', '${progress.toStringAsFixed(1)}%')),
+              pw.Expanded(child: _buildStatItem('lbl_progress_colon'.tr, '${progress.toStringAsFixed(1)}%')),
             ],
           ),
           pw.SizedBox(height: 8),

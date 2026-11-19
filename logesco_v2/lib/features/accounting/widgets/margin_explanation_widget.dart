@@ -44,7 +44,7 @@ class MarginExplanationWidget extends StatelessWidget {
             _buildCalculationStep(
               'accounting_1_revenus_ventes'.tr,
               balance.totalRevenueFormatted,
-              'Prix de vente  Quantités vendues',
+              'acc_formula_sales'.tr.tr,
               Colors.green.shade600,
               Icons.attach_money,
             ),
@@ -67,7 +67,7 @@ class MarginExplanationWidget extends StatelessWidget {
             const SizedBox(height: 8),
 
             _buildCalculationStep(
-              '= Marge Brute',
+              'acc_eq_gross_margin'.tr.tr,
               balance.grossProfitFormatted,
               'accounting_revenus_cout_marchandises'.trParams({'grossMarginFormatted': '${balance.grossMarginFormatted}'}),
               Colors.blue.shade600,
@@ -185,7 +185,7 @@ class MarginExplanationWidget extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildExplanationSection(
-                'Marge Brute',
+                'acc_gross_margin'.tr.tr,
                 'accounting_marge_brute_represente_benefice_realise_sur'.tr,
                 'accounting_formule_prix_vente_cump'.tr,
                 Colors.blue.shade600,
@@ -199,9 +199,9 @@ class MarginExplanationWidget extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildExplanationSection(
-                'Marge en %',
+                'acc_margin_in_pct'.tr.tr,
                 'accounting_marge_pourcentage_permet_comparer_rentabilite_sur'.tr,
-                'Formule: (Bénéfice / Chiffre d\'Affaires)  100',
+                'acc_margin_formula'.tr.tr,
                 Colors.purple.shade600,
               ),
             ],

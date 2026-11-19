@@ -25,8 +25,8 @@ class DailyBalanceChartWidget extends StatelessWidget {
               children: [
                 Icon(Icons.show_chart, color: Colors.teal.shade600),
                 const SizedBox(width: 8),
-                const Text(
-                  'volution Quotidienne',
+                Text(
+                  'acc_daily_evolution'.tr.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -86,7 +86,7 @@ class DailyBalanceChartWidget extends StatelessWidget {
       children: [
         Expanded(
           child: _buildStatCard(
-            'Jours Rentables',
+            'acc_profitable_days'.tr.tr,
             '$profitableDays/$totalDays',
             Icons.calendar_today,
             Colors.green.shade600,
@@ -95,7 +95,7 @@ class DailyBalanceChartWidget extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _buildStatCard(
-            'Moyenne/Jour',
+            'acc_avg_per_day'.tr.tr,
             '${averageProfit.toStringAsFixed(0)} FCFA',
             Icons.trending_up,
             averageProfit > 0 ? Colors.blue.shade600 : Colors.red.shade600,
@@ -104,7 +104,7 @@ class DailyBalanceChartWidget extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _buildStatCard(
-            'Meilleur Jour',
+            'acc_best_day'.tr.tr,
             bestDay.profitFormatted,
             Icons.star,
             Colors.amber.shade600,

@@ -155,7 +155,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
         child: Row(
           children: [
             _PeriodChip(
-              label: "Aujourd'hui",
+              label: 'period_today'.tr,
               selected: _selectedPeriod == PeriodFilter.today,
               onTap: () {
                 setState(() => _selectedPeriod = PeriodFilter.today);
@@ -236,8 +236,8 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Vue d\'ensemble',
+        Text(
+          'bd_overview'.tr,
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
@@ -245,7 +245,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
           children: [
             Expanded(
               child: _CompactStatCard(
-                label: 'Chiffre d\'affaires',
+                label: 'bd_turnover'.tr,
                 value: _formatMoney(totaux['chiffreAffaires']),
                 icon: Icons.trending_up_rounded,
                 color: const Color(0xFF4CAF50),
@@ -272,7 +272,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
             const SizedBox(width: 10),
             Expanded(
               child: _CompactStatCard(
-                label: 'Mouvements financiers',
+                label: 'bd_financial_movements'.tr,
                 value: _formatMoney(totaux['totalMouvementsFinanciers']),
                 icon: Icons.swap_horiz_rounded,
                 color: const Color(0xFF9C27B0),
@@ -640,7 +640,7 @@ class _ModernBoutiqueCard extends StatelessWidget {
                     ),
                     if (estPrincipale)
                       Text(
-                        'Boutique principale',
+                        'bd_main_shop'.tr,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.amber[700],
@@ -744,7 +744,7 @@ class _ModernBoutiqueCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Solde actuel',
+                          'cash_session_current_balance'.tr,
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey[500],

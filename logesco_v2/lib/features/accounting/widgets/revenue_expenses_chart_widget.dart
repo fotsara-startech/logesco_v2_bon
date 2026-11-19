@@ -42,7 +42,7 @@ class RevenueExpensesChartWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildLegendItem('Revenus', Colors.green.shade600, balance.totalRevenueFormatted),
+                _buildLegendItem('lbl_revenues'.tr, Colors.green.shade600, balance.totalRevenueFormatted),
                 _buildLegendItem('accounting_expenses'.tr, Colors.red.shade600, balance.totalExpensesFormatted),
                 _buildLegendItem('accounting_profit'.tr, balance.isProfitable ? Colors.blue.shade600 : Colors.orange.shade600, balance.netProfitFormatted),
               ],
@@ -65,7 +65,7 @@ class RevenueExpensesChartWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _buildBar('Revenus', revenueHeight, Colors.green.shade600),
+          _buildBar('lbl_revenues'.tr, revenueHeight, Colors.green.shade600),
           _buildBar('accounting_expenses'.tr, expensesHeight, Colors.red.shade600),
           _buildBar(
             'accounting_profit'.tr,

@@ -100,7 +100,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildMetricCard(
-                        'Marge',
+                        'accounting_margin'.tr.tr,
                         '${profitMargin.toStringAsFixed(1)}%',
                         Icons.percent,
                         statusColor,
@@ -115,7 +115,7 @@ class ProfitabilityOverviewWidget extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildMetricCard(
-                        'Revenus',
+                        'accounting_revenue'.tr.tr,
                         '${totalRevenue.toStringAsFixed(0)} FCFA',
                         Icons.attach_money,
                         Colors.green.shade600,
