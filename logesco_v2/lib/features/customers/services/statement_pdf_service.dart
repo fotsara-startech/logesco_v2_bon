@@ -446,15 +446,15 @@ class StatementPdfService {
   static String _getTransactionTypeLabel(String type) {
     switch (type) {
       case 'achat_comptant':
-        return 'Achat comptant';
+        return 'plain_cash_purchase'.tr;
       case 'achat_credit':
         return 'customers_credit_purchase'.tr;
       case 'paiement':
-        return 'Paiement';
+        return 'plain_payment'.tr;
       case 'paiement_comptant':
-        return 'Paiement comptant';
+        return 'plain_cash_payment'.tr;
       case 'paiement_dette':
-        return 'Paiement dette';
+        return 'plain_debt_payment'.tr;
       case 'depot':
       case 'depot_avance':
         return 'customers_approvisionnement_compte'.tr;

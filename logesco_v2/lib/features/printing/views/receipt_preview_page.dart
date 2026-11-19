@@ -888,7 +888,7 @@ class ReceiptPreviewPage extends StatelessWidget {
           pw.SizedBox(height: 6),
           pw.Center(
             child: pw.Text(
-              'Document généré par Logesco V2 - ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}',
+              'printing_document_generated_by'.trParams({'date': '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'}),
               style: pw.TextStyle(fontSize: fontSize - 2, color: PdfColors.grey700),
             ),
           ),

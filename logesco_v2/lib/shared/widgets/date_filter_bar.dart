@@ -60,7 +60,7 @@ class DateFilterBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _PeriodChip(
-              label: selectedPeriod == PeriodFilter.custom && customRange != null ? '${_fmtDate(customRange!.start)} – ${_fmtDate(customRange!.end)}' : 'Personnalisée',
+              label: selectedPeriod == PeriodFilter.custom && customRange != null ? '${_fmtDate(customRange!.start)} – ${_fmtDate(customRange!.end)}' : 'shared_custom_period'.tr,
               selected: selectedPeriod == PeriodFilter.custom,
               icon: Icons.date_range,
               onTap: onCustomRangePick,

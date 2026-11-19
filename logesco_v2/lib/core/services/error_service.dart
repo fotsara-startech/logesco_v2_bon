@@ -129,7 +129,7 @@ class ErrorService extends GetxService {
     if (ErrorHandler.isNetworkError(error)) {
       ErrorHandler.showWarning(
         'core_verifiez_votre_connexion_internet'.tr,
-        title: 'Connexion',
+        title: 'plain_connection'.tr,
       );
     }
   }

@@ -136,7 +136,7 @@ extension ReprintStatusExtension on ReprintStatus {
   String get displayName {
     switch (this) {
       case ReprintStatus.all:
-        return 'Tous';
+        return 'plain_all'.tr;
       case ReprintStatus.originalsOnly:
         return 'Originaux seulement';
       case ReprintStatus.reprintsOnly:

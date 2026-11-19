@@ -151,7 +151,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     setState(() => _working.add(c.key));
     try {
       await _service.apply(caseKey: c.key, optionId: optionId, stockVu: c.stockAffiche, cible: cible);
-      SnackbarHelper.success(optionId == 'ignorer' ? 'Cas laissé tel quel' : 'decisions_decision_appliquee_2'.trParams({'produitNom': '${c.produitNom}'}));
+      SnackbarHelper.success(optionId == 'ignorer' ? 'decisions_case_left_as_is'.tr : 'decisions_decision_appliquee_2'.trParams({'produitNom': '${c.produitNom}'}));
       _choix.remove(c.key);
       await _load();
     } catch (e) {
@@ -177,7 +177,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('decisions_decisions_prendre'.tr),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh), tooltip: 'Actualiser')],
+        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh), tooltip: 'plain_refresh'.tr)],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -237,9 +237,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Pour chacun : les faits, des options avec leur résultat chiffré, et c\'est vous qui décidez. '
-                  'Le choix est appliqué par un mouvement de correction ; l\'historique n\'est jamais réécrit. '
-                  'decisions_idealement_appuyez_vous_sur_comptage_physique'.tr,
+                  'decisions_intro_text'.tr,
                   style: TextStyle(fontSize: 13),
                 ),
                 if (!peutDecider) ...[
@@ -260,8 +258,7 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
             child: Text(
-              "La même fiche existe sur ce poste et dans le cloud : la synchronisation reste bloquée tant que vous n'avez pas dit "
-              "s'il s'agit de la même fiche ou de deux fiches différentes.",
+              'decisions_sync_conflicts_explanation'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ),
@@ -298,8 +295,8 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           title: Text(c.produitNom, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           subtitle: Text(
-            '${c.boutiqueNom != null ? '${c.boutiqueNom} · ' : ''}Stock affiché : ${c.stockAffiche}'
-            '${c.produitEstService ? ' · marqué « service »' : ''}',
+            '${c.boutiqueNom != null ? '${c.boutiqueNom} · ' : ''}${'decisions_stock_displayed'.trParams({'stock': '${c.stockAffiche}'})}'
+            '${c.produitEstService ? ' · ${'decisions_marked_service'.tr}' : ''}',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
           ),
           children: [
@@ -322,13 +319,13 @@ class _DecisionCenterPageState extends State<DecisionCenterPage> {
                     ],
                   ),
                 )),
-            if (c.ventes.isNotEmpty) _faits('decisions_ventes_sans_mouvement_stock'.tr, c.ventes.map((v) => '${v.numeroVente}${v.date != null ? ' (${_date(v.date!)})' : ''} : ${v.quantite} unité(s)').toList()),
+            if (c.ventes.isNotEmpty) _faits('decisions_ventes_sans_mouvement_stock'.tr, c.ventes.map((v) => 'decisions_sale_units_line'.trParams({'sale': '${v.numeroVente}${v.date != null ? ' (${_date(v.date!)})' : ''}', 'qty': '${v.quantite}'})).toList()),
             if (c.doublons.isNotEmpty)
               _faits(
                 'decisions_receptions_suspectes'.tr,
-                c.doublons.map((d) => '${d.quantite} unité(s) reçues le ${d.date != null ? _date(d.date!) : '?'}, déjà reçues le ${d.dateOriginal != null ? _date(d.dateOriginal!) : '?'} sans lien entre les deux saisies').toList(),
+                c.doublons.map((d) => 'decisions_received_twice_line'.trParams({'qty': '${d.quantite}', 'date': d.date != null ? _date(d.date!) : '?', 'original': d.dateOriginal != null ? _date(d.dateOriginal!) : '?'})).toList(),
               ),
-            if (c.dernierMouvementStock != null) _faits('Historique', ['Le dernier mouvement indique un stock de ${c.dernierMouvementStock}']),
+            if (c.dernierMouvementStock != null) _faits('decisions_history'.tr, ['decisions_last_movement_stock'.trParams({'stock': '${c.dernierMouvementStock}'})]),
             const Divider(),
             Text('decisions_votre_decision'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
             ...c.options.map((o) => RadioListTile<String>(

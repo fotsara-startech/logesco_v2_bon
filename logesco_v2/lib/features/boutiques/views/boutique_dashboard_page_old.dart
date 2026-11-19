@@ -380,7 +380,7 @@ class _BoutiqueStatCard extends StatelessWidget {
               children: [
                 Expanded(child: _MiniStat(label: 'CA', value: '${_fmt(data['chiffreAffaires'])} FCFA', color: Colors.green)),
                 Expanded(child: _MiniStat(label: 'boutiques_encaisse'.tr, value: '${_fmt(data['montantEncaisse'])} FCFA', color: Colors.blue)),
-                Expanded(child: _MiniStat(label: 'Ventes', value: '${data['nbVentes'] ?? 0}', color: Colors.orange)),
+                Expanded(child: _MiniStat(label: 'plain_sales'.tr, value: '${data['nbVentes'] ?? 0}', color: Colors.orange)),
               ],
             ),
             if (caisses.isNotEmpty) ...[

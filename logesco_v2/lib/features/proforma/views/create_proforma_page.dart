@@ -201,7 +201,7 @@ class _CreateProformaPageState extends State<CreateProformaPage> {
               labelColor: Colors.orange[700],
               indicatorColor: Colors.orange[700],
               tabs: [
-                const Tab(icon: Icon(Icons.inventory_2), text: 'Produits'),
+                Tab(icon: Icon(Icons.inventory_2), text: 'plain_products'.tr),
                 Tab(
                   icon: Badge(isLabelVisible: itemCount > 0, label: Text('$itemCount'), child: const Icon(Icons.shopping_cart)),
                   text: 'proforma_order_tab'.tr,

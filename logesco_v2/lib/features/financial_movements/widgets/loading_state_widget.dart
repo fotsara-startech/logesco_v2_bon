@@ -300,7 +300,7 @@ class LoadingStateBar extends StatelessWidget {
   String _getDefaultMessage(LoadingState state) {
     switch (state.type) {
       case LoadingStateType.loading:
-        return 'Chargement...';
+        return 'plain_loading'.tr;
       case LoadingStateType.refreshing:
         return 'Actualisation...';
       case LoadingStateType.loadingMore:

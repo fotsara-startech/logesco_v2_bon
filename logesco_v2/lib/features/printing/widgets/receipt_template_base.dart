@@ -1,4 +1,5 @@
-﻿import 'package:flutter/foundation.dart';
+﻿import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/receipt_model.dart';
 import '../models/print_format.dart' as print_models;
@@ -761,7 +762,7 @@ abstract class ReceiptTemplateBase extends StatelessWidget {
             child: Text(
               '${t('reprintedOn')} ${receipt.lastReprintDate!.day.toString().padLeft(2, '0')}/'
               '${receipt.lastReprintDate!.month.toString().padLeft(2, '0')}/'
-              '${receipt.lastReprintDate!.year} à '
+              '${receipt.lastReprintDate!.year} ${'common_at'.tr} '
               '${receipt.lastReprintDate!.hour.toString().padLeft(2, '0')}:'
               '${receipt.lastReprintDate!.minute.toString().padLeft(2, '0')}',
               style: textStyle,

@@ -134,7 +134,7 @@ class DashboardPage extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'dashboard_gerez_votre_commerce_efficacement_avec_logesco'.tr,
                           style: TextStyle(
                             fontSize: 14,
@@ -287,7 +287,7 @@ class DashboardPage extends StatelessWidget {
             TextButton.icon(
               onPressed: () => Get.toNamed(AppRoutes.financialMovements),
               icon: const Icon(Icons.list, size: 16),
-              label: const Text('Voir tout'),
+              label: Text('plain_view_all'.tr),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.indigo.shade600,
                 textStyle: const TextStyle(fontSize: 12),
@@ -459,7 +459,7 @@ class DashboardPage extends StatelessWidget {
     // Définir tous les modules avec leurs permissions requises
     final allModules = [
       _ModuleItem(
-        title: 'Produits',
+        title: 'plain_products'.tr,
         subtitle: 'dashboard_gerer_catalogue'.tr,
         icon: Icons.inventory_2,
         color: Colors.blue,
@@ -475,7 +475,7 @@ class DashboardPage extends StatelessWidget {
         requiredPermission: 'suppliers.view',
       ),
       _ModuleItem(
-        title: 'Clients',
+        title: 'plain_customers'.tr,
         subtitle: 'dashboard_gerer_clients'.tr,
         icon: Icons.people,
         color: Colors.orange,
@@ -491,7 +491,7 @@ class DashboardPage extends StatelessWidget {
         requiredPermission: 'products.manage',
       ),
       _ModuleItem(
-        title: 'Ventes',
+        title: 'plain_sales'.tr,
         subtitle: 'dashboard_point_vente'.tr,
         icon: Icons.point_of_sale,
         color: Colors.red,

@@ -813,7 +813,7 @@ class CashSessionController extends GetxController {
       final soldeController = TextEditingController();
       final confirmed = await Get.dialog<bool>(
         AlertDialog(
-          title: const Text('Solde d\'ouverture'),
+          title: Text('plain_opening_balance'.tr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -821,8 +821,8 @@ class CashSessionController extends GetxController {
               const SizedBox(height: 16),
               TextField(
                 controller: soldeController,
-                decoration: const InputDecoration(
-                  labelText: 'Solde d\'ouverture',
+                decoration: InputDecoration(
+                  labelText: 'plain_opening_balance'.tr,
                   suffixText: 'FCFA',
                   border: OutlineInputBorder(),
                 ),
@@ -837,7 +837,7 @@ class CashSessionController extends GetxController {
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),
-              child: const Text('Confirmer'),
+              child: Text('plain_confirm'.tr),
             ),
           ],
         ),

@@ -100,7 +100,7 @@ class LoadingStateDemo extends StatelessWidget {
                       ),
                       ElevatedButton(
                         onPressed: () => controller.loadMovements(forceRefresh: true),
-                        child: const Text('Actualiser'),
+                        child: Text('plain_refresh'.tr),
                       ),
                       ElevatedButton(
                         onPressed: () => controller.loadMovements(append: true),

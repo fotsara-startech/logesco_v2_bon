@@ -78,7 +78,7 @@ class CancelCommandeDialog extends StatelessWidget {
                 children: [
                   Icon(Icons.warning, color: Colors.orange[700], size: 20),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'procurement_attention_action_est_irreversible'.tr,
                       style: TextStyle(fontWeight: FontWeight.w500),
@@ -91,7 +91,7 @@ class CancelCommandeDialog extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Conséquences de l'annulation
-            const Text(
+            Text(
               'procurement_consequences_annulation'.tr,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class CancelCommandeDialog extends StatelessWidget {
                   children: [
                     Icon(Icons.info, color: Colors.blue[700], size: 16),
                     const SizedBox(width: 6),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'procurement_commande_deja_receptions_partielles_stocks_deja'.tr,
                         style: TextStyle(fontSize: 12),
@@ -217,7 +217,7 @@ class CancelCommandeDialog extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Non'),
+            child: Text('plain_no'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),

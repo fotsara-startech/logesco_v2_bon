@@ -119,7 +119,7 @@ class _ExpirationDateDialogState extends State<ExpirationDateDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                widget.expirationDate == null ? 'Ajouter une date de péremption' : 'expiration_dialog_edit_title'.tr,
+                widget.expirationDate == null ? 'products_add_expiration_date'.tr : 'expiration_dialog_edit_title'.tr,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),

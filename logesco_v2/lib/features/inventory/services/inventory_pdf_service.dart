@@ -279,7 +279,7 @@ class InventoryPdfService {
       pw.SizedBox(width: 8),
       _summaryCard('En alerte', alerte.toString(), _cardOrange, _cardOrangeBg),
       pw.SizedBox(width: 8),
-      _summaryCard('En rupture', rupture.toString(), _cardRed, _cardRedBg),
+      _summaryCard('plain_out_of_stock'.tr, rupture.toString(), _cardRed, _cardRedBg),
     ]);
   }
 
@@ -449,13 +449,13 @@ class InventoryPdfService {
   static String _movementLabel(String type) {
     switch (type.toLowerCase()) {
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       case 'vente':
         return 'inventory_movement_sale'.tr;
       case 'ajustement':
-        return 'Ajustement';
+        return 'plain_adjustment'.tr;
       case 'retour':
-        return 'Retour';
+        return 'plain_return'.tr;
       case 'approvisionnement':
         return 'Appro.';
       default:

@@ -154,9 +154,9 @@ class InventoryFilterBar extends StatelessWidget {
       case 'alerte':
         return 'En alerte';
       case 'rupture':
-        return 'En rupture';
+        return 'plain_out_of_stock'.tr;
       case 'disponible':
-        return 'Disponible';
+        return 'plain_available'.tr;
       default:
         return status;
     }
@@ -166,15 +166,15 @@ class InventoryFilterBar extends StatelessWidget {
   String _getMovementTypeLabel(String type) {
     switch (type.toLowerCase()) {
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       case 'vente':
         return 'inventory_movement_sale'.tr;
       case 'ajustement':
-        return 'Ajustement';
+        return 'plain_adjustment'.tr;
       case 'retour':
-        return 'Retour';
+        return 'plain_return'.tr;
       case 'approvisionnement':
-        return 'Approvisionnement';
+        return 'plain_supply'.tr;
       default:
         return type;
     }

@@ -219,7 +219,7 @@ class _ReceiveCommandeDialogState extends State<ReceiveCommandeDialog> {
                                     }
                                     final quantity = int.tryParse(value);
                                     if (quantity == null || quantity < 0) {
-                                      return 'Nombre invalide';
+                                      return 'plain_invalid_number'.tr;
                                     }
                                     if (quantity > detail.quantiteRestante) {
                                       return 'Max: ${detail.quantiteRestante}';

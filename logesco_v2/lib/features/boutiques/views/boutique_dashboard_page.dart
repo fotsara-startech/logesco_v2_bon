@@ -106,7 +106,7 @@ class _BoutiqueDashboardPageState extends State<BoutiqueDashboardPage> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _load,
-            tooltip: 'Actualiser',
+            tooltip: 'plain_refresh'.tr,
           ),
         ],
       ),
@@ -676,7 +676,7 @@ class _ModernBoutiqueCard extends StatelessWidget {
               ),
               Expanded(
                 child: _StatItem(
-                  label: 'Ventes',
+                  label: 'plain_sales'.tr,
                   value: '$nbVentes',
                   icon: Icons.receipt_long_rounded,
                   color: Colors.orange,

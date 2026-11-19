@@ -505,7 +505,7 @@ class PrintingController extends GetxController {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('DETAILS:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('plain_details_colon'.tr, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 8),
                     pw.Text('Solde initial: ${receipt.items.first.displayPrice.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontSize: 9)),
                     pw.SizedBox(height: 4),
@@ -603,7 +603,7 @@ class PrintingController extends GetxController {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Total:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('plain_total_colon'.tr, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         pw.Text('${receipt.totalAmount.toStringAsFixed(0)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       ],
                     ),

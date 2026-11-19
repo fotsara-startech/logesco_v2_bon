@@ -428,7 +428,7 @@ class ProductFormView extends StatelessWidget {
                     )
                   : null,
               border: const OutlineInputBorder(),
-              helperText: controller.categories.isNotEmpty ? '${controller.categories.length} catégorie(s) disponible(s)' : null,
+              helperText: controller.categories.isNotEmpty ? 'products_categorie_s_disponible_s'.trParams({'length': '${controller.categories.length}'}) : null,
             ),
           ),
           const SizedBox(height: 8),

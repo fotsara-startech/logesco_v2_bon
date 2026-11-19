@@ -80,13 +80,13 @@ class PaginationWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Affichage ${paginationInfo.from} à ${paginationInfo.to} sur ${paginationInfo.total}',
+          'shared_pagination_showing'.trParams({'from': '${paginationInfo.from}', 'to': '${paginationInfo.to}', 'total': '${paginationInfo.total}'}),
           style: Get.textTheme.bodySmall?.copyWith(
             color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
         Text(
-          'Page ${paginationInfo.page} sur ${paginationInfo.pages}',
+          'shared_pagination_page_of'.trParams({'page': '${paginationInfo.page}', 'pages': '${paginationInfo.pages}'}),
           style: Get.textTheme.bodySmall?.copyWith(
             color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
           ),
@@ -120,7 +120,7 @@ class PaginationWidget extends StatelessWidget {
         IconButton(
           onPressed: paginationInfo.hasNext ? () => onPageChanged(paginationInfo.page + 1) : null,
           icon: const Icon(Icons.chevron_right),
-          tooltip: 'Page suivante',
+          tooltip: 'shared_pagination_next_page'.tr,
         ),
 
         // Dernière page
@@ -229,7 +229,7 @@ class PaginationWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Aller à:',
+          'shared_pagination_go_to'.tr,
           style: Get.textTheme.bodySmall,
         ),
         const SizedBox(width: 8),
@@ -291,12 +291,12 @@ class SimplePaginationWidget extends StatelessWidget {
           TextButton.icon(
             onPressed: paginationInfo.hasPrev ? () => onPageChanged(paginationInfo.page - 1) : null,
             icon: const Icon(Icons.chevron_left),
-            label: Text(previousText ?? 'Précédent'),
+            label: Text(previousText ?? 'shared_pagination_previous'.tr),
           ),
 
           // Info page courante
           Text(
-            'Page ${paginationInfo.page} sur ${paginationInfo.pages}',
+            'shared_pagination_page_of'.trParams({'page': '${paginationInfo.page}', 'pages': '${paginationInfo.pages}'}),
             style: Get.textTheme.bodyMedium?.copyWith(
               color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -306,7 +306,7 @@ class SimplePaginationWidget extends StatelessWidget {
           TextButton.icon(
             onPressed: paginationInfo.hasNext ? () => onPageChanged(paginationInfo.page + 1) : null,
             icon: const Icon(Icons.chevron_right),
-            label: Text(nextText ?? 'Suivant'),
+            label: Text(nextText ?? 'shared_pagination_next'.tr),
             iconAlignment: IconAlignment.end,
           ),
         ],

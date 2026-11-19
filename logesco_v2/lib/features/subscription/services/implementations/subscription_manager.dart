@@ -282,7 +282,7 @@ class SubscriptionManager implements ISubscriptionManager {
     // Mettre à jour le statut
     final status = SubscriptionStatus.trialActive(
       remainingDays: _trialDurationDays,
-      warnings: ['Période d\'essai de $_trialDurationDays jours activée'],
+      warnings: ['subscription_trial_activated_days'.trParams({'days': '$_trialDurationDays'})],
     );
 
     _updateStatus(status);
@@ -422,7 +422,7 @@ class SubscriptionManager implements ISubscriptionManager {
           expirationDate: status.expirationDate,
           remainingDays: 0,
           isInGracePeriod: status.isInGracePeriod,
-          warnings: [...status.warnings, 'Abonnement expiré'],
+          warnings: [...status.warnings, 'subscription_expired_title'.tr],
         );
 
         _updateStatus(updatedStatus);
@@ -539,7 +539,7 @@ class SubscriptionManager implements ISubscriptionManager {
 
       return notifications;
     } catch (e) {
-      return ['Erreur lors de la vérification des notifications'];
+      return ['subscription_notifications_check_error'.tr];
     }
   }
 
@@ -568,7 +568,7 @@ class SubscriptionManager implements ISubscriptionManager {
 
       return notifications;
     } catch (e) {
-      return ['Erreur critique du système de licence'];
+      return ['subscription_license_system_critical_error'.tr];
     }
   }
 
@@ -678,7 +678,7 @@ class SubscriptionManager implements ISubscriptionManager {
       isActive: false,
       type: SubscriptionType.trial,
       remainingDays: 0,
-      warnings: ['Période d\'essai expirée'],
+      warnings: ['subscription_trial_expired'.tr],
     );
 
     _updateStatus(expiredStatus);
@@ -957,7 +957,7 @@ class SubscriptionManager implements ISubscriptionManager {
         expirationDate: license.expiresAt,
         remainingDays: 0,
         isInGracePeriod: false,
-        warnings: ['Manipulation de la date système détectée. Restaurez la date correcte.'],
+        warnings: ['subscription_system_date_tampered'.tr],
       );
     }
 
@@ -1180,7 +1180,7 @@ class SubscriptionManager implements ISubscriptionManager {
         isActive: false,
         type: SubscriptionType.trial,
         remainingDays: 0,
-        warnings: ['Licence réinitialisée'],
+        warnings: ['subscription_license_reset'.tr],
       );
       _statusController.add(emptyStatus);
 

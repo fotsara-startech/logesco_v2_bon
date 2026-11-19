@@ -66,7 +66,7 @@ class _DecisionsAlertState extends State<DecisionsAlert> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _conflits == 0 ? '${_cases.length} décision(s) à prendre sur le stock' : 'decisions_decision_s_prendre'.trParams({'length_conflits': '${_cases.length + _conflits}'}),
+                        _conflits == 0 ? 'decisions_to_decide_on_stock'.trParams({'count': '${_cases.length}'}) : 'decisions_decision_s_prendre'.trParams({'length_conflits': '${_cases.length + _conflits}'}),
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       if (_conflits > 0)

@@ -122,9 +122,7 @@ class ReceiptTemplateA4 extends ReceiptTemplateBase {
           // Informations du système
           Center(
             child: Text(
-              'Document généré par Logesco V2 - ${DateTime.now().day.toString().padLeft(2, '0')}/'
-              '${DateTime.now().month.toString().padLeft(2, '0')}/'
-              '${DateTime.now().year}',
+              'printing_document_generated_by'.trParams({'date': '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'}),
               style: textStyle,
             ),
           ),

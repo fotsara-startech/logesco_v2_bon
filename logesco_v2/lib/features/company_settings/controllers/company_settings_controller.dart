@@ -441,8 +441,7 @@ class CompanySettingsController extends GetxController {
       AlertDialog(
         title: Text('users_delete_confirm_title'.tr),
         content: Text(
-          'Êtestes-vous sûr de vouloir supprimer le profil d\'entreprise ? '
-          'roles_delete_irreversible'.tr,
+          'companysettings_confirm_delete_profile'.tr,
         ),
         actions: [
           TextButton(
@@ -515,8 +514,7 @@ class CompanySettingsController extends GetxController {
       AlertDialog(
         title: Text('company_settings_unsaved_changes'.tr),
         content: Text(
-          'Vous avez des modifications non sauvegardées. '
-          'companysettings_voulez_vous_abandonner'.tr,
+          'companysettings_unsaved_discard_question'.tr,
         ),
         actions: [
           TextButton(

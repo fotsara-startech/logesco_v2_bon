@@ -8,14 +8,16 @@ import 'package:get/get.dart';
 
 /// Statuts possibles d'une commande d'approvisionnement
 enum CommandeStatut {
-  enAttente('en_attente', 'En attente'),
-  partielle('partielle', 'Partiellement reçue'),
-  terminee('terminee', 'sales_status_completed'.tr),
-  annulee('annulee', 'proforma_status_cancelled'.tr);
+  enAttente('en_attente', 'procurement_status_pending'),
+  partielle('partielle', 'procurement_status_partial'),
+  terminee('terminee', 'sales_status_completed'),
+  annulee('annulee', 'proforma_status_cancelled');
 
-  const CommandeStatut(this.value, this.label);
+  const CommandeStatut(this.value, this.labelKey);
   final String value;
-  final String label;
+  final String labelKey;
+
+  String get label => labelKey.tr;
 
   static CommandeStatut fromString(String value) {
     return CommandeStatut.values.firstWhere(

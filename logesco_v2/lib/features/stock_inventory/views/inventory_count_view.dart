@@ -117,7 +117,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                   children: [
                     const Icon(Icons.table_chart, color: Colors.green),
                     const SizedBox(width: 8),
-                    const Text('Exporter Excel'),
+                    Text('plain_export_excel'.tr),
                   ],
                 ),
               ),
@@ -127,7 +127,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
                   children: [
                     const Icon(Icons.upload_file, color: Colors.blue),
                     const SizedBox(width: 8),
-                    const Text('Importer Excel'),
+                    Text('plain_import_excel'.tr),
                   ],
                 ),
               ),
@@ -839,8 +839,7 @@ class _InventoryCountViewState extends State<InventoryCountView> {
       AlertDialog(
         title: Text('stockinventory_importer_fiche_comptage'.tr),
         content: Text(
-          'Sélectionnez le fichier Excel contenant les comptages remplis.\n\n'
-          'stockinventory_quantites_comptees_seront_importees_remplaceront_valeurs'.tr,
+          'stockinventory_select_excel_counts_dialog'.tr,
         ),
         actions: [
           TextButton(

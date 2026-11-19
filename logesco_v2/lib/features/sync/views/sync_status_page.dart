@@ -189,8 +189,7 @@ class SyncStatusPage extends StatelessWidget {
               ...g.exemples.take(4).map((e) => Text('• ${e.resume}', style: const TextStyle(fontSize: 12))),
               const SizedBox(height: 10),
               Text(
-                "Il ne sera plus signalé tant qu'il existe, mais rien n'est corrigé : les deux côtés resteront différents. "
-                'sync_il_reapparaitra_si_vous_cliquez_sur'.tr,
+                'sync_ignore_explanation'.tr,
                 style: TextStyle(fontSize: 12),
               ),
               const SizedBox(height: 10),
@@ -234,9 +233,7 @@ class SyncStatusPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${s.pendingCount} opération(s) n'ont pas encore été envoyées vers le cloud. "
-                    'Vos données sont conservées sur ce poste, mais les autres postes ne les voient pas. '
-                    'sync_verifiez_connexion_internet_puis_appuyez_sur'.tr,
+                    'sync_pending_not_sent_message'.trParams({'count': '${s.pendingCount}'}),
                     style: TextStyle(fontSize: 13, color: Colors.red.shade900),
                   ),
                 ],

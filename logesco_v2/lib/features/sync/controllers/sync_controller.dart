@@ -44,8 +44,7 @@ class SyncController extends GetxController {
       if (result.isType3 && result.isStale && !_staleWarned) {
         _staleWarned = true;
         SnackbarHelper.warning(
-          '${result.pendingCount} opération(s) ne sont pas synchronisées depuis ${result.pendingAgeLabel}. '
-          'sync_verifiez_connexion_internet_menu_synchronisation'.tr,
+          'sync_stale_warning'.trParams({'count': '${result.pendingCount}', 'age': '${result.pendingAgeLabel}'}),
           duration: const Duration(seconds: 10),
         );
       }
@@ -55,8 +54,7 @@ class SyncController extends GetxController {
       if (result.isType3 && result.driftAnciens > 0 && !_driftWarned) {
         _driftWarned = true;
         SnackbarHelper.warning(
-          '${result.driftAnciens} élément(s) diffèrent entre ce poste et le cloud depuis plus d\'un jour. '
-          'sync_voir_menu_synchronisation'.tr,
+          'sync_drift_old_warning'.trParams({'count': '${result.driftAnciens}'}),
           duration: const Duration(seconds: 10),
         );
       }

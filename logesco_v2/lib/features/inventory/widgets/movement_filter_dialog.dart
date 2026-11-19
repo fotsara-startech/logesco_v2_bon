@@ -35,8 +35,8 @@ class MovementFilterDialog extends StatelessWidget {
                     DropdownMenuItem(value: 'achat', child: Text('stock_summary_purchases'.tr)),
                     DropdownMenuItem(value: 'vente', child: Text('stock_summary_sales'.tr)),
                     DropdownMenuItem(value: 'ajustement', child: Text('stock_adjust'.tr)),
-                    DropdownMenuItem(value: 'retour', child: const Text('Retour')),
-                    DropdownMenuItem(value: 'approvisionnement', child: const Text('Approvisionnement')),
+                    DropdownMenuItem(value: 'retour', child: Text('plain_return'.tr)),
+                    DropdownMenuItem(value: 'approvisionnement', child: Text('plain_supply'.tr)),
                   ],
                   onChanged: (value) {
                     controller.movementTypeFilter.value = value;

@@ -155,7 +155,7 @@ class SaleSummary extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.point_of_sale),
-                label: Text(salesController.isCreating ? 'Création...' : 'sales_finalize_sale'.tr),
+                label: Text(salesController.isCreating ? 'sales_creating'.tr : 'sales_finalize_sale'.tr),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

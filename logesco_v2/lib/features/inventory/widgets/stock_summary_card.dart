@@ -97,7 +97,7 @@ class StockSummaryCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _SummaryItem(
-                        title: 'Total Produits',
+                        title: 'plain_total_products'.tr,
                         value: summary.totalProduits.toString(),
                         icon: Icons.inventory_2,
                         color: Colors.blue,

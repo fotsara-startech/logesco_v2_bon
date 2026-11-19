@@ -20,7 +20,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           IconButton(
             onPressed: controller.refresh,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser',
+            tooltip: 'plain_refresh'.tr,
           ),
           IconButton(
             onPressed: () => _showSearchDialog(context, controller),
@@ -29,7 +29,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           ),
           PopupMenuButton<ReceiptFilterPreset>(
             icon: const Icon(Icons.filter_list),
-            tooltip: 'Filtres',
+            tooltip: 'plain_filters'.tr,
             onSelected: controller.applyPresetFilter,
             itemBuilder: (context) => controller.getAvailablePresets().map((preset) {
               return PopupMenuItem(
@@ -418,7 +418,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            controller.hasActiveFilters ? 'Aucun reçu trouvé avec ces critères' : 'printing_aucun_recu_disponible'.tr,
+            controller.hasActiveFilters ? 'printing_no_receipt_found_with_criteria'.tr : 'printing_aucun_recu_disponible'.tr,
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[600],
@@ -427,7 +427,7 @@ class ReceiptHistoryPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.hasActiveFilters ? 'Essayez de modifier vos critères de recherche' : 'printing_recus_apparaitront_ici_apres_ventes'.tr,
+            controller.hasActiveFilters ? 'printing_try_changing_search_criteria'.tr : 'printing_recus_apparaitront_ici_apres_ventes'.tr,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -486,7 +486,7 @@ class ReceiptHistoryPage extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: controller.hasMorePages && !controller.isLoading ? controller.loadNextPage : null,
               icon: const Icon(Icons.chevron_right),
-              label: const Text('Suivant'),
+              label: Text('plain_next'.tr),
             ),
           ],
         ),
@@ -551,7 +551,7 @@ class ReceiptHistoryPage extends StatelessWidget {
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year} à '
+        '${date.year} ${'common_at'.tr} '
         '${date.hour.toString().padLeft(2, '0')}:'
         '${date.minute.toString().padLeft(2, '0')}';
   }

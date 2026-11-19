@@ -483,15 +483,15 @@ class _StockDetailPageState extends State<StockDetailPage> with TickerProviderSt
   String _movementLabel(String type) {
     switch (type.toLowerCase()) {
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       case 'vente':
         return 'inventory_movement_sale'.tr;
       case 'ajustement':
-        return 'Ajustement';
+        return 'plain_adjustment'.tr;
       case 'retour':
-        return 'Retour';
+        return 'plain_return'.tr;
       case 'approvisionnement':
-        return 'Approvisionnement';
+        return 'plain_supply'.tr;
       default:
         return type;
     }

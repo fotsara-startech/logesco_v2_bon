@@ -353,9 +353,9 @@ class TransactionCompte {
       case 'credit':
         return 'sales_payment_credit'.tr;
       case 'paiement':
-        return 'Paiement';
+        return 'plain_payment'.tr;
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       default:
         return typeTransaction;
     }

@@ -71,8 +71,7 @@ class SyncDoublonsCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Ces fiches semblent désigner la même personne ou la même boutique, saisies sur deux postes. '
-              'sync_application_ne_fusionne_pas_toute_seule'.tr,
+              'sync_doublons_explanation'.tr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
             ),
             const SizedBox(height: 10),

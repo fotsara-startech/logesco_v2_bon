@@ -376,15 +376,15 @@ class _CustomerAccountViewState extends State<CustomerAccountView> {
   String _getTransactionTypeLabel(String type) {
     switch (type) {
       case 'achat_comptant':
-        return 'Achat comptant';
+        return 'plain_cash_purchase'.tr;
       case 'achat_credit':
         return 'customers_credit_purchase'.tr;
       case 'paiement':
-        return 'Paiement';
+        return 'plain_payment'.tr;
       case 'paiement_dette':
         return 'customers_debt_payment'.tr;
       case 'depot':
-        return 'Approvisionnement';
+        return 'plain_supply'.tr;
       case 'credit':
         return 'sales_payment_credit'.tr;
       case 'debit':

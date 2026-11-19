@@ -85,24 +85,24 @@ class CustomerTransaction {
   String get typeTransactionDisplay {
     switch (typeTransaction) {
       case 'paiement':
-        return 'Paiement';
+        return 'plain_payment'.tr;
       case 'credit':
         return 'sales_payment_credit'.tr;
       case 'debit':
         return 'customers_debit'.tr;
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       // Anciens types pour compatibilité
       case 'paiement_dette':
-        return 'Paiement dette';
+        return 'plain_debt_payment'.tr;
       case 'achat_credit':
         return 'customers_credit_purchase'.tr;
       case 'achat_comptant':
-        return 'Achat comptant';
+        return 'plain_cash_purchase'.tr;
       case 'credit_manuel':
-        return 'Crédit manuel';
+        return 'plain_manual_credit'.tr;
       case 'debit_manuel':
-        return 'Débit manuel';
+        return 'plain_manual_debit'.tr;
       default:
         return typeTransaction.replaceAll('_', ' ').toUpperCase();
     }

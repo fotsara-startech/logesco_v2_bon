@@ -63,7 +63,7 @@ class CategoryStatsCard extends GetView<ProductController> {
           Expanded(
             flex: 3,
             child: Text(
-              category.isEmpty ? 'Sans catégorie' : category,
+              category.isEmpty ? 'products_without_category'.tr : category,
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),

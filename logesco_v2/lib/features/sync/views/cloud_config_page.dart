@@ -117,9 +117,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
       builder: (ctx) => AlertDialog(
         title: Text('sync_enregistrer_redemarrer_serveur'.tr),
         content: Text(
-          "Le lien sera enregistré, puis le serveur de LOGESCO redémarrera pour utiliser le cloud. "
-          "Cela prend environ une minute : les autres postes du réseau perdront la connexion un instant.\n\n"
-          'sync_faites_dehors_heures_vente_si_possible'.tr,
+          'sync_restart_dialog_message'.tr,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('suppliers_form_cancel'.tr)),
@@ -167,7 +165,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
     if (_erreurLecture != null) {
       return Card(color: Colors.red.shade50, child: Padding(padding: const EdgeInsets.all(16), child: Text(_erreurLecture!)));
     }
-    if (c == null) return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Chargement...')));
+    if (c == null) return Card(child: Padding(padding: EdgeInsets.all(16), child: Text('plain_loading'.tr)));
 
     final Color fond = c.active ? Colors.green.shade50 : Colors.blueGrey.shade50;
     return Card(
@@ -248,8 +246,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
         padding: const EdgeInsets.only(top: 8),
         child: Text(
           t.cloudDejaRempli
-              ? "Ce cloud contient déjà des données (${d['produits']} produit(s), ${d['clients']} client(s), ${d['ventes']} vente(s)). "
-                  'sync_donnees_deja_presentes_sur_cet_ordinateur'.tr
+              ? 'sync_cloud_has_data_message'.trParams({'produits': '${d['produits']}', 'clients': '${d['clients']}', 'ventes': '${d['ventes']}'})
               : 'sync_cloud_est_vide_donnees_cet_ordinateur'.tr,
           style: const TextStyle(fontSize: 12),
         ),
@@ -262,7 +259,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
   Widget build(BuildContext context) {
     if (!CloudConfigPage.disponible) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Connexion au cloud')),
+        appBar: AppBar(title: Text('plain_cloud_connection'.tr)),
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -275,7 +272,7 @@ class _CloudConfigPageState extends State<CloudConfigPage> {
     final peutEnregistrer = !_occupe && _test != null && _test!.ok && _test!.schemaPret;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Connexion au cloud (Neon)')),
+      appBar: AppBar(title: Text('plain_cloud_connection_neon'.tr)),
       body: AbsorbPointer(
         absorbing: _occupe,
         child: ListView(

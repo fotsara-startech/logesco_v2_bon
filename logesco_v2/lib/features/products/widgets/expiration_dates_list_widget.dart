@@ -418,7 +418,7 @@ class _ExpirationDatesListWidgetState extends State<ExpirationDatesListWidget> {
               Get.back();
               controller.markAsExhausted(date.id).then((_) => _loadStats());
             },
-            child: const Text('Confirmer'),
+            child: Text('plain_confirm'.tr),
           ),
         ],
       ),

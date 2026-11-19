@@ -34,8 +34,8 @@ mixin SubscriptionVerificationMixin {
 
       if (!status.isActive && !status.isInGracePeriod) {
         _showSubscriptionError(
-          'Abonnement expir',
-          actionName != null ? 'L\'action "$actionName" nécessite un abonnement actif.' : 'subscription_action_necessite_abonnement_actif_2'.tr,
+          'subscription_expired_title'.tr,
+          actionName != null ? 'subscription_action_named_requires_active'.trParams({'action': actionName}) : 'subscription_action_necessite_abonnement_actif_2'.tr,
         );
         return false;
       }
@@ -43,7 +43,7 @@ mixin SubscriptionVerificationMixin {
       if (status.isInGracePeriod && !allowGracePeriod && requireActiveSubscription) {
         _showSubscriptionError(
           'subscription_grace_period'.tr,
-          actionName != null ? 'L\'action "$actionName" n\'est pas autorise en Période de grâce.' : 'subscription_action_n_est_pas_autorise_periode'.tr,
+          actionName != null ? 'subscription_action_named_not_allowed_grace'.trParams({'action': actionName}) : 'subscription_action_n_est_pas_autorise_periode'.tr,
         );
         return false;
       }
@@ -78,8 +78,8 @@ mixin SubscriptionVerificationMixin {
     final status = subscriptionController.currentStatus;
     if (status?.type == SubscriptionType.trial) {
       _showSubscriptionError(
-        'Fonctionnalit premium',
-        featureName != null ? 'La fonctionnalit "$featureName" nécessite un abonnement payant.' : 'subscription_fonctionnalit_necessite_abonnement_payant'.tr,
+        'subscription_premium_feature_title'.tr,
+        featureName != null ? 'subscription_feature_named_requires_paid'.trParams({'feature': featureName}) : 'subscription_fonctionnalit_necessite_abonnement_payant'.tr,
       );
       return false;
     }

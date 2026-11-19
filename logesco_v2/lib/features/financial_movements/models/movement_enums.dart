@@ -1,25 +1,37 @@
 import 'package:get/get.dart';
 /// Enums pour le module des mouvements financiers
 
+/// Traduction avec repli : `.tr` renvoie la clé elle-même quand elle n'existe pas.
+String _fmTr(String key, String fallback) {
+  final t = key.tr;
+  return t == key ? fallback : t;
+}
+
+
 /// Types de mouvements financiers
 enum MovementType {
   /// Sortie d'argent (dépense)
-  expense('expense', 'financialmovements_depense'.tr, 'Sortie d\'argent'),
+  expense('expense', 'Dépense', 'Sortie d\'argent'),
 
   /// Remboursement
-  refund('refund', 'Remboursement', 'financialmovements_remboursement_depense'.tr),
+  refund('refund', 'Remboursement', 'Remboursement de dépense'),
 
   /// Avance
-  advance('advance', 'Avance', 'financialmovements_avance_sur_salaire_depense'.tr),
+  advance('advance', 'Avance', 'Avance sur salaire ou dépense'),
 
   /// Autre type de mouvement
-  other('other', 'Autre', 'financialmovements_autre_type_mouvement'.tr);
+  other('other', 'Autre', 'Autre type de mouvement');
 
-  const MovementType(this.code, this.label, this.description);
+  const MovementType(this.code, this._label, this._description);
 
   final String code;
-  final String label;
-  final String description;
+  final String _label;
+  final String _description;
+
+  /// Libellé traduit (le français d'origine sert de repli si la clé manque)
+  String get label => _fmTr('fm_enum_MovementType_${code}_label', _label);
+
+  String get description => _fmTr('fm_enum_MovementType_${code}_desc', _description);
 
   /// Trouve un type de mouvement par son code
   static MovementType? fromCode(String code) {
@@ -39,25 +51,30 @@ enum MovementType {
 /// Statuts des mouvements financiers
 enum MovementStatus {
   /// Mouvement en attente de validation
-  pending('pending', 'En attente', 'financialmovements_attente_validation'.tr),
+  pending('pending', 'En attente', 'En attente de validation'),
 
   /// Mouvement validé
-  validated('validated', 'financialmovements_valide'.tr, 'financialmovements_mouvement_valide_approuve'.tr),
+  validated('validated', 'Validé', 'Mouvement validé et approuvé'),
 
   /// Mouvement rejeté
-  rejected('rejected', 'financialmovements_rejete'.tr, 'financialmovements_mouvement_rejete'.tr),
+  rejected('rejected', 'Rejeté', 'Mouvement rejeté'),
 
   /// Mouvement annulé
-  cancelled('cancelled', 'suppliers_annule'.tr, 'financialmovements_mouvement_annule'.tr),
+  cancelled('cancelled', 'Annulé', 'Mouvement annulé'),
 
   /// Mouvement en cours de traitement
-  processing('processing', 'En cours', 'financialmovements_cours_traitement'.tr);
+  processing('processing', 'En cours', 'En cours de traitement');
 
-  const MovementStatus(this.code, this.label, this.description);
+  const MovementStatus(this.code, this._label, this._description);
 
   final String code;
-  final String label;
-  final String description;
+  final String _label;
+  final String _description;
+
+  /// Libellé traduit (le français d'origine sert de repli si la clé manque)
+  String get label => _fmTr('fm_enum_MovementStatus_${code}_label', _label);
+
+  String get description => _fmTr('fm_enum_MovementStatus_${code}_desc', _description);
 
   /// Trouve un statut par son code
   static MovementStatus? fromCode(String code) {
@@ -102,31 +119,36 @@ enum ReportPeriod {
   today('today', 'Aujourd\'hui', 'Mouvements d\'aujourd\'hui'),
 
   /// Cette semaine
-  thisWeek('this_week', 'sales_this_week'.tr, 'financial_movements_filter_this_week_desc'.tr),
+  thisWeek('this_week', 'Cette semaine', 'Mouvements de cette semaine'),
 
   /// Ce mois
-  thisMonth('this_month', 'analytics_this_month'.tr, 'financial_movements_filter_this_month_desc'.tr),
+  thisMonth('this_month', 'Ce mois', 'Mouvements de ce mois'),
 
   /// Cette année
-  thisYear('this_year', 'analytics_this_year'.tr, 'financialmovements_mouvements_annee'.tr),
+  thisYear('this_year', 'Cette année', 'Mouvements de cette année'),
 
   /// 7 derniers jours
-  last7Days('last_7_days', '7 derniers jours', 'financialmovements_mouvements_7_derniers_jours'.tr),
+  last7Days('last_7_days', '7 derniers jours', 'Mouvements des 7 derniers jours'),
 
   /// 30 derniers jours
-  last30Days('last_30_days', '30 derniers jours', 'financialmovements_mouvements_30_derniers_jours'.tr),
+  last30Days('last_30_days', '30 derniers jours', 'Mouvements des 30 derniers jours'),
 
   /// 3 derniers mois
-  last3Months('last_3_months', '3 derniers mois', 'financialmovements_mouvements_3_derniers_mois'.tr),
+  last3Months('last_3_months', '3 derniers mois', 'Mouvements des 3 derniers mois'),
 
   /// Période personnalisée
-  custom('custom', 'sales_custom_period'.tr, 'financialmovements_periode_definie_par_utilisateur'.tr);
+  custom('custom', 'Période personnalisée', 'Période définie par l\'utilisateur');
 
-  ReportPeriod(this.code, this.label, this.description);
+  const ReportPeriod(this.code, this._label, this._description);
 
   final String code;
-  final String label;
-  final String description;
+  final String _label;
+  final String _description;
+
+  /// Libellé traduit (le français d'origine sert de repli si la clé manque)
+  String get label => _fmTr('fm_enum_ReportPeriod_${code}_label', _label);
+
+  String get description => _fmTr('fm_enum_ReportPeriod_${code}_desc', _description);
 
   /// Trouve une période par son code
   static ReportPeriod? fromCode(String code) {
@@ -199,22 +221,27 @@ enum ReportPeriod {
 /// Niveaux de priorité pour les mouvements
 enum MovementPriority {
   /// Priorité basse
-  low('low', 'Basse', 'financialmovements_priorite_basse'.tr),
+  low('low', 'Basse', 'Priorité basse'),
 
   /// Priorité normale
-  normal('normal', 'Normale', 'financialmovements_priorite_normale'.tr),
+  normal('normal', 'Normale', 'Priorité normale'),
 
   /// Priorité haute
-  high('high', 'Haute', 'financialmovements_priorite_haute'.tr),
+  high('high', 'Haute', 'Priorité haute'),
 
   /// Priorité urgente
-  urgent('urgent', 'Urgente', 'financialmovements_priorite_urgente'.tr);
+  urgent('urgent', 'Urgente', 'Priorité urgente');
 
-  MovementPriority(this.code, this.label, this.description);
+  const MovementPriority(this.code, this._label, this._description);
 
   final String code;
-  final String label;
-  final String description;
+  final String _label;
+  final String _description;
+
+  /// Libellé traduit (le français d'origine sert de repli si la clé manque)
+  String get label => _fmTr('fm_enum_MovementPriority_${code}_label', _label);
+
+  String get description => _fmTr('fm_enum_MovementPriority_${code}_desc', _description);
 
   /// Trouve une priorité par son code
   static MovementPriority? fromCode(String code) {
@@ -259,31 +286,36 @@ enum MovementPriority {
 /// Types d'actions pour l'audit
 enum AuditAction {
   /// Création d'un mouvement
-  create('create', 'roles_priv_create'.tr, 'financialmovements_creation_nouveau_mouvement_2'.tr),
+  create('create', 'Création', 'Création d\'un nouveau mouvement'),
 
   /// Modification d'un mouvement
-  update('update', 'Modification', 'financialmovements_modification_mouvement_existant'.tr),
+  update('update', 'Modification', 'Modification d\'un mouvement existant'),
 
   /// Suppression d'un mouvement
-  delete('delete', 'Suppression', 'financialmovements_suppression_mouvement_3'.tr),
+  delete('delete', 'Suppression', 'Suppression d\'un mouvement'),
 
   /// Validation d'un mouvement
-  validate('validate', 'Validation', 'financialmovements_validation_mouvement'.tr),
+  validate('validate', 'Validation', 'Validation d\'un mouvement'),
 
   /// Rejet d'un mouvement
-  reject('reject', 'Rejet', 'financialmovements_rejet_mouvement'.tr),
+  reject('reject', 'Rejet', 'Rejet d\'un mouvement'),
 
   /// Annulation d'un mouvement
-  cancel('cancel', 'Annulation', 'financialmovements_annulation_mouvement'.tr),
+  cancel('cancel', 'Annulation', 'Annulation d\'un mouvement'),
 
   /// Consultation d'un mouvement
-  view('view', 'Consultation', 'financialmovements_consultation_mouvement'.tr);
+  view('view', 'Consultation', 'Consultation d\'un mouvement');
 
-  const AuditAction(this.code, this.label, this.description);
+  const AuditAction(this.code, this._label, this._description);
 
   final String code;
-  final String label;
-  final String description;
+  final String _label;
+  final String _description;
+
+  /// Libellé traduit (le français d'origine sert de repli si la clé manque)
+  String get label => _fmTr('fm_enum_AuditAction_${code}_label', _label);
+
+  String get description => _fmTr('fm_enum_AuditAction_${code}_desc', _description);
 
   /// Trouve une action par son code
   static AuditAction? fromCode(String code) {

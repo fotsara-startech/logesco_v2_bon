@@ -118,7 +118,7 @@ class ExpirationDate {
   /// Retourne une description du statut
   String getStatusDescription() {
     if (estEpuise) {
-      return 'puisé';
+      return 'products_status_exhausted'.tr;
     }
     if (estPerime) {
       return 'products_perime_depuis_jour_s'.trParams({'abs': '${joursRestants.abs()}'});

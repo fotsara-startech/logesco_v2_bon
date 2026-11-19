@@ -43,7 +43,7 @@ class ProductTypeSelector extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           choisi
-              ? (enEdition ? 'Changer le type a des conséquences sur le stock : une explication vous sera présentée.' : 'products_vous_pouvez_encore_changer_avant_continuer'.tr)
+              ? (enEdition ? 'products_changing_type_has_stock_consequences'.tr : 'products_vous_pouvez_encore_changer_avant_continuer'.tr)
               : 'products_choisissez_abord_choix_determine_champs_remplir'.tr,
           style: TextStyle(fontSize: 12, color: choisi ? Colors.grey.shade700 : Colors.orange.shade800),
         ),
@@ -139,7 +139,7 @@ Future<bool?> confirmerChangementDeType(BuildContext context, {required bool ver
         ]
       : [
           'products_produit_sera_gere_stock_chaque_vente'.tr,
-          'Son stock de départ est probablement à 0 : enregistrez une réception ou un inventaire avant de le vendre.',
+          'products_initial_stock_probably_zero'.tr,
           'products_vous_pourrez_renseigner_prix_achat_seuil'.tr,
           'products_ventes_deja_faites_ne_changent_pas'.tr,
         ];

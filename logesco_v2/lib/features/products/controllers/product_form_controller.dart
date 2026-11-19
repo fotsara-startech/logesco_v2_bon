@@ -308,8 +308,7 @@ class ProductFormController extends GetxController {
     final achat = double.tryParse(prixAchatController.text.trim());
     final perte = Product.perteParUnite(vente: vente, achat: achat, estService: estService.value);
     avertissementPrix.value = perte > 0
-        ? "Attention : le prix de vente (${CurrencyConstants.formatAmount(vente!)}) est inférieur au prix d'achat (${CurrencyConstants.formatAmount(achat!)}). "
-            'products_chaque_vente_fera_perdre_par_unite'.trParams({'formatAmount': '${CurrencyConstants.formatAmount(perte)}'})
+        ? 'products_selling_below_purchase_warning'.trParams({'vente': CurrencyConstants.formatAmount(vente!), 'achat': CurrencyConstants.formatAmount(achat!), 'perte': CurrencyConstants.formatAmount(perte)})
         : '';
   }
 

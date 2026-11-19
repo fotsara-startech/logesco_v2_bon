@@ -104,7 +104,7 @@ class CustomerFormController extends GetxController {
     if (value != null && value.trim().isNotEmpty) {
       final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
       if (!emailRegex.hasMatch(value.trim())) {
-        return 'Format d\'email invalide';
+        return 'plain_invalid_email_format'.tr;
       }
     }
     return null;

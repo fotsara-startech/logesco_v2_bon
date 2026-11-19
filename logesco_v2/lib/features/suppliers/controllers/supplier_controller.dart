@@ -584,7 +584,7 @@ class SupplierController extends GetxController {
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),
-              child: const Text('Importer'),
+              child: Text('plain_import'.tr),
             ),
           ],
         ),

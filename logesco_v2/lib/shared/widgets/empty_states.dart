@@ -278,7 +278,7 @@ class NetworkErrorState extends StatelessWidget {
       icon: Icons.wifi_off_outlined,
       title: 'shared_erreur_connexion'.tr,
       subtitle: 'shared_verifiez_votre_connexion_internet_reessayez'.tr,
-      actionText: onRetry != null ? 'Réessayer' : null,
+      actionText: onRetry != null ? 'shared_retry'.tr : null,
       onAction: onRetry,
     );
   }
@@ -299,7 +299,7 @@ class ServerErrorState extends StatelessWidget {
       icon: Icons.cloud_off_outlined,
       title: 'error_server'.tr,
       subtitle: 'shared_erreur_s_est_produite_sur_serveur'.tr,
-      actionText: onRetry != null ? 'Réessayer' : null,
+      actionText: onRetry != null ? 'shared_retry'.tr : null,
       onAction: onRetry,
     );
   }

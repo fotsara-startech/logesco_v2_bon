@@ -149,7 +149,7 @@ extension InventoryTypeExtension on InventoryType {
       case InventoryType.PARTIEL:
         return 'Inventaire Partiel';
       case InventoryType.TOTAL:
-        return 'Inventaire Total';
+        return 'plain_full_inventory'.tr;
     }
   }
 

@@ -89,7 +89,7 @@ class SyncDriftCard extends StatelessWidget {
                   child: Text(
                     r == null
                         ? 'sync_ecart_avec_cloud_pas_encore_verifie'.tr
-                        : (alerte ? '$inexpliques élément(s) en écart avec le cloud' : 'sync_poste_cloud_concordent'.tr),
+                        : (alerte ? 'sync_drift_count_label'.trParams({'count': '$inexpliques'}) : 'sync_poste_cloud_concordent'.tr),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
@@ -103,8 +103,7 @@ class SyncDriftCard extends StatelessWidget {
             if (alerte) ...[
               const SizedBox(height: 6),
               Text(
-                "Ces éléments existent d'un seul côté ou ont une valeur différente, sans envoi ni réception en cours qui l'explique."
-                '${r!.anciens > 0 ? ' ${r.anciens} durent depuis plus d\'un jour.' : ''}',
+                'sync_drift_explanation'.tr + (r!.anciens > 0 ? ' ' + 'sync_drift_old_suffix'.trParams({'count': '${r.anciens}'}) : ''),
                 style: TextStyle(fontSize: 12, color: r.anciens > 0 ? Colors.red.shade800 : Colors.grey.shade800),
               ),
               const SizedBox(height: 8),

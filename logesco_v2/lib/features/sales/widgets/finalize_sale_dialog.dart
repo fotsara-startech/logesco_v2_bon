@@ -397,7 +397,7 @@ class _FinalizeSaleDialogState extends State<FinalizeSaleDialog> {
 
               // 5. Net à payer
               const Divider(height: 20),
-              _summaryLine(tvaEnabled ? 'Net à payer (TTC)' : 'Net à payer', fmt(net), color: Colors.blue, strong: true, size: 26),
+              _summaryLine(tvaEnabled ? 'sales_net_to_pay_ttc'.tr : 'sales_net_to_pay'.tr, fmt(net), color: Colors.blue, strong: true, size: 26),
 
               // Avance du client utilisée pour cette vente
               if (_advance > 0) ...[

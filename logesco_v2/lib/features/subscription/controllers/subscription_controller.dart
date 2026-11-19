@@ -213,17 +213,17 @@ class SubscriptionController extends GetxController {
     if (!AppConfig.enableLicenseControl) return 'subscription_licence_vie_acces_complet'.tr;
 
     final status = _currentStatus.value;
-    if (status == null) return 'Statut inconnu';
+    if (status == null) return 'subscription_status_unknown'.tr;
     if (!status.isActive) {
-      return status.isInGracePeriod ? 'Période de grâce active - Renouvelez maintenant' : 'Abonnement expir - Activation requise';
+      return status.isInGracePeriod ? 'subscription_grace_active_renew_now'.tr : 'subscription_expired_activation_required'.tr;
     }
     if (status.type == SubscriptionType.trial) {
       final days = status.remainingDays ?? 0;
-      return days <= 1 ? 'Période d\'essai expire ${days == 0 ? 'aujourd\'hui' : 'demain'}' : 'Période d\'essai - $days jours restants';
+      return days <= 1 ? (days == 0 ? 'subscription_trial_expires_today'.tr : 'subscription_trial_expires_tomorrow'.tr) : 'subscription_trial_days_left'.trParams({'days': '$days'});
     }
     final days = status.remainingDays ?? 0;
-    if (days <= 3) return 'Abonnement expire dans $days jour${days > 1 ? 's' : ''}';
-    return 'Abonnement actif';
+    if (days <= 3) return 'subscription_expires_in_days'.trParams({'days': '$days'});
+    return 'subscription_active'.tr;
   }
 
   void clearError() => _errorMessage.value = '';

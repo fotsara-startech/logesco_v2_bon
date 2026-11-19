@@ -118,7 +118,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
                 labelText: 'products_category'.tr,
                 prefixIcon: const Icon(Icons.category),
                 border: const OutlineInputBorder(),
-                helperText: widget.availableCategories.isEmpty ? 'Aucune catégorie disponible' : 'products_categorie_s_disponible_s'.trParams({'length': '${widget.availableCategories.length}'}),
+                helperText: widget.availableCategories.isEmpty ? 'stock_category_empty'.tr : 'products_categorie_s_disponible_s'.trParams({'length': '${widget.availableCategories.length}'}),
                 suffixIcon: _isCreatingCategory
                     ? const SizedBox(
                         width: 20,
@@ -213,7 +213,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
         // Bouton pour actualiser les catégories
         ActionChip(
           avatar: const Icon(Icons.refresh, size: 16),
-          label: const Text('Actualiser'),
+          label: Text('plain_refresh'.tr),
           onPressed: widget.enabled ? _refreshCategories : null,
         ),
       ],
@@ -241,8 +241,8 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
             const SizedBox(height: 16),
             TextField(
               controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optionnelle)',
+              decoration: InputDecoration(
+                labelText: 'plain_description_optional'.tr,
                 border: OutlineInputBorder(),
               ),
               maxLines: 2,

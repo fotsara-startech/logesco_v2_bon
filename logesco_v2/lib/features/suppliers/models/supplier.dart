@@ -261,11 +261,11 @@ class SupplierTransaction {
       case 'debit':
         return 'customers_debit'.tr;
       case 'paiement':
-        return 'Paiement';
+        return 'plain_payment'.tr;
       case 'achat':
-        return 'Achat';
+        return 'plain_purchase'.tr;
       case 'ajustement':
-        return 'Ajustement';
+        return 'plain_adjustment'.tr;
       default:
         return typeTransaction;
     }

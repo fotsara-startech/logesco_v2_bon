@@ -156,8 +156,7 @@ class CommercialController extends GetxController {
     } catch (e) {
       String message = 'suppliers_delete_error'.tr;
       if (e is ApiException && e.statusCode == 409) {
-        message = 'Impossible de supprimer : des ventes sont attribuées à ce commercial. '
-            'commercials_desactivez_plutot_que_supprimer'.tr;
+        message = 'commercials_cannot_delete_has_sales'.tr;
       }
       SnackbarHelper.error(message, duration: const Duration(seconds: 5));
     }
