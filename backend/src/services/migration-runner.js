@@ -40,6 +40,7 @@ const MIGRATION_ORDER = [
   'add_separation_commande_visibilite_ventes',
   'add_avance_utilisee',
   'add_annulation_articles_vente',
+  'add_compta_socle',
 ];
 
 const TRACKING_TABLE = '_app_migrations';

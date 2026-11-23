@@ -52,6 +52,9 @@ const { createExpenseCategoriesRouter } = require('./routes/expense-categories')
 const companySettingsRouter = require('./routes/company-settings');
 const createPrintingRouter = require('./routes/printing');
 const { createFinancialMovementRouter } = require('./routes/financial-movements');
+const { createComptaRouter } = require('./routes/compta');
+const { ComptaService } = require('./compta/compta-service');
+const comptaReferentiel = require('./compta/referentiel');
 const { createCommercialReportRouter } = require('./routes/commercial-reports');
 const { createMovementCategoryRouter } = require('./routes/movement-categories');
 const { createUserRouter } = require('./routes/users');
@@ -539,6 +542,14 @@ class LogescoServer {
       // Seed automatique si la base est vide (première installation)
       await this._runAutoSeed(prisma);
 
+      // Comptabilité : plan comptable et journaux livrés avec l'application (idempotent)
+      try {
+        const ref = await comptaReferentiel.ensureReferentiel(prisma);
+        if (ref.comptes || ref.journaux) console.log(`📒 Comptabilité : ${ref.comptes} compte(s) et ${ref.journaux} journal(aux) chargé(s)`);
+      } catch (e) {
+        console.warn('⚠️  Comptabilité : chargement du référentiel impossible (non bloquant) :', e.message);
+      }
+
       // Initialiser les modèles et services en premier → serveur prêt le plus vite possible
       this.models = new ModelFactory(prisma);
       this.authService = new AuthService(this.models.utilisateur);
@@ -572,6 +583,8 @@ class LogescoServer {
         this.financialMovementService = new FinancialMovementService(prisma, syncService);
         this.movementReportService = new MovementReportService(prisma, this.financialMovementService);
       }
+
+      this.comptaService = new ComptaService(prisma, this.syncService || null);
 
       // Exposer prisma dans app.locals pour le sync middleware
       this.app.locals.prisma = prisma;
@@ -807,6 +820,12 @@ class LogescoServer {
       financialMovementService: this.financialMovementService,
       fileUploadService: this.fileUploadService,
       movementReportService: this.movementReportService
+    }));
+
+    this.app.use(`/api/${apiVersion}/compta`, createComptaRouter({
+      authService: this.authService,
+      prisma: this.models.prisma,
+      comptaService: this.comptaService
     }));
 
     this.app.use(`/api/${apiVersion}/commercial-reports`, createCommercialReportRouter({

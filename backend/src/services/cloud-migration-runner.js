@@ -29,6 +29,10 @@ const MIGRATIONS = [
     sql: `ALTER TABLE details_ventes ADD COLUMN IF NOT EXISTS annule BOOLEAN NOT NULL DEFAULT false;
           ALTER TABLE details_ventes ADD COLUMN IF NOT EXISTS date_annulation TIMESTAMPTZ`,
   },
+  {
+    name: 'add_compta_socle',
+    sql: require('./compta-schema-pg'),
+  },
 ];
 
 const TRACKING_TABLE = '_app_migrations_pg';

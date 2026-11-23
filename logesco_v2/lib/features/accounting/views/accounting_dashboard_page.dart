@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/accounting_controller.dart';
+import '../../../core/routes/app_routes.dart';
 import '../widgets/profitability_overview_widget.dart';
 import '../widgets/financial_balance_widget.dart';
 import '../widgets/period_selector_widget.dart';
@@ -41,12 +42,25 @@ class AccountingDashboardPage extends StatelessWidget {
                     case 'export_excel':
                       _exportToExcel(controller);
                       break;
+                    case 'ledger':
+                      Get.toNamed(AppRoutes.accountingLedger);
+                      break;
                     case 'settings':
                       _showSettings();
                       break;
                   }
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'ledger',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.menu_book, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        Text('compta_title'.tr),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     value: 'export_pdf',
                     child: Row(

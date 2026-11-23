@@ -110,6 +110,8 @@ class AppRoutes {
   // Routes de comptabilité
   static const String accounting = '/accounting';
   static const String accountingDashboard = '/accounting/dashboard';
+  static const String accountingLedger = '/accounting/ledger';
+  static const String accountingEntryForm = '/accounting/ledger/entry';
 
   // Routes de test et développement
   static const String roleTest = '/role-test';

@@ -48,6 +48,9 @@ const PULL_TABLES = [
   'ventes', 'details_ventes', 'ventes_proforma', 'details_ventes_proforma',
   'mouvements_stock', 'transferts_stock', 'transactions_comptes', 'dates_peremption',
   'stock_inventories', 'inventory_items', 'historique_recus', 'parametres_entreprise',
+  // Comptabilité : références d'abord (exercices, comptes, journaux), puis écritures et lignes
+  'compta_parametres', 'compta_exercices', 'compta_periodes', 'compta_comptes', 'compta_journaux',
+  'compta_ecritures', 'compta_lignes',
 ];
 
 // Tables that DO NOT have date_modification column

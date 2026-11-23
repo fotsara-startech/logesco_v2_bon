@@ -88,6 +88,9 @@ import '../../features/financial_movements/models/financial_movement.dart';
 import '../../features/financial_movements/bindings/financial_movement_binding.dart';
 import '../../features/accounting/views/accounting_dashboard_page.dart';
 import '../../features/accounting/bindings/accounting_binding.dart';
+import '../../features/accounting/bindings/ledger_binding.dart';
+import '../../features/accounting/views/ledger_page.dart';
+import '../../features/accounting/views/ledger_entry_form_page.dart';
 import '../../features/analytics/views/product_analytics_page.dart';
 import '../../features/analytics/bindings/analytics_binding.dart';
 import '../../features/boutiques/views/boutiques_management_page.dart';
@@ -487,6 +490,16 @@ class AppPages {
       name: AppRoutes.accountingDashboard,
       page: () => const AccountingDashboardPage(),
       binding: AccountingBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.accountingLedger,
+      page: () => const LedgerPage(),
+      binding: LedgerBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.accountingEntryForm,
+      page: () => const LedgerEntryFormPage(),
+      binding: LedgerBinding(),
     ),
 
     // Rapports de remises

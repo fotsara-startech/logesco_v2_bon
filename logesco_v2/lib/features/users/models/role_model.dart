@@ -199,6 +199,7 @@ class ModulePrivileges {
     'company_settings': ['READ', 'UPDATE'],
     'printing': ['READ', 'PRINT', 'REPRINT'],
     'reports': ['READ', 'EXPORT'],
+    'accounting': ['READ', 'CREATE', 'VALIDATE', 'CLOSE', 'MANAGE'],
   };
 
   static const Map<String, String> moduleDisplayNames = {
@@ -219,6 +220,7 @@ class ModulePrivileges {
     'company_settings': 'roles_module_company_settings',
     'printing': 'roles_module_printing',
     'reports': 'roles_module_reports',
+    'accounting': 'roles_module_accounting',
   };
 
   static const Map<String, String> privilegeDisplayNames = {
@@ -240,5 +242,7 @@ class ModulePrivileges {
     'REPRINT': 'roles_priv_reprint',
     'EXPORT': 'roles_priv_export',
     'BACKDATE': 'roles_priv_backdate',
+    'VALIDATE': 'roles_priv_validate',
+    'MANAGE': 'roles_priv_manage',
   };
 }

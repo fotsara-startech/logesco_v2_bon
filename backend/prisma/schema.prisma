@@ -920,3 +920,138 @@ model LicenseAuditLog {
   @@index([timestamp], map: "idx_license_audit_timestamp")
   @@map("license_audit_logs")
 }
+
+// ============================================================================
+// COMPTABILITÉ (SYSCOHADA) — voir docs/CONCEPTION_COMPTABILITE_OHADA.md
+// Montants en entiers FCFA. Pas de clé étrangère vers boutiques/clients/
+// fournisseurs : ces colonnes sont de simples références (comme tiers_id) afin
+// que la synchronisation n'ait pas à respecter d'ordre entre ces tables.
+// ============================================================================
+
+model ComptaExercice {
+  id               Int              @id @default(autoincrement())
+  libelle          String
+  dateDebut        DateTime         @map("date_debut")
+  dateFin          DateTime         @map("date_fin")
+  statut           String           @default("ouvert") // ouvert | cloture
+  dateCloture      DateTime?        @map("date_cloture")
+  dateCreation     DateTime         @default(now()) @map("date_creation")
+  dateModification DateTime         @updatedAt @map("date_modification")
+  periodes         ComptaPeriode[]
+  ecritures        ComptaEcriture[]
+
+  @@index([statut], map: "idx_compta_exercices_statut")
+  @@map("compta_exercices")
+}
+
+model ComptaPeriode {
+  id               Int            @id @default(autoincrement())
+  exerciceId       Int            @map("exercice_id")
+  mois             Int
+  statut           String         @default("ouverte") // ouverte | verrouillee
+  dateCreation     DateTime       @default(now()) @map("date_creation")
+  dateModification DateTime       @updatedAt @map("date_modification")
+  exercice         ComptaExercice @relation(fields: [exerciceId], references: [id])
+
+  @@unique([exerciceId, mois])
+  @@map("compta_periodes")
+}
+
+model ComptaCompte {
+  id               Int           @id @default(autoincrement())
+  numero           String        @unique
+  libelle          String
+  classe           Int
+  nature           String // actif | passif | charge | produit | tresorerie | tiers | hors_bilan
+  sens             String? // debit | credit (sens normal du solde)
+  parentNumero     String?       @map("parent_numero")
+  estCollectif     Boolean       @default(false) @map("est_collectif")
+  lettrable        Boolean       @default(false)
+  systeme          Boolean       @default(true)
+  actif            Boolean       @default(true)
+  dateCreation     DateTime      @default(now()) @map("date_creation")
+  dateModification DateTime      @updatedAt @map("date_modification")
+  lignes           ComptaLigne[]
+
+  @@index([classe], map: "idx_compta_comptes_classe")
+  @@map("compta_comptes")
+}
+
+model ComptaJournal {
+  id               Int              @id @default(autoincrement())
+  code             String           @unique
+  libelle          String
+  type             String // ventes | achats | caisse | banque | od | a_nouveaux
+  dateCreation     DateTime         @default(now()) @map("date_creation")
+  dateModification DateTime         @updatedAt @map("date_modification")
+  ecritures        ComptaEcriture[]
+
+  @@map("compta_journaux")
+}
+
+model ComptaEcriture {
+  id               Int            @id @default(autoincrement())
+  exerciceId       Int            @map("exercice_id")
+  journalId        Int            @map("journal_id")
+  numeroPiece      String?        @unique @map("numero_piece")
+  dateEcriture     DateTime       @map("date_ecriture")
+  libelle          String
+  statut           String         @default("brouillon") // brouillon | validee | contrepassee
+  origine          String // auto | manuelle | ouverture | cloture
+  sourceType       String?        @map("source_type")
+  sourceId         Int?           @map("source_id")
+  sourceRole       String?        @map("source_role")
+  contrepasseId    Int?           @map("contrepasse_id") // pièce annulée par celle-ci
+  boutiqueId       Int?           @map("boutique_id")
+  utilisateurId    Int?           @map("utilisateur_id")
+  dateValidation   DateTime?      @map("date_validation")
+  dateCreation     DateTime       @default(now()) @map("date_creation")
+  dateModification DateTime       @updatedAt @map("date_modification")
+  exercice         ComptaExercice @relation(fields: [exerciceId], references: [id])
+  journal          ComptaJournal  @relation(fields: [journalId], references: [id])
+  lignes           ComptaLigne[]
+
+  @@unique([sourceType, sourceId, sourceRole], map: "uq_compta_ecriture_source")
+  @@index([exerciceId, dateEcriture], map: "idx_compta_ecritures_exercice_date")
+  @@index([journalId], map: "idx_compta_ecritures_journal")
+  @@index([statut], map: "idx_compta_ecritures_statut")
+  @@index([boutiqueId], map: "idx_compta_ecritures_boutique")
+  @@map("compta_ecritures")
+}
+
+model ComptaLigne {
+  id               Int            @id @default(autoincrement())
+  ecritureId       Int            @map("ecriture_id")
+  compteId         Int            @map("compte_id")
+  tiersType        String?        @map("tiers_type") // client | fournisseur
+  tiersId          Int?           @map("tiers_id")
+  libelle          String?
+  debit            Int            @default(0)
+  credit           Int            @default(0)
+  lettrage         String?
+  boutiqueId       Int?           @map("boutique_id")
+  dateCreation     DateTime       @default(now()) @map("date_creation")
+  dateModification DateTime       @updatedAt @map("date_modification")
+  ecriture         ComptaEcriture @relation(fields: [ecritureId], references: [id], onDelete: Cascade)
+  compte           ComptaCompte   @relation(fields: [compteId], references: [id])
+
+  @@index([ecritureId], map: "idx_compta_lignes_ecriture")
+  @@index([compteId], map: "idx_compta_lignes_compte")
+  @@index([tiersType, tiersId], map: "idx_compta_lignes_tiers")
+  @@map("compta_lignes")
+}
+
+model ComptaParametres {
+  id                   Int      @id @default(1)
+  regime               String   @default("normal") // normal | smt
+  modeAffichage        String   @default("simple") @map("mode_affichage") // simple | expert
+  dateOuverture        DateTime? @map("date_ouverture")
+  exerciceDefautId     Int?     @map("exercice_defaut_id")
+  tauxTvaDefaut        Float    @default(19.25) @map("taux_tva_defaut")
+  assujettiTva         Boolean  @default(true) @map("assujetti_tva")
+  longueurComptesTiers Int      @default(6) @map("longueur_comptes_tiers")
+  ouvertureValidee     Boolean  @default(false) @map("ouverture_validee")
+  dateModification     DateTime @updatedAt @map("date_modification")
+
+  @@map("compta_parametres")
+}
