@@ -55,6 +55,7 @@ const { createFinancialMovementRouter } = require('./routes/financial-movements'
 const { createComptaRouter } = require('./routes/compta');
 const { ComptaService } = require('./compta/compta-service');
 const { MoteurAuto } = require('./compta/moteur-auto');
+const { EtatsService } = require('./compta/etats');
 const comptaReferentiel = require('./compta/referentiel');
 const { createCommercialReportRouter } = require('./routes/commercial-reports');
 const { createMovementCategoryRouter } = require('./routes/movement-categories');
@@ -588,6 +589,7 @@ class LogescoServer {
       this.comptaService = new ComptaService(prisma, this.syncService || null);
       // Écritures automatiques : générées uniquement par le poste de référence (voir compta/moteur-auto.js)
       this.moteurCompta = new MoteurAuto(prisma, this.comptaService);
+      this.etatsCompta = new EtatsService(prisma, this.comptaService);
       if (process.env.COMPTA_AUTO !== 'off') this.moteurCompta.demarrer();
 
       // Exposer prisma dans app.locals pour le sync middleware
@@ -830,7 +832,8 @@ class LogescoServer {
       authService: this.authService,
       prisma: this.models.prisma,
       comptaService: this.comptaService,
-      moteurAuto: this.moteurCompta
+      moteurAuto: this.moteurCompta,
+      etatsService: this.etatsCompta
     }));
 
     this.app.use(`/api/${apiVersion}/commercial-reports`, createCommercialReportRouter({

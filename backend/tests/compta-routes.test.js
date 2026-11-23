@@ -12,6 +12,7 @@ const { PrismaClient } = require('@prisma/client');
 const referentiel = require('../src/compta/referentiel');
 const { ComptaService } = require('../src/compta/compta-service');
 const { createComptaRouter } = require('../src/routes/compta');
+const { EtatsService } = require('../src/compta/etats');
 
 const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'compta-routes-'));
 const prisma = new PrismaClient({ datasources: { db: { url: `file:${path.join(dossier, 'test.db').replace(/\\/g, '/')}` } } });
@@ -48,7 +49,7 @@ test.before(async () => {
   await referentiel.ensureReferentiel(prisma);
   const app = express();
   app.use(express.json());
-  app.use('/compta', createComptaRouter({ authService, prisma: facade, comptaService: new ComptaService(prisma, null) }));
+  app.use('/compta', createComptaRouter({ authService, prisma: facade, comptaService: new ComptaService(prisma, null), etatsService: new EtatsService(prisma, new ComptaService(prisma, null)) }));
   await new Promise((ok) => { serveur = app.listen(0, '127.0.0.1', ok); });
   base = `http://127.0.0.1:${serveur.address().port}/compta`;
 });

@@ -1,0 +1,58 @@
+{
+  "_avertissement": "Structure simplifiée du compte de résultat et du bilan SYSCOHADA. Les rubriques regroupent les comptes par préfixe ; elles ne reprennent PAS les références officielles (TA, RA, XA...) : à confronter au modèle officiel de la DSF avec un expert-comptable avant tout dépôt.",
+  "resultat": [
+    { "id": "ventes_marchandises", "libelle": "Ventes de marchandises", "type": "produit", "comptes": ["701"] },
+    { "id": "rrr_accordes", "libelle": "Rabais, remises et ristournes accordés", "type": "produit", "comptes": ["709"] },
+    { "id": "achats_marchandises", "libelle": "Achats de marchandises", "type": "charge", "comptes": ["601"] },
+    { "id": "variation_stocks", "libelle": "Variation de stocks de marchandises", "type": "charge", "comptes": ["603"] },
+    { "id": "marge_commerciale", "libelle": "MARGE COMMERCIALE", "type": "total", "formule": [["+", "ventes_marchandises"], ["+", "rrr_accordes"], ["-", "achats_marchandises"], ["-", "variation_stocks"]] },
+    { "id": "autres_ventes", "libelle": "Produits fabriqués, services vendus et produits accessoires", "type": "produit", "comptes": ["702", "703", "704", "705", "706", "707"] },
+    { "id": "autres_produits", "libelle": "Subventions et autres produits", "type": "produit", "comptes": ["71", "72", "73", "751", "752", "753", "755", "756", "757", "758", "78"] },
+    { "id": "autres_achats", "libelle": "Autres achats et fournitures", "type": "charge", "comptes": ["602", "604", "605", "608"] },
+    { "id": "transports", "libelle": "Transports", "type": "charge", "comptes": ["61"] },
+    { "id": "services_exterieurs", "libelle": "Services extérieurs", "type": "charge", "comptes": ["62", "63"] },
+    { "id": "impots_taxes", "libelle": "Impôts et taxes", "type": "charge", "comptes": ["64"] },
+    { "id": "autres_charges", "libelle": "Autres charges", "type": "charge", "comptes": ["651", "652", "653", "654", "655", "656", "657", "658"] },
+    { "id": "charges_personnel", "libelle": "Charges de personnel", "type": "charge", "comptes": ["66"] },
+    { "id": "ebe", "libelle": "EXCÉDENT BRUT D'EXPLOITATION", "type": "total", "formule": [["+", "marge_commerciale"], ["+", "autres_ventes"], ["+", "autres_produits"], ["-", "autres_achats"], ["-", "transports"], ["-", "services_exterieurs"], ["-", "impots_taxes"], ["-", "autres_charges"], ["-", "charges_personnel"]] },
+    { "id": "reprises", "libelle": "Reprises de provisions et dépréciations", "type": "produit", "comptes": ["79"] },
+    { "id": "dotations", "libelle": "Dotations aux amortissements, provisions et dépréciations", "type": "charge", "comptes": ["68", "69", "659"] },
+    { "id": "resultat_exploitation", "libelle": "RÉSULTAT D'EXPLOITATION", "type": "total", "formule": [["+", "ebe"], ["+", "reprises"], ["-", "dotations"]] },
+    { "id": "revenus_financiers", "libelle": "Revenus financiers et produits assimilés", "type": "produit", "comptes": ["77"] },
+    { "id": "frais_financiers", "libelle": "Frais financiers et charges assimilées", "type": "charge", "comptes": ["67"] },
+    { "id": "resultat_financier", "libelle": "RÉSULTAT FINANCIER", "type": "total", "formule": [["+", "revenus_financiers"], ["-", "frais_financiers"]] },
+    { "id": "resultat_ordinaire", "libelle": "RÉSULTAT DES ACTIVITÉS ORDINAIRES", "type": "total", "formule": [["+", "resultat_exploitation"], ["+", "resultat_financier"]] },
+    { "id": "produits_hao", "libelle": "Produits hors activités ordinaires", "type": "produit", "comptes": ["754", "82", "84"] },
+    { "id": "charges_hao", "libelle": "Charges hors activités ordinaires", "type": "charge", "comptes": ["81", "83"] },
+    { "id": "resultat_hao", "libelle": "RÉSULTAT HORS ACTIVITÉS ORDINAIRES", "type": "total", "formule": [["+", "produits_hao"], ["-", "charges_hao"]] },
+    { "id": "impots_resultat", "libelle": "Impôts sur le résultat", "type": "charge", "comptes": ["89"] },
+    { "id": "resultat_net", "libelle": "RÉSULTAT NET", "type": "total", "formule": [["+", "resultat_ordinaire"], ["+", "resultat_hao"], ["-", "impots_resultat"], ["+", "non_classes"]] }
+  ],
+  "bilan": {
+    "actif": [
+      { "id": "immobilisations", "libelle": "Immobilisations brutes", "mode": "net", "comptes": ["21", "22", "23", "24", "25", "26", "27"] },
+      { "id": "amortissements", "libelle": "Amortissements et dépréciations des immobilisations", "mode": "net", "comptes": ["28", "29"] },
+      { "id": "stocks", "libelle": "Stocks", "mode": "net", "comptes": ["31", "32", "33", "34", "35", "36", "37", "38", "39"] },
+      { "id": "creances_clients", "libelle": "Clients", "mode": "debiteur", "comptes": ["411", "412", "413", "414", "415", "416", "417", "418"] },
+      { "id": "avances_fournisseurs", "libelle": "Fournisseurs, avances versées", "mode": "debiteur", "comptes": ["401", "409"] },
+      { "id": "autres_creances", "libelle": "Personnel, État et autres créances", "mode": "debiteur", "comptes": ["42", "43", "44", "45", "46", "47"] },
+      { "id": "tresorerie_actif", "libelle": "Trésorerie (banques, caisses, mobile money)", "mode": "debiteur", "comptes": ["52", "53", "54", "57", "58"] }
+    ],
+    "passif": [
+      { "id": "capital", "libelle": "Capital et primes", "mode": "credit", "comptes": ["10"] },
+      { "id": "reserves", "libelle": "Réserves", "mode": "credit", "comptes": ["11"] },
+      { "id": "report", "libelle": "Report à nouveau", "mode": "credit", "comptes": ["12"] },
+      { "id": "resultat_clos", "libelle": "Résultat net de l'exercice (comptes de résultat clôturés)", "mode": "credit", "comptes": ["13"] },
+      { "id": "subventions", "libelle": "Subventions et provisions réglementées", "mode": "credit", "comptes": ["14", "15"] },
+      { "id": "resultat_en_cours", "libelle": "Résultat de l'exercice en cours", "mode": "calcule" },
+      { "id": "dettes_financieres", "libelle": "Emprunts et dettes financières", "mode": "credit", "comptes": ["16", "17", "18", "19"] },
+      { "id": "fournisseurs", "libelle": "Fournisseurs d'exploitation", "mode": "crediteur", "comptes": ["401", "402", "403", "404", "405", "406", "407", "408"] },
+      { "id": "clients_crediteurs", "libelle": "Clients, avances reçues", "mode": "crediteur", "comptes": ["411", "416", "419"] },
+      { "id": "dettes_fiscales_sociales", "libelle": "Dettes fiscales et sociales", "mode": "crediteur", "comptes": ["42", "43", "44"] },
+      { "id": "autres_dettes", "libelle": "Autres dettes", "mode": "crediteur", "comptes": ["45", "46", "47"] },
+      { "id": "tresorerie_passif", "libelle": "Trésorerie-passif (découverts)", "mode": "crediteur", "comptes": ["52", "53", "54", "57", "58"] }
+    ]
+  },
+  "tresorerie": ["52", "53", "54", "57", "58"],
+  "agees": { "tranches": [30, 60, 90] }
+}

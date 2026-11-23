@@ -1,6 +1,6 @@
 # Conception du module Comptabilité (SYSCOHADA – Cameroun)
 
-> Statut : **phases 1 et 2 réalisées** (socle, puis écritures automatiques — voir les sections « État de la phase » en fin de document). Les phases 3 et 4 restent à faire.
+> Statut : **phases 1 à 3 réalisées** (socle, écritures automatiques, états et exports — voir les sections « État de la phase » en fin de document). La phase 4 reste à faire.
 > Les points marqués **[À VALIDER]** doivent être confirmés par un expert-comptable camerounais avant mise en production auprès de clients.
 
 ---
@@ -445,3 +445,28 @@ Liste complète et libellés officiels à charger depuis le plan SYSCOHADA révi
 - un paiement client direct enregistré sans session de caisse ouverte n'a pas de mouvement de caisse et n'est donc pas vu ; il apparaît dans les contrôles ;
 - chaque passage relit tous les documents depuis l'ouverture (pas de curseur) : à optimiser pour de très gros volumes ;
 - le comportement n'a été vérifié que sur des données de test, pas sur une base réelle de production : lancer d'abord sur une copie et examiner les contrôles.
+
+---
+
+## État de la phase 3 (réalisé)
+
+**États** (`backend/src/compta/etats.js`, structure dans `etats-syscohada.json`, API `/api/v1/compta/etats/*`) :
+- **Compte de résultat** : marge commerciale, excédent brut d'exploitation, résultat d'exploitation, financier, hors activités ordinaires, résultat net. Les comptes de résultat que la structure ne reconnaît pas sont comptés quand même (ligne « non classés »).
+- **Bilan** : actif et passif, résultat de l'exercice en cours inclus tant que les comptes ne sont pas clôturés. Les comptes clients et fournisseurs sont classés **tiers par tiers** (l'avance d'un client ne compense pas la créance d'un autre). Un indicateur signale un bilan non équilibré ou des comptes non classés.
+- **TVA mensuelle** : collectée (443), déductible (445), crédit reporté d'un mois sur l'autre, TVA due. Les écritures d'opérations diverses (liquidation de TVA) sont ignorées pour ne pas fausser la déclaration.
+- **Balance âgée** clients et fournisseurs (0-30, 31-60, 61-90, plus de 90 jours) : les règlements soldent d'abord les plus anciennes échéances ; les lignes lettrées sont écartées ; un excédent apparaît comme avance.
+- **Lettrage** manuel (mêmes compte et tiers, débits = crédits), annulation et lettrage automatique des tiers qui se soldent exactement.
+- **SMT** : livre des recettes et dépenses (mouvements de trésorerie avec solde), état de trésorerie via le résumé ; le bilan est masqué pour ce régime.
+- **Résumé du mode simple** : résultat du mois, trésorerie, argent dû par les clients et aux fournisseurs, stock, TVA à payer, principales charges.
+- **Exports** : tout état, ainsi que le journal, le grand livre et la balance, se télécharge en **CSV** (séparateur « ; », accents lisibles dans Excel) ou **Excel** avec `?format=csv|xlsx`.
+
+**Écrans** : l'onglet **Résumé** et l'onglet **États** (choix de l'état, mois de TVA, boutons Excel / CSV, lettrage automatique) sont toujours disponibles. Le **mode simple** n'affiche que Résumé, États et Paramètres ; le **mode expert** ajoute écritures, plan comptable, grand livre et balance.
+
+**Tests** : `npm run test:compta` (52 tests, dont 14 pour les états et les exports).
+
+**Limites connues** :
+- La structure du compte de résultat et du bilan est **simplifiée** : elle ne reprend pas les références officielles (TA, RA, XA...) ni la présentation brut/amortissements/net par colonne de la DSF. À confronter avec un expert-comptable avant tout dépôt.
+- La TVA est lue sur les comptes 443 et 445 : elle suppose que les achats portent leur TVA (non fournie par les commandes, voir phase 2).
+- Pas de PDF : exports CSV et Excel uniquement.
+- Le lettrage manuel est disponible par l'API ; l'écran propose pour l'instant le lettrage automatique seulement.
+- TAFIRE, notes annexes, clôture annuelle et à-nouveaux : phase 4.

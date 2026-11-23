@@ -4,78 +4,86 @@ import 'package:intl/intl.dart';
 import '../controllers/ledger_controller.dart';
 import 'ledger_entry_form_page.dart';
 import 'ledger_opening_dialog.dart';
+import 'ledger_states_page.dart';
 
 String _jour(dynamic iso) {
   final d = DateTime.tryParse((iso ?? '').toString());
   return d == null ? '' : DateFormat('dd/MM/yyyy').format(d.toUtc());
 }
 
-/// Comptabilité en partie double : écritures, plan comptable, grand livre, balance, exercices.
+/// Comptabilité en partie double.
+/// Mode simple : résumé, états, paramètres. Mode expert : + écritures, plan comptable, grand livre, balance.
 class LedgerPage extends StatelessWidget {
   const LedgerPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final c = Get.find<LedgerController>();
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('compta_title'.tr),
-          backgroundColor: Colors.green.shade600,
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(icon: const Icon(Icons.refresh), onPressed: c.refreshAll, tooltip: 'refresh'.tr),
-            Obx(() => Row(children: [
-                  Text('compta_this_shop'.tr, style: const TextStyle(fontSize: 12)),
-                  Switch(
-                    value: c.parBoutique.value,
-                    activeColor: Colors.white,
-                    onChanged: (v) {
-                      c.parBoutique.value = v;
-                      c.loadEcritures();
-                    },
-                  ),
-                ])),
-          ],
-          bottom: TabBar(
-            isScrollable: true,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(text: 'compta_tab_entries'.tr),
-              Tab(text: 'compta_tab_chart'.tr),
-              Tab(text: 'compta_tab_ledger'.tr),
-              Tab(text: 'compta_tab_balance'.tr),
-              Tab(text: 'compta_tab_fiscal_years'.tr),
+    return Obx(() {
+      final expert = c.modeExpert;
+      final onglets = <MapEntry<String, Widget>>[
+        MapEntry('compta_tab_summary'.tr, const LedgerSummaryTab()),
+        MapEntry('compta_tab_states'.tr, const LedgerStatesTab()),
+        if (expert) MapEntry('compta_tab_entries'.tr, _EntriesTab(c)),
+        if (expert) MapEntry('compta_tab_chart'.tr, _ChartTab(c)),
+        if (expert) MapEntry('compta_tab_ledger'.tr, _LedgerTab(c)),
+        if (expert) MapEntry('compta_tab_balance'.tr, _BalanceTab(c)),
+        MapEntry(expert ? 'compta_tab_fiscal_years'.tr : 'compta_tab_settings'.tr, _FiscalYearsTab(c)),
+      ];
+      return DefaultTabController(
+        key: ValueKey(expert),
+        length: onglets.length,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('compta_title'.tr),
+            backgroundColor: Colors.green.shade600,
+            foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () async {
+                  await c.refreshAll();
+                  c.chargerResume();
+                },
+                tooltip: 'refresh'.tr,
+              ),
+              Row(children: [
+                Text('compta_this_shop'.tr, style: const TextStyle(fontSize: 12)),
+                Switch(
+                  value: c.parBoutique.value,
+                  activeColor: Colors.white,
+                  onChanged: (v) {
+                    c.parBoutique.value = v;
+                    c.loadEcritures();
+                    c.chargerResume();
+                  },
+                ),
+              ]),
             ],
+            bottom: TabBar(
+              isScrollable: true,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+              tabs: [for (final o in onglets) Tab(text: o.key)],
+            ),
           ),
+          body: Column(children: [
+            c.isLoading.value ? const LinearProgressIndicator() : const SizedBox(height: 4),
+            if (!c.ouvertureFaite)
+              MaterialBanner(
+                backgroundColor: Colors.orange.shade50,
+                content: Text('compta_opening_needed'.tr),
+                leading: const Icon(Icons.flag, color: Colors.orange),
+                actions: [
+                  TextButton(onPressed: () => showDialog(context: context, builder: (_) => const LedgerOpeningDialog()), child: Text('compta_opening_start'.tr)),
+                ],
+              ),
+            Expanded(child: TabBarView(children: [for (final o in onglets) o.value])),
+          ]),
         ),
-        body: Column(children: [
-          Obx(() => c.isLoading.value ? const LinearProgressIndicator() : const SizedBox(height: 4)),
-          Obx(() => c.ouvertureFaite
-              ? const SizedBox.shrink()
-              : MaterialBanner(
-                  backgroundColor: Colors.orange.shade50,
-                  content: Text('compta_opening_needed'.tr),
-                  leading: const Icon(Icons.flag, color: Colors.orange),
-                  actions: [
-                    TextButton(onPressed: () => showDialog(context: context, builder: (_) => const LedgerOpeningDialog()), child: Text('compta_opening_start'.tr)),
-                  ],
-                )),
-          Expanded(
-            child: TabBarView(children: [
-              _EntriesTab(c),
-              _ChartTab(c),
-              _LedgerTab(c),
-              _BalanceTab(c),
-              _FiscalYearsTab(c),
-            ]),
-          ),
-        ]),
-      ),
-    );
+      );
+    });
   }
 }
 

@@ -12,6 +12,7 @@ const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { BaseResponseDTO } = require('../dto');
 const { ComptaError } = require('../compta/compta-service');
+const { tableaux, enCsv, enXlsx } = require('../compta/etats');
 
 const MODULE = 'accounting';
 
@@ -34,7 +35,7 @@ async function aPrivilege(prisma, user, privilege) {
   }
 }
 
-function createComptaRouter({ authService, prisma, comptaService, moteurAuto }) {
+function createComptaRouter({ authService, prisma, comptaService, moteurAuto, etatsService }) {
   const router = express.Router();
   const auth = authenticateToken(authService);
 
@@ -59,6 +60,31 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto }) 
       }
       console.error(`Erreur comptabilité (${message}) :`, e);
       res.status(500).json(BaseResponseDTO.error('Erreur interne de la comptabilité'));
+    }
+  };
+
+  /** Réponse d'un état : JSON par défaut, ou fichier CSV / Excel avec ?format=csv|xlsx */
+  const etat = (message, calcul, nomTableau, nomFichier) => async (req, res) => {
+    try {
+      const data = await calcul(req);
+      const format = String(req.query.format || 'json').toLowerCase();
+      if (format === 'json') return res.json(BaseResponseDTO.success(data, message));
+      if (format === 'tableau') return res.json(BaseResponseDTO.success(tableaux[nomTableau](data), message));
+      const tableau = tableaux[nomTableau](data);
+      const base = `${nomFichier}-${new Date().toISOString().slice(0, 10)}`;
+      if (format === 'csv') {
+        res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${base}.csv"` });
+        return res.send(enCsv(tableau));
+      }
+      if (format === 'xlsx') {
+        res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${base}.xlsx"` });
+        return res.send(await enXlsx(tableau));
+      }
+      throw new ComptaError('Format invalide (json, csv ou xlsx)');
+    } catch (e) {
+      if (e instanceof ComptaError) return res.status(e.status).json({ success: false, message: e.message, code: e.code });
+      console.error(`Erreur comptabilité (${message}) :`, e);
+      return res.status(500).json(BaseResponseDTO.error('Erreur interne de la comptabilité'));
     }
   };
 
@@ -120,22 +146,22 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto }) 
   }));
 
   // ── États ──
-  router.get('/grand-livre', auth, droit('READ'), gerer('Grand livre', (req) => comptaService.grandLivre({
-    compteNumero: req.query.compte,
-    exerciceId: req.query.exerciceId,
-    dateDebut: req.query.dateDebut,
-    dateFin: req.query.dateFin,
-    boutiqueId: boutique(req),
-    tiersType: req.query.tiersType,
-    tiersId: req.query.tiersId,
-  })));
-  router.get('/balance', auth, droit('READ'), gerer('Balance', (req) => comptaService.balance({
-    exerciceId: req.query.exerciceId,
-    dateDebut: req.query.dateDebut,
-    dateFin: req.query.dateFin,
-    boutiqueId: boutique(req),
-    inclureSoldesNuls: req.query.inclureSoldesNuls === 'true',
-  })));
+  const q = (req) => ({ exerciceId: req.query.exerciceId, dateDebut: req.query.dateDebut, dateFin: req.query.dateFin, boutiqueId: boutique(req) });
+  router.get('/grand-livre', auth, droit('READ'), etat('Grand livre', (req) => comptaService.grandLivre({ ...q(req), compteNumero: req.query.compte, tiersType: req.query.tiersType, tiersId: req.query.tiersId }), 'grandLivre', 'grand-livre'));
+  router.get('/balance', auth, droit('READ'), etat('Balance', (req) => comptaService.balance({ ...q(req), inclureSoldesNuls: req.query.inclureSoldesNuls === 'true' }), 'balance', 'balance'));
+  router.get('/etats/journal', auth, droit('READ'), etat('Journal', (req) => etatsService.journalLignes({ ...q(req), journalCode: req.query.journalCode }), 'journal', 'journal'));
+  router.get('/etats/resultat', auth, droit('READ'), etat('Compte de résultat', (req) => etatsService.compteDeResultat(q(req)), 'resultat', 'compte-de-resultat'));
+  router.get('/etats/bilan', auth, droit('READ'), etat('Bilan', (req) => etatsService.bilan(q(req)), 'bilan', 'bilan'));
+  router.get('/etats/tva', auth, droit('READ'), etat('Déclaration de TVA', (req) => etatsService.declarationTva({ ...q(req), annee: req.query.annee, mois: req.query.mois }), 'tva', 'tva'));
+  router.get('/etats/balance-agee', auth, droit('READ'), etat('Balance âgée', (req) => etatsService.balanceAgee({ type: req.query.type, dateRef: req.query.dateRef, boutiqueId: boutique(req) }), 'balanceAgee', 'balance-agee'));
+  router.get('/etats/recettes-depenses', auth, droit('READ'), etat('Livre des recettes et dépenses', (req) => etatsService.livreRecettesDepenses(q(req)), 'livreRecettesDepenses', 'recettes-depenses'));
+  router.get('/resume', auth, droit('READ'), gerer('Résumé', (req) => etatsService.resume({ boutiqueId: boutique(req), annee: req.query.annee, mois: req.query.mois })));
+
+  // ── Lettrage (rapprochement factures / règlements d'un tiers) ──
+  router.get('/lettrage/lignes', auth, droit('READ'), gerer('Lignes à lettrer', (req) => etatsService.lignesOuvertes({ compteNumero: req.query.compte, tiersType: req.query.tiersType, tiersId: req.query.tiersId })));
+  router.post('/lettrage', auth, droit('VALIDATE'), gerer('Lettrage enregistré', (req) => etatsService.lettrer((req.body || {}).ligneIds || []), 201));
+  router.post('/lettrage/auto', auth, droit('VALIDATE'), gerer('Lettrage automatique', (req) => etatsService.lettrageAutomatique({ type: (req.body || {}).type })));
+  router.delete('/lettrage/:code', auth, droit('VALIDATE'), gerer('Lettrage annulé', (req) => etatsService.delettrer(req.params.code)));
 
   return router;
 }

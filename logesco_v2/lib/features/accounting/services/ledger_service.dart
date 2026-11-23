@@ -91,7 +91,32 @@ class LedgerService {
   }
   Future<Map<String, dynamic>> controles() async => Map<String, dynamic>.from(await _get('/controles'));
 
-  // États
+  // États (tableaux génériques, résumé, exports)
+  Future<Map<String, dynamic>> resume({int? annee, int? mois, int? boutiqueId}) async =>
+      Map<String, dynamic>.from(await _get('/resume', {'annee': annee, 'mois': mois, 'boutiqueId': boutiqueId}));
+
+  /// Un état sous forme de tableau { titre, sousTitre, colonnes[{cle, libelle, type}], lignes[] }
+  Future<Map<String, dynamic>> tableau(String chemin, Map<String, dynamic> query) async =>
+      Map<String, dynamic>.from(await _get(chemin, {...query, 'format': 'tableau'}));
+
+  /// Télécharge un état en CSV ou Excel : octets du fichier
+  Future<List<int>> telecharger(String chemin, Map<String, dynamic> query, String format) async {
+    final r = await http.get(_uri(chemin, {...query, 'format': format}), headers: await _headers());
+    if (r.statusCode != 200) {
+      try {
+        throw LedgerException((json.decode(utf8.decode(r.bodyBytes)) as Map)['message'].toString());
+      } on LedgerException {
+        rethrow;
+      } catch (_) {
+        throw LedgerException('Erreur ${r.statusCode}');
+      }
+    }
+    return r.bodyBytes;
+  }
+
+  Future<Map<String, dynamic>> lettrageAutomatique(String type) async =>
+      Map<String, dynamic>.from(await _send('POST', '/lettrage/auto', {'type': type}));
+
   Future<Map<String, dynamic>> grandLivre(String compte, {String? dateDebut, String? dateFin, int? boutiqueId}) async =>
       Map<String, dynamic>.from(await _get('/grand-livre', {'compte': compte, 'dateDebut': dateDebut, 'dateFin': dateFin, 'boutiqueId': boutiqueId}));
   Future<Map<String, dynamic>> balance({String? dateDebut, String? dateFin, int? boutiqueId}) async =>

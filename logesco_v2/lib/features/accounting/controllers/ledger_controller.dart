@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:get/get.dart';
+import '../../../core/utils/file_download_helper.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_helper.dart';
 import '../../boutiques/controllers/boutique_controller.dart';
@@ -158,6 +160,42 @@ class LedgerController extends GetxController {
 
   Future<void> chargerControles() async {
     controles.value = await _run(() => _service.controles());
+  }
+
+  // ── Résumé, états et exports ──
+  final resume = Rxn<Map<String, dynamic>>();
+  final tableauCourant = Rxn<Map<String, dynamic>>();
+  final etatEnCours = false.obs;
+  final moisResume = DateTime(DateTime.now().year, DateTime.now().month, 1).obs;
+
+  Future<void> chargerResume() async {
+    resume.value = await _run<Map<String, dynamic>?>(() => _service.resume(annee: moisResume.value.year, mois: moisResume.value.month, boutiqueId: _boutiqueId));
+  }
+
+  void changerMoisResume(int decalage) {
+    final m = moisResume.value;
+    moisResume.value = DateTime(m.year, m.month + decalage, 1);
+    chargerResume();
+  }
+
+  Future<void> chargerTableau(String chemin, Map<String, dynamic> query) async {
+    etatEnCours.value = true;
+    tableauCourant.value = await _run<Map<String, dynamic>?>(() => _service.tableau(chemin, {...query, 'boutiqueId': _boutiqueId}));
+    etatEnCours.value = false;
+  }
+
+  /// Télécharge un état ; retourne le chemin du fichier enregistré
+  Future<String?> exporter(String chemin, Map<String, dynamic> query, String format, String nomFichier) async {
+    final octets = await _run<List<int>>(() => _service.telecharger(chemin, {...query, 'boutiqueId': _boutiqueId}, format));
+    if (octets == null) return null;
+    final ext = format == 'xlsx' ? 'xlsx' : 'csv';
+    final mime = format == 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
+    return FileDownloadHelper.saveFile(bytes: Uint8List.fromList(octets), fileName: '$nomFichier.$ext', mimeType: mime);
+  }
+
+  Future<void> lettrageAuto(String type) async {
+    final r = await _run(() => _service.lettrageAutomatique(type));
+    if (r != null) SnackbarHelper.success('compta_msg_lettrage_auto'.trParams({'n': '${r['lettrages']}'}));
   }
 
   // ── Exercices, paramètres, ouverture ──
