@@ -954,3 +954,25 @@ model ComptaParametres {
 
   @@map("compta_parametres")
 }
+
+// Registre des immobilisations amortissables (phase 4) — amortissement linéaire au mois près
+model ComptaImmobilisation {
+  id                 Int       @id @default(autoincrement())
+  libelle            String
+  compteNumero      String    @map("compte_numero") // compte d'immobilisation, ex. 2183
+  compteAmortNumero String    @map("compte_amort_numero") // compte d'amortissement, ex. 28183
+  compteDotationNumero String  @default("681") @map("compte_dotation_numero")
+  dateAcquisition    DateTime  @map("date_acquisition")
+  valeur             Int
+  valeurResiduelle   Int       @default(0) @map("valeur_residuelle")
+  dureeMois          Int       @map("duree_mois")
+  statut             String    @default("en_service") // en_service | cedee
+  dateCession        DateTime? @map("date_cession")
+  prixCession        Int?      @map("prix_cession")
+  boutiqueId         Int?      @map("boutique_id")
+  dateCreation       DateTime  @default(now()) @map("date_creation")
+  dateModification   DateTime  @updatedAt @map("date_modification")
+
+  @@index([statut], map: "idx_compta_immobilisations_statut")
+  @@map("compta_immobilisations")
+}

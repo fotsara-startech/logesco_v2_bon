@@ -100,6 +100,7 @@ class _EtatDef {
 final List<_EtatDef> _etats = [
   const _EtatDef('resultat', 'compta_state_income', '/etats/resultat', 'compte-de-resultat'),
   const _EtatDef('bilan', 'compta_state_balance_sheet', '/etats/bilan', 'bilan', smtMasque: true),
+  const _EtatDef('tft', 'compta_state_cash_flow', '/etats/tft', 'tableau-flux-tresorerie', smtMasque: true),
   _EtatDef('tva', 'compta_state_vat', '/etats/tva', 'declaration-tva', parametres: (m) => {'annee': m.year, 'mois': m.month}),
   const _EtatDef('clients', 'compta_state_receivables', '/etats/balance-agee', 'balance-agee-clients'),
   const _EtatDef('fournisseurs', 'compta_state_payables', '/etats/balance-agee', 'balance-agee-fournisseurs'),

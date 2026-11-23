@@ -41,6 +41,7 @@ const MIGRATION_ORDER = [
   'add_avance_utilisee',
   'add_annulation_articles_vente',
   'add_compta_socle',
+  'add_compta_immobilisations',
 ];
 
 const TRACKING_TABLE = '_app_migrations';

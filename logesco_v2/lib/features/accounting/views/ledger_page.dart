@@ -5,6 +5,7 @@ import '../controllers/ledger_controller.dart';
 import 'ledger_entry_form_page.dart';
 import 'ledger_opening_dialog.dart';
 import 'ledger_states_page.dart';
+import 'ledger_assets_page.dart';
 
 String _jour(dynamic iso) {
   final d = DateTime.tryParse((iso ?? '').toString());
@@ -28,6 +29,7 @@ class LedgerPage extends StatelessWidget {
         if (expert) MapEntry('compta_tab_chart'.tr, _ChartTab(c)),
         if (expert) MapEntry('compta_tab_ledger'.tr, _LedgerTab(c)),
         if (expert) MapEntry('compta_tab_balance'.tr, _BalanceTab(c)),
+        if (expert) MapEntry('compta_tab_assets'.tr, const LedgerAssetsTab()),
         MapEntry(expert ? 'compta_tab_fiscal_years'.tr : 'compta_tab_settings'.tr, _FiscalYearsTab(c)),
       ];
       return DefaultTabController(
@@ -636,6 +638,19 @@ class _FiscalYearsTab extends StatelessWidget {
           Text(ex['libelle'].toString(), style: Theme.of(context).textTheme.titleMedium),
           Text('${_jour(ex['dateDebut'])} → ${_jour(ex['dateFin'])} · ${ex['statut']}'),
           const SizedBox(height: 8),
+          if (ex['statut'] == 'ouvert')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(spacing: 8, runSpacing: 8, children: [
+                OutlinedButton.icon(icon: const Icon(Icons.calculate), label: Text('compta_depreciation_run'.tr), onPressed: () => c.calculerDotations(ex['id'] as int)),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.lock),
+                  label: Text('compta_close_year'.tr),
+                  onPressed: () => _cloturer(context, ex),
+                ),
+              ]),
+            ),
           Wrap(spacing: 6, runSpacing: 6, children: [
             for (final p in periodes)
               FilterChip(
@@ -648,6 +663,28 @@ class _FiscalYearsTab extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  Future<void> _cloturer(BuildContext context, Map<String, dynamic> ex) async {
+    final suggestion = await c.valeurStock();
+    if (!context.mounted) return;
+    final stock = TextEditingController(text: '${suggestion ?? 0}');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('compta_close_year'.tr),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('compta_close_warning'.tr),
+          const SizedBox(height: 12),
+          TextField(controller: stock, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'compta_close_stock'.tr, suffixText: 'FCFA', helperText: 'compta_close_stock_help'.tr, helperMaxLines: 3)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr)),
+          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white), onPressed: () => Navigator.pop(ctx, true), child: Text('compta_close_confirm'.tr)),
+        ],
+      ),
+    );
+    if (ok == true) await c.cloturerExercice(ex['id'] as int, int.tryParse(stock.text.replaceAll(' ', '')) ?? 0);
   }
 
   void _nouvelExercice(BuildContext context) {

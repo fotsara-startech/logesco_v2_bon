@@ -91,6 +91,17 @@ class LedgerService {
   }
   Future<Map<String, dynamic>> controles() async => Map<String, dynamic>.from(await _get('/controles'));
 
+  // Immobilisations, clôture
+  Future<List<Map<String, dynamic>>> immobilisations() async => List<Map<String, dynamic>>.from((await _get('/immobilisations')) as List);
+  Future<Map<String, dynamic>> creerImmobilisation(Map<String, dynamic> p) async => Map<String, dynamic>.from(await _send('POST', '/immobilisations', p));
+  Future<Map<String, dynamic>> planAmortissement(int id) async => Map<String, dynamic>.from(await _get('/immobilisations/$id/plan'));
+  Future<Map<String, dynamic>> ceder(int id, String date, int prix) async =>
+      Map<String, dynamic>.from(await _send('POST', '/immobilisations/$id/ceder', {'date': date, 'prix': prix}));
+  Future<Map<String, dynamic>> dotations(int exerciceId) async => Map<String, dynamic>.from(await _send('POST', '/exercices/$exerciceId/dotations'));
+  Future<int> valeurStock() async => ((await _get('/stocks/valeur')) as Map)['valeur'] as int;
+  Future<Map<String, dynamic>> cloturer(int exerciceId, int valeurStock) async =>
+      Map<String, dynamic>.from(await _send('POST', '/exercices/$exerciceId/cloturer', {'valeurStock': valeurStock}));
+
   // États (tableaux génériques, résumé, exports)
   Future<Map<String, dynamic>> resume({int? annee, int? mois, int? boutiqueId}) async =>
       Map<String, dynamic>.from(await _get('/resume', {'annee': annee, 'mois': mois, 'boutiqueId': boutiqueId}));

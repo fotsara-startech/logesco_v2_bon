@@ -1,6 +1,6 @@
 # Conception du module Comptabilité (SYSCOHADA – Cameroun)
 
-> Statut : **phases 1 à 3 réalisées** (socle, écritures automatiques, états et exports — voir les sections « État de la phase » en fin de document). La phase 4 reste à faire.
+> Statut : **phases 1 à 4 réalisées** (socle, écritures automatiques, états et exports, clôture et TFT — voir les sections « État de la phase » en fin de document). La paie et la DSF télétransmise restent hors périmètre.
 > Les points marqués **[À VALIDER]** doivent être confirmés par un expert-comptable camerounais avant mise en production auprès de clients.
 
 ---
@@ -59,7 +59,7 @@ Deux régimes à supporter : **Système Normal** et **Système Minimal de Tréso
 
 ## 4. Référentiel réglementaire (résumé)
 
-- **SYSCOHADA révisé 2018** (Acte uniforme OHADA relatif au droit comptable) : plan comptable en classes 1 à 9, états financiers annuels (Bilan, Compte de résultat, TAFIRE, Notes annexes), tenue des livres (journal, grand livre, balance, inventaire).
+- **SYSCOHADA révisé 2018** (Acte uniforme OHADA relatif au droit comptable) : plan comptable en classes 1 à 9, états financiers annuels (Bilan, Compte de résultat, Tableau des flux de trésorerie (TFT), Notes annexes), tenue des livres (journal, grand livre, balance, inventaire).
 - **Cameroun** : déclaration annuelle **DSF** (Déclaration Statistique et Fiscale) au format OHADA ; **TVA** au taux normal de **19,25 %** (17,5 % + 10 % de centimes additionnels communaux) **[À VALIDER chaque année – Loi de finances]**.
 - **Régimes** :
   - *Système Normal* : comptabilité d'engagement complète.
@@ -294,7 +294,8 @@ backend/src/compta/
 | Déclaration de TVA mensuelle (support) | ✔ | selon régime | simple + expert |
 | Compte de résultat SYSCOHADA | ✔ | simplifié | simple + expert |
 | Bilan SYSCOHADA | ✔ | simplifié | expert (bêta) |
-| TAFIRE, notes annexes, DSF | ✔ | — | v4, bêta |
+| Tableau des flux de trésorerie (TFT) | ✔ | — | phase 4, bêta |
+| Notes annexes, DSF | ✔ | — | hors périmètre |
 | Livre des recettes / dépenses, état de trésorerie | — | ✔ | simple |
 | Exports PDF / Excel / CSV (FEC-like) | ✔ | ✔ | tous |
 
@@ -345,7 +346,7 @@ Les libellés suivent le système existant (`fr_translations.dart`, `en_translat
 | **1 – Socle** | Schéma + migrations (SQLite & Postgres), plan comptable OHADA pré-chargé, journaux, exercices/périodes, paramètres, assistant d'ouverture, saisie manuelle, validation/contre-passation, grand livre, balance | Un comptable saisit des écritures et obtient grand livre/balance justes |
 | **2 – Automatisation** | Générateurs vente, achat, règlements clients/fournisseurs, caisse, dépenses, annulations, TVA ; file d'attente d'erreurs ; correspondance catégories → comptes | Chaque opération métier produit les bonnes écritures, équilibrées et sans doublon |
 | **3 – États** | Compte de résultat, bilan, déclaration de TVA, balance âgée, lettrage, mode simple complet, exports, SMT | Un commerçant lit son résultat/TVA ; un cabinet exporte ses états |
-| **4 – Avancé** | Variation de stocks automatique, clôture annuelle + à-nouveaux, immobilisations et amortissements, rapprochement bancaire, TAFIRE/DSF, (paie en option) | Clôture d'un exercice complet |
+| **4 – Avancé** | Variation de stocks automatique, clôture annuelle + à-nouveaux, immobilisations et amortissements, rapprochement bancaire, TFT, (paie en option) | Clôture d'un exercice complet |
 
 Chaque phase se termine par des **tests automatisés** : équilibre systématique, idempotence, annulation, période verrouillée, parité SQLite/Postgres.
 
@@ -469,4 +470,43 @@ Liste complète et libellés officiels à charger depuis le plan SYSCOHADA révi
 - La TVA est lue sur les comptes 443 et 445 : elle suppose que les achats portent leur TVA (non fournie par les commandes, voir phase 2).
 - Pas de PDF : exports CSV et Excel uniquement.
 - Le lettrage manuel est disponible par l'API ; l'écran propose pour l'instant le lettrage automatique seulement.
-- TAFIRE, notes annexes, clôture annuelle et à-nouveaux : phase 4.
+- Notes annexes et DSF : hors périmètre.
+
+---
+
+## Le TFT remplace le TAFIRE
+
+Dans le SYSCOHADA révisé (comptes individuels à partir de 2018), le **Tableau des flux de trésorerie (TFT)** a remplacé l'ancien TAFIRE (tableau financier des ressources et des emplois). Là où le TAFIRE expliquait la variation du fonds de roulement net global, le TFT explique **comment le résultat devient de la trésorerie réelle** — dans l'esprit de la norme internationale IAS 7. Il est obligatoire dans le système normal ; les très petites entités du **SMT** disposent d'un modèle allégé centré sur les recettes et dépenses de trésorerie (notre livre des recettes et dépenses).
+
+Structure retenue : de la **trésorerie nette d'ouverture** (trésorerie-actif − trésorerie-passif) à la **trésorerie nette de clôture**, en trois flux :
+1. **Opérationnels** : capacité d'autofinancement globale (résultat + dotations − reprises) puis variation du besoin en fonds de roulement (stocks, créances, dettes d'exploitation) ;
+2. **Investissement** : acquisitions d'immobilisations, cessions et opérations hors activités ordinaires ;
+3. **Financement** : capitaux propres (apports, dividendes) et dettes financières (emprunts, remboursements).
+
+Point de contrôle : **A + B + C = variation de la trésorerie nette**. Le calcul rattache chaque compte hors trésorerie à l'un des trois flux, donc l'égalité est garantie par construction ; l'indicateur « contrôle » vérifie en plus que la trésorerie de clôture retombe sur le solde réel des comptes de trésorerie.
+
+---
+
+## État de la phase 4 (réalisé)
+
+**Immobilisations et amortissements** (`backend/src/compta/immobilisations.js`, table `compta_immobilisations`) : registre des biens (compte 21 à 27, valeur, durée en mois), plan d'amortissement **linéaire au mois près** (le mois d'acquisition compte en entier ; l'arrondi porte sur le cumul, jamais sur chaque dotation), dotations de l'exercice rapprochées comme les écritures automatiques (idempotentes, régularisées si le bien change), compte d'amortissement créé automatiquement (2183 → 28183), **cession** (dotation jusqu'à la date, reprise des amortissements cumulés, valeur nette comptable en charge 81, prix de vente en produit 82 encaissé en caisse).
+
+**Variation de stocks** (`cloture.js`) : en inventaire intermittent, l'écriture amène le compte 31 à la valeur du stock constaté (6031 en contrepartie). Valeur proposée = stock × coût moyen pondéré (à défaut prix d'achat, services exclus), remplaçable par la valeur de l'inventaire. Relançable : l'écriture se régularise.
+
+**Clôture annuelle** : refusée s'il reste des brouillons, si la balance est déséquilibrée ou si un exercice antérieur est ouvert. Elle calcule dotations et variation de stocks, **solde les classes 6 à 8 vers 131 (bénéfice) ou 139 (perte)**, crée l'exercice suivant, génère l'**écriture d'à-nouveaux** (classes 1 à 5, tiers par tiers) puis verrouille toutes les périodes. Le compte de résultat de l'exercice clos reste lisible : l'écriture de clôture est exclue des états de gestion (résultat, TFT, résumé) mais comptée dans le bilan et la balance.
+
+**Tableau des flux de trésorerie** (`GET /etats/tft`, exports CSV et Excel, écran États) : voir la section précédente.
+
+**Rapprochement bancaire** : pointage des lignes d'un compte de trésorerie contre le relevé (code `RB` + date du relevé), état avec solde comptable, solde pointé, écart et lignes en attente, dépointage.
+
+**Écrans** : onglet **Immobilisations** (mode expert : liste, ajout, plan d'amortissement, cession), boutons « Calculer les dotations » et « Clôturer l'exercice » (avec avertissement, valeur du stock à confirmer) dans l'onglet Exercices, état **Flux de trésorerie** dans l'onglet États (masqué en SMT).
+
+**Tests** : `npm run test:compta` (65 tests, dont 12 pour la phase 4 : amortissement, stocks, clôture, à-nouveaux, TFT sur deux exercices, cession, rapprochement).
+
+**Limites connues** :
+- Le **modèle officiel du TFT** (libellés et références de lignes de la DSF) n'est pas reproduit : le rangement de certains comptes (cessions, provisions, comptes d'associés) est à valider avec un expert-comptable.
+- Amortissement linéaire seulement (pas de dégressif, pas de prorata en jours) ; les acquisitions s'enregistrent par une écriture manuelle, le registre ne sert qu'au calcul des dotations.
+- L'affectation du résultat (réserves, dividendes, report à nouveau) se fait par écriture manuelle dans l'exercice suivant.
+- Les à-nouveaux sont consolidés : les soldes d'ouverture ne gardent pas la répartition par boutique.
+- Pas d'écran de rapprochement bancaire (API seulement) ; pas de notes annexes, de DSF télétransmise ni de paie.
+- La clôture n'est pas annulable : sauvegarde conseillée avant de la lancer.

@@ -36,9 +36,11 @@ const od = (extra = {}) => ({
 });
 
 test.before(async () => {
-  const sql = fs.readFileSync(path.join(__dirname, '../prisma/migrations/add_compta_socle/migration.sql'), 'utf8');
-  const instructions = sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean);
-  for (const i of instructions) await prisma.$executeRawUnsafe(i);
+  for (const migration of ['add_compta_socle', 'add_compta_immobilisations']) {
+    const sql = fs.readFileSync(path.join(__dirname, `../prisma/migrations/${migration}/migration.sql`), 'utf8');
+    const instructions = sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean);
+    for (const i of instructions) await prisma.$executeRawUnsafe(i);
+  }
   await referentiel.ensureReferentiel(prisma);
   installation.setInstallationId(null);
 });
@@ -262,4 +264,10 @@ test('synchronisation : écriture envoyée avant ses lignes, suppression d\'un b
 test('numeroAuxiliaire : code du tiers complété à gauche', () => {
   assert.strictEqual(numeroAuxiliaire('411', 42, 6), '411000042');
   assert.strictEqual(numeroAuxiliaire('401', null), '401');
+});
+
+test('migration des immobilisations : table utilisable avec le client Prisma', async () => {
+  const i = await prisma.comptaImmobilisation.create({ data: { libelle: 'Test', compteNumero: '2183', compteAmortNumero: '28183', dateAcquisition: new Date('2027-01-01'), valeur: 1000, dureeMois: 12 } });
+  assert.strictEqual(i.compteDotationNumero, '681');
+  assert.strictEqual(i.statut, 'en_service');
 });

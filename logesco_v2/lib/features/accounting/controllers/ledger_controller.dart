@@ -198,6 +198,41 @@ class LedgerController extends GetxController {
     if (r != null) SnackbarHelper.success('compta_msg_lettrage_auto'.trParams({'n': '${r['lettrages']}'}));
   }
 
+  // ── Immobilisations et clôture ──
+  final immobilisations = <Map<String, dynamic>>[].obs;
+
+  Future<void> chargerImmobilisations() async {
+    final r = await _run(() => _service.immobilisations());
+    if (r != null) immobilisations.value = r;
+  }
+
+  Future<bool> creerImmobilisation(Map<String, dynamic> donnees) async {
+    final r = await _run(() => _service.creerImmobilisation(donnees), succes: 'compta_msg_asset_created'.tr);
+    if (r != null) await chargerImmobilisations();
+    return r != null;
+  }
+
+  Future<Map<String, dynamic>?> planAmortissement(int id) => _run(() => _service.planAmortissement(id));
+
+  Future<Map<String, dynamic>?> ceder(int id, String date, int prix) async {
+    final r = await _run(() => _service.ceder(id, date, prix), succes: 'compta_msg_asset_sold'.tr);
+    if (r != null) await chargerImmobilisations();
+    return r;
+  }
+
+  Future<void> calculerDotations(int exerciceId) async {
+    final r = await _run(() => _service.dotations(exerciceId));
+    if (r != null) SnackbarHelper.success('compta_msg_depreciation_done'.trParams({'n': '${r['ecritures']}'}));
+  }
+
+  Future<int?> valeurStock() => _run(() => _service.valeurStock());
+
+  Future<bool> cloturerExercice(int exerciceId, int valeurStock) async {
+    final r = await _run(() => _service.cloturer(exerciceId, valeurStock), succes: 'compta_msg_year_closed'.tr);
+    if (r != null) await refreshAll();
+    return r != null;
+  }
+
   // ── Exercices, paramètres, ouverture ──
   Future<bool> creerExercice(String libelle, String debut, String fin) async {
     final r = await _run(() => _service.creerExercice({'libelle': libelle, 'dateDebut': debut, 'dateFin': fin}), succes: 'compta_msg_exercice_cree'.tr);

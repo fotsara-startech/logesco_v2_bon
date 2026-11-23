@@ -35,7 +35,7 @@ async function aPrivilege(prisma, user, privilege) {
   }
 }
 
-function createComptaRouter({ authService, prisma, comptaService, moteurAuto, etatsService }) {
+function createComptaRouter({ authService, prisma, comptaService, moteurAuto, etatsService, immobilisationService, clotureService }) {
   const router = express.Router();
   const auth = authenticateToken(authService);
 
@@ -156,6 +156,25 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
   router.get('/etats/balance-agee', auth, droit('READ'), etat('Balance âgée', (req) => etatsService.balanceAgee({ type: req.query.type, dateRef: req.query.dateRef, boutiqueId: boutique(req) }), 'balanceAgee', 'balance-agee'));
   router.get('/etats/recettes-depenses', auth, droit('READ'), etat('Livre des recettes et dépenses', (req) => etatsService.livreRecettesDepenses(q(req)), 'livreRecettesDepenses', 'recettes-depenses'));
   router.get('/resume', auth, droit('READ'), gerer('Résumé', (req) => etatsService.resume({ boutiqueId: boutique(req), annee: req.query.annee, mois: req.query.mois })));
+
+  router.get('/etats/tft', auth, droit('READ'), etat('Tableau des flux de trésorerie', (req) => etatsService.fluxTresorerie(q(req)), 'tft', 'tableau-flux-tresorerie'));
+
+  // ── Immobilisations et amortissements ──
+  router.get('/immobilisations', auth, droit('READ'), gerer('Immobilisations', () => immobilisationService.lister()));
+  router.post('/immobilisations', auth, droit('CREATE'), gerer('Immobilisation créée', (req) => immobilisationService.creer(req.body || {}), 201));
+  router.get('/immobilisations/:id/plan', auth, droit('READ'), gerer('Plan d\'amortissement', (req) => immobilisationService.plan(req.params.id)));
+  router.post('/immobilisations/:id/ceder', auth, droit('VALIDATE'), gerer('Cession enregistrée', (req) => immobilisationService.ceder(req.params.id, { ...(req.body || {}), utilisateurId: req.user.id }), 201));
+  router.post('/exercices/:id/dotations', auth, droit('VALIDATE'), gerer('Dotations calculées', (req) => immobilisationService.dotationsExercice({ exerciceId: req.params.id })));
+
+  // ── Stocks et clôture annuelle ──
+  router.get('/stocks/valeur', auth, droit('READ'), gerer('Valeur du stock', async () => ({ valeur: await clotureService.valeurStock() })));
+  router.post('/stocks/variation', auth, droit('VALIDATE'), gerer('Variation de stocks enregistrée', (req) => clotureService.variationStocks(req.body || {})));
+  router.post('/exercices/:id/cloturer', auth, droit('CLOSE'), gerer('Exercice clôturé', (req) => clotureService.cloturerExercice({ exerciceId: req.params.id, valeurStock: (req.body || {}).valeurStock, utilisateurId: req.user.id })));
+
+  // ── Rapprochement bancaire ──
+  router.get('/rapprochement', auth, droit('READ'), gerer('État de rapprochement', (req) => clotureService.etatRapprochement({ compteNumero: req.query.compte, dateReleve: req.query.dateReleve, soldeReleve: req.query.soldeReleve })));
+  router.post('/rapprochement/pointer', auth, droit('VALIDATE'), gerer('Lignes pointées', (req) => clotureService.pointer(req.body || {}), 201));
+  router.post('/rapprochement/depointer', auth, droit('VALIDATE'), gerer('Pointage annulé', (req) => clotureService.depointer(req.body || {})));
 
   // ── Lettrage (rapprochement factures / règlements d'un tiers) ──
   router.get('/lettrage/lignes', auth, droit('READ'), gerer('Lignes à lettrer', (req) => etatsService.lignesOuvertes({ compteNumero: req.query.compte, tiersType: req.query.tiersType, tiersId: req.query.tiersId })));

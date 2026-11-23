@@ -38,9 +38,11 @@ class EtatsService {
   }
 
   /** Soldes par compte sur la période : Map numero → { numero, libelle, classe, debit, credit, net } */
-  async _soldes({ exerciceId, debut, fin, boutiqueId, journalTypeExclu }) {
+  async _soldes({ exerciceId, debut, fin, boutiqueId, journalTypeExclu, seulementJournalType, exclureCloture }) {
     const where = { ecriture: { statut: { in: STATUTS }, exerciceId, dateEcriture: { gte: debut, lte: fin } } };
     if (journalTypeExclu) where.ecriture.journal = { type: { not: journalTypeExclu } };
+    if (seulementJournalType) where.ecriture.journal = { type: seulementJournalType };
+    if (exclureCloture) where.ecriture.origine = { not: 'cloture' };
     if (boutiqueId) where.boutiqueId = Number(boutiqueId);
     const groupes = await this.prisma.comptaLigne.groupBy({ by: ['compteId'], where, _sum: { debit: true, credit: true } });
     const comptes = await this.prisma.comptaCompte.findMany({ where: { id: { in: groupes.map((g) => g.compteId) } } });
@@ -74,7 +76,7 @@ class EtatsService {
 
   async compteDeResultat(params = {}) {
     const { exercice, debut, fin } = await this._periode(params);
-    const soldes = await this._soldes({ exerciceId: exercice.id, debut, fin, boutiqueId: params.boutiqueId });
+    const soldes = await this._soldes({ exerciceId: exercice.id, debut, fin, boutiqueId: params.boutiqueId, exclureCloture: true });
     const valeurs = new Map();
     const utilises = new Set();
     const lignes = [];
@@ -179,6 +181,70 @@ class EtatsService {
     return {
       exercice: { id: exercice.id, libelle: exercice.libelle }, debut, fin, actif, passif, resultatEnCours,
       equilibre: actif.total === passif.total && nonAffectes.length === 0, nonAffectes,
+    };
+  }
+
+  // ───────────────────────────── Tableau des flux de trésorerie (TFT) ─────────────────────────────
+
+  /**
+   * TFT par la méthode indirecte, calculé à partir des seuls mouvements de l'exercice (à-nouveaux et écriture de clôture exclus) :
+   * trésorerie nette d'ouverture → flux opérationnels, d'investissement, de financement → trésorerie nette de clôture.
+   * Il remplace l'ancien TAFIRE (SYSCOHADA révisé, dans l'esprit de la norme IAS 7).
+   * Tout compte hors trésorerie est rangé dans l'un des trois flux, donc leur somme égale la variation de trésorerie par construction ;
+   * l'indicateur « controle » vérifie en plus que la trésorerie de clôture retombe sur le solde des comptes de trésorerie.
+   * [À VALIDER] : rangement de certains comptes (cessions, provisions, comptes d'associés) et libellés par rapport au modèle officiel.
+   */
+  async fluxTresorerie(params = {}) {
+    const { exercice, fin } = await this._periode(params);
+    const mouvements = await this._soldes({ exerciceId: exercice.id, debut: exercice.dateDebut, fin, journalTypeExclu: 'a_nouveaux', exclureCloture: true });
+    const ouverture = await this._soldes({ exerciceId: exercice.id, debut: exercice.dateDebut, fin: exercice.dateFin, seulementJournalType: 'a_nouveaux' });
+    const tous = await this._soldes({ exerciceId: exercice.id, debut: exercice.dateDebut, fin });
+
+    const estTreso = (n) => commence(n, config.tresorerie);
+    const somme = (m, test) => [...m.values()].filter((s) => test(s.numero)).reduce((t, s) => t + s.net, 0);
+    const soldeOuverture = somme(ouverture, estTreso);
+    const variationReelle = somme(mouvements, estTreso);
+
+    // Rangement des comptes (hors trésorerie) ; par défaut : résultat (classes 6, 7 et 89)
+    const nonCash = ['28', '29', '15', '39', '49', '59'];
+    const investissement = ['20', '21', '22', '23', '24', '25', '26', '27', '754', '81', '82', '83', '84'];
+    const financement = ['10', '11', '12', '13', '14', '16', '17', '18', '19', '45', '46'];
+    const stocks = ['31', '32', '33', '34', '35', '36', '37', '38'];
+    const exploitation = ['40', '41', '42', '43', '44', '47'];
+    const groupe = (n) => {
+      if (estTreso(n)) return 'tresorerie';
+      if (commence(n, nonCash)) return 'noncash';
+      if (commence(n, investissement)) return 'investissement';
+      if (commence(n, financement)) return 'financement';
+      if (commence(n, stocks)) return 'stocks';
+      if (commence(n, exploitation)) return 'exploitation';
+      return 'resultat';
+    };
+    const flux = { resultat: 0, noncash: 0, stocks: 0, exploitation: 0, investissement: 0, financement: 0 };
+    const detail = { acquisitions: 0, cessions: 0, capitaux: 0, associes: 0 };
+    for (const s of mouvements.values()) {
+      const g = groupe(s.numero);
+      if (g === 'tresorerie') continue;
+      flux[g] += -s.net; // un compte qui augmente au débit consomme de la trésorerie
+      if (g === 'investissement') { if (s.classe === 2) detail.acquisitions += -s.net; else detail.cessions += -s.net; }
+      if (g === 'financement') { if (s.numero.startsWith('45') || s.numero.startsWith('46')) detail.associes += -s.net; else detail.capitaux += -s.net; }
+    }
+    const cafg = flux.resultat + flux.noncash;
+    const variationBfr = flux.stocks + flux.exploitation;
+    const fluxOperationnels = cafg + variationBfr;
+    const variation = fluxOperationnels + flux.investissement + flux.financement;
+    const cloture = soldeOuverture + variation;
+    const soldeCloture = somme(tous, estTreso);
+
+    return {
+      exercice: { id: exercice.id, libelle: exercice.libelle }, debut: exercice.dateDebut, fin,
+      tresorerieOuverture: soldeOuverture,
+      resultat: flux.resultat, dotationsNettes: flux.noncash, cafg,
+      variationStocks: flux.stocks, variationCreancesDettes: flux.exploitation, variationBfr, fluxOperationnels,
+      acquisitions: detail.acquisitions, cessions: detail.cessions, fluxInvestissement: flux.investissement,
+      capitauxEtEmprunts: detail.capitaux, associesEtDividendes: detail.associes, fluxFinancement: flux.financement,
+      variationTresorerie: variation, tresorerieCloture: cloture,
+      controle: variation === variationReelle && cloture === soldeCloture,
     };
   }
 
@@ -419,7 +485,7 @@ class EtatsService {
     const finMois = new Date(Date.UTC(annee, mois, 0));
     const { exercice } = await this._periode({ dateFin: finMois });
 
-    const soldeMois = await this._soldes({ exerciceId: exercice.id, debut: debutMois, fin: finMois, boutiqueId });
+    const soldeMois = await this._soldes({ exerciceId: exercice.id, debut: debutMois, fin: finMois, boutiqueId, exclureCloture: true });
     const cumul = await this._soldes({ exerciceId: exercice.id, debut: exercice.dateDebut, fin: finMois, boutiqueId });
     const somme = (m, test, f) => [...m.values()].filter(test).reduce((s, x) => s + f(x), 0);
 
@@ -507,6 +573,27 @@ const colMontant = (cle, libelle) => ({ cle, libelle, type: 'montant' });
 const dateFr = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d || '').slice(0, 10));
 
 const tableaux = {
+  tft: (t) => ({
+    titre: 'Tableau des flux de trésorerie', sousTitre: `${t.exercice.libelle} — du ${dateFr(t.debut)} au ${dateFr(t.fin)}${t.controle ? '' : ' — CONTRÔLE EN ÉCART'}`,
+    colonnes: [{ cle: 'libelle', libelle: 'Rubrique' }, colMontant('montant', 'Montant (FCFA)')],
+    lignes: [
+      { libelle: "Trésorerie nette à l'ouverture", montant: t.tresorerieOuverture, gras: true },
+      { libelle: 'Résultat net (hors opérations hors activités ordinaires)', montant: t.resultat },
+      { libelle: 'Dotations et reprises sans effet sur la trésorerie', montant: t.dotationsNettes },
+      { libelle: "Capacité d'autofinancement globale (CAFG)", montant: t.cafg, gras: true },
+      { libelle: 'Variation des stocks', montant: t.variationStocks },
+      { libelle: "Variation des créances et des dettes d'exploitation", montant: t.variationCreancesDettes },
+      { libelle: 'A. FLUX DE TRÉSORERIE DES ACTIVITÉS OPÉRATIONNELLES', montant: t.fluxOperationnels, gras: true },
+      { libelle: "Variation des immobilisations en valeur brute (acquisitions, sorties)", montant: t.acquisitions },
+      { libelle: "Cessions d'immobilisations et opérations hors activités ordinaires", montant: t.cessions },
+      { libelle: "B. FLUX DE TRÉSORERIE DES ACTIVITÉS D'INVESTISSEMENT", montant: t.fluxInvestissement, gras: true },
+      { libelle: 'Capitaux propres et emprunts (apports, remboursements)', montant: t.capitauxEtEmprunts },
+      { libelle: 'Associés et dividendes', montant: t.associesEtDividendes },
+      { libelle: 'C. FLUX DE TRÉSORERIE DES ACTIVITÉS DE FINANCEMENT', montant: t.fluxFinancement, gras: true },
+      { libelle: 'VARIATION DE LA TRÉSORERIE NETTE (A + B + C)', montant: t.variationTresorerie, gras: true },
+      { libelle: 'Trésorerie nette à la clôture', montant: t.tresorerieCloture, gras: true },
+    ],
+  }),
   journal: (j) => ({
     titre: 'Journal des écritures', sousTitre: `${j.exercice.libelle} — du ${dateFr(j.debut)} au ${dateFr(j.fin)}`,
     colonnes: [{ cle: 'journal', libelle: 'Journal' }, { cle: 'date', libelle: 'Date', type: 'date' }, { cle: 'numeroPiece', libelle: 'Pièce' }, { cle: 'compte', libelle: 'Compte' }, { cle: 'libelleCompte', libelle: 'Libellé du compte' },

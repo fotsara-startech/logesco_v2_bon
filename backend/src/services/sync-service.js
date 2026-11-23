@@ -50,7 +50,7 @@ const PULL_TABLES = [
   'stock_inventories', 'inventory_items', 'historique_recus', 'parametres_entreprise',
   // Comptabilité : références d'abord (exercices, comptes, journaux), puis écritures et lignes
   'compta_parametres', 'compta_exercices', 'compta_periodes', 'compta_comptes', 'compta_journaux',
-  'compta_ecritures', 'compta_lignes',
+  'compta_ecritures', 'compta_lignes', 'compta_immobilisations',
 ];
 
 // Tables that DO NOT have date_modification column

@@ -33,6 +33,10 @@ const MIGRATIONS = [
     name: 'add_compta_socle',
     sql: require('./compta-schema-pg'),
   },
+  {
+    name: 'add_compta_immobilisations',
+    sql: require('./compta-schema-pg-immobilisations'),
+  },
 ];
 
 const TRACKING_TABLE = '_app_migrations_pg';
