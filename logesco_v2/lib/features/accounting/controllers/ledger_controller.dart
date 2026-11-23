@@ -58,6 +58,7 @@ class LedgerController extends GetxController {
       journaux.value = await _service.journaux();
       exercices.value = await _service.exercices();
       comptes.value = await _service.comptes();
+      derniereGeneration.value = await _service.derniereGeneration();
       await loadEcritures();
     } on LedgerException catch (e) {
       SnackbarHelper.error(e.message);
@@ -129,6 +130,34 @@ class LedgerController extends GetxController {
 
   Future<void> chargerBalance({String? dateDebut, String? dateFin}) async {
     balance.value = await _run(() => _service.balance(dateDebut: dateDebut, dateFin: dateFin, boutiqueId: _boutiqueId));
+  }
+
+  // ── Écritures automatiques et contrôles ──
+  final generationEnCours = false.obs;
+  final derniereGeneration = Rxn<Map<String, dynamic>>();
+  final controles = Rxn<Map<String, dynamic>>();
+
+  Future<void> chargerDerniereGeneration() async {
+    derniereGeneration.value = await _run<Map<String, dynamic>?>(() => _service.derniereGeneration());
+  }
+
+  Future<void> lancerGeneration() async {
+    generationEnCours.value = true;
+    final r = await _run(() => _service.generer());
+    generationEnCours.value = false;
+    if (r == null) return;
+    if (r['ignore'] != null) {
+      SnackbarHelper.warning(r['ignore'].toString());
+      return;
+    }
+    derniereGeneration.value = r;
+    final erreurs = (r['erreurs'] as List).length;
+    SnackbarHelper.success(erreurs == 0 ? 'compta_msg_generation_ok'.tr : 'compta_msg_generation_errors'.trParams({'n': '$erreurs'}));
+    await loadEcritures();
+  }
+
+  Future<void> chargerControles() async {
+    controles.value = await _run(() => _service.controles());
   }
 
   // ── Exercices, paramètres, ouverture ──

@@ -83,6 +83,14 @@ class LedgerService {
   Future<Map<String, dynamic>> contrepasser(int id, {String? date, String? motif}) async =>
       Map<String, dynamic>.from(await _send('POST', '/ecritures/$id/contrepasser', {'dateEcriture': date, 'motif': motif}));
 
+  // Écritures automatiques et contrôles
+  Future<Map<String, dynamic>> generer() async => Map<String, dynamic>.from(await _send('POST', '/generer'));
+  Future<Map<String, dynamic>?> derniereGeneration() async {
+    final r = await _get('/generation');
+    return r == null ? null : Map<String, dynamic>.from(r);
+  }
+  Future<Map<String, dynamic>> controles() async => Map<String, dynamic>.from(await _get('/controles'));
+
   // États
   Future<Map<String, dynamic>> grandLivre(String compte, {String? dateDebut, String? dateFin, int? boutiqueId}) async =>
       Map<String, dynamic>.from(await _get('/grand-livre', {'compte': compte, 'dateDebut': dateDebut, 'dateFin': dateFin, 'boutiqueId': boutiqueId}));

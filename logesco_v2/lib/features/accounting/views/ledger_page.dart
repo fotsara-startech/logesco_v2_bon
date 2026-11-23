@@ -546,8 +546,76 @@ class _FiscalYearsTab extends StatelessWidget {
                 ]),
               ),
             ),
+            _automatique(context),
             for (final ex in c.exercices) _exercice(context, ex),
           ])),
+    );
+  }
+
+  Widget _automatique(BuildContext context) {
+    final r = c.derniereGeneration.value;
+    final erreurs = r == null ? <dynamic>[] : (r['erreurs'] as List? ?? []);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('compta_auto_title'.tr, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text('compta_auto_help'.tr, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ElevatedButton.icon(
+              icon: c.generationEnCours.value ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.auto_fix_high),
+              label: Text('compta_auto_run'.tr),
+              onPressed: c.generationEnCours.value ? null : c.lancerGeneration,
+            ),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.fact_check),
+              label: Text('compta_controls'.tr),
+              onPressed: () async {
+                await c.chargerControles();
+                if (context.mounted) _afficherControles(context);
+              },
+            ),
+          ]),
+          if (r != null) ...[
+            const SizedBox(height: 8),
+            Text('${'compta_auto_errors'.tr} : ${erreurs.length}', style: TextStyle(color: erreurs.isEmpty ? Colors.green : Colors.red)),
+            for (final e in erreurs.take(5)) Text('• ${e['type']} #${e['id']} : ${e['message']}', style: const TextStyle(fontSize: 12)),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  void _afficherControles(BuildContext context) {
+    final k = c.controles.value;
+    if (k == null) return;
+    final clients = List<Map<String, dynamic>>.from(k['clients'] as List);
+    final fournisseurs = List<Map<String, dynamic>>.from(k['fournisseurs'] as List);
+    final caisse = Map<String, dynamic>.from(k['caisse'] as Map);
+    Widget ligne(String nom, Map<String, dynamic> x) => ListTile(
+          dense: true,
+          title: Text(nom),
+          subtitle: Text('${'compta_controls_books'.tr} ${formatFcfa(x['comptabilite'] as num)} · ${'compta_controls_management'.tr} ${formatFcfa(x['gestion'] as num)}'),
+          trailing: Text(formatFcfa(x['ecart'] as num), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('compta_controls'.tr),
+        content: SizedBox(
+          width: 460,
+          child: ListView(shrinkWrap: true, children: [
+            Text(k['coherent'] == true ? 'compta_controls_ok'.tr : 'compta_controls_ko'.tr, style: TextStyle(fontWeight: FontWeight.bold, color: k['coherent'] == true ? Colors.green : Colors.orange)),
+            const SizedBox(height: 8),
+            if ((caisse['ecart'] as num) != 0) ligne('compta_controls_cash'.tr, caisse),
+            for (final x in clients) ligne('${'compta_controls_customer'.tr} : ${x['nom']}', x),
+            for (final x in fournisseurs) ligne('${'compta_controls_supplier'.tr} : ${x['nom']}', x),
+          ]),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text('close'.tr))],
+      ),
     );
   }
 

@@ -456,6 +456,9 @@ class ComptaService {
       if (!o) throw new ComptaError('Écriture introuvable', 404);
       if (o.statut === 'contrepassee') throw new ComptaError('Cette écriture est déjà contre-passée', 409, 'DEJA_CONTREPASSEE');
       if (o.statut !== 'validee') throw new ComptaError('Seule une écriture validée se contre-passe (supprimez un brouillon)', 409);
+      if (o.origine === 'auto') {
+        throw new ComptaError('Écriture automatique : corrigez l\'opération d\'origine (vente, commande, dépense...), la comptabilité se régularise seule', 409, 'ECRITURE_AUTO');
+      }
       if (o.origine === 'contrepassation') throw new ComptaError('Une contre-passation ne se contre-passe pas : saisissez une nouvelle écriture', 409);
 
       const date = jourUtc(dateEcriture || new Date(), 'Date de contre-passation');

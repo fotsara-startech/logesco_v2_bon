@@ -34,7 +34,7 @@ async function aPrivilege(prisma, user, privilege) {
   }
 }
 
-function createComptaRouter({ authService, prisma, comptaService }) {
+function createComptaRouter({ authService, prisma, comptaService, moteurAuto }) {
   const router = express.Router();
   const auth = authenticateToken(authService);
 
@@ -107,6 +107,17 @@ function createComptaRouter({ authService, prisma, comptaService }) {
     gerer('Écriture validée', (req) => comptaService.validerEcriture(req.params.id, { utilisateurId: req.user.id })));
   router.post('/ecritures/:id/contrepasser', auth, droit('VALIDATE'),
     gerer('Écriture contre-passée', (req) => comptaService.contrepasser(req.params.id, { ...req.body, utilisateurId: req.user.id }), 201));
+
+  // ── Écritures automatiques (poste de référence) ──
+  router.post('/generer', auth, droit('MANAGE'), gerer('Génération terminée', () => {
+    if (!moteurAuto) throw new ComptaError('Moteur automatique indisponible', 503);
+    return moteurAuto.generer({ force: true });
+  }));
+  router.get('/generation', auth, droit('READ'), gerer('Dernière génération', () => (moteurAuto && moteurAuto.dernierRapport) || null));
+  router.get('/controles', auth, droit('READ'), gerer('Contrôles de cohérence', () => {
+    if (!moteurAuto) throw new ComptaError('Moteur automatique indisponible', 503);
+    return moteurAuto.controles();
+  }));
 
   // ── États ──
   router.get('/grand-livre', auth, droit('READ'), gerer('Grand livre', (req) => comptaService.grandLivre({

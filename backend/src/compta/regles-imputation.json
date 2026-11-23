@@ -1,0 +1,46 @@
+{
+  "_avertissement": "Règles d'imputation des écritures automatiques. Propositions SYSCOHADA à faire relire par un expert-comptable : modifier un numéro de compte ici suffit, sans toucher au code. Les comptes cités doivent exister dans le plan comptable.",
+  "comptes": {
+    "clients": "411",
+    "avancesClients": "4191",
+    "ventesMarchandises": "701",
+    "tvaFacturee": "4431",
+    "caisse": "571",
+    "fournisseurs": "401",
+    "avancesFournisseurs": "4091",
+    "achatsMarchandises": "601",
+    "ecartCaisseNegatif": "658",
+    "ecartCaissePositif": "758"
+  },
+  "journaux": {
+    "ventes": "VT",
+    "achats": "AC",
+    "caisse": "CA"
+  },
+  "depenses": {
+    "compteParDefaut": "658",
+    "motsCles": [
+      ["loyer", "622"],
+      ["electricite", "605"],
+      ["eau", "605"],
+      ["carburant", "61"],
+      ["transport", "61"],
+      ["telephone", "628"],
+      ["internet", "628"],
+      ["salaire", "661"],
+      ["main d'oeuvre", "661"],
+      ["entretien", "624"],
+      ["reparation", "624"],
+      ["maintenance", "624"],
+      ["fourniture", "604"],
+      ["publicite", "627"],
+      ["frais bancaire", "631"],
+      ["banque", "631"],
+      ["assurance", "625"],
+      ["impot", "64"],
+      ["taxe", "64"],
+      ["cnps", "664"]
+    ],
+    "parCategorie": {}
+  }
+}

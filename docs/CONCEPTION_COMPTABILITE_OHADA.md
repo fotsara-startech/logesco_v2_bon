@@ -1,6 +1,6 @@
 # Conception du module Comptabilité (SYSCOHADA – Cameroun)
 
-> Statut : **phase 1 réalisée** (socle : schéma, plan comptable, écritures, grand livre, balance — voir « État de la phase 1 » en fin de document). Les phases 2 à 4 restent à faire.
+> Statut : **phases 1 et 2 réalisées** (socle, puis écritures automatiques — voir les sections « État de la phase » en fin de document). Les phases 3 et 4 restent à faire.
 > Les points marqués **[À VALIDER]** doivent être confirmés par un expert-comptable camerounais avant mise en production auprès de clients.
 
 ---
@@ -418,3 +418,30 @@ Liste complète et libellés officiels à charger depuis le plan SYSCOHADA révi
 - Numérotation continue par poste seulement (suffixe `-Pn`) ; à revoir si un cabinet exige une numérotation continue sur l'ensemble des postes.
 - Mode simple / expert : le réglage existe, mais tous les onglets restent visibles dans les deux modes (le mode simple viendra avec la phase 3).
 - Les droits ne masquent pas encore les boutons : le serveur refuse l'action (403) avec un message.
+
+---
+
+## État de la phase 2 (réalisé)
+
+**Principe retenu** (`backend/src/compta/moteur-auto.js`) : plutôt que de rejouer l'historique des opérations, le moteur calcule pour chaque document source (vente, commande, dépense, session de caisse...) la situation comptable qu'il doit produire aujourd'hui (un solde net par compte et par tiers), la compare à ce qui est déjà comptabilisé et n'écrit que la **différence**. Une annulation, une annulation partielle d'articles ou un règlement tardif produisent ainsi leur écriture de régularisation sans logique propre à chaque cas ; relancer ne change rien (idempotent) ; l'ordre de synchronisation des postes n'a pas d'importance. Les écritures sont validées, numérotées, datées du document (première écriture) ou de sa dernière modification (régularisation), ignorent tout ce qui précède la date d'ouverture, et ne se contre-passent pas à la main (on corrige l'opération d'origine).
+
+**Sources traduites** (règles dans `regles-imputation.json`, modifiables sans toucher au code) :
+- ventes terminées : 701, 4431, créance 411 (par client), avance consommée 4191, encaissement 571 ; ventes annulées : tout est repris ;
+- commandes fournisseurs : achats reçus 601, dette 401 (par fournisseur) ou avance 4091, règlements 571 ;
+- dépenses : compte de charge selon la catégorie (mots-clés, surcharge possible), contre 571 ; dépenses annulées reprises ;
+- écarts de caisse à la fermeture des sessions (658 / 758) ;
+- dépôts d'avance des clients (571 / 4191), paiements directs d'un client hors vente (571 / 411), règlements fournisseurs hors commande (401 / 571).
+
+**Exécution** : sur le poste de référence uniquement (poste 1, serveur cloud ou poste sans identité), toutes les 5 minutes (désactivable avec `COMPTA_AUTO=off`), ou à la demande (bouton « Générer maintenant », `POST /compta/generer`). Les opérations qui échouent (période verrouillée, aucun exercice...) sont listées dans le rapport sans bloquer les autres (`GET /compta/generation`).
+
+**Contrôles de cohérence** (`GET /compta/controles`, bouton « Contrôles de cohérence ») : compare les soldes tenus en comptabilité aux soldes de gestion (comptes clients, comptes fournisseurs, somme des caisses). Un écart signale une opération que le moteur ne sait pas traduire ; c'est le filet de sécurité qui évite une comptabilité fausse sans qu'on le voie.
+
+**Tests** : `npm run test:compta` (38 tests dont 18 pour le moteur, sur une base créée avec le schéma complet).
+
+**Limites connues** :
+- TVA récupérable sur achats non comptabilisée : les commandes fournisseurs ne portent pas de TVA en base ;
+- tout encaissement va en 571 : le mode de paiement réel (espèces, mobile money, banque) n'est pas enregistré sur la vente ;
+- variation de stocks, immobilisations, clôture : phase 4 ;
+- un paiement client direct enregistré sans session de caisse ouverte n'a pas de mouvement de caisse et n'est donc pas vu ; il apparaît dans les contrôles ;
+- chaque passage relit tous les documents depuis l'ouverture (pas de curseur) : à optimiser pour de très gros volumes ;
+- le comportement n'a été vérifié que sur des données de test, pas sur une base réelle de production : lancer d'abord sur une copie et examiner les contrôles.
