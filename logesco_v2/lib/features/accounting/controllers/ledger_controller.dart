@@ -198,6 +198,10 @@ class LedgerController extends GetxController {
     if (r != null) SnackbarHelper.success('compta_msg_lettrage_auto'.trParams({'n': '${r['lettrages']}'}));
   }
 
+  // ── Ouverture reprise de la gestion et journal d'audit ──
+  Future<Map<String, dynamic>?> propositionsOuverture() => _run<Map<String, dynamic>?>(() => _service.propositionsOuverture());
+  Future<Map<String, dynamic>?> chargerAudit({String? action}) => _run<Map<String, dynamic>?>(() => _service.audit(action: action));
+
   // ── Immobilisations et clôture ──
   final immobilisations = <Map<String, dynamic>>[].obs;
 

@@ -36,7 +36,7 @@ const od = (extra = {}) => ({
 });
 
 test.before(async () => {
-  for (const migration of ['add_compta_socle', 'add_compta_immobilisations']) {
+  for (const migration of ['add_compta_socle', 'add_compta_immobilisations', 'add_compta_audit']) {
     const sql = fs.readFileSync(path.join(__dirname, `../prisma/migrations/${migration}/migration.sql`), 'utf8');
     const instructions = sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean);
     for (const i of instructions) await prisma.$executeRawUnsafe(i);
@@ -258,7 +258,7 @@ test('synchronisation : écriture envoyée avant ses lignes, suppression d\'un b
   assert.strictEqual(operations.filter((o) => o.table === 'compta_lignes').length, 2);
   operations.length = 0;
   await service.supprimerBrouillon(e.id);
-  assert.deepStrictEqual(operations.map((o) => `${o.table}:${o.op}`), ['compta_lignes:DELETE', 'compta_lignes:DELETE', 'compta_ecritures:DELETE']);
+  assert.deepStrictEqual(operations.map((o) => `${o.table}:${o.op}`), ['compta_lignes:DELETE', 'compta_lignes:DELETE', 'compta_ecritures:DELETE', 'compta_audit:INSERT']);
 });
 
 test('numeroAuxiliaire : code du tiers complété à gauche', () => {

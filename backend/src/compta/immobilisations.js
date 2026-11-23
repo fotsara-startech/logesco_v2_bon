@@ -53,7 +53,7 @@ class ImmobilisationService {
     });
   }
 
-  async creer({ libelle, compteNumero, compteAmortNumero, compteDotationNumero, dateAcquisition, valeur, valeurResiduelle = 0, dureeMois, boutiqueId } = {}) {
+  async creer({ libelle, compteNumero, compteAmortNumero, compteDotationNumero, dateAcquisition, valeur, valeurResiduelle = 0, dureeMois, boutiqueId, utilisateurId } = {}) {
     libelle = String(libelle || '').trim();
     if (!libelle) throw new ComptaError('Le libellé est obligatoire');
     compteNumero = String(compteNumero || '').trim();
@@ -80,6 +80,7 @@ class ImmobilisationService {
       },
     });
     await this._enqueue('INSERT', immo);
+    await this.compta.tracer('immobilisation.creee', { utilisateurId, entiteType: 'immobilisation', entiteId: immo.id, details: { libelle, valeur, dureeMois } });
     return immo;
   }
 
@@ -165,6 +166,7 @@ class ImmobilisationService {
       source: { type: 'cession', id: immo.id, role: 'sortie' }, utilisateurId, valider: true,
     });
     await this._enqueue('UPDATE', maj);
+    await this.compta.tracer('immobilisation.cedee', { utilisateurId, entiteType: 'immobilisation', entiteId: immo.id, details: { prix, valeurNetteComptable: vnc } });
     return { immobilisation: maj, ecriture, amortissementCumule: cumul, valeurNetteComptable: vnc, plusOuMoinsValue: prix - vnc };
   }
 }

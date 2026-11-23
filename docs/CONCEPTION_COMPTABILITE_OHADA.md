@@ -510,3 +510,28 @@ Point de contrôle : **A + B + C = variation de la trésorerie nette**. Le calcu
 - Les à-nouveaux sont consolidés : les soldes d'ouverture ne gardent pas la répartition par boutique.
 - Pas d'écran de rapprochement bancaire (API seulement) ; pas de notes annexes, de DSF télétransmise ni de paie.
 - La clôture n'est pas annulable : sauvegarde conseillée avant de la lancer.
+
+---
+
+## Lot de fiabilisation (après la phase 4)
+
+Ce lot répond à l'inventaire des oublis du plan de départ qui empêchaient une vraie mise en service.
+
+**Vérification sur PostgreSQL (Neon).** Les suites comptables tournent désormais aussi sur PostgreSQL : `COMPTA_TEST_PG_URL=... node scripts/compta-test-postgres.js` génère un client Prisma dédié (sans toucher au client SQLite du projet) et exécute chaque suite dans un **schéma temporaire** qui est supprimé à la fin ; le schéma « public » n'est jamais modifié. La connexion se fait en direct (sans le pooler Neon, dont pgbouncer conserve le `search_path` d'une connexion à l'autre et fausse les requêtes des autres clients). Elle a révélé une différence entre les deux schémas Prisma : `Vente` et `CommandeApprovisionnement` n'ont pas de colonne `dateModification` côté PostgreSQL, donc en mode cloud pur une régularisation est datée du document et non de sa dernière modification.
+
+**Essai sur une copie des données.** `scripts/compta-essai-donnees.js` copie les tables de gestion d'une base Neon dans un schéma temporaire, enregistre l'ouverture à la date de la première activité, lance le moteur deux fois (idempotence) et affiche états et contrôles de cohérence en totaux uniquement (aucun nom). La base d'origine n'est lue qu'en `SELECT`.
+
+**Ouverture tiers par tiers.** L'assistant d'ouverture propose « Reprendre les soldes de la gestion » : caisses, stock valorisé, créance ou avance de chaque client, dette ou avance de chaque fournisseur (`GET /ouverture/propositions`). Les lignes d'ouverture portent le tiers (411 / 4191 / 401 / 4091) : la balance âgée, le lettrage et les contrôles sont justes dès le premier jour. La balance âgée tient maintenant compte des avances (4191, 4091).
+
+**Mouvements de caisse manuels.** Entrées et sorties de caisse saisies à la main sont comptabilisées : contrepartie devinée au libellé (apport, prélèvement → 462 ; remise ou retrait en banque → 585), sinon **compte d'attente** (4712 en entrée, 4711 en sortie) à justifier par une écriture d'opérations diverses. Les mouvements déjà couverts par un autre document (règlement client, dépôt, paiement fournisseur) sont ignorés. Mots-clés modifiables dans `regles-imputation.json`.
+
+**TVA récupérable sur achats.** Une commande fournisseur porte l'indicateur « facture avec TVA récupérable » (case dans le formulaire de commande). Les prix d'achat sont alors lus TTC et la TVA est extraite au taux par défaut de la comptabilité : 601 hors taxe, 4452 TVA déductible. Décocher l'indicateur régularise l'écriture. La déclaration de TVA mensuelle reçoit enfin une TVA déductible.
+
+**Journal d'audit.** Table `compta_audit`, synchronisée : validation, contre-passation, suppression de brouillon, modification des paramètres, verrouillage et réouverture de période, création de compte, ouverture, clôture d'exercice, lettrage, pointage bancaire, création et cession d'immobilisation. Une panne d'audit ne bloque jamais l'opération tracée. Consultation : `GET /audit` ou bouton « Journal d'audit » de l'onglet Exercices (mode expert).
+
+**Restent à faire** : écrans de lettrage manuel et de rapprochement bancaire ; écran d'édition des règles d'imputation ; file persistante des écritures en erreur ; masquage des boutons selon les droits ; export PDF ; mode de paiement réel (mobile money, banque) ; écriture de liquidation mensuelle de la TVA ; suivi des autres impôts ; frais d'approche.
+
+**Résultats observés.**
+- *PostgreSQL (Neon 17)* : les 53 tests des suites comptables passent (une première passe a eu un échec dû à une coupure réseau, rejouée avec succès). L'essai a mis en évidence qu'une transaction interactive de Prisma coupe à 5 s par défaut : insuffisant vers une base distante, les transactions comptables disposent maintenant de 60 s, et la validation des lignes d'écriture fait une seule requête pour tous les comptes. Sur SQLite : 73 tests comptables et 218 tests de synchronisation passent.
+- *Essai sur la copie des données de la base de test* (66 ventes, 2 commandes, 24 dépôts clients, 87 mouvements de caisse) : aucune erreur de génération, seconde passe sans nouvelle écriture, balance et bilan équilibrés, contrôle du TFT conforme. Les contrôles de cohérence ont signalé des écarts qui viennent des **données de gestion**, pas du moteur : 18 ventes terminées payées (1 031 550 FCFA) n'ont **aucune session de caisse** donc aucun mouvement de caisse, ce qui explique l'essentiel de l'écart entre la caisse comptable et la somme des caisses ; quatre clients ont un solde de compte qui ne correspond pas à leurs lignes ni à leurs ventes ; deux fournisseurs ont une dette de départ saisie directement sur leur compte, que l'ouverture « Reprendre les soldes de la gestion » reprend. À examiner avec l'exploitant avant la mise en service.
+- *Durée* : sur une base distante chaque document coûte plusieurs allers-retours (environ 6 s par document dans cet essai, soit 10 minutes pour la première génération) ; en local sur SQLite, ou depuis un serveur proche de la base, c'est instantané. Les passes suivantes ne traitent que les écarts.

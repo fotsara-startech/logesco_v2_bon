@@ -287,6 +287,13 @@ class _CreateCommandeDialogState extends State<CreateCommandeDialog> {
           maxLines: 3,
           onChanged: (value) => widget.controller.notes.value = value,
         ),
+        Obx(() => SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('procurement_vat_recoverable'.tr),
+              subtitle: Text('procurement_vat_recoverable_help'.tr, style: const TextStyle(fontSize: 12)),
+              value: widget.controller.tvaRecuperable.value,
+              onChanged: (v) => widget.controller.tvaRecuperable.value = v,
+            )),
       ],
     );
   }

@@ -5370,4 +5370,11 @@ Map<String, String> frTranslations = {
   'compta_close_stock_help': 'Proposition : stock actuel × coût moyen. Remplacez-la par la valeur de votre inventaire de fin d\'exercice.',
   'compta_close_confirm': 'Clôturer définitivement',
   'compta_state_cash_flow': 'Flux de trésorerie (TFT)',
+  'procurement_vat_recoverable': 'Facture fournisseur avec TVA récupérable',
+  'procurement_vat_recoverable_help': 'Les prix saisis sont TTC : la TVA est déduite de votre déclaration (comptabilité).',
+  'compta_opening_import': 'Reprendre les soldes de la gestion',
+  'compta_opening_imported': 'Repris de la gestion',
+  'compta_opening_customers': 'client(s)',
+  'compta_opening_suppliers': 'fournisseur(s)',
+  'compta_audit_title': 'Journal d\'audit',
 };

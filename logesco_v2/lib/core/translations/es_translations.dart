@@ -5179,5 +5179,12 @@ const Map<String, String> esTranslations = {
   'compta_close_stock_help': 'Propuesta: existencias actuales × coste medio. Sustitúyala por el valor de su inventario de fin de ejercicio.',
   'compta_close_confirm': 'Cerrar definitivamente',
   'compta_state_cash_flow': 'Flujos de tesorería',
+  'procurement_vat_recoverable': 'Factura de proveedor con IVA recuperable',
+  'procurement_vat_recoverable_help': 'Los precios incluyen IVA: se deduce de su declaración (contabilidad).',
+  'compta_opening_import': 'Importar saldos de la gestión',
+  'compta_opening_imported': 'Importado de la gestión',
+  'compta_opening_customers': 'cliente(s)',
+  'compta_opening_suppliers': 'proveedor(es)',
+  'compta_audit_title': 'Registro de auditoría',
 };
 // };

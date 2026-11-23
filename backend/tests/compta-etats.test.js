@@ -10,16 +10,13 @@ const os = require('node:os');
 const path = require('node:path');
 const { execSync } = require('node:child_process');
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const installation = require('../src/utils/installation');
 const referentiel = require('../src/compta/referentiel');
 const { ComptaService, ComptaError } = require('../src/compta/compta-service');
 const { EtatsService, enCsv } = require('../src/compta/etats');
 const { createComptaRouter } = require('../src/routes/compta');
 
-const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'compta-etats-'));
-const url = `file:${path.join(dossier, 'test.db').replace(/\\/g, '/')}`;
-const prisma = new PrismaClient({ datasources: { db: { url } } });
+const { prisma, nettoyer } = require('./helpers/base-compta').creerBaseSync('etats');
 const service = new ComptaService(prisma, null);
 const etats = new EtatsService(prisma, service);
 
@@ -29,9 +26,6 @@ const ecrire = (journalCode, dateEcriture, libelle, lignes, extra = {}) =>
   service.creerEcriture({ journalCode, dateEcriture, libelle, lignes, valider: true, ...extra });
 
 test.before(async () => {
-  execSync('npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss', {
-    cwd: path.join(__dirname, '..'), env: { ...process.env, DATABASE_URL: url }, stdio: 'pipe',
-  });
   await referentiel.ensureReferentiel(prisma);
   installation.setInstallationId(null);
   clientA = await prisma.client.create({ data: { nom: 'Atangana', prenom: 'Paul' } });
@@ -65,8 +59,7 @@ test.before(async () => {
 
 test.after(async () => {
   await new Promise((ok) => serveur.close(ok));
-  await prisma.$disconnect();
-  fs.rmSync(dossier, { recursive: true, force: true });
+  await nettoyer();
 });
 
 const rub = (etat, id) => etat.lignes.find((l) => l.id === id).montant;

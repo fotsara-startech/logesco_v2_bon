@@ -37,6 +37,14 @@ const MIGRATIONS = [
     name: 'add_compta_immobilisations',
     sql: require('./compta-schema-pg-immobilisations'),
   },
+  {
+    name: 'add_compta_audit',
+    sql: require('./compta-schema-pg-audit'),
+  },
+  {
+    name: 'add_commande_tva_recuperable',
+    sql: 'ALTER TABLE commandes_approvisionnement ADD COLUMN IF NOT EXISTS tva_recuperable BOOLEAN NOT NULL DEFAULT false',
+  },
 ];
 
 const TRACKING_TABLE = '_app_migrations_pg';

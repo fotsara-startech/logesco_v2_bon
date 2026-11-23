@@ -50,6 +50,7 @@ class ProcurementController extends GetxController {
   final Rx<DateTime?> dateLivraisonPrevue = Rx<DateTime?>(null);
   final Rx<ModePaiement> modePaiement = ModePaiement.credit.obs;
   final RxString notes = ''.obs;
+  final RxBool tvaRecuperable = false.obs; // facture d'achat avec TVA récupérable (comptabilité)
 
   // Alertes
   final RxList<Map<String, dynamic>> alertes = <Map<String, dynamic>>[].obs;
@@ -150,6 +151,7 @@ class ProcurementController extends GetxController {
         boutiqueId: BoutiqueController.getActiveBoutiqueId(),
         dateLivraisonPrevue: dateLivraisonPrevue.value,
         modePaiement: 'credit', // Mode de paiement par défaut, sera défini lors de la réception
+        tvaRecuperable: tvaRecuperable.value,
         notes: notes.value.isNotEmpty ? notes.value : null,
         details: details,
       );
@@ -279,6 +281,7 @@ class ProcurementController extends GetxController {
     detailsCommande.clear();
     dateLivraisonPrevue.value = null;
     modePaiement.value = ModePaiement.credit;
+    tvaRecuperable.value = false;
     notes.value = '';
   }
 

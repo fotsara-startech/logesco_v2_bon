@@ -78,8 +78,11 @@ function cibleVente(v) {
   ]);
 }
 
-/** Commande fournisseur : achats reçus, dette (ou avance versée) et règlements déjà effectués */
-function cibleCommande(c) {
+/**
+ * Commande fournisseur : achats reçus, TVA récupérable, dette (ou avance versée) et règlements déjà effectués.
+ * Quand la commande est marquée « TVA récupérable », les prix d'achat sont TTC : la TVA est extraite au taux par défaut.
+ */
+function cibleCommande(c, tauxTva = 0) {
   if (c.statut === 'annulee') return [];
   const valeur = entier(c.details.reduce((s, d) => s + (Number(d.quantiteRecue) || 0) * (Number(d.coutUnitaire) || 0), 0));
   const paye = Math.max(0, entier(c.montantPaye));
@@ -87,8 +90,10 @@ function cibleCommande(c) {
   const dette = Math.max(0, valeur - paye);
   const avance = Math.max(0, paye - valeur);
   const tiers = { tiersType: 'fournisseur', tiersId: c.fournisseurId };
+  const tva = c.tvaRecuperable && tauxTva > 0 ? Math.round((valeur * tauxTva) / (100 + tauxTva)) : 0;
   return agreger([
-    { compteNumero: C.achatsMarchandises, net: valeur },
+    { compteNumero: C.achatsMarchandises, net: valeur - tva },
+    { compteNumero: C.tvaRecuperable, net: tva },
     { compteNumero: C.fournisseurs, net: -dette, ...tiers },
     { compteNumero: C.avancesFournisseurs, net: avance, ...tiers },
     { compteNumero: C.caisse, net: -paye },
@@ -110,6 +115,30 @@ function cibleEcartCaisse(s) {
   return ecart < 0
     ? agreger([{ compteNumero: C.ecartCaisseNegatif, net: -ecart }, { compteNumero: C.caisse, net: ecart }])
     : agreger([{ compteNumero: C.caisse, net: ecart }, { compteNumero: C.ecartCaissePositif, net: -ecart }]);
+}
+
+const motsCaisse = regles.caisseManuelle;
+
+/**
+ * Entrée ou sortie de caisse saisie à la main : le compte de contrepartie se devine au libellé (apport, banque...),
+ * à défaut c'est un compte d'attente à justifier.
+ */
+function cibleMouvementCaisse(m) {
+  const montant = Math.max(0, entier(m.montant));
+  const entree = m.type === 'entree';
+  const texte = sansAccent(m.description);
+  const trouve = motsCaisse.motsCles.find(([mot]) => texte.includes(sansAccent(mot)));
+  const contrepartie = trouve ? trouve[1] : (entree ? motsCaisse.attenteEntree : motsCaisse.attenteSortie);
+  return agreger([
+    { compteNumero: C.caisse, net: entree ? montant : -montant },
+    { compteNumero: contrepartie, net: entree ? -montant : montant },
+  ]);
+}
+
+/** Mouvement de caisse déjà traduit par un autre document (règlement client, dépôt, paiement fournisseur) ? */
+function mouvementDejaCouvert(meta) {
+  if (!meta) return false;
+  return ['paiement_client', 'depot_client'].includes(meta.categorie) || meta.typeTransaction === 'paiement_fournisseur';
 }
 
 /** Argent versé en caisse par un client sans lien avec une vente (dette, dépôt d'avance) */
@@ -253,6 +282,7 @@ class MoteurAuto {
       const ouverture = jourComptable(params.dateOuverture);
       const depuis = new Date(ouverture.getTime() - 2 * 24 * 3600 * 1000);
       const rapport = { ouverture, parType: {}, erreurs: [], debut: new Date(debut) };
+      const tauxTva = params.assujettiTva ? Number(params.tauxTvaDefaut) || 0 : 0;
       const p = this.prisma;
 
       // Ventes
@@ -264,7 +294,7 @@ class MoteurAuto {
       // Commandes fournisseurs
       await this._traiter(rapport, 'achat', await p.commandeApprovisionnement.findMany({ where: { dateCommande: { gte: depuis } }, include: { details: true }, orderBy: { id: 'asc' } }), (c) => ({
         sourceId: c.id, journalCode: regles.journaux.achats, dateDocument: c.dateCommande, dateModification: c.dateModification,
-        libelle: `Commande ${c.numeroCommande}`, boutiqueId: c.boutiqueId, cible: cibleCommande(c),
+        libelle: `Commande ${c.numeroCommande}`, boutiqueId: c.boutiqueId, cible: cibleCommande(c, tauxTva),
       }));
 
       // Dépenses
@@ -281,17 +311,26 @@ class MoteurAuto {
       }));
 
       // Paiements directs d'un client (hors vente) : mouvement de caisse « paiement_client »
-      const entrees = await p.cashMovement.findMany({ where: { type: 'entree', dateCreation: { gte: depuis } }, orderBy: { id: 'asc' } });
+      const mouvements = await p.cashMovement.findMany({ where: { type: { in: ['entree', 'sortie'] }, dateCreation: { gte: depuis } }, orderBy: { id: 'asc' } });
       const paiementsClients = [];
-      for (const m of entrees) {
+      const mouvementsManuels = [];
+      for (const m of mouvements) {
         let meta = null;
         try { meta = m.metadata ? JSON.parse(m.metadata) : null; } catch { meta = null; }
-        if (meta && meta.categorie === 'paiement_client' && meta.clientId) paiementsClients.push({ m, clientId: Number(meta.clientId) });
+        if (m.type === 'entree' && meta && meta.categorie === 'paiement_client' && meta.clientId) paiementsClients.push({ m, clientId: Number(meta.clientId) });
+        else if (!mouvementDejaCouvert(meta)) mouvementsManuels.push(m);
       }
       await this._traiter(rapport, 'reglement_client', paiementsClients.map((x) => ({ id: x.m.id, ...x })), (x) => ({
         sourceId: x.m.id, journalCode: regles.journaux.caisse, dateDocument: x.m.dateCreation, dateModification: null,
         libelle: x.m.description || `Règlement client ${x.clientId}`, boutiqueId: x.m.boutiqueId,
         cible: cibleCaisseClient(x.m.montant, C.clients, x.clientId),
+      }));
+
+      // Entrées et sorties de caisse saisies à la main (apports, retraits, remises en banque...)
+      await this._traiter(rapport, 'mouvement_caisse', mouvementsManuels, (m) => ({
+        sourceId: m.id, journalCode: regles.journaux.caisse, dateDocument: m.dateCreation, dateModification: null,
+        libelle: m.description || (m.type === 'entree' ? 'Entrée de caisse' : 'Sortie de caisse'), boutiqueId: m.boutiqueId,
+        cible: cibleMouvementCaisse(m),
       }));
 
       // Mouvements du compte client : dépôts d'avance (hors paiement de dette, déjà porté par les ventes)
@@ -394,5 +433,5 @@ class MoteurAuto {
 
 module.exports = {
   MoteurAuto, peutGenerer, jourComptable, compteDepense,
-  cibleVente, cibleCommande, cibleDepense, cibleEcartCaisse, cibleCaisseClient, cibleReglementFournisseur,
+  cibleVente, cibleCommande, cibleDepense, cibleEcartCaisse, cibleCaisseClient, cibleReglementFournisseur, cibleMouvementCaisse,
 };

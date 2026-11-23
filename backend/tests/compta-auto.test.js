@@ -9,15 +9,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execSync } = require('node:child_process');
-const { PrismaClient } = require('@prisma/client');
 const installation = require('../src/utils/installation');
 const referentiel = require('../src/compta/referentiel');
 const { ComptaService } = require('../src/compta/compta-service');
 const { MoteurAuto, compteDepense, cibleVente, cibleCommande } = require('../src/compta/moteur-auto');
 
-const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'compta-auto-'));
-const url = `file:${path.join(dossier, 'test.db').replace(/\\/g, '/')}`;
-const prisma = new PrismaClient({ datasources: { db: { url } } });
+const { prisma, nettoyer, postgres } = require('./helpers/base-compta').creerBaseSync('auto');
+// Le schéma PostgreSQL du projet n'a pas de colonne dateModification sur les ventes ni les commandes : la date de régularisation retombe alors sur celle du document
+const modif = (iso) => (postgres ? {} : { dateModification: new Date(iso) });
 const service = new ComptaService(prisma, null);
 const moteur = new MoteurAuto(prisma, service);
 
@@ -45,9 +44,6 @@ const vente = (extra = {}) => ({
 });
 
 test.before(async () => {
-  execSync('npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss', {
-    cwd: path.join(__dirname, '..'), env: { ...process.env, DATABASE_URL: url }, stdio: 'pipe',
-  });
   await referentiel.ensureReferentiel(prisma);
   installation.setInstallationId(null);
 
@@ -63,8 +59,7 @@ test.before(async () => {
 });
 
 test.after(async () => {
-  await prisma.$disconnect();
-  fs.rmSync(dossier, { recursive: true, force: true });
+  await nettoyer();
 });
 
 test('sans ouverture enregistrée : rien n\'est généré', async () => {
@@ -123,21 +118,21 @@ test('vente à crédit au client puis règlement : créance suivie par client, �
   assert.strictEqual(await net('411', { tiersId: client.id }), 13850);
   assert.strictEqual(await net('571', { sourceType: 'vente', sourceId: v.id }), 10000);
 
-  await prisma.vente.update({ where: { id: v.id }, data: { montantPaye: 23850, montantRestant: 0, dateModification: new Date('2027-04-02T09:00:00Z') } });
+  await prisma.vente.update({ where: { id: v.id }, data: { montantPaye: 23850, montantRestant: 0, ...modif('2027-04-02T09:00:00Z') } });
   await moteur.generer({ force: true });
   assert.strictEqual(await net('411', { tiersId: client.id }), 0);
   assert.strictEqual(await net('571', { sourceType: 'vente', sourceId: v.id }), 23850);
   const pieces = await prisma.comptaEcriture.findMany({ where: { sourceType: 'vente', sourceId: v.id }, orderBy: { id: 'asc' } });
   assert.strictEqual(pieces.length, 2);
   assert.match(pieces[1].libelle, /régularisation/);
-  assert.strictEqual(pieces[1].dateEcriture.toISOString().slice(0, 10), '2027-04-02');
+  if (!postgres) assert.strictEqual(pieces[1].dateEcriture.toISOString().slice(0, 10), '2027-04-02');
 });
 
 test('annulation d\'une vente : tout est contre-passé, solde du document nul', async () => {
   const v = await prisma.vente.create({ data: vente({ dateVente: new Date('2027-05-05T10:00:00Z') }) });
   await moteur.generer({ force: true });
   assert.strictEqual(await net('701', { sourceType: 'vente', sourceId: v.id }), -10000);
-  await prisma.vente.update({ where: { id: v.id }, data: { statut: 'annulee', dateModification: new Date('2027-05-06T10:00:00Z') } });
+  await prisma.vente.update({ where: { id: v.id }, data: { statut: 'annulee', ...modif('2027-05-06T10:00:00Z') } });
   await moteur.generer({ force: true });
   for (const compte of ['701', '4431', '571', '411']) assert.strictEqual(await net(compte, { sourceType: 'vente', sourceId: v.id }), 0, compte);
 });
@@ -146,7 +141,7 @@ test('annulation partielle d\'articles : seule la différence est écrite', asyn
   const v = await prisma.vente.create({ data: vente({ dateVente: new Date('2027-05-10T10:00:00Z') }) });
   await moteur.generer({ force: true });
   // moitié des articles annulés, remboursée en espèces (comme settleReleasedValue)
-  await prisma.vente.update({ where: { id: v.id }, data: { sousTotal: 5000, montantTva: 962.5, montantTotal: 5962.5, montantPaye: 5962.5, dateModification: new Date('2027-05-11T10:00:00Z') } });
+  await prisma.vente.update({ where: { id: v.id }, data: { sousTotal: 5000, montantTva: 962.5, montantTotal: 5962.5, montantPaye: 5962.5, ...modif('2027-05-11T10:00:00Z') } });
   await moteur.generer({ force: true });
   const ht = await net('701', { sourceType: 'vente', sourceId: v.id });
   const tva = await net('4431', { sourceType: 'vente', sourceId: v.id });
@@ -196,7 +191,7 @@ test('achat fournisseur : achats reçus, dette puis règlement', async () => {
   assert.strictEqual(await net('401', { tiersId: fournisseur.id }), -6000);
   assert.strictEqual(await net('571', { sourceType: 'achat', sourceId: c.id }), -4000);
 
-  await prisma.commandeApprovisionnement.update({ where: { id: c.id }, data: { montantPaye: 12000, dateModification: new Date('2027-07-05T10:00:00Z') } });
+  await prisma.commandeApprovisionnement.update({ where: { id: c.id }, data: { montantPaye: 12000, ...modif('2027-07-05T10:00:00Z') } });
   await moteur.generer({ force: true });
   assert.strictEqual(await net('401', { tiersId: fournisseur.id }), 0);
   assert.strictEqual(await net('4091', { tiersId: fournisseur.id }), 2000, 'payé plus que reçu : avance fournisseur');

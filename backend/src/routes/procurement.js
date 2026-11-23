@@ -129,7 +129,7 @@ function createProcurementRouter(services) {
     validate(commandeApprovisionnementSchemas.create, 'body'),
     async (req, res) => {
       try {
-        const { fournisseurId, dateLivraisonPrevue, modePaiement, notes, details } = req.body;
+        const { fournisseurId, dateLivraisonPrevue, modePaiement, notes, details, tvaRecuperable } = req.body;
 
         // Extraire boutiqueId
         const boutiqueId = req.body.boutiqueId ||
@@ -184,6 +184,7 @@ function createProcurementRouter(services) {
             boutiqueId: boutiqueIdInt,
             dateLivraisonPrevue: dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null,
             modePaiement: modePaiement || 'credit',
+            tvaRecuperable: Boolean(tvaRecuperable),
             notes,
             montantTotal,
             details: {
@@ -528,6 +529,7 @@ function createProcurementRouter(services) {
         if (updates.modePaiement) updateData.modePaiement = updates.modePaiement;
         if (updates.notes !== undefined) updateData.notes = updates.notes;
         if (updates.statut) updateData.statut = updates.statut;
+        if (updates.tvaRecuperable !== undefined) updateData.tvaRecuperable = Boolean(updates.tvaRecuperable);
 
         const commande = await prisma.commandeApprovisionnement.update({
           where: { id: parseInt(id) },

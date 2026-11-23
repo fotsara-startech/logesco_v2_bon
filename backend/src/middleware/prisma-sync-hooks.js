@@ -49,7 +49,7 @@ const SYNC_TABLES = {
     columns: [
       'id', 'numero_commande', 'fournisseur_id', 'boutique_id', 'statut',
       'date_commande', 'date_livraison_prevue', 'montant_total', 'montant_paye',
-      'montant_restant', 'mode_paiement', 'notes', 'date_modification'
+      'montant_restant', 'mode_paiement', 'notes', 'tva_recuperable', 'date_modification'
     ]
   },
   detailCommandeApprovisionnement: {

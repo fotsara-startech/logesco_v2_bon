@@ -10,7 +10,6 @@ const os = require('node:os');
 const path = require('node:path');
 const { execSync } = require('node:child_process');
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const installation = require('../src/utils/installation');
 const referentiel = require('../src/compta/referentiel');
 const { ComptaService, ComptaError } = require('../src/compta/compta-service');
@@ -20,9 +19,7 @@ const { ImmobilisationService, amortissementCumule, moisInclus } = require('../s
 const { ClotureService } = require('../src/compta/cloture');
 const { createComptaRouter } = require('../src/routes/compta');
 
-const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'compta-cloture-'));
-const url = `file:${path.join(dossier, 'test.db').replace(/\\/g, '/')}`;
-const prisma = new PrismaClient({ datasources: { db: { url } } });
+const { prisma, nettoyer } = require('./helpers/base-compta').creerBaseSync('cloture');
 const service = new ComptaService(prisma, null);
 const moteur = new MoteurAuto(prisma, service);
 const etats = new EtatsService(prisma, service);
@@ -39,9 +36,6 @@ const net = async (numero, filtre = {}) => {
 };
 
 test.before(async () => {
-  execSync('npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss', {
-    cwd: path.join(__dirname, '..'), env: { ...process.env, DATABASE_URL: url }, stdio: 'pipe',
-  });
   await referentiel.ensureReferentiel(prisma);
   installation.setInstallationId(null);
   fournisseur = await prisma.fournisseur.create({ data: { nom: 'Grossiste SA' } });
@@ -61,8 +55,7 @@ test.before(async () => {
 
 test.after(async () => {
   await new Promise((ok) => serveur.close(ok));
-  await prisma.$disconnect();
-  fs.rmSync(dossier, { recursive: true, force: true });
+  await nettoyer();
 });
 
 test('calcul de l\'amortissement linéaire au mois près', () => {

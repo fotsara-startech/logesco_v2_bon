@@ -285,6 +285,7 @@ const commandeApprovisionnementSchemas = {
     boutiqueId: baseSchemas.id.allow(null),
     dateLivraisonPrevue: baseSchemas.date.allow(null),
     modePaiement: baseSchemas.modePaiement.default('credit'),
+    tvaRecuperable: Joi.boolean().default(false),
     notes: Joi.string().max(500).allow('', null),
     details: Joi.array().items(
       Joi.object({
@@ -298,6 +299,7 @@ const commandeApprovisionnementSchemas = {
   update: Joi.object({
     dateLivraisonPrevue: baseSchemas.date.allow(null),
     modePaiement: baseSchemas.modePaiement,
+    tvaRecuperable: Joi.boolean(),
     notes: Joi.string().max(500).allow('', null),
     statut: baseSchemas.statut
   }).min(1),

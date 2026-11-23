@@ -329,6 +329,8 @@ model CommandeApprovisionnement {
   montantRestant      Float                             @default(0) @map("montant_restant")
   modePaiement        String                            @default("credit") @map("mode_paiement")
   notes               String?
+  // Facture avec TVA récupérable : les prix d'achat sont alors TTC, au taux par défaut de la comptabilité
+  tvaRecuperable      Boolean                           @default(false) @map("tva_recuperable")
   dateModification    DateTime? @map("date_modification")
   boutique            Boutique?                         @relation(fields: [boutiqueId], references: [id])
   fournisseur         Fournisseur                       @relation(fields: [fournisseurId], references: [id])
@@ -1076,4 +1078,20 @@ model ComptaImmobilisation {
 
   @@index([statut], map: "idx_compta_immobilisations_statut")
   @@map("compta_immobilisations")
+}
+
+// Journal d'audit de la comptabilité : qui a fait quoi, quand (lignes jamais modifiées)
+model ComptaAudit {
+  id               Int      @id @default(autoincrement())
+  dateAction       DateTime @default(now()) @map("date_action")
+  utilisateurId    Int?     @map("utilisateur_id")
+  action           String
+  entiteType       String?  @map("entite_type")
+  entiteId         Int?     @map("entite_id")
+  details          String?
+  dateModification DateTime @updatedAt @map("date_modification")
+
+  @@index([dateAction], map: "idx_compta_audit_date")
+  @@index([action], map: "idx_compta_audit_action")
+  @@map("compta_audit")
 }

@@ -69,6 +69,23 @@ class ClotureService {
     return { valeurStock, valeurCalculee: calculee, variation, ecriture: r === 'cree' };
   }
 
+  /**
+   * Soldes de départ proposés à partir de la gestion : caisses, stock valorisé, créances et avances des clients,
+   * dettes et avances des fournisseurs. L'utilisateur les relit avant d'enregistrer l'ouverture.
+   * clients[].montant : > 0 = le client doit de l'argent ; < 0 = le client a une avance.
+   * fournisseurs[].montant : > 0 = vous devez de l'argent ; < 0 = vous avez versé une avance.
+   */
+  async propositionsOuverture() {
+    const caisse = (await this.prisma.cashRegister.aggregate({ _sum: { soldeActuel: true } }))._sum.soldeActuel || 0;
+    const clients = (await this.prisma.compteClient.findMany({ include: { client: { select: { nom: true, prenom: true } } } }))
+      .map((c) => ({ clientId: c.clientId, nom: `${c.client?.nom || ''} ${c.client?.prenom || ''}`.trim(), montant: -Math.round(Number(c.soldeActuel) || 0) }))
+      .filter((c) => c.montant !== 0);
+    const fournisseurs = (await this.prisma.compteFournisseur.findMany({ include: { fournisseur: { select: { nom: true } } } }))
+      .map((c) => ({ fournisseurId: c.fournisseurId, nom: c.fournisseur?.nom || '', montant: Math.round(Number(c.soldeActuel) || 0) }))
+      .filter((c) => c.montant !== 0);
+    return { caisse: Math.round(caisse), stock: await this.valeurStock(), clients, fournisseurs };
+  }
+
   // ───────────────────────────── Clôture ─────────────────────────────
 
   /**
@@ -155,6 +172,7 @@ class ClotureService {
     const params = await this.prisma.comptaParametres.update({ where: { id: 1 }, data: { exerciceDefautId: suivant.id } });
     await this.compta._enqueue('compta_parametres', 'UPDATE', params);
     resume.cloture = true;
+    await this.compta.tracer('exercice.cloture', { utilisateurId, entiteType: 'exercice', entiteId: exercice.id, details: { resultat: resume.resultat, exerciceSuivant: suivant.id } });
     return resume;
   }
 
@@ -192,7 +210,7 @@ class ClotureService {
     };
   }
 
-  async pointer({ ligneIds = [], dateReleve } = {}) {
+  async pointer({ ligneIds = [], dateReleve, utilisateurId } = {}) {
     const ids = [...new Set(ligneIds.map(Number))];
     if (ids.length === 0) throw new ComptaError('Sélectionnez au moins une ligne');
     const jour = jourUtc(dateReleve, 'Date du relevé');
@@ -204,6 +222,7 @@ class ClotureService {
     const code = `RB${jour.toISOString().slice(0, 10).replace(/-/g, '')}`;
     await this.prisma.comptaLigne.updateMany({ where: { id: { in: ids } }, data: { lettrage: code } });
     await this._enqueueLignes(ids);
+    await this.compta.tracer('rapprochement.pointage', { utilisateurId, entiteType: 'ligne', details: { code, lignes: ids.length } });
     return { code, lignes: ids.length };
   }
 

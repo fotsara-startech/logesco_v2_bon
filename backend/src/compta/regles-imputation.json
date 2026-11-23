@@ -10,7 +10,8 @@
     "avancesFournisseurs": "4091",
     "achatsMarchandises": "601",
     "ecartCaisseNegatif": "658",
-    "ecartCaissePositif": "758"
+    "ecartCaissePositif": "758",
+    "tvaRecuperable": "4452"
   },
   "journaux": {
     "ventes": "VT",
@@ -42,5 +43,21 @@
       ["cnps", "664"]
     ],
     "parCategorie": {}
+  },
+  "caisseManuelle": {
+    "_commentaire": "Entrées et sorties de caisse saisies à la main, sans nature connue : elles vont en compte d'attente (à justifier par une écriture d'opérations diverses) sauf mot-clé reconnu dans le libellé.",
+    "attenteEntree": "4712",
+    "attenteSortie": "4711",
+    "motsCles": [
+      ["apport", "462"],
+      ["compte courant", "462"],
+      ["associe", "462"],
+      ["prelevement", "462"],
+      ["retrait banque", "585"],
+      ["versement banque", "585"],
+      ["depot banque", "585"],
+      ["remise en banque", "585"],
+      ["banque", "585"]
+    ]
   }
 }

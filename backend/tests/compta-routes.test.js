@@ -42,9 +42,11 @@ const appel = async (jeton, methode, url, corps) => {
 };
 
 test.before(async () => {
-  const sql = fs.readFileSync(path.join(__dirname, '../prisma/migrations/add_compta_socle/migration.sql'), 'utf8');
-  for (const i of sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean)) {
-    await prisma.$executeRawUnsafe(i);
+  for (const migration of ['add_compta_socle', 'add_compta_audit']) {
+    const sql = fs.readFileSync(path.join(__dirname, `../prisma/migrations/${migration}/migration.sql`), 'utf8');
+    for (const i of sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean)) {
+      await prisma.$executeRawUnsafe(i);
+    }
   }
   await referentiel.ensureReferentiel(prisma);
   const app = express();

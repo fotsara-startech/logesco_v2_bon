@@ -92,13 +92,14 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
 
   // ── Paramètres et ouverture ──
   router.get('/parametres', auth, droit('READ'), gerer('Paramètres comptables', () => comptaService.getParametres()));
-  router.put('/parametres', auth, droit('MANAGE'), gerer('Paramètres mis à jour', (req) => comptaService.updateParametres(req.body)));
+  router.put('/parametres', auth, droit('MANAGE'), gerer('Paramètres mis à jour', (req) => comptaService.updateParametres(req.body, { utilisateurId: req.user.id })));
+  router.get('/ouverture/propositions', auth, droit('MANAGE'), gerer('Propositions d\'ouverture', () => clotureService.propositionsOuverture()));
   router.post('/ouverture', auth, droit('MANAGE'),
     gerer('Ouverture enregistrée', (req) => comptaService.enregistrerOuverture({ ...req.body, utilisateurId: req.user.id }), 201));
 
   // ── Plan comptable ──
   router.get('/comptes', auth, droit('READ'), gerer('Plan comptable', (req) => comptaService.listerComptes(req.query)));
-  router.post('/comptes', auth, droit('CREATE'), gerer('Compte créé', (req) => comptaService.creerCompte(req.body), 201));
+  router.post('/comptes', auth, droit('CREATE'), gerer('Compte créé', (req) => comptaService.creerCompte(req.body, { utilisateurId: req.user.id }), 201));
   router.put('/comptes/:id', auth, droit('CREATE'), gerer('Compte mis à jour', (req) => comptaService.modifierCompte(req.params.id, req.body)));
 
   // ── Journaux ──
@@ -108,7 +109,7 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
   router.get('/exercices', auth, droit('READ'), gerer('Exercices', () => comptaService.listerExercices()));
   router.post('/exercices', auth, droit('MANAGE'), gerer('Exercice créé', (req) => comptaService.creerExercice(req.body), 201));
   router.put('/exercices/:id/periodes/:mois', auth, droit('CLOSE'),
-    gerer('Période mise à jour', (req) => comptaService.changerStatutPeriode(req.params.id, req.params.mois, req.body.statut)));
+    gerer('Période mise à jour', (req) => comptaService.changerStatutPeriode(req.params.id, req.params.mois, req.body.statut, { utilisateurId: req.user.id })));
 
   // ── Écritures ──
   router.get('/ecritures', auth, droit('READ'), gerer('Écritures', (req) => comptaService.listerEcritures(req.query)));
@@ -128,7 +129,7 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
     const { journalId, journalCode, dateEcriture, libelle, lignes } = req.body || {};
     return comptaService.modifierBrouillon(req.params.id, { journalId, journalCode, dateEcriture, libelle, lignes });
   }));
-  router.delete('/ecritures/:id', auth, droit('CREATE'), gerer('Brouillon supprimé', (req) => comptaService.supprimerBrouillon(req.params.id)));
+  router.delete('/ecritures/:id', auth, droit('CREATE'), gerer('Brouillon supprimé', (req) => comptaService.supprimerBrouillon(req.params.id, { utilisateurId: req.user.id })));
   router.post('/ecritures/:id/valider', auth, droit('VALIDATE'),
     gerer('Écriture validée', (req) => comptaService.validerEcriture(req.params.id, { utilisateurId: req.user.id })));
   router.post('/ecritures/:id/contrepasser', auth, droit('VALIDATE'),
@@ -139,6 +140,7 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
     if (!moteurAuto) throw new ComptaError('Moteur automatique indisponible', 503);
     return moteurAuto.generer({ force: true });
   }));
+  router.get('/audit', auth, droit('MANAGE'), gerer('Journal d\'audit', (req) => comptaService.listerAudit(req.query)));
   router.get('/generation', auth, droit('READ'), gerer('Dernière génération', () => (moteurAuto && moteurAuto.dernierRapport) || null));
   router.get('/controles', auth, droit('READ'), gerer('Contrôles de cohérence', () => {
     if (!moteurAuto) throw new ComptaError('Moteur automatique indisponible', 503);
@@ -161,7 +163,7 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
 
   // ── Immobilisations et amortissements ──
   router.get('/immobilisations', auth, droit('READ'), gerer('Immobilisations', () => immobilisationService.lister()));
-  router.post('/immobilisations', auth, droit('CREATE'), gerer('Immobilisation créée', (req) => immobilisationService.creer(req.body || {}), 201));
+  router.post('/immobilisations', auth, droit('CREATE'), gerer('Immobilisation créée', (req) => immobilisationService.creer({ ...(req.body || {}), utilisateurId: req.user.id }), 201));
   router.get('/immobilisations/:id/plan', auth, droit('READ'), gerer('Plan d\'amortissement', (req) => immobilisationService.plan(req.params.id)));
   router.post('/immobilisations/:id/ceder', auth, droit('VALIDATE'), gerer('Cession enregistrée', (req) => immobilisationService.ceder(req.params.id, { ...(req.body || {}), utilisateurId: req.user.id }), 201));
   router.post('/exercices/:id/dotations', auth, droit('VALIDATE'), gerer('Dotations calculées', (req) => immobilisationService.dotationsExercice({ exerciceId: req.params.id })));
@@ -173,14 +175,14 @@ function createComptaRouter({ authService, prisma, comptaService, moteurAuto, et
 
   // ── Rapprochement bancaire ──
   router.get('/rapprochement', auth, droit('READ'), gerer('État de rapprochement', (req) => clotureService.etatRapprochement({ compteNumero: req.query.compte, dateReleve: req.query.dateReleve, soldeReleve: req.query.soldeReleve })));
-  router.post('/rapprochement/pointer', auth, droit('VALIDATE'), gerer('Lignes pointées', (req) => clotureService.pointer(req.body || {}), 201));
+  router.post('/rapprochement/pointer', auth, droit('VALIDATE'), gerer('Lignes pointées', (req) => clotureService.pointer({ ...(req.body || {}), utilisateurId: req.user.id }), 201));
   router.post('/rapprochement/depointer', auth, droit('VALIDATE'), gerer('Pointage annulé', (req) => clotureService.depointer(req.body || {})));
 
   // ── Lettrage (rapprochement factures / règlements d'un tiers) ──
   router.get('/lettrage/lignes', auth, droit('READ'), gerer('Lignes à lettrer', (req) => etatsService.lignesOuvertes({ compteNumero: req.query.compte, tiersType: req.query.tiersType, tiersId: req.query.tiersId })));
-  router.post('/lettrage', auth, droit('VALIDATE'), gerer('Lettrage enregistré', (req) => etatsService.lettrer((req.body || {}).ligneIds || []), 201));
+  router.post('/lettrage', auth, droit('VALIDATE'), gerer('Lettrage enregistré', (req) => etatsService.lettrer((req.body || {}).ligneIds || [], { utilisateurId: req.user.id }), 201));
   router.post('/lettrage/auto', auth, droit('VALIDATE'), gerer('Lettrage automatique', (req) => etatsService.lettrageAutomatique({ type: (req.body || {}).type })));
-  router.delete('/lettrage/:code', auth, droit('VALIDATE'), gerer('Lettrage annulé', (req) => etatsService.delettrer(req.params.code)));
+  router.delete('/lettrage/:code', auth, droit('VALIDATE'), gerer('Lettrage annulé', (req) => etatsService.delettrer(req.params.code, { utilisateurId: req.user.id })));
 
   return router;
 }

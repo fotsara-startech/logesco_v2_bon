@@ -91,6 +91,10 @@ class LedgerService {
   }
   Future<Map<String, dynamic>> controles() async => Map<String, dynamic>.from(await _get('/controles'));
 
+  Future<Map<String, dynamic>> propositionsOuverture() async => Map<String, dynamic>.from(await _get('/ouverture/propositions'));
+  Future<Map<String, dynamic>> audit({String? action, int page = 1}) async =>
+      Map<String, dynamic>.from(await _get('/audit', {'action': action, 'page': page, 'limit': 100}));
+
   // Immobilisations, clôture
   Future<List<Map<String, dynamic>>> immobilisations() async => List<Map<String, dynamic>>.from((await _get('/immobilisations')) as List);
   Future<Map<String, dynamic>> creerImmobilisation(Map<String, dynamic> p) async => Map<String, dynamic>.from(await _send('POST', '/immobilisations', p));

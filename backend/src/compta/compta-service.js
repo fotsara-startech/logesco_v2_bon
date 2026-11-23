@@ -53,6 +53,14 @@ class ComptaService {
     this.syncService = syncService;
   }
 
+  /**
+   * Transaction interactive avec un délai large : par défaut Prisma coupe à 5 s, ce qui ne suffit pas quand la base
+   * est distante (chaque requête coûte alors plusieurs centaines de millisecondes).
+   */
+  _transaction(fn) {
+    return this.prisma.$transaction(fn, { maxWait: 20000, timeout: 60000 });
+  }
+
   async _enqueue(table, operation, row) {
     if (!this.syncService || !row) return;
     try {
@@ -61,6 +69,49 @@ class ComptaService {
       // La comptabilité locale reste juste ; la synchro rattrapera (voir sync-heal)
       console.warn(`⚠️  [Compta] mise en file de synchro impossible (${table} ${operation}) : ${e.message}`);
     }
+  }
+
+  /**
+   * Journal d'audit : trace une action sensible. Ne bloque jamais l'opération tracée (une erreur est seulement signalée).
+   * @param {string} action ex. « ecriture.validee »
+   * @param {{ utilisateurId?: number, entiteType?: string, entiteId?: number, details?: object }} p
+   */
+  async tracer(action, { utilisateurId, entiteType, entiteId, details } = {}) {
+    try {
+      const ligne = await this.prisma.comptaAudit.create({
+        data: {
+          action, utilisateurId: utilisateurId ? Number(utilisateurId) : null, entiteType: entiteType || null,
+          entiteId: entiteId ? Number(entiteId) : null, details: details ? JSON.stringify(details) : null,
+        },
+      });
+      await this._enqueue('compta_audit', 'INSERT', ligne);
+    } catch (e) {
+      console.warn(`⚠️  [Compta] audit non enregistré (${action}) : ${e.message}`);
+    }
+  }
+
+  async listerAudit({ action, entiteType, dateDebut, dateFin, page = 1, limit = 100 } = {}) {
+    const where = {};
+    if (action) where.action = { startsWith: String(action) };
+    if (entiteType) where.entiteType = String(entiteType);
+    if (dateDebut || dateFin) {
+      where.dateAction = {};
+      if (dateDebut) where.dateAction.gte = jourUtc(dateDebut, 'Date de début');
+      if (dateFin) where.dateAction.lt = new Date(jourUtc(dateFin, 'Date de fin').getTime() + 24 * 3600 * 1000);
+    }
+    page = Math.max(1, Number(page) || 1);
+    limit = Math.min(500, Math.max(1, Number(limit) || 100));
+    const [total, lignes] = await Promise.all([
+      this.prisma.comptaAudit.count({ where }),
+      this.prisma.comptaAudit.findMany({ where, orderBy: { id: 'desc' }, skip: (page - 1) * limit, take: limit }),
+    ]);
+    const ids = [...new Set(lignes.map((l) => l.utilisateurId).filter(Boolean))];
+    const utilisateurs = ids.length ? await this.prisma.utilisateur.findMany({ where: { id: { in: ids } }, select: { id: true, nomUtilisateur: true } }) : [];
+    const noms = new Map(utilisateurs.map((u) => [u.id, u.nomUtilisateur]));
+    return {
+      total, page, limit,
+      lignes: lignes.map((l) => ({ ...l, utilisateur: l.utilisateurId ? (noms.get(l.utilisateurId) || `#${l.utilisateurId}`) : null, details: l.details ? JSON.parse(l.details) : null })),
+    };
   }
 
   async _enqueueEcriture(operation, ecriture) {
@@ -78,7 +129,7 @@ class ComptaService {
     return p;
   }
 
-  async updateParametres(patch = {}) {
+  async updateParametres(patch = {}, { utilisateurId } = {}) {
     const data = {};
     if (patch.regime !== undefined) {
       if (!['normal', 'smt'].includes(patch.regime)) throw new ComptaError('Régime invalide (normal ou smt)');
@@ -102,6 +153,7 @@ class ComptaService {
     await this.getParametres();
     const p = await this.prisma.comptaParametres.update({ where: { id: 1 }, data });
     await this._enqueue('compta_parametres', 'UPDATE', p);
+    await this.tracer('parametres.modifies', { utilisateurId, entiteType: 'parametres', entiteId: 1, details: data });
     return p;
   }
 
@@ -115,7 +167,7 @@ class ComptaService {
     return this.prisma.comptaCompte.findMany({ where, orderBy: { numero: 'asc' } });
   }
 
-  async creerCompte({ numero, libelle, nature, sens, lettrable = false } = {}) {
+  async creerCompte({ numero, libelle, nature, sens, lettrable = false } = {}, { utilisateurId } = {}) {
     numero = String(numero || '').trim();
     libelle = String(libelle || '').trim();
     if (!/^[1-8]\d{1,7}$/.test(numero)) throw new ComptaError('Numéro de compte invalide : 2 à 8 chiffres, classe 1 à 8');
@@ -145,6 +197,7 @@ class ComptaService {
       },
     });
     await this._enqueue('compta_comptes', 'INSERT', compte);
+    await this.tracer('compte.cree', { utilisateurId, entiteType: 'compte', entiteId: compte.id, details: { numero: compte.numero, libelle: compte.libelle } });
     return compte;
   }
 
@@ -214,7 +267,7 @@ class ComptaService {
     }
   }
 
-  async changerStatutPeriode(exerciceId, mois, statut) {
+  async changerStatutPeriode(exerciceId, mois, statut, { utilisateurId } = {}) {
     if (!['ouverte', 'verrouillee'].includes(statut)) throw new ComptaError('Statut de période invalide');
     const periode = await this.prisma.comptaPeriode.findUnique({ where: { exerciceId_mois: { exerciceId: Number(exerciceId), mois: Number(mois) } } });
     if (!periode) throw new ComptaError('Période introuvable', 404);
@@ -224,6 +277,7 @@ class ComptaService {
     }
     const maj = await this.prisma.comptaPeriode.update({ where: { id: periode.id }, data: { statut } });
     await this._enqueue('compta_periodes', 'UPDATE', maj);
+    await this.tracer(statut === 'verrouillee' ? 'periode.verrouillee' : 'periode.rouverte', { utilisateurId, entiteType: 'periode', entiteId: maj.id, details: { exerciceId: Number(exerciceId), mois: Number(mois) } });
     return maj;
   }
 
@@ -237,6 +291,11 @@ class ComptaService {
     let totalDebit = 0;
     let totalCredit = 0;
     const resultat = [];
+    const idsDemandes = [...new Set(lignes.map((l) => l.compteId).filter(Boolean).map(Number))];
+    const numerosDemandes = [...new Set(lignes.map((l) => l.compteNumero).filter(Boolean).map(String))];
+    const trouves = await db.comptaCompte.findMany({ where: { OR: [{ id: { in: idsDemandes } }, { numero: { in: numerosDemandes } }] } });
+    const parId = new Map(trouves.map((c) => [c.id, c]));
+    const parNumero = new Map(trouves.map((c) => [c.numero, c]));
     for (const [i, l] of lignes.entries()) {
       const debit = l.debit === undefined || l.debit === null || l.debit === '' ? 0 : Number(l.debit);
       const credit = l.credit === undefined || l.credit === null || l.credit === '' ? 0 : Number(l.credit);
@@ -246,8 +305,8 @@ class ComptaService {
       if ((debit > 0) === (credit > 0)) throw new ComptaError(`Ligne ${n} : renseigner soit un débit, soit un crédit`);
 
       let compte = null;
-      if (l.compteId) compte = await db.comptaCompte.findUnique({ where: { id: Number(l.compteId) } });
-      else if (l.compteNumero) compte = await db.comptaCompte.findUnique({ where: { numero: String(l.compteNumero) } });
+      if (l.compteId) compte = parId.get(Number(l.compteId)) || null;
+      else if (l.compteNumero) compte = parNumero.get(String(l.compteNumero)) || null;
       if (!compte) throw new ComptaError(`Ligne ${n} : compte introuvable`);
       if (!compte.actif) throw new ComptaError(`Ligne ${n} : le compte ${compte.numero} est désactivé`);
 
@@ -294,7 +353,7 @@ class ComptaService {
     if (!libelle) throw new ComptaError('Le libellé de l\'écriture est obligatoire');
     const date = jourUtc(p.dateEcriture, 'Date d\'écriture');
 
-    const creee = await this.prisma.$transaction(async (tx) => {
+    const creee = await this._transaction(async (tx) => {
       const journal = await this._journal(tx, p);
       if (journal.type === 'a_nouveaux' && origine === 'manuelle') {
         throw new ComptaError('Le journal des à-nouveaux est réservé à l\'ouverture et à la clôture');
@@ -339,7 +398,7 @@ class ComptaService {
   }
 
   async modifierBrouillon(id, p = {}) {
-    const maj = await this.prisma.$transaction(async (tx) => {
+    const maj = await this._transaction(async (tx) => {
       const existante = await tx.comptaEcriture.findUnique({ where: { id: Number(id) }, include: { lignes: true } });
       if (!existante) throw new ComptaError('Écriture introuvable', 404);
       if (existante.statut !== 'brouillon') throw new ComptaError('Seul un brouillon peut être modifié : contre-passez la pièce validée', 409, 'ECRITURE_VALIDEE');
@@ -381,13 +440,14 @@ class ComptaService {
     return maj.ecriture;
   }
 
-  async supprimerBrouillon(id) {
+  async supprimerBrouillon(id, { utilisateurId } = {}) {
     const existante = await this.prisma.comptaEcriture.findUnique({ where: { id: Number(id) }, include: { lignes: true } });
     if (!existante) throw new ComptaError('Écriture introuvable', 404);
     if (existante.statut !== 'brouillon') throw new ComptaError('Une écriture validée ne se supprime pas : contre-passez-la', 409, 'ECRITURE_VALIDEE');
     await this.prisma.comptaEcriture.delete({ where: { id: existante.id } });
     for (const l of existante.lignes) await this._enqueue('compta_lignes', 'DELETE', { id: l.id });
     await this._enqueue('compta_ecritures', 'DELETE', { id: existante.id });
+    await this.tracer('ecriture.brouillon_supprime', { utilisateurId, entiteType: 'ecriture', entiteId: existante.id, details: { libelle: existante.libelle } });
     return { id: existante.id };
   }
 
@@ -418,7 +478,7 @@ class ComptaService {
   }
 
   async validerEcriture(id, { utilisateurId } = {}) {
-    const validee = await this.prisma.$transaction(async (tx) => {
+    const validee = await this._transaction(async (tx) => {
       const e = await tx.comptaEcriture.findUnique({ where: { id: Number(id) }, include: { lignes: true, journal: true, exercice: true } });
       if (!e) throw new ComptaError('Écriture introuvable', 404);
       if (e.statut !== 'brouillon') throw new ComptaError('Cette écriture est déjà validée', 409, 'DEJA_VALIDEE');
@@ -446,12 +506,13 @@ class ComptaService {
       });
     });
     await this._enqueue('compta_ecritures', 'UPDATE', { ...validee, lignes: undefined });
+    await this.tracer('ecriture.validee', { utilisateurId, entiteType: 'ecriture', entiteId: validee.id, details: { numeroPiece: validee.numeroPiece, origine: validee.origine } });
     return validee;
   }
 
   /** Annule une pièce validée par une écriture inverse (l'originale passe à « contrepassee ») */
   async contrepasser(id, { dateEcriture, motif, utilisateurId } = {}) {
-    const res = await this.prisma.$transaction(async (tx) => {
+    const res = await this._transaction(async (tx) => {
       const o = await tx.comptaEcriture.findUnique({ where: { id: Number(id) }, include: { lignes: true, journal: true } });
       if (!o) throw new ComptaError('Écriture introuvable', 404);
       if (o.statut === 'contrepassee') throw new ComptaError('Cette écriture est déjà contre-passée', 409, 'DEJA_CONTREPASSEE');
@@ -505,6 +566,7 @@ class ComptaService {
 
     await this._enqueueEcriture('INSERT', res.contre);
     await this._enqueue('compta_ecritures', 'UPDATE', res.originale);
+    await this.tracer('ecriture.contrepassee', { utilisateurId, entiteType: 'ecriture', entiteId: res.originale.id, details: { numeroPiece: res.originale.numeroPiece, contrePassation: res.contre.numeroPiece, motif: motif || null } });
     return res;
   }
 
@@ -551,7 +613,7 @@ class ComptaService {
    * d'à-nouveaux (journal AN) à partir des soldes saisis, et mémorise régime et date.
    * Un écart éventuel va sur un compte d'attente (4711/4712) à justifier ensuite.
    */
-  async enregistrerOuverture({ dateOuverture, dateFinExercice, libelleExercice, regime, soldes = [], utilisateurId } = {}) {
+  async enregistrerOuverture({ dateOuverture, dateFinExercice, libelleExercice, regime, soldes = [], clients = [], fournisseurs = [], utilisateurId } = {}) {
     const params = await this.getParametres();
     if (params.ouvertureValidee) throw new ComptaError('L\'ouverture a déjà été enregistrée', 409, 'OUVERTURE_DEJA_FAITE');
     const debut = jourUtc(dateOuverture, 'Date d\'ouverture');
@@ -566,6 +628,23 @@ class ComptaService {
     const lignes = (soldes || [])
       .filter((s) => Number(s.debit || 0) > 0 || Number(s.credit || 0) > 0)
       .map((s) => ({ ...s, libelle: s.libelle || 'Solde d\'ouverture' }));
+    // Soldes par tiers : client > 0 = créance (411), < 0 = avance reçue (4191) ; fournisseur > 0 = dette (401), < 0 = avance versée (4091)
+    for (const c of clients || []) {
+      const m = Number(c.montant);
+      if (!Number.isInteger(m)) throw new ComptaError('Les soldes des clients doivent être des entiers (FCFA)');
+      if (m === 0) continue;
+      lignes.push(m > 0
+        ? { compteNumero: '411', debit: m, tiersType: 'client', tiersId: Number(c.clientId), libelle: 'Créance client à l\'ouverture' }
+        : { compteNumero: '4191', credit: -m, tiersType: 'client', tiersId: Number(c.clientId), libelle: 'Avance client à l\'ouverture' });
+    }
+    for (const fo of fournisseurs || []) {
+      const m = Number(fo.montant);
+      if (!Number.isInteger(m)) throw new ComptaError('Les soldes des fournisseurs doivent être des entiers (FCFA)');
+      if (m === 0) continue;
+      lignes.push(m > 0
+        ? { compteNumero: '401', credit: m, tiersType: 'fournisseur', tiersId: Number(fo.fournisseurId), libelle: 'Dette fournisseur à l\'ouverture' }
+        : { compteNumero: '4091', debit: -m, tiersType: 'fournisseur', tiersId: Number(fo.fournisseurId), libelle: 'Avance fournisseur à l\'ouverture' });
+    }
     const totalDebit = lignes.reduce((a, s) => a + Number(s.debit || 0), 0);
     const totalCredit = lignes.reduce((a, s) => a + Number(s.credit || 0), 0);
     const ecart = totalDebit - totalCredit;
@@ -594,6 +673,7 @@ class ComptaService {
       data: { dateOuverture: debut, ouvertureValidee: true, exerciceDefautId: exercice.id, ...(regime ? { regime } : {}) },
     });
     await this._enqueue('compta_parametres', 'UPDATE', maj);
+    await this.tracer('ouverture.enregistree', { utilisateurId, entiteType: 'exercice', entiteId: exercice.id, details: { dateOuverture: debut.toISOString().slice(0, 10), ecart, regime: maj.regime } });
     return { exercice, ecriture, ecart, parametres: maj };
   }
 

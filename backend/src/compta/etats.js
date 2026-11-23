@@ -295,7 +295,7 @@ class EtatsService {
   async balanceAgee({ type = 'client', dateRef, boutiqueId } = {}) {
     if (!['client', 'fournisseur'].includes(type)) throw new ComptaError('Type invalide (client ou fournisseur)');
     const ref = dateRef ? jourUtc(dateRef, 'Date de référence') : jourUtc(new Date());
-    const numeros = type === 'client' ? ['411', '416'] : ['401'];
+    const numeros = type === 'client' ? ['411', '416', '4191'] : ['401', '4091'];
     const comptes = await this.prisma.comptaCompte.findMany({ where: { numero: { in: numeros } } });
     const where = {
       compteId: { in: comptes.map((c) => c.id) }, tiersType: type, lettrage: null,
@@ -365,7 +365,7 @@ class EtatsService {
   }
 
   /** Rapproche des lignes d'un même compte et d'un même tiers dont les débits égalent les crédits */
-  async lettrer(ligneIds = []) {
+  async lettrer(ligneIds = [], { utilisateurId } = {}) {
     const ids = [...new Set(ligneIds.map(Number))];
     if (ids.length < 2) throw new ComptaError('Sélectionnez au moins deux lignes à lettrer');
     const lignes = await this.prisma.comptaLigne.findMany({ where: { id: { in: ids } }, include: { ecriture: { select: { statut: true } } } });
@@ -383,14 +383,16 @@ class EtatsService {
     await this.prisma.comptaLigne.updateMany({ where: { id: { in: ids } }, data: { lettrage: code } });
     const maj = await this.prisma.comptaLigne.findMany({ where: { id: { in: ids } } });
     await this._enqueueLignes(maj);
+    await this.compta.tracer('lettrage.effectue', { utilisateurId, entiteType: 'ligne', details: { code, lignes: maj.length, montant: debit } });
     return { code, lignes: maj.length, montant: debit };
   }
 
-  async delettrer(code) {
+  async delettrer(code, { utilisateurId } = {}) {
     const lignes = await this.prisma.comptaLigne.findMany({ where: { lettrage: String(code || '') } });
     if (lignes.length === 0) throw new ComptaError('Code de lettrage introuvable', 404);
     await this.prisma.comptaLigne.updateMany({ where: { lettrage: String(code) }, data: { lettrage: null } });
     await this._enqueueLignes(await this.prisma.comptaLigne.findMany({ where: { id: { in: lignes.map((l) => l.id) } } }));
+    await this.compta.tracer('lettrage.annule', { utilisateurId, entiteType: 'ligne', details: { code, lignes: lignes.length } });
     return { code, lignes: lignes.length };
   }
 

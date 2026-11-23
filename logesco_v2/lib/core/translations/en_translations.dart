@@ -5370,4 +5370,11 @@ const Map<String, String> enTranslations = {
   'compta_close_stock_help': 'Suggestion: current stock × average cost. Replace with your year-end inventory value.',
   'compta_close_confirm': 'Close permanently',
   'compta_state_cash_flow': 'Cash flow statement',
+  'procurement_vat_recoverable': 'Supplier invoice with recoverable VAT',
+  'procurement_vat_recoverable_help': 'Entered prices include VAT: the VAT is deducted from your return (accounting).',
+  'compta_opening_import': 'Import balances from management',
+  'compta_opening_imported': 'Imported from management',
+  'compta_opening_customers': 'customer(s)',
+  'compta_opening_suppliers': 'supplier(s)',
+  'compta_audit_title': 'Audit log',
 };

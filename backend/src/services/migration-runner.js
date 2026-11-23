@@ -42,6 +42,8 @@ const MIGRATION_ORDER = [
   'add_annulation_articles_vente',
   'add_compta_socle',
   'add_compta_immobilisations',
+  'add_commande_tva_recuperable',
+  'add_compta_audit',
 ];
 
 const TRACKING_TABLE = '_app_migrations';

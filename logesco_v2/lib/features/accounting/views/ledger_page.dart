@@ -547,6 +547,8 @@ class _FiscalYearsTab extends StatelessWidget {
                     value: c.modeExpert,
                     onChanged: (v) => c.changerParametres({'modeAffichage': v ? 'expert' : 'simple'}),
                   ),
+                  if (c.modeExpert)
+                    OutlinedButton.icon(icon: const Icon(Icons.history), label: Text('compta_audit_title'.tr), onPressed: () => _afficherAudit(context)),
                   if (!c.ouvertureFaite)
                     ElevatedButton.icon(
                       icon: const Icon(Icons.flag),
@@ -661,6 +663,37 @@ class _FiscalYearsTab extends StatelessWidget {
               ),
           ]),
         ]),
+      ),
+    );
+  }
+
+  Future<void> _afficherAudit(BuildContext context) async {
+    final r = await c.chargerAudit();
+    if (r == null || !context.mounted) return;
+    final lignes = List<Map<String, dynamic>>.from((r['lignes'] as List).map((x) => Map<String, dynamic>.from(x as Map)));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('compta_audit_title'.tr),
+        content: SizedBox(
+          width: 520,
+          height: 420,
+          child: lignes.isEmpty
+              ? Center(child: Text('compta_no_entries'.tr))
+              : ListView.builder(
+                  itemCount: lignes.length,
+                  itemBuilder: (_, i) {
+                    final l = lignes[i];
+                    final d = DateTime.tryParse(l['dateAction'].toString())?.toLocal();
+                    return ListTile(
+                      dense: true,
+                      title: Text(l['action'].toString()),
+                      subtitle: Text('${d == null ? '' : DateFormat('dd/MM/yyyy HH:mm').format(d)} · ${l['utilisateur'] ?? '-'}${l['details'] == null ? '' : ' · ${l['details']}'}', maxLines: 2, overflow: TextOverflow.ellipsis),
+                    );
+                  },
+                ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text('close'.tr))],
       ),
     );
   }

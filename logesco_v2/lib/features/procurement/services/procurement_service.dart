@@ -122,6 +122,7 @@ class ProcurementService {
     int? boutiqueId,
     DateTime? dateLivraisonPrevue,
     String modePaiement = 'credit',
+    bool tvaRecuperable = false,
     String? notes,
     required List<Map<String, dynamic>> details,
   }) async {
@@ -133,6 +134,7 @@ class ProcurementService {
         if (boutiqueId != null) 'boutiqueId': boutiqueId,
         'dateLivraisonPrevue': dateLivraisonPrevue?.toIso8601String(),
         'modePaiement': modePaiement,
+        'tvaRecuperable': tvaRecuperable,
         'notes': notes,
         'details': details,
       };
